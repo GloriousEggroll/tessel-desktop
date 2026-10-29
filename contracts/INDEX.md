@@ -69,3 +69,4 @@
 |---|---|---|---|
 | text-editor | [text-editor.md](text-editor.md) | GApplication `org.waydock.TextEditor` (HANDLES_OPEN); `$XDG_STATE_HOME/text-editor/recovery/*.json`; `desktop-suite/text-editor.json` | `/usr/local/bin/text-editor` (desktop-apps/install.py), `org.waydock.TextEditor.desktop` |
 | system-monitor | [system-monitor.md](system-monitor.md) | GApplication `org.waydock.SystemMonitor` (HANDLES_COMMAND_LINE; `--check`/`--page`/`--quit`), no D-Bus service; /proc + /sys | launcher `/usr/local/bin/system-monitor` |
+| hdr-calibration | [hdr-calibration.md](hdr-calibration.md) | GApplication `org.desktop.HDRCalibration` (NON_UNIQUE; `--output`/`--sdr-editing`/`--smoke-test`); SIGHUP to labwc; rc.xml hdr-calibration block, `~/.config/hdr-calibration/` profiles + corrections; C `hdr-pattern` helper kept | launcher `~/.local/bin/hdr-calibration`; shim at `hdr_calibration.py` (way-displays color_controls.py) |

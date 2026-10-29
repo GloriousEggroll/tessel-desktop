@@ -73,7 +73,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 4 | text-editor | 1637 | ported (sourceview5 via .cargo/config.toml soname link), 31 unit + 21 headless pass, not swapped |
 | 4 | picture-viewer | 2333 | in progress |
 | 4 | system-monitor | 1519 | ported (/proc+/sys instead of psutil), 28 unit + 15 headless pass, not swapped |
-| 4 | hdr-calibration | 935 | in progress |
+| 4 | hdr-calibration | 926 | ported (hdr-pattern stays C), 19 unit + 6 headless pass, not swapped |
 | 4 | capture-manager (GUI + CLI; portal and capture_pipewire.c stay C) | 3420 | in progress |
 | 4 | file-manager | — | not started (excluded from this run) |
 | 4 | global-settings, welcome | ~9.4k | |
