@@ -1,7 +1,8 @@
 //! Lock Screen (lock_page.py + lock-screen/lock_settings.py, lock_config.py,
 //! lock_weather.configured_weather and power_client.PowerClient). Kept in
 //! submodules so wave 5 can move them into the lock-screen crate unchanged.
-pub mod config;
+/// Moved to the shared `suite-lock` crate (wave 5).
+pub use suite_lock::config;
 pub mod power;
 pub mod settings;
 pub mod weather;

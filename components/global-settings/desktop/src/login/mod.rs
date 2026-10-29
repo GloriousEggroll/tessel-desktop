@@ -3,7 +3,8 @@
 //! `pkexec /usr/bin/python3 -I /usr/local/lib/waylogin/login_settings_helper.py`
 //! (JSON request on stdin). The helper argv is injectable; tests only ever
 //! run it against a fake `pkexec`.
-pub mod model;
+/// Moved to the shared `suite-lock` crate (wave 5).
+pub use suite_lock::login_model as model;
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;

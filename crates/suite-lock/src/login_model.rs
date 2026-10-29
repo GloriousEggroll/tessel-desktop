@@ -1,5 +1,6 @@
 //! login-manager/login_model.py: system-wide greeter appearance and the
-//! installed Wayland desktop sessions. (Wave 5 moves this into login-manager.)
+//! installed Wayland desktop sessions. Shared by login-manager and Global
+//! Settings (moved from gs-desktop).
 use std::path::{Path, PathBuf};
 
 use serde_json::{Map, Value};

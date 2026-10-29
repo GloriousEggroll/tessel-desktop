@@ -1,5 +1,6 @@
 //! lock-screen/lock_config.py: lock-screen appearance. Idle policy remains
-//! owned by Power management. (Wave 5 moves this into the lock-screen crate.)
+//! owned by Power management. Shared by lock-screen, login-manager,
+//! home-assistant-screen and Global Settings (moved from gs-desktop).
 use std::path::{Path, PathBuf};
 
 use serde_json::{Map, Value};

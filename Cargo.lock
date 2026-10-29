@@ -926,6 +926,7 @@ dependencies = [
  "serde_json",
  "suite-core",
  "suite-gtk",
+ "suite-lock",
  "tiling-manager",
  "way-displays",
  "waydock",
@@ -2071,6 +2072,14 @@ dependencies = [
  "serde_json",
  "suite-core",
  "suite-wayland",
+]
+
+[[package]]
+name = "suite-lock"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "suite-core",
 ]
 
 [[package]]

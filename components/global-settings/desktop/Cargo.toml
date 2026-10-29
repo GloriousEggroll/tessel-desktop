@@ -14,6 +14,7 @@ gs-base = { path = "../base" }
 gs-system = { path = "../system" }
 suite-core.workspace = true
 suite-gtk.workspace = true
+suite-lock.workspace = true
 glib.workspace = true
 gio.workspace = true
 gtk.workspace = true
