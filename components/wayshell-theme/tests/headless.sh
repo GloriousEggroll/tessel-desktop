@@ -6,7 +6,8 @@ set -eu
 R=/run/user/1000/cbt/rust-ws-prompt/n
 OUTPUTS=$1; shift
 mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data"; chmod 700 "$R/rt"
-sed "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" /usr/share/dbus-1/session.conf > "$R/d.conf"
+# No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
+sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 rm -f "$R/result"
 {
   echo '#!/bin/sh'
@@ -18,8 +19,10 @@ rm -f "$R/result"
   echo 'labwc --exit'
 } > "$R/run.sh"
 chmod +x "$R/run.sh"
-env -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS="$OUTPUTS" \
+env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
+  HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS="$OUTPUTS" \
   WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" \
   > "$R/labwc.log" 2>&1 || true
 cat "$R/log"
+grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 exit "$(cat "$R/result" 2>/dev/null || echo 1)"

@@ -299,6 +299,11 @@ elif [ "$op" = setvcp ]; then read raw max < "$dir/$1"; echo "$2 $max" > "$dir/$
         assert!(root.join("bin").join(fake).exists(), "fake {fake} must shadow the real tool");
     }
 
+    // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+    // and in spawned children must not look up portals or gvfs.
+    for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+        std::env::set_var(key, value);
+    }
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     let address = bus.bus_address().unwrap().to_string();
@@ -324,6 +329,7 @@ elif [ "$op" = setvcp ]; then read raw max < "$dir/$1"; echo "$2 $max" > "$dir/$
         ("DBUS_SYSTEM_BUS_ADDRESS".into(), address.clone()),
         ("BRIGHTNESS_MANAGER_SYSFS".into(), root.join("sys").display().to_string()),
         ("GSETTINGS_BACKEND".into(), "memory".into()),
+        ("GDK_DEBUG".into(), "no-portals".into()), ("GIO_USE_VFS".into(), "local".into()), ("GTK_USE_PORTAL".into(), "0".into()),
         ("GTK_A11Y".into(), "none".into()),
         ("NO_AT_BRIDGE".into(), "1".into()),
         ("GSK_RENDERER".into(), "cairo".into()),

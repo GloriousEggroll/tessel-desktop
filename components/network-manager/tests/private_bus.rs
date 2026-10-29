@@ -106,6 +106,11 @@ fn manager_agent_and_status_stream_on_private_bus() {
         std::fs::create_dir_all(root.join(dir)).unwrap();
     }
     std::fs::set_permissions(root.join("runtime"), std::os::unix::fs::PermissionsExt::from_mode(0o700)).unwrap();
+    // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+    // and in spawned children must not look up portals or gvfs.
+    for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+        std::env::set_var(key, value);
+    }
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     let address = bus.bus_address().unwrap().to_string();
@@ -121,6 +126,7 @@ fn manager_agent_and_status_stream_on_private_bus() {
         ("DBUS_SESSION_BUS_ADDRESS".into(), address.clone()),
         ("DBUS_SYSTEM_BUS_ADDRESS".into(), address.clone()),
         ("GSETTINGS_BACKEND".into(), "memory".into()),
+        ("GDK_DEBUG".into(), "no-portals".into()), ("GIO_USE_VFS".into(), "local".into()), ("GTK_USE_PORTAL".into(), "0".into()),
         ("LANG".into(), "C.UTF-8".into()),
     ] };
 

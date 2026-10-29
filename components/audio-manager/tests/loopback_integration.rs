@@ -89,6 +89,7 @@ impl Isolated {
             ("DBUS_SYSTEM_BUS_ADDRESS".into(), format!("unix:path={d}/no-system-bus")),
             ("PULSE_SERVER".into(), format!("unix:{d}/no-pulse-server")),
             ("WAYLAND_DISPLAY".into(), "no-test-display".into()),
+            ("GDK_DEBUG".into(), "no-portals".into()), ("GIO_USE_VFS".into(), "local".into()), ("GTK_USE_PORTAL".into(), "0".into()),
             ("TMPDIR".into(), d.clone()),
         ];
         let mut graph = Self { dir, env, processes: Vec::new() };

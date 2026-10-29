@@ -32,6 +32,7 @@ fn headless_start_exits_before_registering_authentication() {
         .env("XDG_RUNTIME_DIR", &runtime).env("XDG_CONFIG_HOME", dir.join("config"))
         .env("DBUS_SESSION_BUS_ADDRESS", &bus.address).env("DBUS_SYSTEM_BUS_ADDRESS", &bus.address)
         .env("NOTIFY_SOCKET", &notify).env("GDK_BACKEND", "wayland").env("NO_AT_BRIDGE", "1")
+        .env("GDK_DEBUG", "no-portals").env("GIO_USE_VFS", "local").env("GTK_USE_PORTAL", "0")
         .output().unwrap();
     assert_eq!(output.status.code(), Some(1));
     let stderr = String::from_utf8_lossy(&output.stderr);

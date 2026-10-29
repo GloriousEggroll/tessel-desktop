@@ -41,26 +41,42 @@ pub fn wait_for(what: &str, timeout: Duration, mut condition: impl FnMut() -> bo
 }
 
 /// A dbus-daemon with the session policy listening in a private directory.
+/// tools/headless.md: no service directories, so nothing (portal, gvfs, ...)
+/// can be D-Bus-activated; dropping the bus fails the test if anything was.
 pub struct PrivateBus {
     pub address: String,
     child: Child,
+    log: PathBuf,
 }
 
 impl PrivateBus {
     pub fn start(dir: &Path) -> Self {
+        // GTK/GIO here and in spawned children must not look up portals or gvfs.
+        for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+            std::env::set_var(key, value);
+        }
         let config = std::fs::read_to_string("/usr/share/dbus-1/session.conf").unwrap();
-        let start = config.find("<listen>").unwrap();
-        let end = config.find("</listen>").unwrap() + "</listen>".len();
-        let config = format!("{}<listen>unix:tmpdir={}</listen>{}", &config[..start], dir.display(), &config[end..]);
+        let config: String = config.lines()
+            .filter(|line| !line.trim_start().starts_with("<standard_session_servicedirs")
+                && !line.trim_start().starts_with("<servicedir"))
+            .map(|line| if line.trim_start().starts_with("<listen>") {
+                format!("  <listen>unix:tmpdir={}</listen>\n", dir.display())
+            } else {
+                format!("{line}\n")
+            })
+            .collect();
+        assert!(!config.contains("servicedir"), "private bus config keeps a service dir");
         let path = dir.join("bus.conf");
         std::fs::write(&path, config).unwrap();
+        let log = dir.join("bus.log");
         let mut child = Command::new("dbus-daemon").arg(format!("--config-file={}", path.display()))
-            .args(["--nofork", "--print-address=1"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().unwrap();
+            .args(["--nofork", "--print-address=1"]).stdout(Stdio::piped())
+            .stderr(std::fs::File::create(&log).unwrap()).spawn().unwrap();
         let mut line = String::new();
         std::io::BufRead::read_line(&mut std::io::BufReader::new(child.stdout.take().unwrap()), &mut line).unwrap();
         let address = line.trim().to_owned();
         assert!(address.contains(dir.to_str().unwrap()), "private bus address {address}");
-        Self { address, child }
+        Self { address, child, log }
     }
 }
 
@@ -68,6 +84,10 @@ impl Drop for PrivateBus {
     fn drop(&mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();
+        let log = std::fs::read_to_string(&self.log).unwrap_or_default();
+        if !std::thread::panicking() {
+            assert!(!log.contains("Activating service"), "UNEXPECTED D-Bus activation on the private bus:\n{log}");
+        }
     }
 }
 

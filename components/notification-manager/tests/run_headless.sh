@@ -10,7 +10,8 @@ BASE=/run/user/1000/cbt/rust-$AGENT
 R=$BASE/n
 rm -rf "$R"
 mkdir -p "$R/rt" "$R/cfg" "$R/home" "$R/state" "$R/helpers"; chmod 700 "$R/rt"
-sed "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" /usr/share/dbus-1/session.conf > "$R/d.conf"
+# No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
+sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 artifacts() {
   (cd "$ROOT" && TMPDIR=$BASE cargo test -p notification-manager --test headless --no-run --message-format=json 2>/dev/null) \
@@ -51,10 +52,12 @@ timeout 120 "$BIN" daemon > "$R/log-daemon" 2>&1; echo \$? > "$R/result-daemon"
 labwc --exit
 RUN
 chmod +x "$R/run.sh"
-env -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=1 \
+env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
+  HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=1 \
   WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" \
   > "$R/labwc.log" 2>&1 || true
 cat "$R/log-ui" "$R/log-daemon" 2>/dev/null | grep -v "^$" || true
 U=$(cat "$R/result-ui" 2>/dev/null || echo 1); D=$(cat "$R/result-daemon" 2>/dev/null || echo 1)
 echo "ui=$U daemon=$D"
+grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 [ "$U" = 0 ] && [ "$D" = 0 ]

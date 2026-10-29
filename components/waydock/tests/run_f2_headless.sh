@@ -41,10 +41,12 @@ rm -f "$R/result" "$R/log"
   echo 'labwc --exit'
 } > "$R/run.sh"
 chmod +x "$R/run.sh"
-env -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 \
+env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
+  HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 \
   WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 RUST_BACKTRACE=1 \
   XDG_CONFIG_HOME="$R/xdg-config" XDG_CACHE_HOME="$R/cache" XDG_DATA_HOME="$R/data" \
   dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" \
   > "$R/labwc.log" 2>&1 || true
 cat "$R/log" 2>/dev/null || true
+grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 exit "$(cat "$R/result" 2>/dev/null || echo 1)"

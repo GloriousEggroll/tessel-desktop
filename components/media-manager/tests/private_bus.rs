@@ -225,6 +225,11 @@ fn cli_rejects_settings_and_negative_offsets() {
 
 #[test]
 fn private_bus() {
+    // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+    // and in spawned children must not look up portals or gvfs.
+    for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+        std::env::set_var(key, value);
+    }
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     assert_eq!(std::env::var("DBUS_SESSION_BUS_ADDRESS").unwrap(), bus.bus_address().unwrap().as_str());

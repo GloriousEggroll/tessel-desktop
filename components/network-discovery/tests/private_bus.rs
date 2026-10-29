@@ -418,6 +418,11 @@ fn status_command_prints_one_json_line(fake: &FakeSystemd, address: &str) {
 }
 
 fn main() {
+    // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+    // and in spawned children must not look up portals or gvfs.
+    for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+        std::env::set_var(key, value);
+    }
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     let address = bus.bus_address().unwrap().to_string();

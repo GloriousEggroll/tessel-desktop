@@ -20,6 +20,8 @@ pub fn scratch(name: &str) -> PathBuf {
     dir
 }
 
+/// tools/headless.md: no service directories, so nothing (portal, gvfs, ...)
+/// can be D-Bus-activated; dropping the bus fails the test if anything was.
 pub struct PrivateBus {
     pub address: String,
     daemon: Child,
@@ -28,6 +30,10 @@ pub struct PrivateBus {
 
 impl PrivateBus {
     pub fn start(name: &str) -> Self {
+        // GTK/GIO here and in spawned children must not look up portals or gvfs.
+        for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+            std::env::set_var(key, value);
+        }
         let dir = scratch(name);
         let config = std::fs::read_to_string("/usr/share/dbus-1/session.conf").expect("session.conf");
         let mut out = String::new();
@@ -48,7 +54,8 @@ impl PrivateBus {
         let path = dir.join("d.conf");
         std::fs::write(&path, out).unwrap();
         let mut daemon = Command::new("dbus-daemon").arg(format!("--config-file={}", path.display()))
-            .args(["--nofork", "--print-address=1"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().expect("dbus-daemon");
+            .args(["--nofork", "--print-address=1"]).stdout(Stdio::piped())
+            .stderr(std::fs::File::create(dir.join("bus.log")).unwrap()).spawn().expect("dbus-daemon");
         let mut line = String::new();
         BufReader::new(daemon.stdout.take().unwrap()).read_line(&mut line).unwrap();
         let address = line.trim().to_owned();
@@ -67,7 +74,11 @@ impl Drop for PrivateBus {
     fn drop(&mut self) {
         let _ = self.daemon.kill();
         let _ = self.daemon.wait();
+        let log = std::fs::read_to_string(self.dir.join("bus.log")).unwrap_or_default();
         let _ = std::fs::remove_dir_all(&self.dir);
+        if !std::thread::panicking() {
+            assert!(!log.contains("Activating service"), "UNEXPECTED D-Bus activation on the private bus:\n{log}");
+        }
     }
 }
 

@@ -9,7 +9,8 @@ AGENT=${AGENT:-hdr-calibration}
 R=/run/user/1000/cbt/rust-$AGENT/n
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/tmp" "$R/bin" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data" "$R/xdg/state"; chmod 700 "$R/rt"
 printf '<labwc_config/>\n' > "$R/cfg/rc.xml"
-sed "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" /usr/share/dbus-1/session.conf > "$R/d.conf"
+# No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
+sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 for tool in way-displays wlr-randr kscreen-doctor xrandr hdr-pattern; do
   printf '#!/bin/sh\necho "%s $*" >> %s/calls.log\nexit 1\n' "$tool" "$R" > "$R/bin/$tool"; chmod +x "$R/bin/$tool"
 done
@@ -33,10 +34,12 @@ ${HDR_TEST_SCREENSHOT:+HDR_TEST_SCREENSHOT=$HDR_TEST_SCREENSHOT} timeout 120 "$B
 labwc --exit
 RUN
 chmod +x "$R/run.sh"
-env -u WAYLAND_DISPLAY -u DISPLAY -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless \
+env -u WAYLAND_DISPLAY -u DISPLAY -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
+  HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless \
   WLR_HEADLESS_OUTPUTS=1 WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
   dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" > "$R/labwc.log" 2>&1 || true
 cat "$R/log"
+grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 echo "private XDG state written:"; find "$R/xdg" -type f | sed "s|$R/||"
 echo "fake tool calls:"; cat "$R/calls.log" 2>/dev/null || echo "(none)"
 exit "$(cat "$R/result" 2>/dev/null || echo 1)"

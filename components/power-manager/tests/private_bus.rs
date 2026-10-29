@@ -139,6 +139,11 @@ fn manager_and_status_stream_on_private_bus() {
                    r#"{"version": 1, "ac": {"display_off": 600, "sleep_after": 900, "sleep_action": "suspend"}, "power_button": "suspend"}"#).unwrap();
     std::fs::write(root.join("config/labwc/rc.xml"), "<labwc_config/>").unwrap();
 
+    // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+    // and in spawned children must not look up portals or gvfs.
+    for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+        std::env::set_var(key, value);
+    }
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     let address = bus.bus_address().unwrap().to_string();
@@ -156,6 +161,7 @@ fn manager_and_status_stream_on_private_bus() {
             ("POWER_MANAGER_EXECUTABLE".into(), MANAGER.into()),
             ("POWER_MANAGER_SCRIPTS_DIR".into(), root.join("config/waybar/scripts").display().to_string()),
             ("GSETTINGS_BACKEND".into(), "memory".into()),
+            ("GDK_DEBUG".into(), "no-portals".into()), ("GIO_USE_VFS".into(), "local".into()), ("GTK_USE_PORTAL".into(), "0".into()),
             ("LANG".into(), "C.UTF-8".into()),
         ],
     };

@@ -80,6 +80,11 @@ fn main() {
 
     let runtime = std::env::temp_dir().join(format!("capture-bus-{}", std::process::id()));
     std::fs::create_dir_all(&runtime).unwrap();
+    // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+    // and in spawned children must not look up portals or gvfs.
+    for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+        std::env::set_var(key, value);
+    }
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     let address = bus.bus_address().unwrap().to_string();
@@ -132,6 +137,7 @@ fn main() {
         command.env_clear().env("HOME", std::env::var("HOME").unwrap()).env("PATH", std::env::var("PATH").unwrap())
             .env("DBUS_SESSION_BUS_ADDRESS", &address).env("XDG_RUNTIME_DIR", &runtime).env("XDPW_CHOOSER_SESSION", session)
             .env("DESKTOP_SUITE_LOCALE_DIR", "/nonexistent").env("GDK_BACKEND", "wayland")
+            .env("GDK_DEBUG", "no-portals").env("GIO_USE_VFS", "local").env("GTK_USE_PORTAL", "0")
             .env("WAYLAND_DISPLAY", "no-such-display")
             .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
         if let Some(remote) = remote {

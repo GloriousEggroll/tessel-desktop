@@ -18,28 +18,63 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 /// A private bus that dies with this test process (a watchdog shell).
+/// tools/headless.md: the session policy without any service directories, so
+/// nothing (portal, gvfs, ...) can be D-Bus-activated; `lock()` and every
+/// fixture drop fail the test if the daemon ever logged an activation.
 fn bus() -> &'static String {
-    static ADDRESS: OnceLock<String> = OnceLock::new();
-    ADDRESS.get_or_init(|| {
-        let script = format!("dbus-daemon --session --nofork --print-address=1 & d=$!; trap 'kill $d' EXIT; \
-                              while kill -0 {} 2>/dev/null; do sleep 0.5; done", std::process::id());
-        let mut child = Process::new("sh").args(["-c", &script]).stdout(Stdio::piped()).stderr(Stdio::null())
-            .spawn().expect("dbus-daemon");
+    &private_bus().0
+}
+
+static BUS: OnceLock<(String, PathBuf)> = OnceLock::new();
+
+fn private_bus() -> &'static (String, PathBuf) {
+    BUS.get_or_init(|| {
+        let dir = temp_dir("bus");
+        let config: String = std::fs::read_to_string("/usr/share/dbus-1/session.conf").expect("session.conf").lines()
+            .filter(|line| !line.trim_start().starts_with("<standard_session_servicedirs")
+                && !line.trim_start().starts_with("<servicedir"))
+            .map(|line| if line.trim_start().starts_with("<listen>") {
+                format!("  <listen>unix:tmpdir={}</listen>\n", dir.display())
+            } else {
+                format!("{line}\n")
+            })
+            .collect();
+        assert!(!config.contains("servicedir"), "private bus config keeps a service dir");
+        let conf = dir.join("bus.conf");
+        let log = dir.join("bus.log");
+        std::fs::write(&conf, config).unwrap();
+        let script = "dbus-daemon --config-file=\"$1\" --nofork --print-address=1 2>\"$2\" & d=$!; trap 'kill $d' EXIT; \
+                      while kill -0 \"$3\" 2>/dev/null; do sleep 0.5; done";
+        let mut child = Process::new("sh").args(["-c", script, "sh"]).arg(&conf).arg(&log).arg(std::process::id().to_string())
+            .stdout(Stdio::piped()).stderr(Stdio::null()).spawn().expect("dbus-daemon");
         let mut line = String::new();
         std::io::BufReader::new(child.stdout.take().unwrap()).read_line(&mut line).unwrap();
         let address = line.trim().to_owned();
-        assert!(address.starts_with("unix:"), "private bus address: {address}");
+        assert!(address.starts_with("unix:") && address.contains(dir.to_str().unwrap()), "private bus address: {address}");
         // SAFETY: set once, before any GIO session-bus lookup in this process.
         unsafe { std::env::set_var("DBUS_SESSION_BUS_ADDRESS", &address) };
+        // Spawned GTK/GIO binaries must not look up portals or gvfs either.
+        for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+            unsafe { std::env::set_var(key, value) };
+        }
         std::mem::forget(child);
-        address
+        (address, log)
     })
+}
+
+fn assert_no_activation() {
+    if let Some((_, log)) = BUS.get() {
+        let log = std::fs::read_to_string(log).unwrap_or_default();
+        assert!(!log.contains("Activating service"), "UNEXPECTED D-Bus activation on the private bus:\n{log}");
+    }
 }
 
 /// All tests share one GLib main context; serialize them.
 fn lock() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-    LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    let guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    assert_no_activation();
+    guard
 }
 
 fn connection() -> gio::DBusConnection {
@@ -88,6 +123,9 @@ impl Drop for Fixture {
         self.service.close();
         let _ = self.client.close_sync(None::<&gio::Cancellable>);
         let _ = self.server.close_sync(None::<&gio::Cancellable>);
+        if !std::thread::panicking() {
+            assert_no_activation();
+        }
     }
 }
 

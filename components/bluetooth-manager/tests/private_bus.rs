@@ -292,6 +292,11 @@ fn selftest_binary(context: &glib::MainContext, address: &str) {
 fn private_bus_end_to_end() {
     let context = glib::MainContext::new();
     context.with_thread_default(|| {
+        // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
+        // and in spawned children must not look up portals or gvfs.
+        for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
+            std::env::set_var(key, value);
+        }
         let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
         bus.up();
         let address = bus.bus_address().unwrap().to_string();

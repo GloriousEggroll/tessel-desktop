@@ -26,7 +26,9 @@ timeout 600 python3 -I "$HERE/driver.py" "$R" "$RUST_BIN" $SCEN > "$R/driver.log
 labwc --exit
 RUN
 chmod +x "$R/run.sh"
-env -i HOME="$HOME" PATH="$PATH" LANG="${LANG:-C.UTF-8}" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless \
+env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
+  HOME="$HOME" PATH="$PATH" LANG="${LANG:-C.UTF-8}" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless \
   WLR_HEADLESS_OUTPUTS=1 WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
   dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" > "$R/labwc.log" 2>&1 || true
+grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 cat "$R/driver.log"
