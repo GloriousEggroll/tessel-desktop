@@ -1,0 +1,5 @@
+python_reference.json is generated from the Python originals in ~/btmanager
+(waydock/dock_style.py background_css/popup_css, gtk_color_scheme.color_css,
+companion_theme.theme_css/window_glyph_svg/window_light_svg) with the exact
+argument sets used in tests/python_parity.rs. Regenerate it whenever the Python
+theme changes, so the Rust port is re-checked byte for byte.

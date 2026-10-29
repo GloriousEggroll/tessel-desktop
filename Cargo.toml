@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+# "c[or][am]*/*" = crates/* + components/*; a literal "components/*" glob makes
+# cargo fail while components/ is still empty.
+members = ["c[or][am]*/*"]
+
+[workspace.package]
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true
+codegen-units = 4
+panic = "abort"
+
+[workspace.dependencies]
+suite-core = { path = "crates/suite-core" }
+suite-gtk = { path = "crates/suite-gtk" }
+glib = "0.22"
+gio = "0.22"
+gtk = { package = "gtk4", version = "0.11", features = ["v4_22"] }
+gtk4-layer-shell = "0.8"
+serde_json = { version = "1", features = ["preserve_order"] }
+libc = "0.2"
+regex = { version = "1", default-features = false, features = ["std", "unicode"] }
+cc = "1"
