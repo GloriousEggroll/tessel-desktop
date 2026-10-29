@@ -1,0 +1,10 @@
+# GtkSourceView 5 is installed only as a runtime library (no -devel package:
+# no gtksourceview-5.pc, no unversioned libgtksourceview-5.so). Tell the
+# sourceview5-sys build script (system-deps) not to ask pkg-config and to link
+# the runtime soname verbatim (`-l:libgtksourceview-5.so.0`) from /usr/lib64.
+# Only sourceview5-sys (used by components/text-editor) reads these variables;
+# it keeps working unchanged if gtksourceview5-devel is installed later.
+[env]
+SYSTEM_DEPS_GTKSOURCEVIEW_5_NO_PKG_CONFIG = "1"
+SYSTEM_DEPS_GTKSOURCEVIEW_5_LIB = "dylib:+verbatim=libgtksourceview-5.so.0"
+SYSTEM_DEPS_GTKSOURCEVIEW_5_SEARCH_NATIVE = "/usr/lib64"

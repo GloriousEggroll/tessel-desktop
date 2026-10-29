@@ -69,7 +69,13 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
 | 3 | wayshell | 4077 | ported (+prompt, capture-picker, theme); install.py entries ready (wayshell, wayshell-prompt, wayshell-capture-picker), not swapped (swap with user present) |
 | 3 | waydock | 14739 | ported, tests + 0 px screenshot parity; install.py entry ready, not swapped (swap with user present) |
-| 4 | apps: calculator, text-editor, picture-viewer, system-monitor, hdr-calibration, capture-manager, file-manager | ~19k | |
+| 4 | calculator | 998 | in progress |
+| 4 | text-editor | 1637 | ported (sourceview5 via .cargo/config.toml soname link), 31 unit + 21 headless pass, not swapped |
+| 4 | picture-viewer | 2333 | in progress |
+| 4 | system-monitor | 1530 | in progress |
+| 4 | hdr-calibration | 935 | in progress |
+| 4 | capture-manager (GUI + CLI; portal and capture_pipewire.c stay C) | 3420 | in progress |
+| 4 | file-manager | — | not started (excluded from this run) |
 | 4 | global-settings, welcome | ~9.4k | |
 | 5 | lock-screen, login-manager (PAM, security review) | ~5.2k | |
 | 5 | home-assistant-screen | 1454 | |

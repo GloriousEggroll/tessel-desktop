@@ -63,3 +63,8 @@
   - ext_background_effect_v1 and the private `waydock_blur_manager_v1` (shared/protocols/waydock-blur-v1.xml). These must bind on GTK's own wl_display, in suite-gtk.
   - The X11 fullscreen probe needs x11rb.
   - Layer-shell stays on gtk4-layer-shell.
+
+## Wave 4 apps (calculator, text-editor, picture-viewer, system-monitor, hdr-calibration, capture-manager)
+| Component | Contract | Bus name / files | Unit / launch |
+|---|---|---|---|
+| text-editor | [text-editor.md](text-editor.md) | GApplication `org.waydock.TextEditor` (HANDLES_OPEN); `$XDG_STATE_HOME/text-editor/recovery/*.json`; `desktop-suite/text-editor.json` | `/usr/local/bin/text-editor` (desktop-apps/install.py), `org.waydock.TextEditor.desktop` |
