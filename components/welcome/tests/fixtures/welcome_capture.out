@@ -1,0 +1,35 @@
+=== --help
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+
+Welcome: first-run setup for the desktop suite; reopen it from the application
+menu.
+
+options:
+  -h, --help   show this help message and exit
+  --first-run  opened by the first-login setup
+  --page PAGE  start at this step
+rc=0
+=== --page
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+welcome.py: error: argument --page: expected one argument
+rc=2
+=== extra
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+welcome.py: error: unrecognized arguments: extra
+rc=2
+=== --first-run=1
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+welcome.py: error: argument --first-run: ignored explicit argument '1'
+rc=2
+=== -x
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+welcome.py: error: unrecognized arguments: -x
+rc=2
+=== --pa
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+welcome.py: error: argument --page: expected one argument
+rc=2
+=== --first-run --page
+usage: welcome.py [-h] [--first-run] [--page PAGE]
+welcome.py: error: argument --page: expected one argument
+rc=2
