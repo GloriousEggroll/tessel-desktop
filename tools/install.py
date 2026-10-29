@@ -44,6 +44,8 @@ import os
 from pathlib import Path
 import pwd
 import re
+import shlex
+import signal
 import stat
 import subprocess
 import sys
@@ -79,14 +81,14 @@ class Shim:
 class Unit:
     name: str
     binary: str
-    args: tuple = ()
+    args: tuple = None        # None: keep the flags the current (Python) ExecStart passes
 
 
 @dataclass(frozen=True)
 class Component:
     key: str
     package: str              # cargo package (components/<package>)
-    dir: str                  # ~/.config/waybar/scripts/<dir>: binaries, helpers and shims live here
+    dir: str                  # <base>/<dir>: binaries, helpers and shims live here
     binaries: tuple           # [[bin]] names of the package, verified by test_install.py
     shims: tuple
     units: tuple = ()
@@ -96,6 +98,10 @@ class Component:
     keeps: tuple = ()         # files others import or the binary needs beside it: never touched
     clobbered_by: tuple = ()  # Python installers that rewrite a shimmed entry (besides install_gtk4)
     notes: tuple = ()
+    base: str = SCRIPTS       # home-relative parent of dir
+    optional: bool = False    # skipped (not blocked) when the Python install is absent
+    requires_confirmation: bool = False   # --apply needs --i-am-at-the-keyboard
+    signal_on_restart: bool = False       # resident without a unit: --restart SIGTERMs it
 
 
 POPUP = ("--popup", "--popup-edge", "--popup-offset")
@@ -104,9 +110,10 @@ APPS = ".local/share/applications"
 CLOBBER_ALL = ("shared/install_gtk4.py", "install_all.py")
 # Python installers that recognise a running waydock child by its *_status.py argv: with the Rust
 # status streams they see "an unrelated application" and refuse to restart waydock.service.
-STATUS_GUARD = ("shared/install_gtk4.py verify_service_children: waydock children running the Rust "
-                "*-status binaries no longer match the *_status.py paths, so Python installers that "
-                "restart waydock.service refuse with 'still owns an unrelated application'.")
+STATUS_GUARD = ("shared/install_gtk4.py recognises waydock's status children and standalone apps by their .py "
+                "argv or, for swapped components, by RUST_TWINS (script -> binary beside it); without an entry "
+                "there, Python installers that restart waydock.service refuse with 'still owns an unrelated "
+                "application' or miss a running instance.")
 
 COMPONENTS = (
     Component(
@@ -176,9 +183,82 @@ COMPONENTS = (
         units=(Unit("audio-manager-loopbacks.service", "audio-manager-loopbacks"),),
         keeps=("audio_ui.py", "audio_backend.py", "audio_popup.py", "volume_keys.py", "loopback_store.py"),
         clobbered_by=("audio-manager/install_waybar.py", "shared/install_adjustment_osd.py"),
-        notes=("Python installers find a running audio_manager.py by its argv (install_gtk4 "
-               "standalone_instances, install_adjustment_osd audio_owner, install_waybar --update): "
-               "they will not see the Rust instance.",)),
+        notes=("install_adjustment_osd audio_owner and install_waybar --update find a running audio_manager.py "
+               "by its argv: they will not see the Rust instance.", STATUS_GUARD)),
+    Component(
+        "brightness-manager", "brightness-manager", "brightness-manager", ("brightness-manager", "brightness-status"),
+        shims=(Shim("brightness_manager.py", "brightness-manager",
+                    (*POPUP, "--settings", "--background", "--check", "--brightness-up", "--brightness-down",
+                     "--idle-dim", "--idle-restore"), porter="components/brightness-manager/shim/brightness_manager.py"),
+               Shim("brightness_status.py", "brightness-status",
+                    porter="components/brightness-manager/shim/brightness_status.py")),
+        units=(Unit("brightness-manager.service", "brightness-manager", ("--background",)),),
+        keeps=("brightness_client.py", "brightness_backend.py"),
+        clobbered_by=("brightness-manager/install_waybar.py", "shared/install_adjustment_osd.py",
+                      "shared/install_keyboard_osd.py"),
+        notes=("The base unit (TimeoutStopSec=60) is not edited; the drop-in only resets ExecStart.",
+               "way-displays-gui keeps loading brightness_client.py.", STATUS_GUARD)),
+    Component(
+        "authentication-manager", "authentication-manager", "authentication-manager", ("authentication-manager",),
+        shims=(Shim("authentication_manager.py", "authentication-manager",
+                    porter="components/authentication-manager/shim/authentication_manager.py"),),
+        units=(Unit("polkitman.service", "authentication-manager", ()),),
+        keeps=("bluetooth_agent.py",),
+        base=".local/share", requires_confirmation=True,
+        notes=("polkit agent: --apply refuses without --i-am-at-the-keyboard; test a password prompt "
+               "(e.g. pkexec true) right after restarting polkitman.service.",)),
+    Component(
+        "calendar-manager", "calendar-manager", "calendar-manager", ("calendar-manager",),
+        shims=(Shim("calendar_manager.py", "calendar-manager", (*POPUP, "--settings"),
+                    porter="components/calendar-manager/shim/calendar_manager.py"),),
+        keeps=("date_settings.py", "date_backend.py"),
+        clobbered_by=("calendar-manager/install_waybar.py",),
+        signal_on_restart=True,
+        notes=("No unit; resident after the first popup: --restart SIGTERMs the running instance.", STATUS_GUARD)),
+    Component(
+        "weather-manager", "weather-manager", "weather-manager", ("weather-manager", "weather-status"),
+        shims=(Shim("weather_manager.py", "weather-manager", (*POPUP, "--settings", "--tray"),
+                    porter="components/weather-manager/shim/weather_manager.py"),
+               Shim("weather_status.py", "weather-status", ("--watch", "--config", "--cache-dir"),
+                    porter="components/weather-manager/shim/weather_status.py")),
+        keeps=("weather_settings.py", "weather_backend.py"),
+        notes=("lock-screen's lock_weather.py keeps importing weather_backend.", STATUS_GUARD)),
+    Component(
+        "weather-manager-ha", "weather-manager", "weather-manager", ("weather-manager",),
+        shims=(Shim("weather_manager.py", "weather-manager", (*POPUP, "--settings", "--tray"),
+                    porter="components/weather-manager/shim/weather_manager.py"),),
+        units=(Unit("weather-manager.service", "weather-manager"),),
+        keeps=("weather_backend.py",),
+        base=".local/share", optional=True,
+        clobbered_by=("home-assistant-screen/install_remote.py",),
+        notes=("Home Assistant tray install; skipped while ~/.local/share/weather-manager does not exist.",)),
+    Component(
+        "media-manager", "media-manager", "media-manager", ("media-manager",),
+        shims=(Shim("media_manager.py", "media-manager", POPUP,
+                    porter="components/media-manager/shim/media_manager.py"),),
+        launchers=((".local/bin/waymedia", "components/media-manager/shim/waymedia"),),
+        keeps=("lock_media.py",),
+        clobbered_by=("media-manager/install.py", "shared/install_popup_fixes.py")),
+    Component(
+        "tiling-manager", "tiling-manager", "tiling-manager", ("waytile", "tiling-status"),
+        shims=(Shim("tiling_manager.py", "waytile",
+                    ("--toggle", "--enable", "--disable", "--restore", "--status", "--watch", "--settings", *POPUP),
+                    porter="components/tiling-manager/shims/tiling_manager.py", fallback="tiling_manager_python.py"),
+               Shim("tiling_status.py", "tiling-status", porter="components/tiling-manager/shims/tiling_status.py",
+                    fallback="tiling_status_python.py")),
+        launchers=(".local/bin/waytile",),
+        keeps=("tiling_settings.py", "tiling_config.py", "tiling_client.py", "bindings.py"),
+        clobbered_by=("tiling-manager/install.py",),
+        notes=("Global Settings and wayshell keep importing tiling_settings/tiling_config/tiling_client/bindings.",)),
+    Component(
+        "network-discovery", "network-discovery", "network-discovery", ("network-discovery",),
+        shims=(Shim("discovery_manager.py", "network-discovery", ("--toggle", "--status", "--settings", *POPUP),
+                    porter="components/network-discovery/shims/discovery_manager.py",
+                    fallback="discovery_manager_python.py"),),
+        keeps=("LICENSE", "discovery_backend.py", "~/.local/share/waydock/discovery_backend.py"),
+        clobbered_by=("network-discovery/install.py",),
+        notes=("~/.local/bin/network-discovery is left as is: it runs the shim.",
+               "Waydock runs discovery_backend.py in-process from ~/.local/share/waydock.")),
 )
 # Future (wave 3): wayshell must override wayshell.service.d/palette.conf, which is what runs it
 # (the base unit's ExecStart is stale); "zz-" sorts after "palette.conf", so the same drop-in works.
@@ -238,7 +318,7 @@ class Change:
 
 
 def component_dir(home, component):
-    return home / SCRIPTS / component.dir
+    return home / component.base / component.dir
 
 
 def binary_path(home, component, name):
@@ -278,9 +358,22 @@ def shim_text(component, shim):
             "        sys.exit(127)\n")
 
 
+def unit_args(home, component, unit):
+    """The unit's flags: fixed in the table, or those the Python ExecStart passes after the script."""
+    if unit.args is not None:
+        return tuple(unit.args)
+    current = effective_execstart(home, unit.name, skip_ours=True) or ""
+    words = shlex.split(current.lstrip("-@:+!"))
+    scripts = {shim.entry for shim in component.shims}
+    for index, word in enumerate(words):
+        if Path(word).name in scripts:
+            return tuple(words[index + 1:])
+    return ()
+
+
 def unit_command(home, component, unit):
     relative = binary_path(home, component, unit.binary).relative_to(home)
-    return " ".join([f"%h/{relative}", *unit.args])
+    return " ".join([f"%h/{relative}", *(shlex.quote(arg) for arg in unit_args(home, component, unit))])
 
 
 def dropin_text(component, unit, home):
@@ -290,7 +383,9 @@ def dropin_text(component, unit, home):
             f"[Service]\nExecStart=\nExecStart={unit_command(home, component, unit)}\n")
 
 
-def launcher_text(component, home):
+def launcher_text(component, home, porter=None):
+    if porter:
+        return (REPO / porter).read_text()
     binary = binary_path(home, component, component.shims[0].binary)
     return (f"#!/bin/sh\n# Desktop suite Rust swap for {component.key} (nobara-de-rust/tools/install.py).\n"
             f"exec '{binary}' \"$@\"\n")
@@ -305,7 +400,7 @@ def entry_pattern(home, entry):
 
 def desktop_text(text, component, home):
     binary = str(binary_path(home, component, component.shims[0].binary))
-    pattern = entry_pattern(home, f"{SCRIPTS}/{component.dir}/{component.shims[0].entry}")
+    pattern = entry_pattern(home, f"{component.base}/{component.dir}/{component.shims[0].entry}")
     return re.sub(r"(?m)^(Exec=)(.*)$", lambda m: m[1] + pattern.sub(lambda _: binary, m[2]), text)
 
 
@@ -367,7 +462,9 @@ def plan_component(component, home, sources):
     """[Change] for one component (unchanged files left out) and [problem] that block the swap."""
     changes, problems = [], []
     if not component_dir(home, component).is_dir():
-        return changes, [f"{SCRIPTS}/{component.dir} is not installed; install the Python component first"]
+        if component.optional:
+            return changes, []
+        return changes, [f"{component.base}/{component.dir} is not installed; install the Python component first"]
     for name in (*component.binaries, *component.helpers):
         target, source = binary_path(home, component, name), sources[component.key, name]
         kind = "helper" if name in component.helpers else "binary"
@@ -401,7 +498,8 @@ def plan_component(component, home, sources):
                               + (f" ({shim.porter})" if shim.porter else " (generated)")))
     for unit in component.units:
         if not (home / UNITS / unit.name).is_file():
-            problems.append(f"{UNITS}/{unit.name} is not installed")
+            if not component.optional:
+                problems.append(f"{UNITS}/{unit.name} is not installed")
             continue
         path = home / UNITS / (unit.name + ".d") / DROPIN
         data = dropin_text(component, unit, home).encode()
@@ -409,16 +507,18 @@ def plan_component(component, home, sources):
             before = effective_execstart(home, unit.name, skip_ours=True)
             changes.append(Change(component.key, path, "dropin", data, 0o644,
                                   f"ExecStart: {before} -> {unit_command(home, component, unit)}"))
-    entry = f"{SCRIPTS}/{component.dir}/{component.shims[0].entry}"
-    for relative in component.launchers:
+    entry = f"{component.base}/{component.dir}/{component.shims[0].entry}"
+    for launcher in component.launchers:
+        relative, porter = launcher if isinstance(launcher, tuple) else (launcher, None)
         path = home / relative
         if not path.is_file():
             continue
-        data = launcher_text(component, home).encode()
+        data = launcher_text(component, home, porter).encode()
         text = path.read_text(errors="replace")
         if path.read_bytes() != data and (entry in text or path.is_symlink()):
             changes.append(Change(component.key, path, "launcher", data, stat.S_IMODE(path.lstat().st_mode),
-                                  f"exec {binary_path(home, component, component.shims[0].binary)}"))
+                                  f"exec {binary_path(home, component, component.shims[0].binary)}"
+                                  + (f" ({porter})" if porter else "")))
     for relative in component.desktop:
         path = home / relative
         if not path.is_file():
@@ -429,6 +529,10 @@ def plan_component(component, home, sources):
             changes.append(Change(component.key, path, "desktop", new.encode(), stat.S_IMODE(path.lstat().st_mode),
                                   "Exec runs the binary"))
     return changes, problems
+
+
+def keep_path(home, component, keep):
+    return home / keep[2:] if keep.startswith("~/") else component_dir(home, component) / keep
 
 
 def guard_warnings(component):
@@ -711,7 +815,9 @@ def component_status(home, component, processes, state):
                             "rss_kb": info["rss_kb"] if info else 0}
     running = [dict(info, impl=impl) for info in processes for impl in [classify(info, home, component)] if impl]
     configured = list(shims.values()) + ["rust" if u["dropin"] else "python" for u in units.values()]
-    if any(state == "python (shim overwritten)" for state in configured):
+    if all(state == "missing" for state in shims.values()):
+        mode = "not installed"
+    elif any(state == "python (shim overwritten)" for state in configured):
         mode = "python (shim overwritten)"
     elif all(state == "rust" for state in configured):
         mode = "rust"
@@ -760,6 +866,11 @@ def check(home, components, sources, locale_source):
         changes, problems = plan_component(component, home, sources)
         print(f"{component.key}  (binaries: {', '.join(component.binaries + component.helpers)} "
               f"-> {component_dir(home, component)})")
+        if component.optional and not component_dir(home, component).is_dir():
+            print(f"  skipped  {component_dir(home, component)} is not installed (optional)")
+            continue
+        if component.requires_confirmation:
+            print("  confirm  --apply needs --i-am-at-the-keyboard for this component")
         for problem in problems:
             blocked = True
             print(f"  BLOCKED  {problem}")
@@ -775,7 +886,7 @@ def check(home, components, sources, locale_source):
                     print(f"           | {line}")
         if not changes and not problems:
             print("  already swapped")
-        missing = [k for k in component.keeps if not (component_dir(home, component) / k).exists()]
+        missing = [k for k in component.keeps if not keep_path(home, component, k).exists()]
         print(f"  kept     {len(component.keeps) - len(missing)}/{len(component.keeps)} imported modules/helpers untouched"
               + (f" (missing now: {', '.join(missing)})" if missing else ""))
         for unit in component.units:
@@ -802,8 +913,21 @@ def selected(only):
     return [BY_KEY[key] for key in keys]
 
 
+def stop_resident(component, home):
+    """SIGTERM the user's running instances (Python or Rust) of a unit-less resident component."""
+    for info in user_processes():
+        if info["pid"] != os.getpid() and classify(info, home, component):
+            print(f"kill -TERM {info['pid']} ({component.key}: {' '.join(info['argv'][:2])})")
+            try:
+                os.kill(info["pid"], signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+
+
 def restart_units(components, home, allow_shell):
     for component in components:
+        if component.signal_on_restart:
+            stop_resident(component, home)
         for unit in component.units:
             if unit.name in NEVER_RESTART or (unit.name in SHELL_UNITS and not allow_shell):
                 print(f"Not restarting {unit.name}" + ("" if unit.name in NEVER_RESTART else " (needs --restart-shell)"))
@@ -833,6 +957,8 @@ def main(argv=None):
     parser.add_argument("--no-reload", action="store_true", help="skip systemctl --user daemon-reload")
     parser.add_argument("--force", action="store_true", help="rollback: also restore files changed since the swap")
     parser.add_argument("--json", action="store_true", help="--status as JSON")
+    parser.add_argument("--i-am-at-the-keyboard", action="store_true", dest="confirmed",
+                        help="allow --apply for components that need a live check (authentication-manager)")
     args = parser.parse_args(argv)
     home = args.home.resolve()
     components = selected(args.only)
@@ -840,7 +966,7 @@ def main(argv=None):
 
     if args.list:
         for c in COMPONENTS:
-            print(f"{c.key}: package {c.package}, into {SCRIPTS}/{c.dir}/: {', '.join(c.binaries + c.helpers)}; "
+            print(f"{c.key}: package {c.package}, into {c.base}/{c.dir}/: {', '.join(c.binaries + c.helpers)}; "
                   f"units {', '.join(u.name for u in c.units) or '-'}; shims {', '.join(s.entry for s in c.shims)}")
         return 0
     if args.status:
@@ -856,6 +982,10 @@ def main(argv=None):
         return 0
     if not args.apply or args.check:
         return 0 if check(home, components, resolve_sources(components, prebuilt), args.locale_source) else 1
+    unconfirmed = [c.key for c in components if c.requires_confirmation]
+    if unconfirmed and not args.confirmed:
+        raise RuntimeError("Nothing was changed: " + ", ".join(unconfirmed) + " must be tested right after the swap "
+                           "(a password prompt). Re-run with --i-am-at-the-keyboard, or leave it out with --only.")
     if not prebuilt and not args.no_build:
         build(components)
     sources = resolve_sources(components, prebuilt)     # after the build: helpers live in OUT_DIR

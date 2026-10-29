@@ -55,7 +55,12 @@ def tree(root, skip=(".local/state",)):
 
 
 def scripts(component):
-    return f"{install.SCRIPTS}/{component.dir}"
+    return f"{component.base}/{component.dir}"
+
+
+def forwards_args(shim):
+    """Porter shims for status streams may drop the arguments (tiling_status.py)."""
+    return not shim.porter or "sys.argv[1:]" in (install.REPO / shim.porter).read_text()
 
 
 class InstallerTest(unittest.TestCase):
@@ -84,7 +89,8 @@ class InstallerTest(unittest.TestCase):
         for component in install.COMPONENTS:
             for name in (*component.binaries, *component.helpers):
                 path = self.prebuilt / name
-                path.write_text(f'#!/bin/sh\necho "rust-{name}-{version}" "$@"\n')
+                # Like the ports: drop the script argument of [python, script.py, ...] shims.
+                path.write_text(f'#!/bin/sh\ncase "$1" in *.py) shift ;; esac\necho "rust-{name}-{version}" "$@"\n')
                 path.chmod(0o755)
 
     def populate(self):
@@ -106,13 +112,16 @@ class InstallerTest(unittest.TestCase):
                 units = home / install.UNITS
                 (units / (unit.name + ".d")).mkdir(parents=True, exist_ok=True)
                 (units / unit.name).write_text(UNIT.format(name=unit.name, entry=f"{scripts(component)}/"
-                                                          f"{component.shims[0].entry}", args=" ".join(unit.args)))
+                                                          f"{component.shims[0].entry}", args=" ".join(unit.args or ())))
                 (units / (unit.name + ".d") / "50-desktop-suite-recovery.conf").write_text(RECOVERY)
         notif = home / install.UNITS / "notifications.service"
         notif.write_text("[Service]\nExecStart=dunst\n[Install]\nWantedBy=graphical-session.target\n")
         (home / install.UNITS / "notifications.service.d/desktop-suite.conf").write_text(
             '[Service]\nExecStart=\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/notification-manager/'
             'notification_manager.py" --daemon\n')
+        weather = home / install.UNITS / "weather-manager.service"
+        weather.write_text("[Service]\nExecStart=/usr/bin/python3 %h/.local/share/weather-manager/weather_manager.py "
+                           "--tray --popup-edge top --popup-offset 40\n")
         loop = home / install.UNITS / "audio-manager-loopbacks.service"
         loop.write_text('[Service]\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/audio-manager/'
                         'loopback_service.py"\nEnvironment=PYTHONUNBUFFERED=1\n')
@@ -120,6 +129,8 @@ class InstallerTest(unittest.TestCase):
         local_bin.mkdir(parents=True)
         (local_bin / "notifications").write_text(
             '#!/bin/sh\nexec /usr/bin/python3 "$HOME/.config/waybar/scripts/notification-manager/notification_manager.py" "$@"\n')
+        for name, entry in (("waymedia", "media-manager/media_manager.py"), ("waytile", "tiling-manager/tiling_manager.py")):
+            (local_bin / name).write_text(f"#!/bin/sh\nexec /usr/bin/python3 {home}/{install.SCRIPTS}/{entry} \"$@\"\n")
         (local_bin / "waykeys").write_text(
             f"#!/bin/sh\nexec /usr/bin/python3 {home}/.config/waybar/scripts/on-screen-keyboard/osk_manager.py \"$@\"\n")
         for launcher in local_bin.iterdir():
@@ -135,7 +146,8 @@ class InstallerTest(unittest.TestCase):
     def env(self, **extra):
         env = dict(os.environ, HOME=str(self.home), PATH=f"{self.bin}:{os.environ['PATH']}",
                    SYSTEMCTL_LOG=str(self.log), TMPDIR=str(SCRATCH))
-        for name in ("XDG_DATA_HOME", "KEEP_AWAKE_BINARY"):
+        for name in ("XDG_DATA_HOME", "KEEP_AWAKE_BINARY", "WAYTILE_BINARY", "TILING_STATUS_BINARY",
+                     "NETWORK_DISCOVERY_BINARY"):
             env.pop(name, None)
         env.update(extra)
         return env
@@ -183,7 +195,7 @@ class InstallerTest(unittest.TestCase):
     def test_apply_swaps_everything_without_restarting(self):
         before = tree(self.home)
         keeps = {(c.key, k): (self.home / scripts(c) / k).read_bytes() for c in install.COMPONENTS for k in c.keeps}
-        result = self.run_installer("--apply")
+        result = self.run_installer("--apply", "--i-am-at-the-keyboard")
         self.assertIn("were not restarted", result.stdout)
         home = self.home
         for component in install.COMPONENTS:
@@ -206,7 +218,8 @@ class InstallerTest(unittest.TestCase):
                 # The shim execs the binary next to it with the same arguments (waydock uses -u).
                 ran = subprocess.run(["/usr/bin/python3", "-u", str(entry), "--x", "a b"],
                                      capture_output=True, text=True, env=self.env())
-                self.assertEqual(ran.stdout.strip(), f"rust-{shim.binary}-v1 --x a b", shim.entry)
+                expected = f"rust-{shim.binary}-v1" + (" --x a b" if forwards_args(shim) else "")
+                self.assertEqual(ran.stdout.strip(), expected, shim.entry)
             for unit in component.units:
                 self.assertEqual(install.effective_execstart(home, unit.name),
                                  install.unit_command(home, component, unit))
@@ -234,11 +247,20 @@ class InstallerTest(unittest.TestCase):
         self.assertTrue(any(item["kind"] == "helper" and item["before"] == "file" for item in manifest))
         original = backups[0] / install.SCRIPTS / "keep-awake/keep_awake.py"
         self.assertIn("python original", original.read_text())
-        self.assertIn("nothing to change", self.run_installer("--apply").stdout)
+        # Same flags as the Python unit when the table does not fix them; TimeoutStopSec stays in the base unit.
+        self.assertEqual(install.effective_execstart(home, "weather-manager.service"),
+                         "%h/.local/share/weather-manager/weather-manager --tray --popup-edge top --popup-offset 40")
+        self.assertIn(f"{home}/{install.SCRIPTS}/media-manager/media-manager",
+                      subprocess.run(["sh", "-x", str(home / ".local/bin/waymedia")], capture_output=True, text=True,
+                                     env=self.env()).stderr)
+        for name in ("tiling_manager_python.py", "tiling_status_python.py"):
+            self.assertIn("python original", self.entry("tiling-manager", name).read_text())
+        self.assertIn("python original", self.entry("network-discovery", "discovery_manager_python.py").read_text())
+        self.assertIn("nothing to change", self.run_installer("--apply", "--i-am-at-the-keyboard").stdout)
 
     def test_rollback_restores_exactly(self):
         before = tree(self.home)
-        self.run_installer("--apply")
+        self.run_installer("--apply", "--i-am-at-the-keyboard")
         self.assertNotEqual(tree(self.home), before)
         self.assertIn("restore", self.run_installer("--rollback", "--check").stdout)
         self.assertNotEqual(tree(self.home), before)
@@ -365,6 +387,41 @@ class InstallerTest(unittest.TestCase):
         self.assertIn("MB", table)
         self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
 
+    def test_authentication_needs_confirmation(self):
+        before = tree(self.home, skip=())
+        result = self.run_installer("--apply", "--only", "keep-awake,authentication-manager", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--i-am-at-the-keyboard", result.stderr)
+        self.assertEqual(tree(self.home, skip=()), before)
+        self.assertIn("needs --i-am-at-the-keyboard", self.run_installer("--only", "authentication-manager").stdout)
+        self.run_installer("--apply", "--only", "authentication-manager", "--i-am-at-the-keyboard")
+        self.assertEqual(install.effective_execstart(self.home, "polkitman.service"),
+                         "%h/.local/share/authentication-manager/authentication-manager")
+        self.run_installer("--rollback", "--only", "authentication-manager")      # rollback needs no confirmation
+        self.assertEqual(tree(self.home), {k: v for k, v in before.items() if not k.startswith(".local/state")})
+
+    def test_optional_home_assistant_weather_is_skipped_when_absent(self):
+        shutil.rmtree(self.home / ".local/share/weather-manager")
+        (self.home / install.UNITS / "weather-manager.service").unlink()
+        out = self.run_installer("--only", "weather-manager,weather-manager-ha").stdout
+        self.assertIn("is not installed (optional)", out)
+        self.run_installer("--apply", "--only", "weather-manager,weather-manager-ha")
+        self.assertIn(install.SHIM_MARKER, self.entry("weather-manager", "weather_status.py").read_text())
+        self.assertFalse((self.home / ".local/share/weather-manager").exists())
+
+    def test_restart_terminates_resident_calendar_only(self):
+        binary = self.entry("calendar-manager", "calendar-manager")
+        self.run_installer("--apply", "--only", "calendar-manager")
+        calendar = subprocess.Popen(["sh", "-c", f'exec -a "{binary}" sleep 30'])
+        other = subprocess.Popen(["sleep", "30"])
+        self.addCleanup(lambda: [(p.kill(), p.wait()) for p in (calendar, other)])
+        time.sleep(0.3)
+        result = self.run_installer("--apply", "--only", "calendar-manager", "--restart")
+        self.assertIn(f"kill -TERM {calendar.pid}", result.stdout)
+        self.assertEqual(calendar.wait(timeout=5), -15)
+        self.assertIsNone(other.poll())
+        self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
+
     def test_table_is_consistent(self):
         keys = [c.key for c in install.COMPONENTS]
         self.assertEqual(len(keys), len(set(keys)))
@@ -398,9 +455,16 @@ class CrateTableTest(unittest.TestCase):
                 self.assertEqual(Path(shim.porter).name, shim.entry)
                 self.assertIn(f'"{shim.binary}"', text, shim.porter)
                 compile(install.shim_text(component, shim), shim.entry, "exec")
-            porter_dirs = [install.REPO / "components" / component.package / d for d in ("shim", "shims")]
+            for launcher in component.launchers:
+                if isinstance(launcher, tuple):
+                    self.assertTrue((install.REPO / launcher[1]).is_file(), launcher)
+        used = {}
+        for component in install.COMPONENTS:
+            used.setdefault(component.package, set()).update(s.entry for s in component.shims if s.porter)
+        for package, entries in used.items():
+            porter_dirs = [install.REPO / "components" / package / d for d in ("shim", "shims")]
             shipped = {p.name for d in porter_dirs if d.is_dir() for p in d.glob("*.py")}
-            self.assertEqual(shipped, {s.entry for s in component.shims if s.porter}, component.key)
+            self.assertEqual(shipped, entries, package)
 
 
 if __name__ == "__main__":
