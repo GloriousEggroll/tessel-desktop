@@ -139,9 +139,12 @@ pub fn shlex_split(text: &str) -> Result<Vec<String>, String> {
                 loop {
                     match chars.next() {
                         Some('"') => break,
+                        // Python's posix shlex (unlike sh) escapes only the quote
+                        // itself and the backslash inside double quotes.
                         Some('\\') => match chars.peek() {
-                            Some('"') | Some('\\') | Some('$') | Some('`') | Some('\n') => word.push(chars.next().unwrap()),
-                            _ => word.push('\\'),
+                            Some('"') | Some('\\') => word.push(chars.next().unwrap()),
+                            Some(_) => word.push('\\'),
+                            None => return Err("No escaped character".into()),
                         },
                         Some(c) => word.push(c),
                         None => return Err("No closing quotation".into()),
@@ -258,6 +261,41 @@ fn session_from(path: &Path, stem: &str) -> Result<Option<Session>, String> {
     Ok(Some(Session { ident: stem.into(), name: get("name").unwrap_or_else(|| stem.into()), argv, desktops }))
 }
 
+/// The post-PAM launcher greetd runs for every session.
+pub const START_SESSION: &str = "/usr/local/lib/waylogin/start-session";
+/// labwc's one-shot desktop fade (`--startup` command), as login_model.py writes it.
+pub const SESSION_TRANSITION: &str = "/usr/bin/python3 -I /usr/local/lib/waylogin/session_transition.py";
+
+impl Session {
+    /// `Session.request()`: greetd's `start_session` request. greetd joins `cmd`
+    /// with spaces and runs `/bin/sh -c`, so the single command is `shlex.join`ed
+    /// (every argument quoted) rather than letting desktop-file punctuation
+    /// become shell syntax.
+    pub fn request(&self) -> Map<String, Value> {
+        self.request_with(SESSION_TRANSITION)
+    }
+
+    /// `request()` with another labwc `--startup` command (the Rust swap).
+    pub fn request_with(&self, transition: &str) -> Map<String, Value> {
+        let mut argv = self.argv.clone();
+        let is_labwc = argv.first().is_some_and(|first| Path::new(first).file_name().is_some_and(|name| name == "labwc"));
+        if is_labwc && !argv.iter().any(|arg| arg == "-s" || arg == "--startup" || arg.starts_with("--startup=")) {
+            argv.push("--startup".into());
+            argv.push(transition.into());
+        }
+        let mut command = vec![START_SESSION.to_owned()];
+        command.extend(argv);
+        let mut request = Map::new();
+        request.insert("type".into(), "start_session".into());
+        request.insert("cmd".into(), Value::Array(vec![suite_core::shell::shell_join(&command).into()]));
+        request.insert("env".into(), Value::Array(vec![
+            "XDG_SESSION_TYPE=wayland".into(), format!("XDG_SESSION_DESKTOP={}", self.ident).into(),
+            format!("XDG_CURRENT_DESKTOP={}", self.desktops).into(), format!("DESKTOP_SESSION={}", self.ident).into(),
+        ]));
+        request
+    }
+}
+
 pub fn default_session_roots() -> Vec<PathBuf> {
     vec![PathBuf::from("/usr/local/share/wayland-sessions"), PathBuf::from("/usr/share/wayland-sessions")]
 }
@@ -283,6 +321,117 @@ pub fn sessions(roots: &[PathBuf]) -> Vec<Session> {
     }
     result.sort_by_key(|item| casefold(&item.name));
     result
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct User {
+    pub username: String,
+    pub name: String,
+}
+
+/// One `pwd.struct_passwd` (only the fields `users()` reads).
+#[derive(Clone, Debug)]
+pub struct PasswdEntry {
+    pub name: String,
+    pub uid: u32,
+    pub gecos: String,
+    pub shell: String,
+}
+
+/// `UID_MIN` of a login.defs text: default 1000, the last valid line wins and
+/// a line Python's `int()` rejects stops the scan (the ValueError ends the loop).
+pub fn uid_minimum(login_defs: Option<&str>) -> i64 {
+    let mut minimum = 1000;
+    for line in login_defs.unwrap_or_default().lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 2 && parts[0] == "UID_MIN" {
+            match suite_core::pyjson::py_int(Some(&Value::String(parts[1].to_owned()))).or_else(|| saturated_int(parts[1])) {
+                Some(value) => minimum = value,
+                None => break,
+            }
+        }
+    }
+    minimum
+}
+
+/// A syntactically valid Python `int()` literal too large for i64, saturated:
+/// Python's unbounded `int` then hides every account (or, negative, admits all),
+/// so an oversized `UID_MIN` must not fall back to the default of 1000.
+fn saturated_int(text: &str) -> Option<i64> {
+    let text = suite_core::pyjson::py_strip(text);
+    let (negative, digits) = match text.as_bytes().first()? {
+        b'+' => (false, &text[1..]),
+        b'-' => (true, &text[1..]),
+        _ => (false, text),
+    };
+    let valid = !digits.is_empty() && !digits.starts_with('_') && !digits.ends_with('_') && !digits.contains("__")
+        && digits.chars().all(|c| c == '_' || c.is_ascii_digit());
+    valid.then_some(if negative { i64::MIN } else { i64::MAX })
+}
+
+/// `users()` over explicit passwd entries (NSS order) and login.defs text.
+pub fn users_from(entries: &[PasswdEntry], login_defs: Option<&str>) -> Vec<User> {
+    let minimum = uid_minimum(login_defs);
+    let mut result: Vec<User> = entries.iter()
+        .filter(|user| minimum <= user.uid as i64 && user.uid < 65534
+                && !["", "/sbin/nologin", "/usr/sbin/nologin", "/bin/false"].contains(&user.shell.as_str()))
+        .map(|user| {
+            let name = suite_core::pyjson::py_strip(user.gecos.split(',').next().unwrap_or_default());
+            User { username: user.name.clone(), name: if name.is_empty() { user.name.clone() } else { name.to_owned() } }
+        })
+        .collect();
+    result.sort_by_key(|user| casefold(&user.name)); // stable, like sorted()
+    result
+}
+
+#[repr(C)]
+struct Passwd {
+    pw_name: *mut std::os::raw::c_char,
+    pw_passwd: *mut std::os::raw::c_char,
+    pw_uid: u32,
+    pw_gid: u32,
+    pw_gecos: *mut std::os::raw::c_char,
+    pw_dir: *mut std::os::raw::c_char,
+    pw_shell: *mut std::os::raw::c_char,
+}
+
+extern "C" {
+    fn setpwent();
+    fn getpwent() -> *mut Passwd;
+    fn endpwent();
+}
+
+/// `pwd.getpwall()` (NSS: files, systemd-userdb, sssd, …).
+pub fn passwd_entries() -> Vec<PasswdEntry> {
+    fn text(pointer: *const std::os::raw::c_char) -> String {
+        if pointer.is_null() {
+            return String::new();
+        }
+        // SAFETY: getpwent returns NUL-terminated strings valid until the next call.
+        unsafe { std::ffi::CStr::from_ptr(pointer) }.to_string_lossy().into_owned()
+    }
+    let mut entries = Vec::new();
+    // SAFETY: the glibc passwd iteration API, used from one thread at a time
+    // (callers are the greeter's main thread); fields are copied immediately.
+    unsafe {
+        setpwent();
+        loop {
+            let entry = getpwent();
+            if entry.is_null() {
+                break;
+            }
+            let entry = &*entry;
+            entries.push(PasswdEntry { name: text(entry.pw_name), uid: entry.pw_uid, gecos: text(entry.pw_gecos),
+                                       shell: text(entry.pw_shell) });
+        }
+        endpwent();
+    }
+    entries
+}
+
+/// `users()`: human accounts for the greeter's user selector.
+pub fn users() -> Vec<User> {
+    users_from(&passwd_entries(), std::fs::read_to_string("/etc/login.defs").ok().as_deref())
 }
 
 #[cfg(test)]
@@ -333,5 +482,61 @@ mod tests {
     fn shlex_matches_python() {
         assert_eq!(shlex_split(r#"a "b c" 'd e' f\ g "h\"i""#).unwrap(), ["a", "b c", "d e", "f g", "h\"i"]);
         assert!(shlex_split("'open").is_err());
+    }
+
+    /// Python: shlex.split(r'sh -c "echo \$HOME \`id\` \\ \""') keeps the
+    /// backslash before `$`, `` ` `` and newline inside double quotes.
+    #[test]
+    fn shlex_double_quote_escapes_match_python() {
+        assert_eq!(shlex_split(r#"sh -c "echo \$HOME \`id\` \\ \"""#).unwrap(), ["sh", "-c", r#"echo \$HOME \`id\` \ ""#]);
+        assert_eq!(shlex_split("\"a\\\nb\"").unwrap(), ["a\\\nb"]);
+        assert_eq!(shlex_split("\"x\\").unwrap_err(), "No escaped character");
+    }
+
+    #[test]
+    fn session_request_quotes_for_greetd_shell() {
+        let session = Session { ident: "test".into(), name: "Test".into(),
+            argv: ["/bin/echo", "a b", "$(touch /tmp/NEVER)", ";false", "it's literal"].map(String::from).to_vec(), desktops: "Test".into() };
+        let request = session.request();
+        let cmd = request["cmd"][0].as_str().unwrap();
+        assert_eq!(cmd, r#"/usr/local/lib/waylogin/start-session /bin/echo 'a b' '$(touch /tmp/NEVER)' ';false' 'it'"'"'s literal'"#);
+        assert_eq!(shlex_split(cmd).unwrap()[1..], session.argv[..]);
+        assert_eq!(request["env"], serde_json::json!(["XDG_SESSION_TYPE=wayland", "XDG_SESSION_DESKTOP=test",
+                                                      "XDG_CURRENT_DESKTOP=Test", "DESKTOP_SESSION=test"]));
+        assert_eq!(request.keys().collect::<Vec<_>>(), ["type", "cmd", "env"]);
+        let labwc = Session { ident: "labwc".into(), name: "labwc".into(), argv: vec!["labwc".into()], desktops: "labwc".into() };
+        assert_eq!(labwc.request()["cmd"][0], "/usr/local/lib/waylogin/start-session labwc --startup '/usr/bin/python3 -I /usr/local/lib/waylogin/session_transition.py'");
+        for argv in [vec!["/usr/bin/labwc", "--startup", "existing command"], vec!["labwc", "-s", "x"], vec!["labwc", "--startup=x"],
+                     vec!["startplasma-wayland"]] {
+            let session = Session { ident: "t".into(), name: "T".into(), argv: argv.iter().map(|s| s.to_string()).collect(), desktops: "T".into() };
+            assert_eq!(shlex_split(session.request()["cmd"][0].as_str().unwrap()).unwrap()[1..], session.argv[..]);
+        }
+    }
+
+    #[test]
+    fn users_follow_python_rules() {
+        let entry = |name: &str, uid: u32, gecos: &str, shell: &str| PasswdEntry { name: name.into(), uid, gecos: gecos.into(), shell: shell.into() };
+        let entries = [entry("root", 0, "root", "/bin/bash"), entry("zed", 1000, "Zed Last,,,", "/bin/bash"),
+                       entry("anna", 1001, "  ", "/bin/zsh"), entry("svc", 1002, "Svc", "/sbin/nologin"),
+                       entry("nobody", 65534, "Nobody", "/bin/bash"), entry("ghost", 1003, "Ghost", ""),
+                       entry("Bob", 1500, "bob", "/bin/sh"), entry("bob2", 1501, "Bob", "/bin/sh")];
+        let names = |users: Vec<User>| users.into_iter().map(|u| (u.username, u.name)).collect::<Vec<_>>();
+        assert_eq!(names(users_from(&entries, None)), [("anna".into(), "anna".into()), ("Bob".into(), "bob".into()),
+                   ("bob2".into(), "Bob".into()), ("zed".into(), "Zed Last".into())]);
+        assert_eq!(uid_minimum(Some("# x\nUID_MIN\t 1500\nUID_MAX 60000\n")), 1500);
+        assert_eq!(uid_minimum(Some("UID_MIN 1_200\nUID_MIN bad\nUID_MIN 900\n")), 1200);
+        assert_eq!(names(users_from(&entries, Some("UID_MIN 1500"))).len(), 2);
+    }
+
+    /// Python's unbounded int(): an oversized UID_MIN hides everyone instead of
+    /// falling back to 1000; an oversized negative one admits every uid.
+    #[test]
+    fn oversized_uid_min_saturates_like_python() {
+        let entry = PasswdEntry { name: "zed".into(), uid: 1000, gecos: "Zed".into(), shell: "/bin/bash".into() };
+        assert!(users_from(std::slice::from_ref(&entry), Some("UID_MIN 99999999999999999999999")).is_empty());
+        assert_eq!(uid_minimum(Some("UID_MIN 1_000\nUID_MIN 99999999999999999999999\nUID_MIN x\nUID_MIN 5\n")), i64::MAX);
+        assert_eq!(uid_minimum(Some("UID_MIN -99999999999999999999999")), i64::MIN);
+        assert_eq!(uid_minimum(Some("UID_MIN 9_9_")), 1000);
+        let _ = passwd_entries(); // NSS enumeration must not crash
     }
 }
