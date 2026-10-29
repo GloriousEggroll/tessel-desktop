@@ -68,7 +68,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | way-displays, language-manager, session-startup (+ session-manager) | ~3.7k | ported, not swapped |
 | 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
 | 3 | wayshell | 4077 | ported (+prompt, capture-picker, theme), not swapped |
-| 3 | waydock | 14739 | porting |
+| 3 | waydock | 14739 | ported, tests + 0 px screenshot parity, not swapped (swap with user present) |
 | 4 | apps: calculator, text-editor, picture-viewer, system-monitor, hdr-calibration, capture-manager, file-manager | ~19k | |
 | 4 | global-settings, welcome | ~9.4k | |
 | 5 | lock-screen, login-manager (PAM, security review) | ~5.2k | |

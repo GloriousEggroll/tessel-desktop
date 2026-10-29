@@ -1,0 +1,41 @@
+#!/bin/sh
+# Build and run tests/g_settings_headless.rs (Dock Settings, W-g) inside a
+# private nested headless labwc (tools/headless.md): own XDG_RUNTIME_DIR, own
+# D-Bus without service activation, 2 outputs, no input devices, fake HOME and
+# XDG dirs under $TMPDIR. Never touches the live session. Optional $1 filters
+# cases. Screenshots + pixel diff land in $TMPDIR/screens/.
+set -eu
+export TMPDIR=/run/user/1000/cbt/rust-waydock/${AGENT:-g}
+mkdir -p "$TMPDIR"
+HERE=$(cd "$(dirname "$0")" && pwd)
+ROOT=$(cd "$HERE/../../.." && pwd)
+BIN=$(cd "$ROOT" && cargo test -p waydock --test g_settings_headless --no-run --message-format=json 2>/dev/null \
+      | python3 -I -c 'import json,sys
+for line in sys.stdin:
+    m=json.loads(line)
+    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="g_settings_headless" and m.get("executable"): print(m["executable"])')
+[ -n "$BIN" ] || { echo "build failed"; exit 1; }
+R=$TMPDIR/n
+rm -rf "$R"
+mkdir -p "$R/rt" "$R/cfg" "$R/svc" "$R/home" "$R/xdg-config" "$R/cache" "$R/data" "$R/state"; chmod 700 "$R/rt"
+sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" \
+    -e "s|<standard_session_servicedirs */>|<servicedir>$R/svc</servicedir>|" /usr/share/dbus-1/session.conf > "$R/d.conf"
+printf '<?xml version="1.0"?>\n<labwc_config/>\n' > "$R/cfg/rc.xml"
+: > "$R/cfg/autostart"
+rm -f "$R/result" "$R/log"
+{
+  echo '#!/bin/sh'
+  echo 'case "$XDG_RUNTIME_DIR:$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac'
+  printf 'WAYDOCK_G_HEADLESS=1 WAYDOCK_PY_DIR=%s GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0 GIO_USE_VFS=local DBUS_SYSTEM_BUS_ADDRESS=unix:path=/no-waydock-test-system-bus timeout %s' "'$HOME/btmanager/waydock'" "${TIMEOUT:-300}"
+  printf " '%s' %s" "$BIN" "${1:-}"
+  printf ' > "%s/log" 2>&1; echo $? > "%s/result"\n' "$R" "$R"
+  echo 'labwc --exit'
+} > "$R/run.sh"
+chmod +x "$R/run.sh"
+env -i HOME="$R/home" PATH="$PATH" LANG=C.UTF-8 XDG_RUNTIME_DIR="$R/rt" TMPDIR="$TMPDIR" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 \
+  WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 RUST_BACKTRACE=1 \
+  XDG_CONFIG_HOME="$R/xdg-config" XDG_CACHE_HOME="$R/cache" XDG_DATA_HOME="$R/data" XDG_STATE_HOME="$R/state" \
+  dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" \
+  > "$R/labwc.log" 2>&1 || true
+cat "$R/log" 2>/dev/null || true
+exit "$(cat "$R/result" 2>/dev/null || echo 1)"

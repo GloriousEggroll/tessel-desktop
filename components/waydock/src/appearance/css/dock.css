@@ -1,0 +1,226 @@
+
+window.waydock-surface { background: transparent; color: #eeeeee; border: none; box-shadow: none; padding: 0; margin: 0; border-radius: 0; }
+.waydock-panel, .waydock-popup {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 7px;
+}
+.waydock-popup { background: rgba(16, 17, 20, 0.97); padding: 12px; }
+.waydock-panel { border: none; box-shadow: none; }
+.waydock-panel button, .waydock-popup button {
+  background: transparent; border: none; box-shadow: none;
+  color: #eeeeee; border-radius: 8px; padding: 5px;
+}
+.waydock-panel button:hover, .waydock-popup button:hover { background: rgba(255,255,255,0.12); }
+.waydock-panel button:active, .waydock-popup button:active { background: rgba(105,167,255,0.24); }
+.waydock-panel button.focused, .waydock-popup button.focused { background: rgba(105,167,255,0.16); }
+.waydock-count { background: #343a45; color: white; border-radius: 9999px; font-size: 7.5pt; font-weight: bold; padding: 0 4px; min-width: 8px; }
+.waydock-indicator { background: #999fa9; border-radius: 2px; min-height: 3px; min-width: 6px; }
+.waydock-indicator.focused { background: #69a7ff; min-width: 20px; }
+.waydock-indicator.vertical { min-height: 6px; min-width: 3px; }
+.waydock-indicator.vertical.focused { min-height: 20px; min-width: 3px; }
+.waydock-separator { background: rgba(255,255,255,0.14); margin: 8px 4px; }
+.waydock-title { font-size: 16pt; font-weight: 600; }
+.waydock-subtitle { color: #a6abb4; font-size: 9pt; }
+.waydock-window-title { font-size: 9pt; }
+.waydock-activities-icon { -gtk-icon-transform: scaleX(-1); }
+.waydock-focused-title { font-size: 10pt; font-weight: 600; padding: 6px; }
+.waydock-panel button.waydock-focused-title-button {
+  min-width: 0; min-height: 0; padding: 0;
+}
+.waydock-panel button.waydock-compact-item {
+  min-width: 24px; min-height: 24px; padding: 3px;
+}
+.waydock-compact-item .waydock-count {
+  font-size: 6pt; padding: 0 2px; min-width: 6px; border-radius: 9999px;
+}
+.waydock-popup button.waydock-window-close {
+  min-width: 18px; min-height: 18px; padding: 1px; border-radius: 8px;
+}
+@define-color waydock_settings_surface mix(@theme_base_color, @theme_bg_color, 0.18);
+@define-color waydock_settings_line alpha(@theme_fg_color, 0.10);
+@define-color waydock_settings_muted alpha(@theme_fg_color, 0.62);
+window.waydock-settings { background: @theme_bg_color; color: @theme_fg_color; }
+.waydock-settings headerbar {
+  background-image: none; background-color: @theme_bg_color;
+  border: none; box-shadow: none; padding: 8px 14px;
+}
+.waydock-settings headerbar .title { font-size: 11pt; font-weight: 600; }
+.waydock-settings .settings-title { font-size: 18pt; font-weight: 700; }
+.waydock-settings .settings-muted { color: @waydock_settings_muted; font-size: 9pt; }
+.waydock-settings .settings-tile {
+  min-width: 50px; min-height: 50px; border-radius: 12px;
+  color: @theme_selected_bg_color; background-color: alpha(@theme_selected_bg_color, 0.10);
+}
+.waydock-settings .settings-card {
+  background-color: @waydock_settings_surface;
+  border: 1px solid @waydock_settings_line; border-radius: 8px; padding: 16px;
+}
+.waydock-settings .settings-section-title { font-size: 10pt; font-weight: 600; color: @waydock_settings_muted; }
+.waydock-settings .settings-section-heading image { color: @theme_selected_bg_color; }
+.waydock-settings .settings-hint { color: @waydock_settings_muted; padding: 1px 4px; }
+.waydock-settings button:not(.titlebutton) {
+  background-image: none; background-color: @waydock_settings_surface;
+  color: @theme_fg_color; border: 1px solid @waydock_settings_line;
+  border-radius: 8px; box-shadow: none; text-shadow: none;
+  min-height: 28px; padding: 4px 12px;
+}
+.waydock-settings button:hover { background-color: mix(@waydock_settings_surface, @theme_fg_color, 0.06); }
+.waydock-settings button.suggested-action {
+  background-color: @theme_selected_bg_color; color: @theme_selected_fg_color; border-color: transparent;
+}
+.waydock-settings button.suggested-action:hover {
+  background-color: shade(@theme_selected_bg_color, 1.10);
+}
+.waydock-settings button:focus {
+  outline: 2px solid alpha(@theme_selected_bg_color, 0.65); outline-offset: -2px;
+}
+.waydock-settings entry:focus-within, .waydock-settings spinbutton:focus-within {
+  outline: 2px solid alpha(@theme_selected_bg_color, 0.65); outline-offset: -2px;
+  border-color: @theme_selected_bg_color;
+}
+.waydock-settings button:disabled { opacity: 0.45; }
+.waydock-settings combobox button { font-weight: normal; }
+.waydock-settings spinbutton {
+  background-color: @waydock_settings_surface; color: @theme_fg_color;
+  border: 1px solid @waydock_settings_line; border-radius: 8px;
+}
+.waydock-settings spinbutton entry { background: transparent; min-width: 28px; padding: 4px 8px; }
+.waydock-settings spinbutton button {
+  min-width: 18px; min-height: 28px; padding: 4px; border: none;
+  border-left: 1px solid @waydock_settings_line; border-radius: 0;
+}
+.waydock-settings spinbutton button:last-child { border-radius: 0 8px 8px 0; }
+.waydock-settings switch {
+  background-image: none; background-color: alpha(@theme_fg_color, 0.14);
+  border: 1px solid @waydock_settings_line;
+  min-width: 44px; min-height: 24px; border-radius: 9999px;
+}
+/* The knob is white in every state, lifted by a soft shadow. */
+.waydock-settings switch slider, .waydock-settings switch:checked slider,
+.waydock-settings switch:disabled slider {
+  background-image: none; background-color: #ffffff;
+  min-width: 20px; min-height: 20px; border-radius: 9999px; border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.waydock-settings switch:checked {
+  background-color: @theme_selected_bg_color; border-color: @theme_selected_bg_color;
+}
+.waydock-settings switch:focus { outline-color: @theme_selected_bg_color; }
+.waydock-settings scale { min-width: 150px; padding: 6px 0; }
+.waydock-settings scale trough {
+  min-height: 5px; border-radius: 9999px; border: none;
+  background: alpha(@theme_fg_color, 0.14);
+}
+.waydock-settings scale highlight { background: @theme_selected_bg_color; border-radius: 9999px; border: none; }
+.waydock-settings scale slider {
+  min-width: 18px; min-height: 18px; margin: -7px 0; padding: 0; border-radius: 9999px; border: none;
+  background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.waydock-settings scale value { color: @theme_fg_color; font-size: 9pt; }
+.waydock-settings .error { color: #ff9494; }
+.waydock-popup entry { background: #292c32; color: white; border-radius: 8px; border: 1px solid #3a3e46; }
+.waydock-popup entry:focus-within { border-color: #69a7ff; outline: 2px solid rgba(105,167,255,0.45); outline-offset: -1px; }
+.waydock-popup list, .waydock-popup row { background: transparent; color: white; }
+.waydock-popup row:hover { background: rgba(255,255,255,0.08); border-radius: 8px; }
+.waydock-app-menu { padding: 16px; border-radius: 12px; }
+.waydock-app-menu-header { padding: 0 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.waydock-app-menu .waydock-app-categories { background: transparent; }
+.waydock-app-menu .waydock-app-categories row { padding: 9px 10px; margin: 2px 0; border-radius: 8px; }
+.waydock-app-menu .waydock-app-categories row:selected { background: rgba(105,167,255,0.18); }
+.waydock-app-menu .waydock-app-categories row:focus-visible { outline: 1px solid #69a7ff; outline-offset: -1px; }
+.waydock-app-menu .waydock-app-categories label { font-size: 10.5pt; }
+.waydock-app-menu .waydock-app-section { font-size: 10pt; font-weight: 600; padding: 3px 8px; }
+.waydock-app-menu separator { background: rgba(255,255,255,0.10); min-width: 1px; }
+.waydock-app-menu flowbox { padding: 0; background: transparent; color: #eeeeee; }
+.waydock-app-menu flowboxchild { padding: 5px 8px; border-radius: 8px; }
+.waydock-app-menu flowboxchild:hover { background: rgba(255,255,255,0.08); }
+.waydock-app-menu flowboxchild:selected { background: rgba(105,167,255,0.18); }
+.waydock-app-menu flowboxchild:focus { outline: 1px solid #69a7ff; outline-offset: -1px; }
+.waydock-app-menu flowboxchild.waydock-empty-cell { background: transparent; outline: none; }
+.waydock-app-menu .waydock-app-name { font-size: 10.5pt; font-weight: 500; }
+.waydock-app-menu button.waydock-app-frequent-tile {
+  padding: 5px 8px; border-radius: 8px; background: transparent; box-shadow: none; border: none;
+}
+.waydock-app-menu button.waydock-app-frequent-tile:hover { background: rgba(127,127,127,0.12); }
+.waydock-app-menu button.waydock-app-pin {
+  color: #929aa7; min-width: 22px; min-height: 22px; padding: 4px;
+}
+.waydock-app-menu button.waydock-app-pin.pinned { color: #8dbbfa; }
+.waydock-app-menu button.waydock-app-pin:hover { color: #eeeeee; }
+.waydock-app-menu button.waydock-app-menu-settings {
+  background: rgba(255,255,255,0.05); min-width: 22px; min-height: 22px; padding: 4px;
+}
+.waydock-app-menu button.waydock-app-menu-settings:hover { background: rgba(255,255,255,0.12); }
+.waydock-app-menu entry {
+  background: rgba(255,255,255,0.055); border-color: rgba(255,255,255,0.10);
+  min-height: 26px; padding: 7px 10px; border-radius: 8px; box-shadow: none;
+}
+.waydock-app-menu entry:focus, .waydock-app-menu entry:focus-within { border-color: #69a7ff; outline-color: #69a7ff; }
+.waydock-app-menu entry.search > text,
+.waydock-app-menu searchentry > text, .waydock-app-menu entry.search > text { margin: 0 8px; }
+.waydock-panel button.waydock-status, .waydock-panel button.waydock-tray-item {
+  min-width: 24px; min-height: 30px; padding: 5px 4px;
+}
+.waydock-media-song { font-family: "Noto Sans", sans-serif; font-size: 10pt; }
+.waydock-panel .waydock-media button.waydock-media-control {
+  min-width: 20px; min-height: 22px; padding: 2px; border-radius: 8px;
+}
+.waydock-panel .waydock-media button:disabled { opacity: .35; }
+/* Glyphs are only a fallback for icon themes without a status icon; their
+   pixel size follows the configured icon size (panel_ui.status_icon_size). */
+.waydock-status-glyph {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "Symbols Nerd Font", "Noto Sans", sans-serif;
+  font-weight: 900;
+}
+.status-capslock .waydock-status-glyph { font-size: 15pt; }
+.status-bluetooth .waydock-status-glyph { font-family: "Font Awesome 6 Brands"; }
+.status-network .waydock-status-glyph {
+  font-family: "Font Awesome 6 Free", "JetBrainsMono Nerd Font Propo", "JetBrainsMonoNL Nerd Font Propo", "Symbols Nerd Font", sans-serif;
+}
+.status-weather .waydock-status-glyph { font-family: "Noto Sans", "Symbols Nerd Font", sans-serif; font-size: 10pt; font-weight: 600; }
+.status-capslock .waydock-status-glyph { font-family: "Noto Sans", sans-serif; }
+.status-showdesktop.regular .waydock-status-glyph { font-weight: 400; }
+.waydock-status.unavailable, .waydock-status.off, .waydock-status.inactive { opacity: 0.45; }
+.waydock-status.recording { color: #f26b6b; }
+.waydock-status.connected, .waydock-status.plugged, .waydock-status.balanced,
+.waydock-status.auto, .waydock-status.active { color: #69a7ff; }
+.waydock-status.power-saver, .waydock-status.full, .waydock-status.vpn { color: #8fd6ab; }
+.waydock-status.performance, .waydock-status.dimmed, .waydock-status.low,
+.waydock-status.limited { color: #e3b66b; }
+.waydock-status.critical, .waydock-status.needs-attention { color: #e05d65; }
+.waydock-panel button.waydock-workspace {
+  padding: 4px; min-width: 18px; min-height: 24px; font-size: 10pt; font-weight: 600;
+}
+.waydock-panel button.waydock-workspace.active { background: rgba(105,167,255,0.35); color: #eeeeee; font-weight: 700; }
+.waydock-panel button.waydock-workspace.urgent { color: #e3b66b; }
+.waydock-panel button.waydock-clock { min-width: 82px; padding: 2px 7px; }
+.waydock-clock-time { font-family: "Noto Sans", sans-serif; font-size: 13pt; font-weight: 600; }
+.waydock-clock-date { font-family: "Noto Sans", sans-serif; font-size: 9pt; font-weight: 400; }
+.waydock-clock.clock-inline .waydock-clock-time,
+.waydock-clock.clock-inline .waydock-clock-date { font-size: 10pt; font-weight: 400; }
+.waydock-panel.waydock-compact-bar { padding: 2px 6px; }
+.waydock-panel.waydock-compact-bar button { padding: 2px 4px; }
+.waydock-panel.waydock-compact-bar.waydock-vertical { padding: 6px 2px; }
+.waydock-compact-bar button.waydock-status,
+.waydock-compact-bar button.waydock-tray-item,
+.waydock-compact-bar button.waydock-tray-expander,
+.waydock-compact-bar button.waydock-compact-item {
+  min-width: 22px; min-height: 22px; padding: 2px 3px; border-radius: 8px;
+}
+.waydock-compact-bar .status-capslock .waydock-status-glyph { font-size: 11pt; }
+.waydock-compact-bar .waydock-media-song { font-size: 10pt; }
+.waydock-compact-bar .status-weather .waydock-status-glyph { font-size: 10pt; }
+.waydock-compact-bar button.waydock-workspace {
+  min-width: 18px; min-height: 22px; padding: 2px 3px; font-size: 10pt;
+}
+.waydock-compact-bar .waydock-focused-title { font-size: 10pt; padding: 2px 4px; }
+.waydock-compact-bar .waydock-count { font-size: 6.5pt; }
+.waydock-compact-bar .waydock-separator { margin: 4px 3px; }
+.waydock-compact-bar button.waydock-clock { min-width: 0; min-height: 0; padding: 0 4px; }
+/* One size and weight for the compact clock, stacked or inline. */
+.waydock-compact-bar .waydock-clock .waydock-clock-time,
+.waydock-compact-bar .waydock-clock .waydock-clock-date { font-size: 8pt; font-weight: 600; line-height: 1; }
+.waydock-compact-bar .waydock-clock.clock-inline .waydock-clock-time,
+.waydock-compact-bar .waydock-clock.clock-inline .waydock-clock-date { font-size: 10pt; font-weight: 600; line-height: 1; }

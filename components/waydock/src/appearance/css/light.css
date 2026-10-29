@@ -1,0 +1,41 @@
+
+window.waydock-surface { color: #23262d; }
+.waydock-panel, .waydock-popup {
+  background: rgba(250, 250, 252, 0.8);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+.waydock-popup { background: rgba(250, 250, 252, 0.97); }
+.waydock-panel button, .waydock-popup button { color: #23262d; }
+.waydock-panel button:hover, .waydock-popup button:hover { background: rgba(0,0,0,0.08); }
+.waydock-panel button:active, .waydock-popup button:active { background: rgba(36,112,210,0.20); }
+.waydock-panel button.focused, .waydock-popup button.focused { background: rgba(36,112,210,0.12); }
+.waydock-count { background: #dce2ed; color: #23262d; }
+.waydock-indicator { background: #687382; }
+.waydock-indicator.focused { background: #2470d2; }
+.waydock-separator { background: rgba(0,0,0,0.16); }
+.waydock-subtitle { color: #5c6572; }
+.waydock-popup entry { background: #ffffff; color: #23262d; border-color: #c7cdd6; }
+.waydock-popup entry:focus-within { border-color: #2470d2; outline-color: rgba(36,112,210,0.45); }
+.waydock-popup list, .waydock-popup row { color: #23262d; }
+.waydock-popup row:hover { background: rgba(0,0,0,0.06); }
+.waydock-app-menu-header { border-bottom-color: rgba(0,0,0,0.08); }
+.waydock-app-menu .waydock-app-categories row:selected { background: rgba(36,112,210,0.12); }
+.waydock-app-menu .waydock-app-categories row:focus-visible { outline-color: #2470d2; }
+.waydock-app-menu separator { background: rgba(0,0,0,0.10); }
+.waydock-app-menu flowbox { color: #23262d; }
+.waydock-app-menu flowboxchild:hover { background: rgba(0,0,0,0.06); }
+.waydock-app-menu flowboxchild:selected { background: rgba(36,112,210,0.12); }
+.waydock-app-menu flowboxchild:focus { outline-color: #2470d2; }
+.waydock-app-menu button.waydock-app-pin { color: #6b7482; }
+.waydock-app-menu button.waydock-app-pin.pinned { color: #2470d2; }
+.waydock-app-menu button.waydock-app-pin:hover { color: #23262d; }
+.waydock-app-menu button.waydock-app-menu-settings { background: rgba(0,0,0,0.035); }
+.waydock-app-menu button.waydock-app-menu-settings:hover { background: rgba(0,0,0,0.08); }
+.waydock-app-menu entry { background: #ffffff; border-color: rgba(0,0,0,0.12); }
+.waydock-app-menu entry:focus, .waydock-app-menu entry:focus-within { border-color: #2470d2; outline-color: #2470d2; }
+.waydock-panel button.waydock-workspace.active { background: rgba(36,112,210,0.24); color: #23262d; }
+.waydock-status.connected, .waydock-status.plugged, .waydock-status.balanced,
+.waydock-status.auto, .waydock-status.active { color: #195aaa; }
+.waydock-status.power-saver, .waydock-status.full, .waydock-status.vpn { color: #287747; }
+.waydock-status.performance, .waydock-status.dimmed, .waydock-status.low,
+.waydock-status.limited { color: #885f10; }
