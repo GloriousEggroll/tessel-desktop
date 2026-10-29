@@ -109,3 +109,18 @@ the app menu closes. Nothing visible changes (compare/run.sh 0 px).
 
 Remaining waydock anon: ~13 MB GTK icon-theme index (worker-thread arena; Python has the same 14.8 MB) and,
 after the menu, the menu's cached icon textures (~11 MB, kept by design, see menu churn above).
+
+Tray private icon themes (follow-up): live waydock still had ~70 MB [heap] in use. Cause: `_pixbuf` builds a
+`Gtk.IconTheme.new()` per item `IconThemePath` (ported from status_tray.py), per tray view (one per output);
+each one indexes the whole Papirus-Dark theme (~13 MB). 5 fake items (`TRAY_ITEMS=5`, each with its own
+directory, like libayatana/Chromium items) took waydock to 167 MB anon (Python 200 MB). Now
+`StatusTray::resolve_icon` derives the private theme's answer from the display theme when the directory
+holds the icon only as a top-level file or not at all (themed hits win, then unthemed files with the
+private directory first, as GTK orders them); a full private theme is built only when the directory has a
+copy below its top level, and is then shared by all views (`PRIVATE_THEMES`, weak, keyed by directory,
+theme name and search path). f2 `tray_private_icon_dirs_share_one_theme_and_only_when_nested`.
+
+| PSS / Pss_Anon MB, 5 tray items | Python | Rust before | Rust after |
+|---|---|---|---|
+| waydock idle | 221 / 200 | 189 / 167 | 57 / 37 |
+| waydock after 40 windows + 2 menus | 264 / 249 | — | 82 / 66 |

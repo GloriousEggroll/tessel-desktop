@@ -6,7 +6,8 @@
 # (make_home.sh). Never touches the live session or the real ~/.config/~/.local.
 # Usage: run.sh [impls=python,rust] [idle-seconds=20]
 # Env: RENDERER=vulkan|pixman (labwc), GSK=<GSK_RENDERER or empty>, OUTPUTS=WxH,
-#      REBUILD_HOME=1, ACTIVITY=1 (menu twice + 8 windows, then ACTIVITY_IDLE s), EXTRA_ENV_RUST/EXTRA_ENV_PYTHON="K=V ...", KEEP_SMAPS=1, SHOT=1
+#      REBUILD_HOME=1, ACTIVITY=1 (menu twice + 8 windows, then ACTIVITY_IDLE s), EXTRA_ENV_RUST/EXTRA_ENV_PYTHON="K=V ...", KEEP_SMAPS=1, SHOT=1,
+#      TRAY_ITEMS=N (fake StatusNotifierItems, each with its own IconThemePath)
 set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
@@ -33,7 +34,7 @@ wlr-randr --output HEADLESS-2 --custom-mode $MODE --pos ${MODE%x*},0 >/dev/null 
 wlr-randr > "$R/outputs.txt" 2>&1
 export DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" GSETTINGS_BACKEND=memory NO_AT_BRIDGE=1 GTK_A11Y=none GDK_BACKEND=wayland
 ${GSK:+export GSK_RENDERER=$GSK}
-RUST_DOCK="$RUST_DOCK" RUST_SHELL="$RUST_SHELL" KEEP_SMAPS="${KEEP_SMAPS:-}" SHOT="${SHOT:-}" ACTIVITY="${ACTIVITY:-}" ACTIVITY_IDLE="${ACTIVITY_IDLE:-10}" \
+RUST_DOCK="$RUST_DOCK" RUST_SHELL="$RUST_SHELL" KEEP_SMAPS="${KEEP_SMAPS:-}" SHOT="${SHOT:-}" ACTIVITY="${ACTIVITY:-}" ACTIVITY_IDLE="${ACTIVITY_IDLE:-10}" ACTIVITY_APPS="${ACTIVITY_APPS:-4}" TRAY_ITEMS="${TRAY_ITEMS:-0}" ACTIVITY_WINDOWS="${ACTIVITY_WINDOWS:-2}" \
 EXTRA_ENV_RUST="${EXTRA_ENV_RUST:-}" EXTRA_ENV_PYTHON="${EXTRA_ENV_PYTHON:-}" \
 WRAP_RUST_WAYDOCK="${WRAP_RUST_WAYDOCK:-}" WRAP_RUST_WAYSHELL="${WRAP_RUST_WAYSHELL:-}" \
   timeout 900 python3 -I "$HERE/driver.py" "$R" "$TEMPLATE" "$IMPLS" "$IDLE" > "$R/driver.log" 2>&1

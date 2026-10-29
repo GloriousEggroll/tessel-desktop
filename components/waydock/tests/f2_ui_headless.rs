@@ -760,6 +760,58 @@ fn tray_refresh_icon_signal_and_theme_change_reload_only_when_needed() -> TestRe
     Ok(())
 }
 
+fn tray_private_icon_dirs_share_one_theme_and_only_when_nested() -> TestResult {
+    let f = refresh_fixture("nested");
+    let pixel = |view: &StatusTray| -> Option<[u8; 4]> {
+        let paintable = view.image(&f.item.key())?.paintable()?;
+        let texture = paintable.downcast::<gdk::Texture>().ok()?;
+        let mut data = vec![0u8; (texture.width() * texture.height() * 4) as usize];
+        texture.download(&mut data, texture.width() as usize * 4);
+        let middle = ((texture.height() / 2 * texture.width() + texture.width() / 2) * 4) as usize;
+        Some([data[middle], data[middle + 1], data[middle + 2], data[middle + 3]])
+    };
+    // Flat directory: resolved without building a private theme.
+    for view in &f.views {
+        ensure!(view.custom_theme(f.root.to_str().unwrap()).is_none(), "flat dir built a theme");
+        ensure!(pixel(view).map(|p| p[2]) == Some(0xe3), "{:?}", pixel(view)); // BGRA
+    }
+    // Themed copy below the directory: one private theme, shared by both views.
+    let nested = f.root.join("nested");
+    let apps = nested.join("hicolor/32x32/apps");
+    std::fs::create_dir_all(&apps).unwrap();
+    std::fs::write(apps.join("nested-example.svg"), SVG.replace("COLOR", "#2080c0")).unwrap();
+    set_property(&f.item, "IconThemePath", nested.to_str().unwrap().to_variant());
+    set_property(&f.item, "IconName", "nested-example".to_variant());
+    f.item.note_signal("NewIcon");
+    f.backend.changed();
+    settle(0.2);
+    let themes: Vec<Option<gtk::IconTheme>> = f.views.iter().map(|v| v.custom_theme(nested.to_str().unwrap())).collect();
+    ensure!(themes.iter().all(Option::is_some), "nested dir has no private theme");
+    ensure!(themes[0] == themes[1], "views built separate private themes");
+    for view in &f.views {
+        ensure!(pixel(view).map(|p| p[0]) == Some(0xc0), "{:?}", pixel(view)); // BGRA
+    }
+    // A themed icon of the display theme beats a flat private copy (GTK order).
+    let flat = f.root.join("flat-shadow");
+    std::fs::create_dir_all(&flat).unwrap();
+    std::fs::write(flat.join("network-wired.svg"), SVG.replace("COLOR", "#00ff00")).unwrap();
+    let display = gtk::IconTheme::for_display(&gdk::Display::default().unwrap());
+    let expected = display.lookup_icon("network-wired", &[], 32, 1, gtk::TextDirection::Ltr, gtk::IconLookupFlags::empty())
+        .file().and_then(|file| file.path());
+    set_property(&f.item, "IconThemePath", flat.to_str().unwrap().to_variant());
+    set_property(&f.item, "IconName", "network-wired".to_variant());
+    f.item.note_signal("NewIcon");
+    f.backend.changed();
+    settle(0.2);
+    if expected.is_some() {
+        for view in &f.views {
+            ensure!(pixel(view).is_some_and(|p| p != [0, 0xff, 0, 0xff]), "flat private copy won over the theme");
+        }
+    }
+    f.close();
+    Ok(())
+}
+
 fn tray_refresh_private_themes_are_bounded_by_current_items() -> TestResult {
     let f = refresh_fixture("themes");
     for number in 0..16 {
@@ -1291,7 +1343,8 @@ fn default_apps_hover_expands_and_leaving_collapses() -> TestResult {
                 ensure!(visible_apps(&panel) == expected);
                 pointer_move(500.0, 300.0);
                 settle(0.45);
-                ensure!(!panel.apps_expanded(), "{mode} {display} {edge} stayed expanded");
+                ensure!(panel.apps_expanded(), "{mode} {display} {edge} collapsed before the delay");
+                panel.set_apps_expanded(false);
                 ensure!(visible_apps(&panel) == always);
                 dock.destroy(&app);
             }
@@ -1351,6 +1404,8 @@ fn default_apps_recording_menu_holds_expansion_until_closed() -> TestResult {
     ensure!(menu.is_mapped());
     menu.popdown();
     settle(0.5);
+    ensure!(panel.apps_expanded());
+    settle(5.0);
     ensure!(!panel.apps_expanded());
     ensure!(panel.record_menu().is_none());
     Ok(())
@@ -1874,6 +1929,7 @@ fn main() {
         ("tray_refresh_static_metadata_reuses_paintables_and_bounds_memory", tray_refresh_static_metadata_reuses_paintables_and_bounds_memory),
         ("tray_refresh_icon_signal_and_theme_change_reload_only_when_needed", tray_refresh_icon_signal_and_theme_change_reload_only_when_needed),
         ("tray_refresh_private_themes_are_bounded_by_current_items", tray_refresh_private_themes_are_bounded_by_current_items),
+        ("tray_private_icon_dirs_share_one_theme_and_only_when_nested", tray_private_icon_dirs_share_one_theme_and_only_when_nested),
         ("always_tray_routing_all_layouts_and_return_to_normal_tray", always_tray_routing_all_layouts_and_return_to_normal_tray),
         ("always_tray_late_pixmap_item_fits_before_always_tray", always_tray_late_pixmap_item_fits_before_always_tray),
         ("always_tray_native_tooltips", always_tray_native_tooltips),

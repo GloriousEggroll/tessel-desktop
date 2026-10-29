@@ -48,7 +48,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, Gtk
 app = Gtk.Application(application_id=sys.argv[1], flags=Gio.ApplicationFlags.NON_UNIQUE)
 def activate(app):
-    for n in range(2):
+    for n in range(int(sys.argv[2])):
         w = Gtk.ApplicationWindow(application=app, title="%s window %d" % (sys.argv[1], n))
         w.set_default_size(900, 600)
         w.set_child(Gtk.Label(label=w.get_title()))
@@ -56,7 +56,8 @@ def activate(app):
 app.connect("activate", activate)
 app.run([])
 """
-APP_IDS = ["org.mozilla.firefox", "org.gnome.Nautilus", "com.mitchellh.ghostty", "org.gnome.TextEditor"]
+APP_IDS = ["org.mozilla.firefox", "org.gnome.Nautilus", "com.mitchellh.ghostty", "org.gnome.TextEditor",
+           "org.gnome.Ptyxis", "org.gnome.Meld", "org.gnome.Calculator", "org.gnome.Settings"][:int(os.environ.get("ACTIVITY_APPS", "4"))]
 
 
 def activity(impl, env, procs):
@@ -65,7 +66,7 @@ def activity(impl, env, procs):
     apps = []
     try:
         for app_id in APP_IDS:
-            apps.append(subprocess.Popen([sys.executable, "-c", FAKE_APP, app_id], env=env,
+            apps.append(subprocess.Popen([sys.executable, "-c", FAKE_APP, app_id, os.environ.get("ACTIVITY_WINDOWS", "2")], env=env,
                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
         time.sleep(4)
         for _ in range(2):
@@ -76,7 +77,9 @@ def activity(impl, env, procs):
         time.sleep(float(os.environ.get("ACTIVITY_IDLE", "10")))
         out = {}
         for comp, p in procs.items():
-            if p.poll() is None:
+            if p.poll() is not None:
+                out[comp] = {"error": "exited %s" % p.returncode}
+            else:
                 r = rollup(p.pid)
                 out[comp] = {k: r.get(k) for k in ("Rss", "Pss", "Pss_Anon")}
                 out[comp]["top"] = top_mappings(p.pid, 3)
@@ -107,12 +110,18 @@ def run(impl):
         k, v = item.split("=", 1)
         env[k] = v
     procs = {}
+    procs_extra = []
     try:
         for comp in ("wayshell", "waydock"):
             wrap = os.environ.get("WRAP_%s_%s" % (impl.upper(), comp.upper()), "").split()
             procs[comp] = subprocess.Popen(wrap + ARGV[impl][comp], env=env, start_new_session=True,
                                            stdout=open(ROOT / f"{impl}-{comp}.log", "w"), stderr=subprocess.STDOUT)
             time.sleep(2)
+        tray = int(os.environ.get("TRAY_ITEMS", "0") or 0)
+        if tray:
+            procs_extra.append(subprocess.Popen([sys.executable, str(Path(__file__).with_name("fake_sni.py")),
+                                                 str(home / "tray"), str(tray)], env=env,
+                                                stdout=open(ROOT / f"{impl}-tray.log", "w"), stderr=subprocess.STDOUT))
         time.sleep(IDLE)
         result = {"impl": impl}
         for comp, p in procs.items():
@@ -130,6 +139,9 @@ def run(impl):
             subprocess.run(["grim", "-o", "HEADLESS-1", str(ROOT / f"{impl}-shot1.png")], timeout=20)
         print(json.dumps(result), flush=True)
     finally:
+        for p in procs_extra:
+            p.terminate()
+            p.wait(timeout=10)
         for p in procs.values():
             if p.poll() is None:
                 p.send_signal(signal.SIGTERM)

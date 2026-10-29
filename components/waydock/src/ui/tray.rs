@@ -193,7 +193,9 @@ struct TrayInner {
     closed: Cell<bool>,
     theme: gtk::IconTheme,
     theme_serial: Cell<u64>,
-    custom_themes: RefCell<HashMap<String, gtk::IconTheme>>,
+    /// Private `IconThemePath`s of current items; a full theme is only built
+    /// (and shared between views) when the directory has themed copies.
+    custom_themes: RefCell<HashMap<String, Option<gtk::IconTheme>>>,
     theme_handler: RefCell<Option<glib::SignalHandlerId>>,
     subscription: Cell<Option<u64>>,
     pixbuf_calls: Cell<u64>,
@@ -253,6 +255,10 @@ impl StatusTray {
         paths.sort();
         paths
     }
+    /// The full private icon theme built for `path`, if one was needed.
+    pub fn custom_theme(&self, path: &str) -> Option<gtk::IconTheme> {
+        self.0.custom_themes.borrow().get(path).cloned().flatten()
+    }
     /// How often icons were resolved/decoded (`_pixbuf` calls).
     pub fn pixbuf_calls(&self) -> u64 { self.0.pixbuf_calls.get() }
     /// Replace the `menu_state(active)` callback.
@@ -283,41 +289,59 @@ impl StatusTray {
         self.refresh();
     }
 
-    fn theme_for(&self, item: &TrayItem) -> gtk::IconTheme {
-        let Some(path) = item.string("IconThemePath").filter(|path| !path.is_empty() && Path::new(path).is_dir()) else {
-            return self.0.theme.clone();
+    /// The icon file `Gtk.IconTheme(theme name, [IconThemePath] + search path)`
+    /// would resolve `name` to (`_pixbuf`'s private theme). A private theme
+    /// costs a full icon-theme index (~13 MB for Papirus) per directory, so it
+    /// is only built when the directory holds a copy of the icon below its top
+    /// level; otherwise the result is derived from the display theme: themed
+    /// icons win, then unthemed top-level files in search-path order.
+    fn resolve_icon(&self, item: &TrayItem, name: &str, size: i32) -> Option<std::path::PathBuf> {
+        let lookup = |theme: &gtk::IconTheme| {
+            theme.lookup_icon(name, &[], size, 1, gtk::TextDirection::Ltr, gtk::IconLookupFlags::empty())
+                .file().and_then(|file| file.path())
         };
-        if let Some(theme) = self.0.custom_themes.borrow().get(&path) {
-            return theme.clone();
+        let Some(path) = item.string("IconThemePath").filter(|path| !path.is_empty() && Path::new(path).is_dir()) else {
+            return lookup(&self.0.theme);
+        };
+        match private_icon_layout(Path::new(&path), name) {
+            PrivateIcons::Nested => {
+                let existing = self.0.custom_themes.borrow().get(&path).cloned().flatten();
+                let theme = existing.unwrap_or_else(|| shared_private_theme(&self.0.theme, &path));
+                self.0.custom_themes.borrow_mut().insert(path, Some(theme.clone()));
+                lookup(&theme)
+            }
+            PrivateIcons::None => {
+                self.0.custom_themes.borrow_mut().entry(path).or_insert(None);
+                lookup(&self.0.theme)
+            }
+            PrivateIcons::TopLevel(file) => {
+                self.0.custom_themes.borrow_mut().entry(path).or_insert(None);
+                // A miss yields the theme's image-missing icon, which the private
+                // theme would not return here: only real hits count.
+                let main = self.0.theme.has_icon(name).then(|| lookup(&self.0.theme)).flatten();
+                let roots = self.0.theme.search_path();
+                match main {
+                    // A themed hit (below a theme directory) beats unthemed files.
+                    Some(found) if !found.parent().is_some_and(|parent| roots.iter().any(|root| root == parent)) => Some(found),
+                    // Unthemed: the private directory comes first in the search path.
+                    _ => Some(file),
+                }
+            }
         }
-        let theme = gtk::IconTheme::new();
-        if let Some(name) = gtk::Settings::default().and_then(|settings| settings.gtk_icon_theme_name()) {
-            theme.set_theme_name(Some(&name));
-        }
-        let mut search = vec![std::path::PathBuf::from(&path)];
-        search.extend(self.0.theme.search_path());
-        let refs: Vec<&Path> = search.iter().map(|p| p.as_path()).collect();
-        theme.set_search_path(&refs);
-        self.0.custom_themes.borrow_mut().insert(path, theme.clone());
-        theme
     }
 
     /// `_pixbuf(properties, prefix, size)`.
     fn pixbuf(&self, item: &TrayItem, prefix: &str, size: i32) -> Option<gdk_pixbuf::Pixbuf> {
         self.0.pixbuf_calls.set(self.0.pixbuf_calls.get() + 1);
         let name = item.string(&format!("{prefix}Name"));
-        let theme = self.theme_for(item);
         if let Some(name) = name.filter(|name| !name.is_empty()) {
             if Path::new(&name).is_absolute() {
                 if let Ok(pixbuf) = gdk_pixbuf::Pixbuf::from_file_at_scale(&name, size, size, true) {
                     return Some(pixbuf);
                 }
-            } else {
-                let paintable = theme.lookup_icon(&name, &[], size, 1, gtk::TextDirection::Ltr, gtk::IconLookupFlags::empty());
-                if let Some(path) = paintable.file().and_then(|file| file.path()) {
-                    if let Ok(pixbuf) = gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true) {
-                        return Some(pixbuf);
-                    }
+            } else if let Some(path) = self.resolve_icon(item, &name, size) {
+                if let Ok(pixbuf) = gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true) {
+                    return Some(pixbuf);
                 }
             }
         }
@@ -880,4 +904,79 @@ impl TrayExpander {
         self.0.closed.set(true);
         self.remove_backdrops();
     }
+}
+
+/// Where a private `IconThemePath` provides `name`.
+enum PrivateIcons {
+    /// Not at all: the private theme would resolve exactly like the display theme.
+    None,
+    /// Only as an unthemed top-level file (svg, png, symbolic png: GTK's order).
+    TopLevel(std::path::PathBuf),
+    /// Below a subdirectory (a themed copy), or the directory is too large to tell.
+    Nested,
+}
+
+fn private_icon_layout(root: &Path, name: &str) -> PrivateIcons {
+    const MAX_ENTRIES: usize = 20_000;
+    let files = [format!("{name}.svg"), format!("{name}.png"), format!("{name}.symbolic.png")];
+    let mut top = None;
+    for file in &files {
+        let candidate = root.join(file);
+        if top.is_none() && candidate.is_file() {
+            top = Some(candidate);
+        }
+    }
+    let mut pending: Vec<(std::path::PathBuf, usize)> = vec![(root.to_path_buf(), 0)];
+    let mut seen = 0usize;
+    while let Some((dir, depth)) = pending.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+        for entry in entries.flatten() {
+            seen += 1;
+            if seen > MAX_ENTRIES {
+                return PrivateIcons::Nested;
+            }
+            let Ok(kind) = entry.file_type() else { continue };
+            let is_dir = kind.is_dir() || (kind.is_symlink() && entry.path().is_dir());
+            if is_dir {
+                if depth < 6 {
+                    pending.push((entry.path(), depth + 1));
+                }
+            } else if depth > 0 && files.iter().any(|file| entry.file_name() == file.as_str()) {
+                return PrivateIcons::Nested;
+            }
+        }
+    }
+    top.map_or(PrivateIcons::None, PrivateIcons::TopLevel)
+}
+
+thread_local! {
+    /// Private themes shared by every tray view (one per output), keyed by
+    /// directory, theme name and the display theme's search path.
+    static PRIVATE_THEMES: RefCell<HashMap<(String, Option<String>, Vec<std::path::PathBuf>), glib::WeakRef<gtk::IconTheme>>> =
+        RefCell::new(HashMap::new());
+}
+
+/// `Gtk.IconTheme.new()` with the settings' theme name and `[path] + search path`.
+fn shared_private_theme(display_theme: &gtk::IconTheme, path: &str) -> gtk::IconTheme {
+    let name = gtk::Settings::default().and_then(|settings| settings.gtk_icon_theme_name()).map(|n| n.to_string());
+    let mut search = vec![std::path::PathBuf::from(path)];
+    search.extend(display_theme.search_path());
+    let key = (path.to_owned(), name.clone(), search.clone());
+    PRIVATE_THEMES.with(|themes| {
+        let mut themes = themes.borrow_mut();
+        themes.retain(|_, weak| weak.upgrade().is_some());
+        if let Some(theme) = themes.get(&key).and_then(|weak| weak.upgrade()) {
+            return theme;
+        }
+        let theme = gtk::IconTheme::new();
+        if let Some(name) = &name {
+            theme.set_theme_name(Some(name));
+        }
+        let refs: Vec<&Path> = search.iter().map(|p| p.as_path()).collect();
+        theme.set_search_path(&refs);
+        let weak = glib::WeakRef::new();
+        weak.set(Some(&theme));
+        themes.insert(key, weak);
+        theme
+    })
 }

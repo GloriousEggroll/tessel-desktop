@@ -65,6 +65,8 @@ pub const TITLES: [(&str, &str); 16] = [
 
 /// Text indicators keep their label; every other status uses a themed icon.
 pub const TEXT_INDICATORS: [&str; 2] = ["capslock", "weather"];
+/// How long the bar's "More apps" section stays expanded after the pointer leaves.
+const APPS_COLLAPSE_DELAY_MS: u32 = 5000;
 
 /// `DEFAULTS.get(name, "")`.
 pub fn default_glyph(name: &str) -> &'static str {
@@ -680,7 +682,7 @@ impl DockIndicators {
             return;
         }
         let weak = self.weak();
-        let source = timer::once(350, move || {
+        let source = timer::once(APPS_COLLAPSE_DELAY_MS, move || {
             if let Some(panel) = Self::upgrade(&weak) {
                 panel.0.apps_hide.replace(None);
                 panel.collapse_apps();
