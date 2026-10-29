@@ -69,7 +69,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
 | 3 | wayshell | 4077 | ported (+prompt, capture-picker, theme); install.py entries ready (wayshell, wayshell-prompt, wayshell-capture-picker), not swapped (swap with user present) |
 | 3 | waydock | 14739 | ported, tests + 0 px screenshot parity; install.py entry ready, not swapped (swap with user present) |
-| 4 | calculator | 998 | in progress |
+| 4 | calculator | 998 | ported (Python-decimal-compatible engine), 24 unit + 9 headless pass, not swapped |
 | 4 | text-editor | 1637 | ported (sourceview5 via .cargo/config.toml soname link), 31 unit + 21 headless pass, not swapped |
 | 4 | picture-viewer | 2333 | in progress |
 | 4 | system-monitor | 1519 | ported (/proc+/sys instead of psutil), 28 unit + 15 headless pass, not swapped |

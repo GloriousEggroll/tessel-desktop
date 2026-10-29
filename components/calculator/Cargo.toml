@@ -1,0 +1,32 @@
+[package]
+name = "calculator"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Calculator (org.waydock.Calculator): standard and scientific GTK4 calculator with a bounded 28-digit decimal parser, history and memory."
+
+[lib]
+name = "calculator"
+path = "src/lib.rs"
+
+[[bin]]
+name = "calculator"
+path = "src/main.rs"
+
+[dependencies]
+suite-core.workspace = true
+suite-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+libc.workspace = true
+num-bigint = "0.4"
+num-integer = "0.1"
+num-traits = "0.2"
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false
