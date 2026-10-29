@@ -1,4 +1,4 @@
-# Foundation crates: `suite-core`, `suite-gtk` and `suite-power`
+# Foundation crates: `suite-core`, `suite-gtk`, `suite-power` and `suite-wayland`
 
 Rust ports of `~/btmanager/shared` (plus Waydock's palette theme, and the
 power backend shared by power-manager and battery-manager). Behaviour,
@@ -12,6 +12,7 @@ suite-gtk.workspace = true          # GUI components only
 gtk.workspace = true                # = gtk4 0.11, feature v4_22 (system GTK 4.22)
 gtk4-layer-shell.workspace = true   # if you use layer shell directly
 suite-power = { workspace = true, features = ["gtk"] }   # power/battery components only
+suite-wayland = { workspace = true, features = ["glib"] } # + "gtk" for GTK-display use / textures
 ```
 
 `gio` is built with feature `v2_80` workspace-wide. Unix signal/fd sources come
@@ -278,11 +279,12 @@ libadwaita colours), `parse_hex`, `ROUNDED_CONTROLS`.
 Tokens: pt fonts, 12 px surfaces / 8 px controls, white knobs, accent HLS
 saturation ≥ 0.45 with ≥ 4.5:1 contrast, blue fallback for colourless input.
 
-### `blur` (background_blur.py; C bridge compiled in by build.rs)
+### `blur` (background_blur.py) = re-export of `suite_wayland::blur`
 `attach(&widget, target_class, include_root, include_popovers) -> BlurBinding`,
 `.configure(enabled, strength 0..100, rounded, target, include_root)`,
-`.refresh()`, `.surface_count()`, `.geometry(i)`, `.close()`. Needs
-`wayland-scanner` + gtk4/wayland-client dev files at build time only.
+`.refresh()`, `.surface_count()`, `.geometry(i)`, `.close()`. The former C
+bridge (native/background_blur.c) is gone; there is one implementation, in
+suite-wayland (see below). suite-gtk's build.rs now only fixes the link order.
 
 ---
 
@@ -327,12 +329,139 @@ Without the `gtk` feature it links only GLib/GIO (status-stream binaries).
 
 ---
 
+## suite-wayland (waydock toplevel_helper.c / workspace_helper.c, wayshell overview_capture.c, shared/background_blur.c)
+
+wayland-client 0.31 on the **system backend** (libwayland-client), so the same
+code can run on its own connection or on GTK's `wl_display`. Protocols come from
+wayland-protocols / wayland-protocols-wlr (XMLs identical to ~/btmanager's
+vendored copies); the private `waydock_blur_manager_v1` is generated with
+wayland-scanner from `protocols/waydock-blur-v1.xml`. Features: `glib`
+(default, GSource), `capture-png` (default, cairo PNG thumbnails for
+`wayshell-overview`), `gtk` (gdk4-wayland: blur, GTK-display clients, textures).
+Build needs wayland-client (and cairo for `capture-png`) dev files.
+
+### `model` — pure state, unit-testable with mocked events
+`Model` holds outputs, foreign-toplevel windows, workspace groups/workspaces and
+ext-foreign-toplevel handles, fed by methods named after the protocol events
+(`output_added/geometry/mode/scale/name/description/done`, `logical_position/size/done`,
+`output_removed`, `toplevel_new/title/app_id/output_enter/leave/state/parent/done/closed`,
+`group_new/…`, `workspace_new/stable_id/name/coordinates/state/capabilities/removed`,
+`workspaces_done`, `publish_workspaces`, `listed_new/title/app_id/identifier/done/closed/forget`).
+Ordering is the C helpers': windows/outputs/membership newest first, workspaces
+and groups oldest first; one id counter for windows, one shared by groups and
+workspaces (`u64`, never reused within a connection).
+- Queries: `outputs()`, `output(global)`, `output_by_name(name)`, `Output::geometry()`
+  (xdg-output logical size, else pixels/scale with 90°/270° swap), `windows()`
+  (published only), `all_windows()`, `window(id)`, `window_outputs(&w)`,
+  `workspaces()`, `workspace(id)`, `groups()`, `group_outputs(&g)`,
+  `workspace_outputs(&ws)`, `listed()`, `listed_toplevel(key)`.
+  `Window {id, app_id, title, activated, fullscreen, minimized, maximized, parent (0 = none), outputs, published}`,
+  `Workspace {id, stable_id, name, state, capabilities, coordinates, group}` + `active()/urgent()/hidden()/can_activate()`.
+- `take_events() -> Vec<model::Event>`: `Output(global)` (then a `Window` per
+  published window), `OutputRemoved`, `Window(id)`, `WindowClosed(id)`,
+  `Workspaces` (atomic, after manager `done`), `Listed(key)`, `ListedClosed(key)`,
+  `Error {message, fatal}`.
+- `render = Some(Render::Toplevel | Render::Workspaces)` renders helper JSON lines
+  at event time (`take_lines()`); `window_json`, `output_json`, `workspaces_json`,
+  `error_json`, `json_string` reproduce the C byte format (only `"`/`\` escaped,
+  < 0x20 as `\u00XX`, strings cut at 16384 bytes).
+
+### `client` — protocol glue
+- `Client::connect(Protocols) -> Result<Client, ConnectError>` (`connect()` follows
+  `wl_display_connect(NULL)`: `WAYLAND_SOCKET`, else `WAYLAND_DISPLAY` default
+  `wayland-0` under `XDG_RUNTIME_DIR`), `Client::new(Connection, Protocols)` (own
+  event queue on any connection), `Client::for_gdk_display(&gdk::Display, …)` (`gtk`).
+  `Protocols::{TOPLEVELS, WORKSPACES, CAPTURE, OUTPUTS, ALL}` or a struct literal
+  (`toplevels` = wlr manager ≤ v3 + wl_seat ≤ v7; `workspaces` = ext-workspace v1;
+  `xdg_output` ≤ v3; `capture` = wl_shm + ext list + copy-capture + both source managers;
+  wl_output ≤ v4 is bound whenever any is set).
+- Blocking drive (helpers, tests): `roundtrip()`, `dispatch_pending()`,
+  `read_and_dispatch()`, `wait(Option<Duration>)`, `wait_until(timeout, pred)`,
+  `flush()`, `fd()`, `take_events() -> Vec<Event>` with
+  `Event::{Changed(model::Event), Captured(CaptureId, Result<Frame, CaptureError>), Disconnected(String)}`.
+- `Client` derefs to `State`: `model`, `has_toplevels/has_seat/toplevel_version/has_workspaces/has_xdg_output`,
+  `can_capture_toplevels/outputs`, `wl_output(global)`.
+  Windows: `activate(id)` (unminimizes first; needs a seat), `set_minimized(id, bool)`,
+  `set_maximized(id, bool)`, `set_fullscreen(id, bool, Option<output name>)` (v2+),
+  `close(id)`, `set_rectangle(id, &WlSurface, x, y, w, h)` (surface must be on the
+  same connection: use a GTK-display client + `gtk::gtk_wl_surface`).
+  Workspaces (each followed by `commit`): `activate_workspace(id)` (only
+  activatable, non-hidden), `deactivate_workspace`, `remove_workspace`,
+  `assign_workspace(id, group)`, `create_workspace(group, name)`.
+  Errors are `ActionError` whose `Display` is the helpers' English text
+  ("That window is no longer available.", …) — translate with `tr!` in UIs.
+- Capture: `listed_for_window(window id) -> Option<HandleKey>` (unique
+  app_id + title match, the overview's identity rule), `capture_listed(key, paint_cursors)`,
+  `capture_output(name, paint_cursors)` → `CaptureId`; one shm buffer per
+  capture (ARGB8888 preferred over XRGB8888, `prefer_format`; ≤ 16384², ≤ 32 Mpx),
+  result `Frame {width, height, stride, format, transform, data}` (copied out,
+  little-endian BGRA), `Frame::to_texture()` (`gtk`), `cancel_capture(id)`,
+  `capture_pending(id)`. `keep_closed_listed` / `listed_limit` tune the handle list.
+
+### `source::GlibClient` — GLib main loop
+`GlibClient::attach(client, Option<&MainContext>, |&GlibClient, Event| …)`;
+`with(|c| c.activate(id))` (runs + flushes), `borrow()`, `borrow_mut()`,
+`set_handler`, `close()`. A custom GSource on the display fd: prepare flushes and
+dispatches already-queued events into the model (registering a waker that wakes
+the context when another reader routes events to us), dispatch reads the socket
+non-blocking and then calls the handler per event **with no borrow held**.
+Reading only in the dispatch phase makes sharing GTK's display deadlock-free
+(GDK prepares/reads within prepare→check).
+
+### `gtk` (feature `gtk`)
+`gdk_connection(&gdk::Display) -> Option<Connection>` (gdk4-wayland's cached
+connection on GTK's wl_display), `gtk_wl_surface(&impl IsA<Native>) -> Option<WlSurface>`,
+`Client::for_gdk_display`, `Frame::to_texture`.
+
+### `blur` (feature `gtk`; re-exported as `suite_gtk::blur`)
+Rust port of background_blur.c/.py with the same API (see suite-gtk above).
+Per GdkDisplay it binds `ext_background_effect_manager_v1` v1 and
+`waydock_blur_manager_v1` v1 on a private queue of GTK's connection; per mapped
+native (root via `target_class`/whole window, popovers via their `contents`) it
+creates one effect object (one owner per wl_surface, data key
+`waydock-background-blur-owner`), a rounded region (`rounded_region_rects`) and
+radius `round(strength·0.4)`; never commits — `queue_render()` lets GTK's next
+frame carry it. `compositor_supports_blur(&display)`, `compositor_supports_radius`.
+
+### Helper-compat binaries (`compat`, `src/bin/`)
+Byte-for-byte drop-ins for the C helpers (verified against them in the headless
+test): `waydock-toplevel [--snapshot]` and the identical `wayshell-toplevel`
+(events `ready/output/output-removed/window/closed/error`; stdin
+`activate|minimize|unminimize|close <id>\n`, sscanf rules, 4096-byte lines),
+`waydock-workspaces [--snapshot]` (`state`, `ready`, `unsupported`, `error`; stdin
+strict `activate <id>\n`, 128-byte lines, NUL rejected), `wayshell-overview [connector]`
+(`desktop` frame, `identities`, `window` frames; cairo-bilinear PNG ≤ 640×400 /
+1600×1000, base64; 1.2 s per frame, 10 s total). Same exit codes. Install them
+where the C builds went (installer step, not done here):
+`~/.local/share/waydock/{waydock-toplevel,waydock-workspaces}`,
+`~/.local/share/wayshell/{wayshell-toplevel,wayshell-overview}`,
+`~/.config/waybar/scripts/{notification-manager,on-screen-keyboard}/waydock-toplevel`.
+Consumers unchanged: waydock window_backend.py/workspace_backend.py, wayshell
+switcher/overview.py/capture_output.py/capture_icons.py (`--snapshot`), Rust
+notification-manager (read-only) and session-manager (`close N`).
+
+### labwc notes
+labwc 0.20.2 offers everything above. Its pixman renderer offers only XRGB8888
+for captures (so headless never exercises the ARGB path), and after a window
+leaves fullscreen its toplevel capture keeps the output's size (the C helper
+sees the same).
+
+---
+
 ## Tests
 `cargo test` (suite-power: test_power_backend / test_power_charge_limits for both
 modes; suite-core: unit tests ported from test_suite_i18n / test_clock_preferences /
 test_service_settings (private `gio::TestDBus`) / test_color_palette /
 test_companion_theme / test_gtk4_utils icon fallbacks; byte-for-byte parity of
 generated CSS/SVG with Python in `suite-gtk/tests/python_parity.rs`).
+suite-wayland: `tests/model.rs` (mocked-event state tracking, JSON bytes,
+request parsing, PNG thumbnails) under plain `cargo test`;
+`crates/suite-wayland/tests/run_headless.sh` builds the original C helpers from
+~/btmanager into `$TMPDIR/c-helpers` and runs `tests/headless.rs` in a private
+labwc (`tests/headless.sh <cmd>` runs any command there, 3 desktops): GTK
+windows observed/activated/minimized/maximized/fullscreened/closed, toplevel and
+output capture, workspaces, GTK-display client + `set_rectangle`, blur, and C vs
+Rust helper output parity.
 Widget checks (popup, anchors, app menu, live theme, OSD, CSS parsing):
 `crates/suite-gtk/tests/run_headless.sh` — private nested headless labwc per
 `tools/headless.md`; under plain `cargo test` that binary skips itself.

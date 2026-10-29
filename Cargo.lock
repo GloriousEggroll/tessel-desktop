@@ -1627,7 +1627,6 @@ dependencies = [
 name = "suite-gtk"
 version = "0.1.0"
 dependencies = [
- "cc",
  "gio",
  "glib",
  "gtk4",
@@ -1636,6 +1635,7 @@ dependencies = [
  "regex",
  "serde_json",
  "suite-core",
+ "suite-wayland",
 ]
 
 [[package]]

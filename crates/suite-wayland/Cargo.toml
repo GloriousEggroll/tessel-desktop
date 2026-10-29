@@ -1,0 +1,40 @@
+[package]
+name = "suite-wayland"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Wayland protocol layer of the desktop suite (foreign toplevels, workspaces, outputs, capture, blur)."
+
+[features]
+default = ["glib", "capture-png"]
+# GSource integration with the GLib main loop.
+glib = ["dep:glib"]
+# Compositor blur and protocol use on GTK's own wl_display (gdk4-wayland).
+gtk = ["glib", "dep:gtk", "dep:gdk-wayland"]
+# PNG thumbnails (cairo) for the wayshell-overview helper.
+capture-png = ["dep:cairo-rs"]
+
+[dependencies]
+wayland-client = "0.31"
+wayland-backend = { version = "0.3", features = ["client_system"] }
+wayland-protocols = { version = "0.32", features = ["client", "staging", "unstable"] }
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+wayland-scanner = "0.31"
+libc.workspace = true
+glib = { workspace = true, optional = true }
+gtk = { workspace = true, optional = true }
+gdk-wayland = { package = "gdk4-wayland", version = "0.11", features = ["wayland_crate"], optional = true }
+cairo-rs = { version = "0.22", features = ["png"], optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true
+libc.workspace = true
+
+[[bin]]
+name = "wayshell-overview"
+required-features = ["capture-png"]
+
+[[test]]
+name = "headless"
+harness = false
+required-features = ["gtk"]

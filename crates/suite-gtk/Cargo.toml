@@ -5,10 +5,11 @@ edition.workspace = true
 license.workspace = true
 description = "Shared GTK4 helpers of the desktop suite: widgets, popups, palette theme."
 build = "build.rs"
-links = "waydock-background-blur"
 
 [dependencies]
 suite-core.workspace = true
+# Compositor blur (ext-background-effect + waydock_blur_manager_v1) on GTK's wl_display.
+suite-wayland = { workspace = true, features = ["gtk"] }
 glib.workspace = true
 gio.workspace = true
 gtk.workspace = true
@@ -17,8 +18,6 @@ serde_json.workspace = true
 regex.workspace = true
 libc.workspace = true
 
-[build-dependencies]
-cc.workspace = true
 
 [[test]]
 name = "gtk_ui"

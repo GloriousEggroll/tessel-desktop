@@ -19,6 +19,7 @@ panic = "abort"
 suite-core = { path = "crates/suite-core" }
 suite-gtk = { path = "crates/suite-gtk" }
 suite-power = { path = "crates/suite-power" }
+suite-wayland = { path = "crates/suite-wayland", default-features = false }
 glib = "0.22"
 # v2_80: DBusConnection::connect_closed and friends (system GLib is newer).
 gio = { version = "0.22", features = ["v2_80"] }
