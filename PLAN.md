@@ -62,7 +62,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 1 | on-screen-keyboard | 1068 | ported, tests pass, not swapped |
 | 1 | audio-manager (loopback service first) | 4046 | ported, tests pass, not swapped |
 | 2 | brightness-manager | 3797 | ported, tests pass, not swapped |
-| 2 | network-manager (netman) | 6934 | porting |
+| 2 | network-manager (netman) | 6934 | ported, not swapped (gaps: structured-list editing, AP cipher/modem checks) |
 | 2 | authentication-manager (polkitman) | 663 | ported, tests pass, not swapped (swap with user present) |
 | 2 | calendar / weather / media / discovery / tiling / session-manager | ~8.7k | ported except session-manager; not swapped |
 | 2 | way-displays, language-manager, session-startup (+ session-manager) | ~3.7k | ported, not swapped |
