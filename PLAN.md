@@ -66,7 +66,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | authentication-manager (polkitman) | 663 | ported, tests pass, not swapped (swap with user present) |
 | 2 | calendar / weather / media / discovery / tiling / session-manager | ~8.7k | ported except session-manager; not swapped |
 | 2 | way-displays, language-manager, session-startup (+ session-manager) | ~3.7k | ported, not swapped |
-| 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | porting |
+| 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
 | 3 | wayshell | 4077 | |
 | 3 | waydock | 14739 | |
 | 4 | apps: calculator, text-editor, picture-viewer, system-monitor, hdr-calibration, capture-manager, file-manager | ~19k | |

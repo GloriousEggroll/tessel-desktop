@@ -1,0 +1,34 @@
+[package]
+name = "bluetooth-manager"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "btmanager: GTK4 Bluetooth device manager, tray popup and OBEX file transfers (Rust port of btmanager.py, btpopup.py, bttransfer.py)."
+
+[lib]
+name = "bluetooth_manager"
+path = "src/lib.rs"
+
+[[bin]]
+name = "btmanager"
+path = "src/main.rs"
+
+[dependencies]
+suite-core.workspace = true
+suite-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+gtk4-layer-shell.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+regex.workspace = true
+
+[[test]]
+name = "private_bus"
+path = "tests/private_bus.rs"
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false
