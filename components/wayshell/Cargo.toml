@@ -1,0 +1,50 @@
+[package]
+name = "wayshell"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Desktop daemon: per-monitor wallpaper + icons, Alt+Tab switcher, Activities overview, wayshell.sock CLI."
+
+[lib]
+name = "wayshell"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wayshell"
+path = "src/main.rs"
+
+[[bin]]
+name = "wayshell-cli"
+path = "src/bin/wayshell-cli.rs"
+
+[features]
+# Development gates so parallel work on the desktop and file operations
+# cannot break the switcher build. Both are on by default in the product.
+default = ["desktop", "fileops", "theme"]
+theme = ["dep:wayshell-theme"]
+fileops = []
+desktop = ["fileops"]
+
+[dependencies]
+suite-core.workspace = true
+suite-gtk.workspace = true
+suite-wayland = { workspace = true, features = ["glib", "gtk"] }
+wayshell-theme = { path = "../wayshell-theme", optional = true }
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+gtk4-layer-shell.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+gio-unix = "0.22"
+regex.workspace = true
+
+[[test]]
+name = "switcher_native"
+path = "tests/switcher_native.rs"
+harness = false
+
+[[test]]
+name = "switcher_ui"
+path = "tests/switcher_ui.rs"
+harness = false
