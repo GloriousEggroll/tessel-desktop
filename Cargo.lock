@@ -100,6 +100,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bluetooth-manager"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
+
+[[package]]
 name = "brightness-manager"
 version = "0.1.0"
 dependencies = [
@@ -977,6 +992,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
+name = "language-manager"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1073,6 +1102,20 @@ dependencies = [
  "gtk4",
  "libc",
  "regex",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
+
+[[package]]
+name = "network-manager"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
  "serde_json",
  "suite-core",
  "suite-gtk",
@@ -1295,6 +1338,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "roxmltree"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c20b6793b5c2fa6553b250154b78d6d0db37e72700ae35fad9387a46f487c97"
+
+[[package]]
+name = "roxmltree"
+version = "0.21.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9da7f59328b09405b181fee1018925fad50f157afb43c0c0f5c522c256dd5907"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1417,6 +1475,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c"
 dependencies = [
  "serde_core",
+]
+
+[[package]]
+name = "session-manager"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
+
+[[package]]
+name = "session-startup"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "libc",
+ "regex",
+ "roxmltree 0.21.2",
+ "suite-core",
 ]
 
 [[package]]
@@ -1740,6 +1824,23 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "way-displays"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "roxmltree 0.20.0",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+ "yaml-rust2",
+]
 
 [[package]]
 name = "weather-manager"

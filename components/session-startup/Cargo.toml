@@ -1,0 +1,30 @@
+[package]
+name = "session-startup"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "labwc session generators (configure_session, configure_xdg_autostart) and the desktop-suite-failed crash notifier."
+
+[lib]
+name = "session_startup"
+path = "src/lib.rs"
+
+[[bin]]
+name = "configure-session"
+path = "src/bin/configure-session.rs"
+
+[[bin]]
+name = "configure-xdg-autostart"
+path = "src/bin/configure-xdg-autostart.rs"
+
+[[bin]]
+name = "desktop-suite-failed"
+path = "src/bin/desktop-suite-failed.rs"
+
+[dependencies]
+suite-core.workspace = true
+glib.workspace = true
+gio.workspace = true
+regex.workspace = true
+libc.workspace = true
+roxmltree = "0.21"
