@@ -579,6 +579,117 @@ fn custom_group_positions_and_hidden_utilities() -> Result<(), String> {
     Ok(())
 }
 
+/// Decodes a grim PPM frame into (width, height, rgb bytes).
+fn ppm(data: &[u8]) -> Option<(usize, usize, &[u8])> {
+    let mut fields = Vec::new();
+    let mut start = 0;
+    let mut index = 0;
+    while fields.len() < 4 && index < data.len() {
+        if data[index].is_ascii_whitespace() {
+            if index > start {
+                fields.push(std::str::from_utf8(&data[start..index]).ok()?.to_owned());
+            }
+            start = index + 1;
+        }
+        index += 1;
+    }
+    let (width, height): (usize, usize) = (fields.get(1)?.parse().ok()?, fields.get(2)?.parse().ok()?);
+    let pixels = data.get(start..start + width * height * 3)?;
+    Some((width, height, pixels))
+}
+
+/// Lines across `region` (columns when `horizontal`, else rows) that hold
+/// anything but the strip's background colour, as (count, first, last).
+fn content_lines(region: &str, horizontal: bool) -> Result<(usize, usize, usize), String> {
+    let data = frame(region);
+    let (width, height, pixels) = ppm(&data).ok_or_else(|| format!("no frame for {region}"))?;
+    let at = |x: usize, y: usize| { let i = (y * width + x) * 3; [pixels[i], pixels[i + 1], pixels[i + 2]] };
+    // The background is the colour of the strip's first line.
+    let background = at(0, 0);
+    let differs = |p: [u8; 3]| p.iter().zip(background).any(|(a, b)| a.abs_diff(b) > 40);
+    let (lines, across) = if horizontal { (width, height) } else { (height, width) };
+    let hits: Vec<usize> = (0..lines).filter(|&line| (0..across).any(|other| {
+        differs(if horizontal { at(line, other) } else { at(other, line) })
+    })).collect();
+    Ok((hits.len(), hits.first().copied().unwrap_or(0), hits.last().copied().unwrap_or(0)))
+}
+
+/// The real-config regression (center section empty while start/end render):
+/// every custom `group_layouts` path must map its center groups with a real
+/// size at the monitor midpoint: bar on horizontal and vertical edges, dock
+/// mode and a separate (expanded, vertical) app dock with a custom layout.
+fn custom_layout_center_groups_render() -> Result<(), String> {
+    let bar = serde_json::json!({"start": ["weather", "workspaces", "focused_title"],
+                                 "center": ["app_menu", "activities", "pinned", "running", "files"],
+                                 "end": ["media", "system_tray", "service_apps", "clock", "session"]});
+    let center_only = serde_json::json!({"start": ["clock"], "center": ["app_menu", "pinned", "running", "files"], "end": ["session"]});
+    let cases = [
+        ("bottom-bar", serde_json::json!({"mode": "bar", "edge": "bottom", "monitor": "HEADLESS-1", "group_layouts": {"bar": bar}})),
+        ("top-bar", serde_json::json!({"mode": "bar", "edge": "top", "monitor": "HEADLESS-1", "group_layouts": {"bar": bar}})),
+        ("left-bar", serde_json::json!({"mode": "bar", "edge": "left", "monitor": "HEADLESS-1", "group_layouts": {"bar": bar}})),
+        ("right-bar", serde_json::json!({"mode": "bar", "edge": "right", "monitor": "HEADLESS-1", "group_layouts": {"bar": bar}})),
+        ("bottom-dock", serde_json::json!({"mode": "dock", "edge": "bottom", "monitor": "HEADLESS-1", "group_layouts": {"dock": center_only}})),
+        ("left-dock", serde_json::json!({"mode": "dock", "edge": "left", "monitor": "HEADLESS-1", "group_layouts": {"dock": center_only}})),
+        ("app-dock", serde_json::json!({"mode": "bar", "edge": "top", "monitor": "HEADLESS-1", "separate_app_dock": true,
+                                        "app_dock_edge": "left", "app_dock_expand": true,
+                                        "app_dock_group_layout": {"start": [], "center": ["app_menu", "pinned", "running", "files"], "end": []}})),
+    ];
+    let mut failures = Vec::new();
+    for (name, config) in cases {
+        let edge = if name == "app-dock" { "left".to_owned() } else { config["edge"].as_str().unwrap().to_owned() };
+        let dock = Dock::start(&format!("center-{name}"), config)?;
+        pointer(H1 + 640, 360);
+        settle(0.8);
+        let check = dock.check()?;
+        let groups: Vec<&str> = check["visible_groups"]["HEADLESS-1"].as_array().map(|a| a.iter().filter_map(Value::as_str).collect())
+            .unwrap_or_default();
+        ensure!(name == "app-dock" || groups.contains(&"app_menu"), "{name}: app_menu not visible {groups:?}");
+        // A strip across the monitor midpoint along the dock's edge (the
+        // thickness of a dock-mode panel is not reserved: take 96 px).
+        let inset = insets(&workareas()?, "HEADLESS-1").ok_or("monitor")?;
+        let thick = |i: usize| if inset[i] > 0 { inset[i] as i32 } else { 96 };
+        let (region, horizontal) = match edge.as_str() {
+            "top" => (format!("{},0 300x{}", H1 + 490, thick(0)), true),
+            "bottom" => (format!("{},{} 300x{}", H1 + 490, 720 - thick(1), thick(1)), true),
+            "left" => (format!("{},210 {}x300", H1, thick(2)), false),
+            _ => (format!("{},210 {}x300", H1 + 1280 - thick(3), thick(3)), false),
+        };
+        let (count, first, last) = content_lines(&region, horizontal)?;
+        // Applications menu + Home + Settings + Trash: at least ~3 icons.
+        if count < 60 || last - first < 90 {
+            failures.push(format!("{name}: center groups not rendered in {region}: {count} lines {first}..{last}"));
+        }
+        dock.stop()?;
+    }
+    ensure!(failures.is_empty(), "{}", failures.join("; "));
+    Ok(())
+}
+
+/// Groups refreshed while an auto-hidden custom-layout bar is unmapped (a
+/// window opens and closes) must still show once the bar is revealed again.
+fn custom_layout_center_survives_auto_hide() -> Result<(), String> {
+    let bar = serde_json::json!({"start": ["weather", "workspaces", "focused_title"],
+                                 "center": ["app_menu", "activities", "pinned", "running", "files"],
+                                 "end": ["media", "system_tray", "service_apps", "clock", "session"]});
+    let observer = Observer::new()?;
+    let dock = Dock::start("center-auto-hide", serde_json::json!({"mode": "bar", "edge": "bottom", "monitor": "HEADLESS-1",
+        "auto_hide": true, "hide_delay_ms": 0, "reveal_delay_ms": 0, "group_layouts": {"bar": bar}}))?;
+    let region = format!("{},{} 300x40", H1 + 490, 720 - 40);
+    pointer(H1 + 640, 300);
+    settle(1.5);
+    let hidden = content_lines(&region, true)?;
+    let window = gtk_window(&observer, "Refresh while hidden", |_| {})?;
+    settle(1.0);
+    window.destroy();
+    settle(1.0);
+    pointer(H1 + 640, 719);
+    ensure!(wait_for(5.0, || content_lines(&region, true).is_ok_and(|(count, first, last)| count >= 60 && last - first >= 90)),
+            "auto-hide: center groups missing after reveal (hidden {hidden:?}, now {:?})", content_lines(&region, true));
+    pointer(H1 + 640, 300);
+    dock.stop()?;
+    Ok(())
+}
+
 fn fullscreen_window_covers_the_dock() -> Result<(), String> {
     let observer = Observer::new()?;
     let dock = Dock::start("fullscreen", serde_json::json!({"mode": "dock", "monitor": "HEADLESS-1"}))?;
@@ -676,6 +787,8 @@ fn main() {
         ("dock_click_minimizes_focused_and_restores", dock_click_minimizes_focused_and_restores),
         ("separate_app_dock_reserves_both_strips", separate_app_dock_reserves_both_strips),
         ("custom_group_positions_and_hidden_utilities", custom_group_positions_and_hidden_utilities),
+        ("custom_layout_center_groups_render", custom_layout_center_groups_render),
+        ("custom_layout_center_survives_auto_hide", custom_layout_center_survives_auto_hide),
         ("fullscreen_window_covers_the_dock", fullscreen_window_covers_the_dock),
         ("menu_churn_does_not_grow_memory", menu_churn_does_not_grow_memory),
     ];

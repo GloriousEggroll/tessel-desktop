@@ -4,7 +4,8 @@
 # open latency, and screenshots (bar, dock, app menu, popups) compared pixelwise.
 # Each implementation gets a fresh fake HOME (config, caches, fake status
 # scripts) under the private runtime; never touches the live session.
-# Usage: run.sh [scenario ...]   (default: dock bar)
+# Usage: run.sh [scenario ...]   (default: dock bar custombar customleft customdock;
+# the custom* scenarios use custom group_layouts, see SCENARIO_CONFIG in driver.py)
 set -eu
 R=/run/user/1000/cbt/rust-waydock/cmp
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/out"; chmod 700 "$R/rt"
@@ -17,7 +18,7 @@ if [ -z "${RUST_BIN:-}" ]; then
   (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-waydock cargo build -q --release -p waydock --bin waydock)
   RUST_BIN="$ROOT/target/release/waydock"
 fi
-SCEN=${*:-dock bar}
+SCEN=${*:-dock bar custombar customleft customdock}
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac

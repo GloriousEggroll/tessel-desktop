@@ -238,7 +238,7 @@ impl DockSurface {
 
     fn application_preview_regions(&self) -> Vec<crate::ui::tray::Hole> {
         use gtk4_layer_shell::{Edge, LayerShell};
-        let Some(popup) = self.preview().window().filter(|p| p.is_visible()) else { return Vec::new() };
+        let Some(popup) = self.preview().window().filter(|p| p.get_visible()) else { return Vec::new() };
         let geometry = self.monitor.geometry();
         let (width, height) = (popup.width(), popup.height());
         let x = if popup.is_anchor(Edge::Left) { popup.margin(Edge::Left) } else { geometry.width() - popup.margin(Edge::Right) - width };
@@ -488,7 +488,7 @@ impl DockSurface {
                     scroll.set_visible(zone.iter().any(|name| visible.contains(name)));
                 }
             }
-            self.core().set_visible(groups.app_scroll.is_visible());
+            self.core().set_visible(groups.app_scroll.get_visible());
         } else {
             self.refresh_legacy_zone_visibility(&visible, title_mode);
         }
@@ -598,7 +598,7 @@ impl DockSurface {
             self.bar_layout((span - fixed).max(1));
             return;
         }
-        let visible_children: Vec<gtk::Widget> = children(&self.panel).into_iter().filter(|c| c.is_visible()).collect();
+        let visible_children: Vec<gtk::Widget> = children(&self.panel).into_iter().filter(|c| c.get_visible()).collect();
         let spacing = self.panel.downcast_ref::<gtk::Box>().map(|b| b.spacing()).unwrap_or(3);
         fixed += spacing * (visible_children.len() as i32 - 1).max(0);
         let utility: Option<gtk::Widget> = self.utility_scroll().map(|s| s.upcast());
@@ -611,7 +611,7 @@ impl DockSurface {
         let mut available = (span - fixed).max(1);
         let mut limits = Vec::new();
         if let (Some(indicators), Some(scroll)) = (self.indicators(), self.utility_scroll()) {
-            if scroll.is_visible() {
+            if scroll.get_visible() {
                 let request = natural(&indicators.widget(), self.orientation);
                 let utility_max = (available - 60.min(available.div_euclid(2))).max(1);
                 let utility_span = request.min(utility_max);
@@ -628,10 +628,10 @@ impl DockSurface {
     fn custom_layout_limits(&self, available: i32) {
         let groups = self.widgets.get().expect("groups");
         let (start, end) = (self.start_scroll().expect("start"), self.utility_scroll().expect("end"));
-        if self.is_app_dock && self.bar_mode && !groups.app_scroll.is_visible() {
+        if self.is_app_dock && self.bar_mode && !groups.app_scroll.get_visible() {
             // With no center group, either side can use the space left by the other.
-            let start_request = if start.is_visible() { self.child_span(&start) } else { 0 };
-            let end_request = if end.is_visible() { self.child_span(&end) } else { 0 };
+            let start_request = if start.get_visible() { self.child_span(&start) } else { 0 };
+            let end_request = if end.get_visible() { self.child_span(&end) } else { 0 };
             let available = (available - 6).max(1);
             let start_limit = start_request.min((available - end_request).max(available.div_euclid(2)));
             self.set_scroll_limit(&end, (available - start_limit).max(1));
@@ -641,7 +641,7 @@ impl DockSurface {
         }
         // Reserve symmetric side space to keep the center at the midpoint.
         let scrolls = [start, groups.app_scroll.clone(), end];
-        let requests = [0, 1, 2].map(|i| if scrolls[i].is_visible() { self.child_span(&scrolls[i]) } else { 0 });
+        let requests = [0, 1, 2].map(|i| if scrolls[i].get_visible() { self.child_span(&scrolls[i]) } else { 0 });
         let limits = custom_limits(available, requests);
         for (scroll, limit) in scrolls.iter().zip(limits) {
             self.set_scroll_limit(scroll, limit);
@@ -653,7 +653,7 @@ impl DockSurface {
         let (start, end) = (self.start_scroll(), self.utility_scroll());
         if self.config.application_display == "title" {
             // Equal limits keep the clock at the monitor midpoint.
-            let clock_request = if groups.app_scroll.is_visible() { self.preferred_span(&groups.center_strip) } else { 0 };
+            let clock_request = if groups.app_scroll.get_visible() { self.preferred_span(&groups.center_strip) } else { 0 };
             let clock_span = clock_request.min((available - 100).max(1));
             let side_limit = ((available - clock_span - 6).div_euclid(2)).max(1);
             for scroll in [&start, &end].into_iter().flatten() {
@@ -663,16 +663,16 @@ impl DockSurface {
             return;
         }
         let core = self.core();
-        let visible_children: Vec<gtk::Widget> = children(&core).into_iter().filter(|c| c.is_visible()).collect();
+        let visible_children: Vec<gtk::Widget> = children(&core).into_iter().filter(|c| c.get_visible()).collect();
         let app_scroll: gtk::Widget = groups.app_scroll.clone().upcast();
         let mut fixed = core.spacing() * (visible_children.len() as i32 - 1).max(0);
         fixed += visible_children.iter().filter(|c| **c != app_scroll).map(|c| self.preferred_span(c)).sum::<i32>();
         // Reserve equal space on each side of the application group.
         let zones: [Option<gtk::Widget>; 3] = [start.clone().map(|s| s.upcast()), Some(core.clone().upcast()), end.clone().map(|s| s.upcast())];
-        let visible_zones = zones.iter().flatten().filter(|w| w.is_visible()).count() as i32;
+        let visible_zones = zones.iter().flatten().filter(|w| w.get_visible()).count() as i32;
         let spacing = 3 * (visible_zones - 1).max(0);
-        let side_request = [&start, &end].into_iter().flatten().filter(|s| s.is_visible()).map(|s| self.child_span(s)).max().unwrap_or(0);
-        let app_request = if groups.app_scroll.is_visible() { self.child_span(&groups.app_scroll) } else { 0 };
+        let side_request = [&start, &end].into_iter().flatten().filter(|s| s.get_visible()).map(|s| self.child_span(s)).max().unwrap_or(0);
+        let app_request = if groups.app_scroll.get_visible() { self.child_span(&groups.app_scroll) } else { 0 };
         let app_minimum = 60.min(app_request);
         let side_limit = ((available - fixed - app_minimum - spacing).div_euclid(2)).max(1);
         let side_span = side_request.min(side_limit);

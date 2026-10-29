@@ -74,7 +74,7 @@ pub fn pin_index_at(host: &dyn DropHost, x: f64, y: f64) -> usize {
     let buttons: Vec<Option<(f64, f64)>> = host
         .pinned_children()
         .into_iter()
-        .filter(|(button, _)| button.is_visible())
+        .filter(|(button, _)| button.get_visible())
         .map(|(button, _)| {
             translate(&button, &panel, 0.0, 0.0).map(|point| {
                 // Python's get_allocated_width/height: the margin box.
@@ -96,7 +96,7 @@ pub fn dropped(host: &dyn DropHost, widget: &gtk::Widget, value: &DropValue, x: 
     let (px, py) = translate(widget, &host.panel(), x, y).unwrap_or((x, y));
     let index = pin_index_at(host, px, py);
     let pinned: Vec<String> =
-        host.pinned_children().into_iter().filter(|(b, id)| b.is_visible() && id.is_some()).filter_map(|(_, id)| id).collect();
+        host.pinned_children().into_iter().filter(|(b, id)| b.get_visible() && id.is_some()).filter_map(|(_, id)| id).collect();
     let before = drop_before(index, &pinned);
     for ident in identities {
         host.place_pin(&ident, before.as_deref());
@@ -131,5 +131,5 @@ pub fn install_drop_target(widget: &impl IsA<gtk::Widget>, host: std::rc::Weak<d
 
 /// Visible children of a box (helper for hosts' `pinned_children`).
 pub fn visible_children(widget: &impl IsA<gtk::Widget>) -> Vec<gtk::Widget> {
-    children(widget).into_iter().filter(|w| w.is_visible()).collect()
+    children(widget).into_iter().filter(|w| w.get_visible()).collect()
 }

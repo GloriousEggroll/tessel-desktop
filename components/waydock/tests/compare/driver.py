@@ -48,7 +48,11 @@ BASE_CONFIG = {
 # Pointer targets measured on the Python screenshots (1280x720 output):
 # first pinned app (firefox) and the applets expander.
 TARGETS = {"dock": {"pin": (187, 676), "applets": (1071, 676), "away": (640, 300)},
-           "bar": {"pin": (588, 34), "applets": (1243, 34), "away": (640, 400)}}
+           "bar": {"pin": (588, 34), "applets": (1243, 34), "away": (640, 400)},
+           "custombar": {"pin": (624, 670), "applets": (1208, 670), "away": (640, 300)},
+           # Python shows only the menu button in the center of a 1280x720 left bar.
+           "customleft": {"pin": (52, 350), "applets": (52, 678), "away": (640, 300)},
+           "customdock": {"pin": (447, 675), "applets": (914, 675), "away": (640, 300)}}
 FAKE_APP = """
 import sys, gi
 gi.require_version("Gtk", "4.0")
@@ -63,9 +67,18 @@ def activate(app):
 app.connect("activate", activate)
 app.run([])
 """
+# The real-config custom layout whose center section once rendered empty.
+CUSTOM_LAYOUT = {"start": ["weather", "workspaces", "focused_title"],
+                 "center": ["app_menu", "activities", "pinned", "running", "files"],
+                 "end": ["media", "system_tray", "service_apps", "clock", "session"]}
 SCENARIO_CONFIG = {
     "dock": {"mode": "dock", "edge": "bottom", "alignment": "center"},
     "bar": {"mode": "bar", "edge": "top"},
+    "custombar": {"mode": "bar", "edge": "bottom", "group_layouts": {"bar": CUSTOM_LAYOUT}},
+    "customleft": {"mode": "bar", "edge": "left", "group_layouts": {"bar": CUSTOM_LAYOUT}},
+    "customdock": {"mode": "dock", "edge": "bottom", "alignment": "center",
+                   "group_layouts": {"dock": {"start": ["workspaces"], "center": ["app_menu", "pinned", "running", "files"],
+                                              "end": ["system_tray", "session"]}}},
 }
 
 

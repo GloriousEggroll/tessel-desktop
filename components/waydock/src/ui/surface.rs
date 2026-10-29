@@ -782,7 +782,7 @@ impl PopupHost for DockSurface {
             PopupAnchor::Item(id) => self.item_anchor(id).map(|button| button.upcast()),
         };
         if self.is_app_dock && *anchor == PopupAnchor::Menu {
-            if let Some(groups) = self.widgets.get().filter(|g| g.menu_button.is_visible()) {
+            if let Some(groups) = self.widgets.get().filter(|g| g.menu_button.get_visible()) {
                 widget = Some(groups.menu_button.clone().upcast());
                 alignment = "start".into();
             }
