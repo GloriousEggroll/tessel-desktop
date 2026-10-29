@@ -102,6 +102,7 @@ class Component:
     optional: bool = False    # skipped (not blocked) when the Python install is absent
     requires_confirmation: bool = False   # --apply needs --i-am-at-the-keyboard
     signal_on_restart: bool = False       # resident without a unit: --restart SIGTERMs it
+    requires_rpms: tuple = ()             # runtime packages the binary loads (checked with rpm -q)
 
 
 POPUP = ("--popup", "--popup-edge", "--popup-offset")
@@ -301,6 +302,22 @@ COMPONENTS = (
         keeps=("btpopup.py", "bttransfer.py", "translations.py"),
         notes=("btmanager.py stays importable: imported, the shim loads btmanager_gtk.py (the original), "
                "so Global Settings' embedded Bluetooth page and battery-manager keep working.", STATUS_GUARD)),
+    Component(
+        "network-manager", "network-manager", "network-manager", ("network-manager", "network-status"),
+        shims=(Shim("network_manager.py", "network-manager", (*POPUP, "--settings", "--background", "--check"),
+                    porter="components/network-manager/shim/network_manager.py", fallback="network_manager_impl.py"),
+               Shim("network_status.py", "network-status",
+                    porter="components/network-manager/shim/network_status.py", fallback="network_status_impl.py")),
+        units=(Unit("netman.service", "network-manager", ("--background",)),),
+        desktop=(f"{APPS}/org.waybar.NetworkManager.desktop",),
+        keeps=("network_backend.py", "network_popup.py", "network_settings.py", "network_preferences.py",
+               "network_style.py", "secret_agent.py"),
+        clobbered_by=("network-manager/install_waybar.py",),
+        requires_confirmation=True, requires_rpms=("NetworkManager-libnm",),
+        notes=("NetworkManager secret agent: --apply needs --i-am-at-the-keyboard; check Wi-Fi/VPN prompts "
+               "right after restarting netman.service.",
+               "Imported, network_manager.py / network_status.py re-export network_manager_impl / "
+               "network_status_impl (the saved originals) for Global Settings.", STATUS_GUARD)),
 )
 # Future (wave 3): wayshell must override wayshell.service.d/palette.conf, which is what runs it
 # (the base unit's ExecStart is stale); "zz-" sorts after "palette.conf", so the same drop-in works.
@@ -591,6 +608,18 @@ def plan_component(component, home, sources):
             changes.append(Change(component.key, path, "desktop", new.encode(), stat.S_IMODE(path.lstat().st_mode),
                                   "Exec runs the binary"))
     return changes, problems
+
+
+def missing_rpms(component):
+    missing = []
+    for package in component.requires_rpms:
+        try:
+            found = subprocess.run(["rpm", "-q", package], capture_output=True).returncode == 0
+        except OSError:
+            found = False
+        if not found:
+            missing.append(package)
+    return missing
 
 
 def keep_path(home, component, keep):
@@ -948,6 +977,8 @@ def check(home, components, sources, locale_source):
             continue
         if component.requires_confirmation:
             print("  confirm  --apply needs --i-am-at-the-keyboard for this component")
+        for package in missing_rpms(component):
+            print(f"  warn     runtime package {package} is not installed (rpm -q {package}); the binary needs it")
         for problem in problems:
             blocked = True
             print(f"  BLOCKED  {problem}")

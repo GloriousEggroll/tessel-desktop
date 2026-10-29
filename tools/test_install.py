@@ -78,6 +78,8 @@ class InstallerTest(unittest.TestCase):
             directory.mkdir()
         (self.bin / "systemctl").write_text(SYSTEMCTL)
         (self.bin / "systemctl").chmod(0o755)
+        (self.bin / "rpm").write_text("#!/bin/sh\n[ -n \"$FAKE_RPM_OK\" ]\n")
+        (self.bin / "rpm").chmod(0o755)
         (self.bin / "cargo").write_text("#!/bin/sh\necho cargo must not run in tests >&2\nexit 99\n")
         (self.bin / "cargo").chmod(0o755)
         for code in ("de", "fr"):
@@ -137,6 +139,12 @@ class InstallerTest(unittest.TestCase):
         (home / install.SCRIPTS / "btmanager/btmanager.py").write_text(
             "import btpopup\nORIGIN = __file__\n\n\nclass App:\n    embedded = True\n\n\n"
             "if __name__ == '__main__':\n    print('python btmanager')\n")
+        netman = home / install.SCRIPTS / "network-manager"
+        (netman / "network_manager.py").write_text(
+            "import network_backend\nAPPLICATION_ID = 'org.waybar.NetworkManager'\nFALLBACK_PORTAL_URI = 'x'\n"
+            "ORIGIN = __file__\n\n\nclass NetworkApplication:\n    pass\n\n\ndef arguments():\n    pass\n\n\n"
+            "def portal_uri():\n    pass\n")
+        (netman / "network_status.py").write_text("STREAM = 'python'\n")
         (local_bin / "waykeys").write_text(
             f"#!/bin/sh\nexec /usr/bin/python3 {home}/.config/waybar/scripts/on-screen-keyboard/osk_manager.py \"$@\"\n")
         for launcher in local_bin.iterdir():
@@ -449,6 +457,26 @@ class InstallerTest(unittest.TestCase):
         self.assertEqual(ran.stdout.strip(), "rust-btmanager-v1 --popup")
         self.assertEqual(self.statuses("bluetooth-manager")["bluetooth-manager"]["configured"], "rust")
         self.assertEqual(self.statuses("way-displays")["way-displays"]["configured"], "python")
+
+    def test_network_manager_shims_reexport_the_python_modules(self):
+        self.assertIn("NetworkManager-libnm is not installed", self.run_installer("--only", "network-manager").stdout)
+        self.assertNotIn("NetworkManager-libnm is not installed",
+                         self.run_installer("--only", "network-manager", FAKE_RPM_OK="1").stdout)
+        self.assertNotEqual(self.run_installer("--apply", "--only", "network-manager", check=False).returncode, 0)
+        self.run_installer("--apply", "--only", "network-manager", "--i-am-at-the-keyboard")
+        directory = self.entry("network-manager", "network_manager.py").parent
+        # Global Settings' applet_pages.py: sys.path gets the scripts dir, then `from network_manager import ...`.
+        probe = ("import sys; sys.path.insert(0, sys.argv[1]); from network_manager import NetworkApplication, "
+                 "APPLICATION_ID; import network_manager, network_status; "
+                 "print(APPLICATION_ID, network_manager.ORIGIN.endswith('network_manager_impl.py'), network_status.STREAM)")
+        ran = subprocess.run([sys.executable, "-c", probe, str(directory)], capture_output=True, text=True,
+                             env=self.env())
+        self.assertEqual(ran.stdout.strip(), "org.waybar.NetworkManager True python", ran.stderr)
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "network_manager.py"), "--settings"],
+                             capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-network-manager-v1 --settings")
+        self.assertEqual(install.effective_execstart(self.home, "netman.service"),
+                         "%h/.config/waybar/scripts/network-manager/network-manager --background")
 
     def test_table_is_consistent(self):
         keys = [c.key for c in install.COMPONENTS]
