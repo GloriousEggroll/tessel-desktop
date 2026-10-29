@@ -78,5 +78,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 4 | file-manager (wayfiles; crates files-ops/files-model/files-widgets + app) | 8448 | ported, 125 unit + 90 app headless + 25 widget headless + 6 private-GVfs checks pass; startup 343 vs 426 ms, idle PSS ≈47 vs 68 MB, after browsing ≈85 vs 115 MB; swap notes in PARITY.md, not swapped |
 | 4 | global-settings | 8708 | ported (shell + gs-base/gs-applets/gs-desktop/gs-system; embeds the Rust applet crates), 94 unit + 113 headless checks, 859 files + 12 page scenarios byte-identical to Python, 0 px screenshot; install.py entry ready, not swapped |
 | 4 | welcome | 590 | ported, 6 unit + 11 headless pass, 0 px screenshot; install.py entry ready, not swapped |
-| 5 | lock-screen, login-manager (PAM, security review) | ~5.2k | |
-| 5 | home-assistant-screen | 1454 | |
+| 5 | suite-lock (lock_config, login_model, lock dashboard widgets) | ~1.4k | done (moved from gs-desktop + widgets; shared by the three below) |
+| 5 | lock-screen (+ Rust `waylock-pam` PAM helper) | ~3.1k | ported, security-reviewed (5 low fixes), 26 unit + 23 headless pass (incl. real ext-session-lock crash test in private labwc, fake libpam), not swapped |
+| 5 | login-manager (Waylogin greeter, root appearance helper) | ~1.7k | ported, security-reviewed (2 low parity fixes), 39 unit + 15 headless pass (fake greetd), not swapped (root swap: describe only) |
+| 5 | home-assistant-screen (Kasumi luna-clock, voice-controls) | 1454 | ported, security-reviewed (5 fixes), 12 unit + 11 headless pass (fake HTTP/scheduler), not swapped (Kasumi device, aarch64) |
