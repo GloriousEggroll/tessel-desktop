@@ -1,0 +1,44 @@
+#!/bin/sh
+# Rust vs Python system-monitor: time until the window is mapped (wlrctl sees
+# app_id org.waydock.SystemMonitor) and idle RSS/PSS after 3 s, 2 runs each, in a
+# private nested headless labwc with a private D-Bus and private XDG dirs.
+# Both only sample /proc and /sys read-only; no process action is taken.
+set -eu
+AGENT=${AGENT:-system-monitor}
+R=/run/user/1000/cbt/rust-$AGENT/m
+rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/tmp" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data" "$R/xdg/state"; chmod 700 "$R/rt"
+printf '<labwc_config/>\n' > "$R/cfg/rc.xml"
+sed "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" /usr/share/dbus-1/session.conf > "$R/d.conf"
+ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p system-monitor)
+REL="$ROOT/target/release"
+cat > "$R/run.sh" <<RUN
+#!/bin/sh
+case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
+export DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config"
+export XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" GSETTINGS_BACKEND=memory
+export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0 PYTHONDONTWRITEBYTECODE=1
+ms() { date +%s%3N; }
+rss() { echo "\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) PSS=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
+measure() {
+  name=\$1; shift
+  t0=\$(ms); "\$@" >"$R/\$name.out" 2>&1 & pid=\$!
+  until wlrctl toplevel find app_id:org.waydock.SystemMonitor >/dev/null 2>&1; do sleep 0.01; [ \$((\$(ms)-t0)) -gt 15000 ] && break; done
+  echo "\$name window_ms=\$((\$(ms)-t0))"
+  sleep 3; echo "\$name idle_rss_kb=\$(rss \$pid)"
+  grim "$R/\$name.png" 2>/dev/null || true
+  kill -TERM \$pid; wait \$pid 2>/dev/null || true
+  sleep 0.5
+}
+for i in 1 2; do
+  measure rust "$REL/system-monitor" --page performance
+  measure python /usr/bin/python3 /home/tcrider/btmanager/system-monitor/system_monitor.py --page performance
+done
+labwc --exit
+RUN
+chmod +x "$R/run.sh"
+env -u WAYLAND_DISPLAY -u DISPLAY -i HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless \
+  WLR_HEADLESS_OUTPUTS=1 WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
+  dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" > "$R/labwc.log" 2>&1 || true
+ls -l "$REL/system-monitor" | awk '{print $9, $5}'
+grep -E "window_ms|rss" "$R/labwc.log" || { tail -30 "$R/labwc.log"; exit 1; }
