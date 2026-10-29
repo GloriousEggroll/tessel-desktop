@@ -1,0 +1,36 @@
+[package]
+name = "capture-manager"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Screenshot & Screen Recorder (waycapture, org.waydock.Capture): ScreenCast portal capture, HDR to SDR screenshots, FFmpeg recording, annotation editor."
+
+[lib]
+name = "capture_manager"
+path = "src/lib.rs"
+
+[[bin]]
+name = "waycapture"
+path = "src/main.rs"
+
+[dependencies]
+suite-core.workspace = true
+suite-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+gtk4-layer-shell.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+regex.workspace = true
+roxmltree = "0.20"
+cairo-rs = { version = "0.22", features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false
+
+[dev-dependencies]
+gio-unix = "0.22"

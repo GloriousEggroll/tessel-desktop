@@ -14,3 +14,7 @@
 - Don't touch PAM/system files under /etc. Don't modify ~/.config live files (parent installs). Read-only inspection is fine.
 
 ## Code
+- Private dbus-daemon: drop `<standard_session_servicedirs/>` from the copied session.conf and set
+  `GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0`. Otherwise GTK's portal settings lookup
+  bus-activates the real /usr/libexec/xdg-desktop-portal (and gvfsd) on the private bus. See
+  components/capture-manager/tests/run_headless.sh, which fails if any service gets activated.

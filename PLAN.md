@@ -74,7 +74,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 4 | picture-viewer | 2320 | ported (image + kamadak-exif, lcms via dlopen), 15 unit + 10 headless pass, not swapped |
 | 4 | system-monitor | 1519 | ported (/proc+/sys instead of psutil), 28 unit + 15 headless pass, not swapped |
 | 4 | hdr-calibration | 926 | ported (hdr-pattern stays C), 19 unit + 6 headless pass, not swapped |
-| 4 | capture-manager (GUI + CLI; portal and capture_pipewire.c stay C) | 3420 | in progress |
+| 4 | capture-manager (GUI + CLI; portal and capture_pipewire.c stay C) | 3420 | ported, 30 unit + 21 headless pass (fake portal/PipeWire; no real stream read), not swapped |
 | 4 | file-manager | — | not started (excluded from this run) |
 | 4 | global-settings, welcome | ~9.4k | |
 | 5 | lock-screen, login-manager (PAM, security review) | ~5.2k | |

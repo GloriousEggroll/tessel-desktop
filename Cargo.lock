@@ -206,6 +206,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "capture-manager"
+version = "0.1.0"
+dependencies = [
+ "cairo-rs",
+ "gio",
+ "gio-unix",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "image",
+ "libc",
+ "regex",
+ "roxmltree 0.20.0",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
+
+[[package]]
 name = "cc"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
