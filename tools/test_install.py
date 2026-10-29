@@ -87,7 +87,7 @@ class InstallerTest(unittest.TestCase):
 
     def make_binaries(self, version):
         for component in install.COMPONENTS:
-            for name in (*component.binaries, *component.helpers):
+            for name in (*(cargo for cargo, _ in install.bins(component)), *component.helpers):
                 path = self.prebuilt / name
                 # Like the ports: drop the script argument of [python, script.py, ...] shims.
                 path.write_text(f'#!/bin/sh\ncase "$1" in *.py) shift ;; esac\necho "rust-{name}-{version}" "$@"\n')
@@ -131,6 +131,12 @@ class InstallerTest(unittest.TestCase):
             '#!/bin/sh\nexec /usr/bin/python3 "$HOME/.config/waybar/scripts/notification-manager/notification_manager.py" "$@"\n')
         for name, entry in (("waymedia", "media-manager/media_manager.py"), ("waytile", "tiling-manager/tiling_manager.py")):
             (local_bin / name).write_text(f"#!/bin/sh\nexec /usr/bin/python3 {home}/{install.SCRIPTS}/{entry} \"$@\"\n")
+        (local_bin / "way-displays-gui").write_text(
+            f"#!/bin/sh\nexec /usr/bin/python3 {home}/.local/share/way-displays/way-displays-gui \"$@\"\n")
+        # The original btmanager.py is a module Global Settings imports (btmanager.App).
+        (home / install.SCRIPTS / "btmanager/btmanager.py").write_text(
+            "import btpopup\nORIGIN = __file__\n\n\nclass App:\n    embedded = True\n\n\n"
+            "if __name__ == '__main__':\n    print('python btmanager')\n")
         (local_bin / "waykeys").write_text(
             f"#!/bin/sh\nexec /usr/bin/python3 {home}/.config/waybar/scripts/on-screen-keyboard/osk_manager.py \"$@\"\n")
         for launcher in local_bin.iterdir():
@@ -200,8 +206,8 @@ class InstallerTest(unittest.TestCase):
         home = self.home
         for component in install.COMPONENTS:
             directory = home / scripts(component)
-            for name in (*component.binaries, *component.helpers):
-                self.assertEqual((directory / name).read_text(), (self.prebuilt / name).read_text())
+            for cargo, name in (*install.bins(component), *((h, h) for h in component.helpers)):
+                self.assertEqual((directory / name).read_text(), (self.prebuilt / cargo).read_text())
                 self.assertTrue(os.access(directory / name, os.X_OK))
             for shim in component.shims:
                 entry = directory / shim.entry
@@ -256,6 +262,12 @@ class InstallerTest(unittest.TestCase):
         for name in ("tiling_manager_python.py", "tiling_status_python.py"):
             self.assertIn("python original", self.entry("tiling-manager", name).read_text())
         self.assertIn("python original", self.entry("network-discovery", "discovery_manager_python.py").read_text())
+        ran = subprocess.run([str(home / ".local/bin/way-displays-gui"), "--x"], capture_output=True, text=True,
+                             env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-way-displays-gui-v1 --x")
+        self.assertTrue((home / ".local/share/way-displays/way-displays-gui-rs").is_file())
+        self.assertIn("'--menu'", self.entry("session-manager", "session_manager.py").read_text())
+        self.assertIn("python original", self.entry("language-manager", "language_manager_python.py").read_text())
         self.assertIn("nothing to change", self.run_installer("--apply", "--i-am-at-the-keyboard").stdout)
 
     def test_rollback_restores_exactly(self):
@@ -422,11 +434,27 @@ class InstallerTest(unittest.TestCase):
         self.assertIsNone(other.poll())
         self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
 
+    def test_btmanager_shim_still_imports_the_python_module(self):
+        self.run_installer("--apply", "--only", "bluetooth-manager")
+        directory = self.entry("bluetooth-manager", "btmanager.py").parent
+        self.assertIn("class App", (directory / "btmanager_gtk.py").read_text())
+        # Global Settings' applet_pages.py: sys.path gets the scripts dir, then `import btmanager`.
+        probe = ("import sys; sys.path.insert(0, sys.argv[1]); import btmanager; "
+                 "print(btmanager.App.embedded, btmanager.ORIGIN.endswith('btmanager_gtk.py'))")
+        ran = subprocess.run([sys.executable, "-c", probe, str(directory)], capture_output=True, text=True,
+                             env=self.env())
+        self.assertEqual(ran.stdout.strip(), "True True", ran.stderr)
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "btmanager.py"), "--popup"],
+                             capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-btmanager-v1 --popup")
+        self.assertEqual(self.statuses("bluetooth-manager")["bluetooth-manager"]["configured"], "rust")
+        self.assertEqual(self.statuses("way-displays")["way-displays"]["configured"], "python")
+
     def test_table_is_consistent(self):
         keys = [c.key for c in install.COMPONENTS]
         self.assertEqual(len(keys), len(set(keys)))
         for component in install.COMPONENTS:
-            names = set(component.binaries)
+            names = set(install.installed_names(component))
             self.assertTrue({s.binary for s in component.shims} | {u.binary for u in component.units} <= names)
             for shim in component.shims:
                 self.assertTrue(shim.entry.endswith(".py"))
@@ -442,7 +470,7 @@ class CrateTableTest(unittest.TestCase):
         for component in install.COMPONENTS:
             cargo = (install.REPO / "components" / component.package / "Cargo.toml").read_text()
             bins = set(re.findall(r'\[\[bin\]\]\s*\nname\s*=\s*"([^"]+)"', cargo))
-            self.assertTrue(set(component.binaries) <= bins, (component.key, bins))
+            self.assertTrue({cargo for cargo, _ in install.bins(component)} <= bins, (component.key, bins))
             for helper in component.helpers:
                 self.assertIn(f'"{helper}"', (install.REPO / "components" / component.package / "build.rs").read_text())
 
@@ -463,7 +491,8 @@ class CrateTableTest(unittest.TestCase):
             used.setdefault(component.package, set()).update(s.entry for s in component.shims if s.porter)
         for package, entries in used.items():
             porter_dirs = [install.REPO / "components" / package / d for d in ("shim", "shims")]
-            shipped = {p.name for d in porter_dirs if d.is_dir() for p in d.glob("*.py")}
+            # configure_session.py must stay Python (installers import it): its CLI shim is not installed.
+            shipped = {p.name for d in porter_dirs if d.is_dir() for p in d.glob("*.py")} - {"configure_session_cli.py"}
             self.assertEqual(shipped, entries, package)
 
 

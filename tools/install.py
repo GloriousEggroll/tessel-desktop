@@ -89,7 +89,7 @@ class Component:
     key: str
     package: str              # cargo package (components/<package>)
     dir: str                  # <base>/<dir>: binaries, helpers and shims live here
-    binaries: tuple           # [[bin]] names of the package, verified by test_install.py
+    binaries: tuple           # [[bin]] names of the package (or (cargo name, installed name)), verified by tests
     shims: tuple
     units: tuple = ()
     helpers: tuple = ()       # non-cargo executables from the crate's build output (waykeys-input)
@@ -134,9 +134,9 @@ COMPONENTS = (
                     porter="components/battery-manager/shims/battery_status.py")),
         units=(Unit("battery-manager.service", "battery-manager", ("--background",)),),
         desktop=(f"{APPS}/org.waybar.BatteryManager.desktop",),
-        keeps=("battery_ui.py", "../btmanager/btmanager.py"),
+        keeps=("battery_ui.py",),
         clobbered_by=("battery-manager/install_waybar.py",),
-        notes=(STATUS_GUARD,)),
+        notes=("The Rust binary opens Bluetooth via ../btmanager/btmanager.py (Python or its shim).", STATUS_GUARD)),
     Component(
         "power-manager", "power-manager", "power-manager", ("power-manager", "power-status"),
         shims=(Shim("power_manager.py", "power-manager",
@@ -259,6 +259,48 @@ COMPONENTS = (
         clobbered_by=("network-discovery/install.py",),
         notes=("~/.local/bin/network-discovery is left as is: it runs the shim.",
                "Waydock runs discovery_backend.py in-process from ~/.local/share/waydock.")),
+    Component(
+        "session-manager", "session-manager", "session-manager", ("session-manager",),
+        shims=(Shim("session_manager.py", "session-manager", ("--popup", "--menu", "--popup-edge", "--popup-offset"),
+                    porter="components/session-manager/shim/session_manager.py"),),
+        keeps=("session_backend.py", "session_end.py"),
+        clobbered_by=("shared/install_popup_fixes.py",),
+        notes=("desktop-suite-action enables the centered menu only while session_manager.py contains '--menu'.",)),
+    Component(
+        "way-displays", "way-displays", "way-displays", (("way-displays-gui", "way-displays-gui-rs"),),
+        shims=(),
+        launchers=((".local/bin/way-displays-gui", "components/way-displays/shim/way-displays-gui-launcher",
+                    ".local/share/way-displays/way-displays-gui"),),
+        keeps=("way-displays-gui", "color_config.py", "color_controls.py"),
+        base=".local/share",
+        clobbered_by=("way-displays/install_color.py", "brightness-manager/install_waybar.py", "shared/install_gtk4.py"),
+        notes=("Global Settings embeds the Python way-displays-gui module, which stays installed.",
+               "way-displays.service runs the system /usr/bin/way-displays daemon and is not changed.")),
+    Component(
+        "language-manager", "language-manager", "language-manager", ("language-manager",),
+        shims=(Shim("language_manager.py", "language-manager", ("--status", "--quit"),
+                    porter="components/language-manager/shim/language_manager.py",
+                    fallback="language_manager_python.py"),),
+        keeps=("language_backend.py", "language_ui.py", "language_style.py"),
+        base=".local/share",
+        notes=("~/.local/bin/language-manager opens Global Settings and is not changed.", STATUS_GUARD)),
+    Component(
+        "session-startup", "session-startup", "desktop-suite/session", ("desktop-suite-failed",),
+        shims=(Shim("desktop_suite_failed.py", "desktop-suite-failed",
+                    porter="components/session-startup/shim/desktop_suite_failed.py"),),
+        keeps=("suite_i18n.py", "language_data.py", "suite_catalogs.py"),
+        base=".local/share", optional=True,
+        clobbered_by=("session-startup/configure_session.py",),
+        notes=("Crash helper only. desktop-suite-failed@.service keeps running python3 desktop_suite_failed.py %i.",
+               "configure_session.py stays Python (installers import it) and is never touched.")),
+    Component(
+        "bluetooth-manager", "bluetooth-manager", "btmanager", ("btmanager",),
+        shims=(Shim("btmanager.py", "btmanager",
+                    (*POPUP, "--lang", "--selftest", "--gen-pot", "--gen-mo"),
+                    porter="components/bluetooth-manager/shim/btmanager.py", fallback="btmanager_gtk.py"),),
+        keeps=("btpopup.py", "bttransfer.py", "translations.py"),
+        notes=("btmanager.py stays importable: imported, the shim loads btmanager_gtk.py (the original), "
+               "so Global Settings' embedded Bluetooth page and battery-manager keep working.", STATUS_GUARD)),
 )
 # Future (wave 3): wayshell must override wayshell.service.d/palette.conf, which is what runs it
 # (the base unit's ExecStart is stale); "zz-" sorts after "palette.conf", so the same drop-in works.
@@ -315,6 +357,27 @@ class Change:
     mode: int = 0o644
     note: str = ""
     source: Path = None
+
+
+def bins(component):
+    """[(cargo [[bin]] name, installed file name)]."""
+    return [b if isinstance(b, tuple) else (b, b) for b in component.binaries]
+
+
+def installed_names(component):
+    return [installed for _, installed in bins(component)]
+
+
+def launcher_spec(component, launcher):
+    """(home-relative path, porter file or None, text that marks the Python launcher)."""
+    relative, porter, match = (tuple(launcher) + (None, None))[:3] if isinstance(launcher, tuple) else (launcher, None, None)
+    if match is None:
+        match = f"{component.base}/{component.dir}/{component.shims[0].entry}"
+    return relative, porter, match
+
+
+def main_binary(component):
+    return component.shims[0].binary if component.shims else installed_names(component)[0]
 
 
 def component_dir(home, component):
@@ -386,7 +449,7 @@ def dropin_text(component, unit, home):
 def launcher_text(component, home, porter=None):
     if porter:
         return (REPO / porter).read_text()
-    binary = binary_path(home, component, component.shims[0].binary)
+    binary = binary_path(home, component, main_binary(component))
     return (f"#!/bin/sh\n# Desktop suite Rust swap for {component.key} (nobara-de-rust/tools/install.py).\n"
             f"exec '{binary}' \"$@\"\n")
 
@@ -435,8 +498,8 @@ def resolve_sources(components, prebuilt):
     """{(component key, file name): source path} for every binary and helper."""
     sources = {}
     for component in components:
-        for name in component.binaries:
-            sources[component.key, name] = (prebuilt or REPO / "target/release") / name
+        for cargo, installed in bins(component):
+            sources[component.key, installed] = (prebuilt or REPO / "target/release") / cargo
         for name in component.helpers:
             sources[component.key, name] = prebuilt / name if prebuilt else built_helper(component.package, name)
     return sources
@@ -465,7 +528,7 @@ def plan_component(component, home, sources):
         if component.optional:
             return changes, []
         return changes, [f"{component.base}/{component.dir} is not installed; install the Python component first"]
-    for name in (*component.binaries, *component.helpers):
+    for name in (*installed_names(component), *component.helpers):
         target, source = binary_path(home, component, name), sources[component.key, name]
         kind = "helper" if name in component.helpers else "binary"
         if not valid_binary(source):
@@ -507,9 +570,8 @@ def plan_component(component, home, sources):
             before = effective_execstart(home, unit.name, skip_ours=True)
             changes.append(Change(component.key, path, "dropin", data, 0o644,
                                   f"ExecStart: {before} -> {unit_command(home, component, unit)}"))
-    entry = f"{component.base}/{component.dir}/{component.shims[0].entry}"
     for launcher in component.launchers:
-        relative, porter = launcher if isinstance(launcher, tuple) else (launcher, None)
+        relative, porter, entry = launcher_spec(component, launcher)
         path = home / relative
         if not path.is_file():
             continue
@@ -517,7 +579,7 @@ def plan_component(component, home, sources):
         text = path.read_text(errors="replace")
         if path.read_bytes() != data and (entry in text or path.is_symlink()):
             changes.append(Change(component.key, path, "launcher", data, stat.S_IMODE(path.lstat().st_mode),
-                                  f"exec {binary_path(home, component, component.shims[0].binary)}"
+                                  f"exec {binary_path(home, component, main_binary(component))}"
                                   + (f" ({porter})" if porter else "")))
     for relative in component.desktop:
         path = home / relative
@@ -538,6 +600,9 @@ def keep_path(home, component, keep):
 def guard_warnings(component):
     """Python-installer behaviour that undoes or trips over this swap."""
     shims = ", ".join(shim.entry for shim in component.shims)
+    if not shims:
+        launchers = ", ".join(launcher_spec(component, l)[0] for l in component.launchers)
+        return [f"re-running {', '.join(component.clobbered_by)} rewrites {launchers}; re-run --apply"]
     return [f"re-running {', '.join(CLOBBER_ALL + component.clobbered_by)} rewrites {shims}"
             f" (then --status shows 'python (shim overwritten)'; re-run --apply)"]
 
@@ -771,8 +836,9 @@ def user_processes():
 
 
 def classify(info, home, component):
-    binaries = {str(binary_path(home, component, name)) for name in component.binaries}
+    binaries = {str(binary_path(home, component, name)) for name in installed_names(component)}
     entries = {str(entry_path(home, component, shim)) for shim in component.shims}
+    entries |= {str(home / launcher_spec(component, l)[2]) for l in component.launchers}
     exe = info["exe"].removesuffix(" (deleted)")
     argv = info["argv"]
     if exe in binaries or (argv and argv[0] in binaries):
@@ -805,6 +871,16 @@ def component_status(home, component, processes, state):
             shims[shim.entry] = "rust"
         else:
             shims[shim.entry] = "python (shim overwritten)" if str(path) in recorded else "python"
+    launchers = {}
+    for launcher in component.launchers:
+        relative, porter, match = launcher_spec(component, launcher)
+        path = home / relative
+        if not path.is_file() or path.is_symlink():
+            launchers[relative] = "missing"
+        elif path.read_bytes() == launcher_text(component, home, porter).encode():
+            launchers[relative] = "rust"
+        else:
+            launchers[relative] = "python" if match in path.read_text(errors="replace") else "other"
     units = {}
     for unit in component.units:
         dropin = home / UNITS / (unit.name + ".d") / DROPIN
@@ -814,8 +890,9 @@ def component_status(home, component, processes, state):
                             "main_pid": pid, "running": (classify(info, home, component) or "other") if info else None,
                             "rss_kb": info["rss_kb"] if info else 0}
     running = [dict(info, impl=impl) for info in processes for impl in [classify(info, home, component)] if impl]
-    configured = list(shims.values()) + ["rust" if u["dropin"] else "python" for u in units.values()]
-    if all(state == "missing" for state in shims.values()):
+    configured = (list(shims.values()) + [v for v in launchers.values() if v != "other"]
+                  + ["rust" if u["dropin"] else "python" for u in units.values()])
+    if all(state == "missing" for state in [*shims.values(), *launchers.values()]):
         mode = "not installed"
     elif any(state == "python (shim overwritten)" for state in configured):
         mode = "python (shim overwritten)"
@@ -826,8 +903,8 @@ def component_status(home, component, processes, state):
     else:
         mode = "mixed"
     warnings = guard_warnings(component) + list(component.notes) if mode != "python" and mode != "not installed" else []
-    return {"component": component.key, "configured": mode, "shims": shims, "units": units,
-            "binaries": {n: binary_path(home, component, n).is_file() for n in component.binaries},
+    return {"component": component.key, "configured": mode, "shims": shims, "launchers": launchers, "units": units,
+            "binaries": {n: binary_path(home, component, n).is_file() for n in installed_names(component)},
             "processes": [{"pid": p["pid"], "impl": p["impl"], "rss_kb": p["rss_kb"]} for p in running],
             "rss_kb": sum(p["rss_kb"] for p in running), "warnings": warnings}
 
@@ -864,7 +941,7 @@ def check(home, components, sources, locale_source):
     blocked = False
     for component in components:
         changes, problems = plan_component(component, home, sources)
-        print(f"{component.key}  (binaries: {', '.join(component.binaries + component.helpers)} "
+        print(f"{component.key}  (binaries: {', '.join(installed_names(component) + list(component.helpers))} "
               f"-> {component_dir(home, component)})")
         if component.optional and not component_dir(home, component).is_dir():
             print(f"  skipped  {component_dir(home, component)} is not installed (optional)")
@@ -966,7 +1043,7 @@ def main(argv=None):
 
     if args.list:
         for c in COMPONENTS:
-            print(f"{c.key}: package {c.package}, into {c.base}/{c.dir}/: {', '.join(c.binaries + c.helpers)}; "
+            print(f"{c.key}: package {c.package}, into {c.base}/{c.dir}/: {', '.join(installed_names(c) + list(c.helpers))}; "
                   f"units {', '.join(u.name for u in c.units) or '-'}; shims {', '.join(s.entry for s in c.shims)}")
         return 0
     if args.status:
