@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Pictures
+GenericName=Picture Viewer
+Comment=Browse, compare and edit images
+Exec=waypictures %U
+Icon=image-x-generic
+Terminal=false
+Categories=Graphics;Viewer;Photography;
+Keywords=picture;image;photo;viewer;editor;crop;resize;slideshow;
+MimeType=image/jpeg;image/png;image/webp;image/gif;image/tiff;image/bmp;image/x-icon;image/svg+xml;image/svg+xml-compressed;image/avif;image/heif;image/heic;image/jxl;video/mp4;video/x-m4v;video/webm;video/x-matroska;video/quicktime;video/x-msvideo;video/vnd.avi;video/ogg;
+StartupNotify=true
+StartupWMClass=org.waydock.Pictures
