@@ -410,6 +410,45 @@ COMPONENTS = (
                "~/.local/bin/waydock execs the binary: keybinds (--menu-hotkey), showdesktop scripts and the "
                ".desktop --settings entry are unchanged.",
                "Restarts the dock and tray: --apply needs --i-am-at-the-keyboard.")),
+    Component(
+        "global-settings", "global-settings", "global-settings", ("global-settings",),
+        shims=(),
+        launchers=((".local/bin/global-settings", "components/global-settings/shim/global-settings-launcher",
+                    ".local/share/global-settings/global_settings.py"),
+                   (".local/bin/language-manager", "components/global-settings/shim/language-manager-launcher",
+                    ".local/share/global-settings/global_settings.py")),
+        keeps=("global_settings.py", "runtime_paths.py", "global_ui.py", "global_style.py", "page_api.py",
+               "page_widgets.py", "settings_search.py", "applet_pages.py", "desktop_pages.py", "dock_pages.py",
+               "layout_page.py", "layout_presets.py", "lock_page.py", "login_page.py", "language_page.py",
+               "weather_page.py", "capture_page.py", "input_page.py", "input_config.py", "input_devices.py",
+               "mouse_polling.py", "mouse_polling_ui.py", "keyboard_page.py", "keyboard_config.py",
+               "shortcuts_page.py", "shortcuts_model.py", "accessibility_page.py", "default_apps_page.py",
+               "night_light.py", "night_light_page.py", "users_page.py", "users_backend.py", "about_page.py",
+               "labwc_settings.py", "workspace_config.py", "workspace_settings.py", "layouts/gnome.layout",
+               "layouts/kde.layout", "layouts/mac.layout", "layouts/win.layout"),
+        base=".local/share",
+        notes=("Only the launchers change: ~/.local/bin/global-settings and ~/.local/bin/language-manager "
+               "(--section language) exec the binary. The .desktop entry, waydock's gear, applet Settings "
+               "buttons, Super+/ (--shortcuts) and Welcome all go through ~/.local/bin/global-settings.",
+               "Every Python module stays: tiling-manager's tiling_config.py imports workspace_config from "
+               "~/.local/share/global-settings, and the Python Welcome imports global_style, runtime_paths, "
+               "desktop_pages, shortcuts_model and the keyboard/layout/language pages.",
+               "The binary embeds the Rust applet pages (audio, bluetooth, network, power, battery, keep-awake, "
+               "notifications, date/time, weather, language, capture, displays, dock, …) directly; the Python "
+               "applet modules it used to import are no longer needed by Global Settings itself.",
+               "night-light.service (copied by install_gtk4.py) is unchanged; it runs the Python night_light.py.")),
+    Component(
+        "welcome", "welcome", "desktop-suite-welcome", (("desktop-suite-welcome", "desktop-suite-welcome"),),
+        shims=(),
+        launchers=((".local/bin/desktop-suite-welcome", "components/welcome/shim/desktop-suite-welcome-launcher",
+                    ".local/share/desktop-suite-welcome/welcome.py"),),
+        keeps=("welcome.py", "welcome_ui.py"),
+        base=".local/share",
+        clobbered_by=("welcome/install.py",),
+        notes=("First-login autostart (install_all.py: `desktop-suite-welcome --first-run` while "
+               "$XDG_STATE_HOME/desktop-suite/setup-done is missing) and the labwc menu item run the launcher; "
+               "the .desktop Exec is the launcher path and does not change.",
+               "setup-done is written by the binary exactly as welcome_ui.mark_setup_done did.")),
 )
 BY_KEY = {component.key: component for component in COMPONENTS}
 

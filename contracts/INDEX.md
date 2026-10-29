@@ -73,3 +73,9 @@
 | calculator | [calculator.md](calculator.md) | GApplication `org.waydock.Calculator` (HANDLES_COMMAND_LINE); state `$XDG_STATE_HOME/waydock-calculator/state.json` | launcher `/usr/local/bin/calculator` |
 | picture-viewer | [picture-viewer.md](picture-viewer.md) | GApplication `org.waydock.Pictures` (HANDLES_COMMAND_LINE); `$XDG_CONFIG_HOME/picture-viewer/settings.json` | launcher `/usr/local/bin/waypictures` |
 | capture-manager | [capture-manager.md](capture-manager.md) | GApplication `org.waydock.Capture` (actions show, stop, lock-shot(d), open/reveal/copy/edit-saved(s)); `/org/waydock/Capture/Status`; CaptureSelection broker; ScreenCast portal client; C `libcapture-pipewire.so` dlopen'ed | `/usr/local/bin/waycapture` (keybinds, waydock, .desktop); Python capture_settings/capture_shortcuts stay installed (Global Settings, install_session.py) |
+
+## Wave 4 (second half): Global Settings and Welcome
+| Component | Contract | Bus name / files | Unit / launch |
+|---|---|---|---|
+| global-settings | [global-settings.md](global-settings.md) | GApplication `org.waydock.GlobalSettings` (HANDLES_COMMAND_LINE; `--section`/`--shortcuts`/`--quit`); embeds every applet's Rust page; rc.xml/environment/mimeapps/night-light/waydock config writers | `~/.local/bin/global-settings`, `~/.local/bin/language-manager` (`--section language`), `org.waydock.GlobalSettings.desktop`; Python modules stay (tiling_config imports workspace_config) |
+| welcome | [welcome.md](welcome.md) | GApplication `org.waydock.Welcome` (`--first-run`, `--page`); `$XDG_STATE_HOME/desktop-suite/setup-done`, reads `install-status.json` | `~/.local/bin/desktop-suite-welcome` (first-login autostart, labwc menu) |
