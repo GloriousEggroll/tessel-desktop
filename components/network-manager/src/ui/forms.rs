@@ -500,6 +500,7 @@ pub struct PropertyField {
     pub secret: bool,
     pub readonly: bool,
     numeric: bool,
+    pub array: Option<crate::ui::structured::Kind>,
     pub original: RefCell<Option<glib::Value>>,
     pub boxed: gtk::Box,
     pub control: Control,
@@ -519,6 +520,11 @@ impl PropertyField {
         let is_enum = native_type.is_a(glib::Type::ENUM);
         let numeric = is_enum || native_type.is_a(glib::Type::FLAGS);
         let mut readonly = false;
+        let array = if spec.value_type == "GPtrArray" || spec.value_type == "GArray" {
+            crate::ui::structured::kind(&name, &spec.dbus_type)
+        } else {
+            None
+        };
         let choices = if is_enum {
             Some(libnm::enum_values(native_type).into_iter()
                  .map(|(v, nick)| (v.to_string(), crate::nm::capitalize(&nick.replace('-', " ")))).collect())
@@ -548,9 +554,19 @@ impl PropertyField {
             let secret_columns: &[usize] = if secret { &[1] } else { &[] };
             Control::Rows(RowsEditor::new(&[tr!("Option"), tr!("Value")], &rows, &tr!("Add option"), secret_columns))
         } else if spec.value_type == "GPtrArray" || spec.value_type == "GArray" {
-            // Structured arrays are preserved exactly (no row parsers yet).
-            readonly = true;
-            Control::Caption(caption(&tr!("Existing structured options are preserved unchanged.")))
+            match array {
+                Some(kind) => {
+                    let view = gtk::TextView::new();
+                    view.set_wrap_mode(gtk::WrapMode::WordChar);
+                    view.buffer().set_text(&crate::ui::structured::read(setting, &name, kind).join("\n"));
+                    view.set_size_request(-1, 90);
+                    Control::Text(view)
+                }
+                None => {
+                    readonly = true;
+                    Control::Caption(caption(&tr!("Existing structured options are preserved unchanged.")))
+                }
+            }
         } else if spec.value_type == "GBytes" {
             let raw = if secret { Vec::new() } else { setting.get_bytes(&name).unwrap_or_default() };
             let text = bytes_text(&name, secret, &raw);
@@ -583,7 +599,7 @@ impl PropertyField {
         if !spec.description.is_empty() {
             control.widget().set_tooltip_text(Some(&spec.description));
         }
-        let field = Rc::new(Self { setting: setting.clone(), spec: spec.clone(), name, title, secret, readonly, numeric,
+        let field = Rc::new(Self { setting: setting.clone(), spec: spec.clone(), name, title, secret, readonly, numeric, array,
                                    original: RefCell::new(original), boxed, control, baseline: RefCell::new(Raw::None) });
         field.baseline.replace(field.raw());
         field
@@ -611,6 +627,18 @@ impl PropertyField {
         let raw = self.raw();
         if raw == Raw::None || raw == *self.baseline.borrow() || (self.secret && matches!(&raw, Raw::Text(t) if t.is_empty())) {
             return Ok(None);
+        }
+        if let Some(kind) = self.array {
+            let Raw::Text(text) = &raw else { return Ok(None) };
+            let lines: Vec<String> = text.lines().map(|l| l.trim().to_owned()).filter(|l| !l.is_empty()).collect();
+            crate::ui::structured::validate(kind, &lines).map_err(|_| format!("{}: enter a valid value.", self.title))?;
+            let field = self.clone();
+            return Ok(Some(Box::new(move || {
+                crate::ui::structured::write(&field.setting, &field.name, kind, &lines)
+                    .map_err(|_| format!("{}: this value is not supported.", field.title))?;
+                field.baseline.replace(raw);
+                Ok(())
+            })));
         }
         let value = parse_value(&self.spec, self.numeric, &raw).map_err(|_| format!("{}: enter a valid value.", self.title))?;
         let field = self.clone();

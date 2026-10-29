@@ -69,9 +69,65 @@ impl Remote {
 
 pub type Connector = Box<dyn Fn(Box<dyn FnOnce(Result<Rc<dyn Bus>, BusError>)>)>;
 
+/// The libnm-only checks Python made on libnm objects. `None` = not known yet
+/// (libnm's cache lags our D-Bus cache): treated as false and re-checked.
+pub trait Matcher {
+    /// Called once when the backend attaches; `ready` asks for a refresh.
+    fn start(&self, _ready: Box<dyn Fn()>) {}
+    /// `NMDevice.connection_compatible(remote)`.
+    fn compatible(&self, objects: &Objects, device: &str, connection: &str, settings: &Settings) -> Option<bool>;
+    /// `NMAccessPoint.connection_valid(remote)`.
+    fn ap_valid(&self, objects: &Objects, device: &str, ap: &str, connection: &str, settings: &Settings) -> Option<bool>;
+    /// `NMDevice.get_description()`.
+    fn description(&self, objects: &Objects, device: &str) -> Option<String>;
+}
+
+/// The daemon: a read-only libnm `NMClient` created on attach.
+#[derive(Default)]
+pub struct LibnmMatcher(Rc<RefCell<Option<libnm::Client>>>);
+
+impl Matcher for LibnmMatcher {
+    fn start(&self, ready: Box<dyn Fn()>) {
+        let _ = libnm::api();
+        let slot = self.0.clone();
+        libnm::Client::new_async(move |client| {
+            let ok = client.is_some();
+            slot.replace(client);
+            if ok {
+                ready();
+            }
+        });
+    }
+    fn compatible(&self, _: &Objects, device: &str, connection: &str, _: &Settings) -> Option<bool> {
+        self.0.borrow().as_ref()?.connection_compatible(device, connection)
+    }
+    fn ap_valid(&self, _: &Objects, device: &str, ap: &str, connection: &str, _: &Settings) -> Option<bool> {
+        self.0.borrow().as_ref()?.ap_connection_valid(device, ap, connection)
+    }
+    fn description(&self, _: &Objects, device: &str) -> Option<String> {
+        self.0.borrow().as_ref()?.description(device)
+    }
+}
+
+/// The status stream: no libnm at all (its output needs none of these).
+pub struct NoMatcher;
+
+impl Matcher for NoMatcher {
+    fn compatible(&self, _: &Objects, _: &str, _: &str, _: &Settings) -> Option<bool> {
+        Some(false)
+    }
+    fn ap_valid(&self, _: &Objects, _: &str, _: &str, _: &str, _: &Settings) -> Option<bool> {
+        Some(false)
+    }
+    fn description(&self, _: &Objects, _: &str) -> Option<String> {
+        Some(String::new())
+    }
+}
+
 pub struct Options {
     pub connector: Connector,
     pub scheduler: Rc<dyn Scheduler>,
+    pub matcher: Rc<dyn Matcher>,
 }
 
 impl Default for Options {
@@ -79,7 +135,15 @@ impl Default for Options {
         Self {
             connector: Box::new(|done| compat::connect(gio::BusType::System, move |r| done(r.map(|(bus, _)| bus)))),
             scheduler: Rc::new(GlibScheduler::default()),
+            matcher: Rc::new(LibnmMatcher::default()),
         }
+    }
+}
+
+impl Options {
+    /// `network-status`: same backend without libnm.
+    pub fn status() -> Self {
+        Self { matcher: Rc::new(NoMatcher), ..Self::default() }
     }
 }
 
@@ -89,6 +153,9 @@ pub struct Inner {
     on_error: Box<dyn Fn(&str)>,
     connector: Connector,
     scheduler: Rc<dyn Scheduler>,
+    matcher: Rc<dyn Matcher>,
+    matcher_started: Cell<bool>,
+    misses: Cell<u32>,
     bus: RefCell<Option<Rc<dyn Bus>>>,
     client: Cell<u64>,
     next_client: Cell<u64>,
@@ -228,7 +295,8 @@ impl NetworkBackend {
     pub fn new(on_changed: impl Fn() + 'static, on_error: impl Fn(&str) + 'static, options: Options) -> Self {
         let inner = Rc::new(Inner {
             state: RefCell::new(State::new()), on_changed: Box::new(on_changed), on_error: Box::new(on_error),
-            connector: options.connector, scheduler: options.scheduler, bus: RefCell::new(None), client: Cell::new(0),
+            connector: options.connector, scheduler: options.scheduler, matcher: options.matcher, matcher_started: Cell::new(false),
+            misses: Cell::new(0), bus: RefCell::new(None), client: Cell::new(0),
             next_client: Cell::new(0), owner: RefCell::new(None), objects: RefCell::new(Objects::new()),
             settings: RefCell::new(HashMap::new()), closed: Cell::new(false), started: Cell::new(false),
             generation: Cell::new(0), load_serial: Cell::new(0), loading: Cell::new(false), dirty: Cell::new(false),
@@ -354,6 +422,10 @@ impl NetworkBackend {
             }
         })));
         self.0.subscriptions.borrow_mut().append(&mut subscriptions);
+        if !self.0.matcher_started.replace(true) {
+            let weak = self.weak();
+            self.0.matcher.start(Box::new(move || if let Some(inner) = weak.upgrade() { NetworkBackend(inner).changed() }));
+        }
         let weak = self.weak();
         bus.call(Call::new("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner",
                            Some((NM_BUS,).to_variant())), Box::new(move |reply| {
@@ -724,6 +796,14 @@ impl NetworkBackend {
         state.connectivity_uri = prop_str(&objects, NM_PATH, NM_IFACE, "ConnectivityCheckUri");
         let devices: Vec<String> = prop_paths(&objects, NM_PATH, NM_IFACE, "Devices").into_iter()
             .filter(|p| objects.get(p).is_some_and(|o| o.contains_key(DEVICE_IFACE))).collect();
+        let matcher = self.0.matcher.clone();
+        let misses = Cell::new(0u32);
+        let known = |value: Option<bool>| -> bool {
+            if value.is_none() {
+                misses.set(misses.get() + 1);
+            }
+            value.unwrap_or(false)
+        };
         let mut profiles: Vec<(String, String)> = Vec::new();
         for path in prop_paths(&objects, SETTINGS_PATH, SETTINGS_IFACE, "Connections") {
             if let Some(uuid) = settings.get(&path).and_then(|s| get_str(s, "connection", "uuid")).filter(|u| !u.is_empty()) {
@@ -771,7 +851,7 @@ impl NetworkBackend {
             let name = get_str(s, "connection", "id").filter(|n| !n.is_empty()).unwrap_or_else(|| "Unnamed connection".into());
             let mut model = Profile::new(uuid, &name, &kind);
             model.interface = get_str(s, "connection", "interface-name").unwrap_or_default();
-            model.device_ids = devices.iter().filter(|d| connection_compatible(&objects, d, s)).cloned().collect();
+            model.device_ids = devices.iter().filter(|d| known(matcher.compatible(&objects, d, path, s))).cloned().collect();
             model.active_ids = active_models.iter().filter(|(_, a)| a.profile_id == *uuid).map(|(k, _)| k.clone()).collect();
             if s.contains_key("802-11-wireless") {
                 model.ssid = get_bytes(s, "802-11-wireless", "ssid").unwrap_or_default();
@@ -852,10 +932,13 @@ impl NetworkBackend {
                     // Hidden beacons have no stable SSID to group safely.
                     let hex: String = ssid.iter().map(|b| format!("{b:02x}")).collect();
                     let key = format!("{path}|{}|{security}", if hex.is_empty() { ap.clone() } else { hex });
-                    let mut saved: Vec<String> = profiles.iter().filter(|(uuid, profile_path)| {
-                        profile_models.get(uuid).is_some_and(|p| p.device_ids.contains(path))
-                            && ap_connection_valid(&objects, &ap, &settings[profile_path])
-                    }).map(|(u, _)| u.clone()).collect();
+                    let mut saved: Vec<String> = Vec::new();
+                    for (uuid, profile_path) in &profiles {
+                        if profile_models.get(uuid).is_some_and(|p| p.device_ids.contains(path))
+                            && known(matcher.ap_valid(&objects, path, &ap, profile_path, &settings[profile_path])) {
+                            saved.push(uuid.clone());
+                        }
+                    }
                     saved.sort_by(|a, b| {
                         let (pa, pb) = (&profile_models.get(a).unwrap(), &profile_models.get(b).unwrap());
                         (std::cmp::Reverse(pa.timestamp), suite_core::pyjson::casefold(&pa.name))
@@ -881,7 +964,13 @@ impl NetworkBackend {
                     }
                 }
             }
-            let description = udev_description(prop_u32(&objects, path, DEVICE_IFACE, "Ifindex"), &interface);
+            let description = match matcher.description(&objects, path) {
+                Some(text) => text,
+                None => {
+                    misses.set(misses.get() + 1);
+                    String::new()
+                }
+            };
             let name = if !description.is_empty() { description } else if !interface.is_empty() { interface.clone() } else { title(&kind) };
             let mut model = Device::new(path, &interface, &name, &kind);
             model.state = status;
@@ -900,6 +989,15 @@ impl NetworkBackend {
         drop(scans);
         drop(settings);
         drop(objects);
+        // libnm's object cache lags ours: re-check shortly (bounded).
+        let misses = misses.get();
+        if misses > 0 && self.0.misses.get() < 40 {
+            self.0.misses.set(self.0.misses.get() + 1);
+            let b = self.clone();
+            self.later("libnm-sync", 250, Box::new(move || b.refresh()));
+        } else if misses == 0 {
+            self.0.misses.set(0);
+        }
         self.notify();
     }
 

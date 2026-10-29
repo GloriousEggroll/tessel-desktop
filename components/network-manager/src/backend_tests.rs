@@ -130,7 +130,8 @@ impl Harness {
         let fake: Rc<dyn Bus> = bus.clone();
         let fake = RefCell::new(Some(fake));
         let backend = NetworkBackend::new(move || c.set(c.get() + 1), move |m| e.borrow_mut().push(m.to_owned()),
-            Options { connector: Box::new(move |done| done(Ok(fake.borrow_mut().take().unwrap()))), scheduler: scheduler.clone() });
+            Options { connector: Box::new(move |done| done(Ok(fake.borrow_mut().take().unwrap()))), scheduler: scheduler.clone(),
+                      matcher: Rc::new(FakeMatcher) });
         let mut harness = Self { backend, bus, scheduler, errors, changes, world };
         harness.backend.start();
         harness.bus.reply("GetNameOwner", Ok((":1.7",).to_variant()), None, None, 0);
@@ -182,6 +183,26 @@ impl Harness {
 
     pub fn busy(&self) -> HashSet<String> {
         self.backend.state().busy.clone()
+    }
+}
+
+/// Python's FakeDevice.connection_compatible / FakeAP.connection_valid.
+pub(crate) struct FakeMatcher;
+
+impl Matcher for FakeMatcher {
+    fn compatible(&self, objects: &Objects, device: &str, _connection: &str, settings: &Settings) -> Option<bool> {
+        Some(prop_u32(objects, device, DEVICE_IFACE, "DeviceType") == 2
+             && get_str(settings, "connection", "type").as_deref() == Some("802-11-wireless"))
+    }
+    fn ap_valid(&self, objects: &Objects, _device: &str, ap: &str, _connection: &str, settings: &Settings) -> Option<bool> {
+        let security = ap_security(prop_u32(objects, ap, AP_IFACE, "Flags"), prop_u32(objects, ap, AP_IFACE, "WpaFlags"),
+                                   prop_u32(objects, ap, AP_IFACE, "RsnFlags"));
+        Some(settings.contains_key("802-11-wireless")
+             && get_bytes(settings, "802-11-wireless", "ssid").unwrap_or_default() == prop_bytes(objects, ap, AP_IFACE, "Ssid")
+             && profile_security(settings) == security)
+    }
+    fn description(&self, _objects: &Objects, _device: &str) -> Option<String> {
+        Some("Test adapter".into())
     }
 }
 
@@ -721,4 +742,44 @@ fn invalid_wifi_credentials_and_enterprise_require_configuration() {
                                 (wifi("wpa-personal", b""), None)] {
         assert!(make_wifi_connection(&network, password).is_err(), "{}", network.security);
     }
+}
+
+#[test]
+fn device_names_come_from_libnm_descriptions() {
+    let (world, _) = base_world();
+    let h = Harness::new(world);
+    assert_eq!(h.backend.state().devices.get("/wifi1").unwrap().name, "Test adapter");
+}
+
+struct LaggingMatcher;
+
+impl Matcher for LaggingMatcher {
+    fn compatible(&self, _: &Objects, _: &str, _: &str, _: &Settings) -> Option<bool> {
+        None
+    }
+    fn ap_valid(&self, _: &Objects, _: &str, _: &str, _: &str, _: &Settings) -> Option<bool> {
+        None
+    }
+    fn description(&self, _: &Objects, _: &str) -> Option<String> {
+        None
+    }
+}
+
+#[test]
+fn libnm_cache_lag_is_treated_as_unknown_and_rechecked() {
+    let (world, profile) = base_world();
+    let bus = FakeBus::new();
+    let scheduler = Rc::new(FakeScheduler::default());
+    let fake: Rc<dyn Bus> = bus.clone();
+    let fake = RefCell::new(Some(fake));
+    let backend = NetworkBackend::new(|| {}, |_| {}, Options { connector: Box::new(move |done| done(Ok(fake.borrow_mut().take().unwrap()))),
+                                                         scheduler: scheduler.clone(), matcher: Rc::new(LaggingMatcher) });
+    backend.start();
+    bus.reply("GetNameOwner", Ok((":1.7",).to_variant()), None, None, 0);
+    bus.reply("GetManagedObjects", Ok(world.variant()), None, None, 0);
+    bus.reply("GetSettings", Ok(Variant::tuple_from_iter([world.settings["/profiles/1"].clone()])), None, None, 0);
+    let state = backend.state().clone();
+    assert!(state.profiles.get(&profile.uuid()).unwrap().device_ids.is_empty());
+    assert_eq!(state.devices.get("/wifi1").unwrap().name, "wlan0", "falls back to the interface like `get_description() or iface`");
+    assert!(scheduler.delays().contains(&250), "re-checked once libnm caught up");
 }

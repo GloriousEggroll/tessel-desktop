@@ -711,4 +711,36 @@ mod tests {
         assert_eq!(draft.setting("vpn").unwrap().vpn_secret("password").as_deref(), Some("fixture-only"));
         let _ = std::fs::remove_dir_all(&dir);
     }
+
+    /// The installed OpenVPN plugin (read-only use): import a synthetic file
+    /// into memory, then export it privately without secrets. Skips when absent.
+    #[test]
+    fn installed_openvpn_plugin_imports_and_exports_without_secrets() {
+        let catalog = VpnPluginCatalog::installed();
+        let Some(item) = catalog.find("org.freedesktop.NetworkManager.openvpn").filter(|p| p.can_import && p.can_export) else {
+            eprintln!("openvpn plugin not installed: skipped");
+            return;
+        };
+        assert!(!item.name.is_empty());
+        let dir = std::env::temp_dir().join(format!("vpn-real-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let source = dir.join("office.ovpn");
+        std::fs::write(dir.join("ca.crt"), "-----BEGIN CERTIFICATE-----\nsynthetic\n-----END CERTIFICATE-----\n").unwrap();
+        std::fs::write(&source, "client\ndev tun\nproto udp\nremote vpn.example.invalid 1194\nauth-user-pass\nca ca.crt\ncipher AES-256-GCM\n").unwrap();
+        let connection = catalog.import_connection(&source.display().to_string(), None).unwrap();
+        let setting = vpn_setting(&connection).unwrap();
+        assert_eq!(setting.vpn_service_type(), "org.freedesktop.NetworkManager.openvpn");
+        assert!(setting.vpn_data_item("remote").is_some_and(|r| r.contains("vpn.example.invalid")));
+        setting.vpn_add_secret("password", "synthetic-never-exported");
+        let target = dir.join("export.conf");
+        catalog.export_connection(&target, &connection, false).unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(std::fs::metadata(&target).unwrap().permissions().mode() & 0o777, 0o600);
+        let text = std::fs::read_to_string(&target).unwrap();
+        assert!(text.contains("vpn.example.invalid") && !text.contains("synthetic-never-exported"));
+        assert!(catalog.export_connection(&target, &connection, false).is_err(), "no overwrite without asking");
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 3, "no temporary left behind");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

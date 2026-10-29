@@ -6,6 +6,7 @@ pub mod info;
 pub mod popup;
 pub mod prompt;
 pub mod settings;
+pub mod structured;
 pub mod style;
 pub mod vpn_editor;
 pub mod wizard;

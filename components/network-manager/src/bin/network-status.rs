@@ -31,7 +31,7 @@ fn main() {
         })
     };
     let (changed, failed) = (emit.clone(), emit.clone());
-    let backend = NetworkBackend::new(move || changed(), move |_| failed(), Options::default());
+    let backend = NetworkBackend::new(move || changed(), move |_| failed(), Options::status());
     slot.replace(backend.downgrade());
     for signal in [libc::SIGTERM, libc::SIGINT] {
         let main_loop = main_loop.clone();

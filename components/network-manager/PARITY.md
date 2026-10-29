@@ -27,14 +27,15 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
   ethtool option helpers, VPN plugin metadata (`.name` files) and editor-plugin import/export.
   **Runtime package needed:** `NetworkManager-libnm` (already installed; no `-devel` needed).
   VPN import/export additionally needs the `NetworkManager-<vpn>` plugin packages (as before).
-* `nm_device_connection_compatible` / `nm_access_point_connection_valid` (libnm client-side
-  logic over NMDevice/NMAccessPoint objects) are re-implemented in `nm.rs` (type, interface
-  name, MAC/BSSID, Wi-Fi WPA/RSN capability, SSID, mode, band, key-management compatibility).
-  ⚠ approximation: pairwise/group cipher matching and modem capability checks are not ported.
-* Device descriptions (`nm_device_get_description`) come from the udev database
-  (`/run/udev/data/n<ifindex>`) with libnm's vendor/product shortening re-implemented
-  (`Intel I226-V`, `Intel 6E AX210/AX1675* 2x2` on this machine). ⚠ word lists reproduced from
-  libnm sources from memory; exotic vendor strings may shorten slightly differently.
+* Device/profile compatibility, AP matching and device names use **libnm itself, exactly as
+  Python did**: the daemon keeps a read-only libnm `NMClient` view (created on attach, never
+  mutating) and calls `nm_device_connection_compatible(device, remote)`,
+  `nm_access_point_connection_valid(ap, remote)` and `nm_device_get_description(device)` on the
+  same objects Python used (`backend::LibnmMatcher`). Results libnm's cache does not have yet are
+  treated as unknown and re-checked every 250 ms (bounded). The status stream uses `NoMatcher`
+  and never loads libnm (asserted via /proc/<pid>/maps in private_bus). ✅ backend_tests
+  (`libnm_cache_lag_…`, `device_names_come_from_libnm_descriptions`, Python's fake matching),
+  private_bus, screenshots byte-identical (incl. libnm's "not saved" decision for the fixture AP).
 * nm-connection-editor / libnma: never run or loaded (same as Python).
 
 ## §1 Entry points / CLI
@@ -95,10 +96,17 @@ decision, WirelessForm, VPN form (protocol fields/secrets, unknown options kept)
 import/export (0600, atomic, secrets cleared), Saving… / close blocked, activate mode.
 ✅ 8 forms + 10 vpn_editor unit tests (`ui::forms::tests::*`, `ui::vpn_editor::tests::*`) and 8 GTK
 checks in ui_headless (existing passwords never displayed/erased, unknown VPN options round-trip, …).
-❌ Structured list properties (tc qdiscs/tfilters, sriov vfs, ovs trunks, bridge vlans, team
-link-watchers, dcb lists) are read-only ("Existing structured options are preserved unchanged.");
-Python could edit some. ❌ No test with a real installed plugin import/export file; the wizard's
-window/file-dialog flow itself is not automated.
+✅ Structured list properties are editable one item per line (`src/ui/structured.rs`): tc
+`qdiscs`/`tfilters` and SR-IOV `vfs` through libnm's own string parsers/renderers, OVS `trunks`,
+bridge/bridge-port `vlans` and team/team-port `link-watchers` in Python's formats, dcb `au`
+arrays and any `ai/au/ax/at/ab/as` array; everything is validated before the setting changes.
+Only unparsed structures (none writable besides IP addresses/routes, which have their own page)
+keep the "preserved unchanged" caption. ✅ `ui::structured::tests::*`, ui_headless (bridge VLANs).
+✅ Real plugin tests: `vpn_auth::tests::real_plugin_name_file_drives_the_helper_command` (installed
+`.name` file read-only via libnm `new_from_file`, fixture fallback) and
+`ui::vpn_editor::tests::installed_openvpn_plugin_imports_and_exports_without_secrets` (real
+openvpn editor plugin: import into memory, private 0600 export without secrets, no overwrite).
+☑ The wizard's own window/file-dialog flow is exercised only through headless_checks.
 
 ## Deviations ⚠
 1. gio D-Bus instead of zbus (consistent with the other ports; no executor thread).
@@ -121,8 +129,8 @@ window/file-dialog flow itself is not automated.
   are not part of this crate.
 
 ## Measurements (headless labwc, fake NM, release build)
-Rust `network-manager` 3.4 MB, `network-status` 1.9 MB. `--background` time-to-ready 46 ms
+Rust `network-manager` 3.4 MB, `network-status` 1.9 MB. `--background` time-to-ready 47 ms
 (Python: never ready against the fake — libnm's agent did not register — so n/a). Idle RSS
-27.6 MB / PSS 12.7 MB vs Python 84.5 / 56.0 MB; after popup+settings 75.2 / 47.6 MB vs
-100.6 / 65.0 MB. Status stream: first line 12 ms vs 56 ms, RSS 11.4 / PSS 4.2 MB vs 36.2 / 19.9 MB.
+28.9 MB / PSS 9.7 MB vs Python 84.2 / 52.8 MB; after popup+settings 75.9 / 44.7 MB vs
+100.6 / 61.8 MB. Status stream: first line 12 ms vs 56 ms, RSS 7.7 / PSS 2.4 MB vs 36.3 / 18.9 MB.
 Popup and settings screenshots are byte-identical to Python.

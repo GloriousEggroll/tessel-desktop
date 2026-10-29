@@ -177,6 +177,21 @@ fn main() {
         Some(Some((values, true))) if values == &vec![("psk".to_string(), "synthetic-passphrase".to_string())])));
     drop(handle);
 
+    // Structured list properties are editable text (bridge VLANs) and apply.
+    {
+        use network_manager::ui::forms::{Page, SettingPage};
+        let bridge = network_manager::libnm::Setting::new("bridge").unwrap();
+        let page = SettingPage::new(&bridge, &[], None);
+        let field = page.field("vlans");
+        let editable = field.as_ref().is_some_and(|f| !f.readonly);
+        if let Some(f) = &field { f.control.set_text("1 pvid untagged\n100-200"); }
+        let applied = page.prepare().map(|ops| ops.into_iter().all(|op| op().is_ok())).unwrap_or(false);
+        let lines = network_manager::ui::structured::read(&bridge, "vlans", network_manager::ui::structured::Kind::Vlans);
+        results.push(("structured bridge VLANs are editable and applied", editable && applied && lines == ["1 pvid untagged", "100-200"]));
+        if let Some(f) = &field { f.control.set_text("0"); }
+        results.push(("invalid structured rows are rejected before apply", page.prepare().is_err()));
+    }
+
     // Escape dismisses the popup.
     gui.show_popup("bottom", 76);
     pump(Duration::from_millis(500));

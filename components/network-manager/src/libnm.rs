@@ -71,6 +71,48 @@ nm_api! {
     nm_ethtool_optname_is_feature: fn(*const c_char) -> B;
     nm_ethtool_optname_is_pause: fn(*const c_char) -> B;
     nm_ethtool_optname_is_eee: fn(*const c_char) -> B;
+    nm_utils_tc_qdisc_from_str: fn(*const c_char, Err) -> *mut c_void;
+    nm_utils_tc_qdisc_to_str: fn(*mut c_void, Err) -> *mut c_char;
+    nm_tc_qdisc_unref: fn(*mut c_void);
+    nm_utils_tc_tfilter_from_str: fn(*const c_char, Err) -> *mut c_void;
+    nm_utils_tc_tfilter_to_str: fn(*mut c_void, Err) -> *mut c_char;
+    nm_tc_tfilter_unref: fn(*mut c_void);
+    nm_utils_sriov_vf_from_str: fn(*const c_char, Err) -> *mut c_void;
+    nm_utils_sriov_vf_to_str: fn(*const c_void, B, Err) -> *mut c_char;
+    nm_sriov_vf_unref: fn(*mut c_void);
+    nm_range_new: fn(u64, u64) -> *mut c_void;
+    nm_range_get_range: fn(*const c_void, *mut u64, *mut u64) -> B;
+    nm_range_unref: fn(*mut c_void);
+    nm_bridge_vlan_new: fn(u16, u16) -> *mut c_void;
+    nm_bridge_vlan_set_pvid: fn(*mut c_void, B);
+    nm_bridge_vlan_set_untagged: fn(*mut c_void, B);
+    nm_bridge_vlan_get_vid_range: fn(*const c_void, *mut u16, *mut u16) -> B;
+    nm_bridge_vlan_is_pvid: fn(*const c_void) -> B;
+    nm_bridge_vlan_is_untagged: fn(*const c_void) -> B;
+    nm_bridge_vlan_unref: fn(*mut c_void);
+    nm_team_link_watcher_new_ethtool: fn(c_int, c_int, Err) -> *mut c_void;
+    nm_team_link_watcher_new_nsna_ping: fn(c_int, c_int, c_int, *const c_char, Err) -> *mut c_void;
+    nm_team_link_watcher_new_arp_ping2: fn(c_int, c_int, c_int, c_int, *const c_char, *const c_char, c_uint, Err) -> *mut c_void;
+    nm_team_link_watcher_get_name: fn(*const c_void) -> *const c_char;
+    nm_team_link_watcher_get_delay_up: fn(*const c_void) -> c_int;
+    nm_team_link_watcher_get_delay_down: fn(*const c_void) -> c_int;
+    nm_team_link_watcher_get_init_wait: fn(*const c_void) -> c_int;
+    nm_team_link_watcher_get_interval: fn(*const c_void) -> c_int;
+    nm_team_link_watcher_get_missed_max: fn(*const c_void) -> c_int;
+    nm_team_link_watcher_get_target_host: fn(*const c_void) -> *const c_char;
+    nm_team_link_watcher_get_source_host: fn(*const c_void) -> *const c_char;
+    nm_team_link_watcher_get_vlanid: fn(*const c_void) -> c_int;
+    nm_team_link_watcher_get_flags: fn(*const c_void) -> c_uint;
+    nm_team_link_watcher_unref: fn(*mut c_void);
+    nm_client_new_async: fn(*mut c_void, Option<unsafe extern "C" fn(*mut gobj::GObject, *mut c_void, *mut c_void)>, *mut c_void);
+    nm_client_new_finish: fn(*mut c_void, Err) -> Obj;
+    nm_client_get_device_by_path: fn(Obj, *const c_char) -> Obj;
+    nm_client_get_connection_by_path: fn(Obj, *const c_char) -> Obj;
+    nm_device_connection_compatible: fn(Obj, Obj, Err) -> B;
+    nm_device_wifi_get_access_point_by_path: fn(Obj, *const c_char) -> Obj;
+    nm_access_point_connection_valid: fn(Obj, Obj) -> B;
+    nm_device_get_description: fn(Obj) -> *const c_char;
+    nm_device_get_device_type: fn(Obj) -> c_uint;
     nm_setting_vpn_get_service_type: fn(Obj) -> *const c_char;
     nm_setting_vpn_get_data_keys: fn(Obj, *mut c_uint) -> *mut *const c_char;
     nm_setting_vpn_get_data_item: fn(Obj, *const c_char) -> *const c_char;
@@ -150,6 +192,7 @@ nm_api! {
     nm_utils_uuid_generate: fn() -> *mut c_char;
     nm_vpn_plugin_info_list_load: fn() -> *mut gffi::GSList;
     nm_vpn_plugin_info_new_search_file: fn(*const c_char, *const c_char) -> Obj;
+    nm_vpn_plugin_info_new_from_file: fn(*const c_char, Err) -> Obj;
     nm_vpn_plugin_info_get_service: fn(Obj) -> *const c_char;
     nm_vpn_plugin_info_get_name: fn(Obj) -> *const c_char;
     nm_vpn_plugin_info_get_auth_dialog: fn(Obj) -> *const c_char;
@@ -198,11 +241,11 @@ pub const RULE_VALIDATE: u32 = 4;
 pub const VPN_IMPORT: u32 = 1;
 pub const VPN_EXPORT: u32 = 2;
 
-fn cstr(text: &str) -> CString {
+pub(crate) fn cstr(text: &str) -> CString {
     CString::new(text.replace('\0', "")).unwrap()
 }
 
-unsafe fn opt_string(ptr: *const c_char) -> Option<String> {
+pub(crate) unsafe fn opt_string(ptr: *const c_char) -> Option<String> {
     if ptr.is_null() { None } else { Some(CStr::from_ptr(ptr).to_string_lossy().into_owned()) }
 }
 
@@ -1257,7 +1300,9 @@ pub fn wep_key_valid(key: &str, key_type: u32) -> bool {
 
 /// `NM.utils_ssid_to_utf8` (libnm guesses the legacy encoding), else lossy UTF-8.
 pub fn ssid_to_utf8(ssid: &[u8]) -> String {
-    if let Some(nm) = api() {
+    // Never loads libnm by itself (the status stream stays libnm-free; the
+    // daemon has loaded it for its NMClient view before the first snapshot).
+    if let Some(Some(nm)) = API.get() {
         unsafe {
             let raw = (nm.nm_utils_ssid_to_utf8)(ssid.as_ptr(), ssid.len());
             if !raw.is_null() {
@@ -1319,6 +1364,16 @@ impl VpnPluginInfo {
         let nm = api()?;
         let service = cstr(service);
         unsafe { object((nm.nm_vpn_plugin_info_new_search_file)(ptr::null(), service.as_ptr()), true).map(Self) }
+    }
+
+    /// `NM.VpnPluginInfo.new_from_file(path)` (libnm's own .name parser).
+    pub fn from_file(path: &str) -> Result<Self, glib::Error> {
+        let nm = nm()?;
+        let path = cstr(path);
+        unsafe {
+            let mut error = ptr::null_mut();
+            object((nm.nm_vpn_plugin_info_new_from_file)(path.as_ptr(), &mut error), true).map(Self).ok_or_else(|| take_error(error))
+        }
     }
 
     pub fn service(&self) -> String {
@@ -1388,3 +1443,76 @@ impl EditorPlugin {
 }
 
 use glib::prelude::*;
+
+
+/// libnm's read-only `NMClient` view, used only for the libnm-only checks
+/// Python made on its objects: `NMDevice.connection_compatible(remote)`,
+/// `NMAccessPoint.connection_valid(remote)` and `NMDevice.get_description()`.
+/// Never mutates; created lazily by the daemon (never by the status stream).
+pub struct Client(pub glib::Object);
+
+unsafe extern "C" fn client_ready(_source: *mut gobj::GObject, result: *mut c_void, data: *mut c_void) {
+    let callback: Box<Box<dyn FnOnce(Option<Client>)>> = Box::from_raw(data as *mut Box<dyn FnOnce(Option<Client>)>);
+    let Some(nm) = api() else { return callback(None) };
+    let mut error = ptr::null_mut();
+    let raw = (nm.nm_client_new_finish)(result, &mut error);
+    if !error.is_null() {
+        gffi::g_error_free(error);
+    }
+    callback(object(raw, true).map(Client));
+}
+
+impl Client {
+    /// `NM.Client.new_async` on the thread-default main context.
+    pub fn new_async(done: impl FnOnce(Option<Client>) + 'static) {
+        let Some(nm) = api() else { return done(None) };
+        let data: Box<Box<dyn FnOnce(Option<Client>)>> = Box::new(Box::new(done));
+        unsafe { (nm.nm_client_new_async)(ptr::null_mut(), Some(client_ready), Box::into_raw(data) as *mut c_void) };
+    }
+
+    fn device(&self, path: &str) -> Option<glib::Object> {
+        let nm = api()?;
+        let path = cstr(path);
+        unsafe { object((nm.nm_client_get_device_by_path)(self.0.as_ptr(), path.as_ptr()), false) }
+    }
+
+    fn connection(&self, path: &str) -> Option<glib::Object> {
+        let nm = api()?;
+        let path = cstr(path);
+        unsafe { object((nm.nm_client_get_connection_by_path)(self.0.as_ptr(), path.as_ptr()), false) }
+    }
+
+    /// `None` when libnm's cache does not have both objects yet.
+    pub fn connection_compatible(&self, device: &str, connection: &str) -> Option<bool> {
+        let nm = api()?;
+        let (device, connection) = (self.device(device)?, self.connection(connection)?);
+        unsafe {
+            let mut error = ptr::null_mut();
+            let ok = (nm.nm_device_connection_compatible)(device.as_ptr(), connection.as_ptr(), &mut error) != 0;
+            if !error.is_null() {
+                gffi::g_error_free(error);
+            }
+            Some(ok)
+        }
+    }
+
+    pub fn ap_connection_valid(&self, device: &str, ap: &str, connection: &str) -> Option<bool> {
+        let nm = api()?;
+        let device = self.device(device)?;
+        if unsafe { (nm.nm_device_get_device_type)(device.as_ptr()) } != 2 {
+            return Some(false);
+        }
+        let connection = self.connection(connection)?;
+        let ap = cstr(ap);
+        unsafe {
+            let ap = object((nm.nm_device_wifi_get_access_point_by_path)(device.as_ptr(), ap.as_ptr()), false)?;
+            Some((nm.nm_access_point_connection_valid)(ap.as_ptr(), connection.as_ptr()) != 0)
+        }
+    }
+
+    pub fn description(&self, device: &str) -> Option<String> {
+        let nm = api()?;
+        let device = self.device(device)?;
+        unsafe { opt_string((nm.nm_device_get_description)(device.as_ptr())) }
+    }
+}

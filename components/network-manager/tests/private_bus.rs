@@ -216,6 +216,10 @@ fn manager_agent_and_status_stream_on_private_bus() {
         collect(&lines);
         lines.borrow().last().is_some_and(|l| l.contains("[\"disabled\"]"))
     });
+    let maps = std::fs::read_to_string(format!("/proc/{}/maps", status.id())).unwrap_or_default();
+    assert!(!maps.contains("libnm.so"), "the status stream stays libnm-free");
+    let manager_maps = std::fs::read_to_string(format!("/proc/{}/maps", manager.id())).unwrap_or_default();
+    assert!(manager_maps.contains("libnm.so"), "the daemon uses libnm for compatibility/AP checks");
     unsafe { libc::kill(status.id() as i32, libc::SIGTERM) };
     let end = Instant::now() + Duration::from_secs(5);
     while status.try_wait().unwrap().is_none() {

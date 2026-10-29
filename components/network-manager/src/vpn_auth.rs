@@ -39,10 +39,14 @@ pub struct PluginMeta {
 }
 
 pub fn plugin_meta(service: &str) -> Option<PluginMeta> {
-    let plugin = VpnPluginInfo::search(service)?;
+    VpnPluginInfo::search(service).map(|p| meta_of(&p))
+}
+
+/// The metadata the agent reads from one plugin `.name` file.
+pub fn meta_of(plugin: &VpnPluginInfo) -> PluginMeta {
     let external = plugin.lookup_property("GNOME", "supports-external-ui-mode").unwrap_or_default().to_lowercase();
-    Some(PluginMeta { auth_dialog: plugin.auth_dialog(), supports_hints: plugin.supports_hints(),
-                      external_ui: ["true", "yes", "1"].contains(&external.as_str()) })
+    PluginMeta { auth_dialog: plugin.auth_dialog(), supports_hints: plugin.supports_hints(),
+                 external_ui: ["true", "yes", "1"].contains(&external.as_str()) }
 }
 
 /// Absolute, regular, root-owned, not group/other-writable and executable.
@@ -371,6 +375,53 @@ mod tests {
         assert!(error.contains("trusted system"), "{error}");
         assert!(!trusted_helper(Path::new("relative/helper")));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A real installed plugin `.name` file (read-only), else a fixture in its format.
+    #[test]
+    fn real_plugin_name_file_drives_the_helper_command() {
+        let installed = ["/usr/lib/NetworkManager/VPN", "/usr/lib64/NetworkManager/VPN", "/etc/NetworkManager/VPN"].iter()
+            .filter_map(|d| std::fs::read_dir(d).ok()).flatten().flatten().map(|e| e.path())
+            .find(|p| p.extension().is_some_and(|x| x == "name")
+                  && std::fs::read_to_string(p).is_ok_and(|t| t.contains("auth-dialog=")));
+        let fixture;
+        let path = match installed {
+            Some(path) => path,
+            None => {
+                let dir = std::env::temp_dir().join(format!("vpn-name-{}", std::process::id()));
+                std::fs::create_dir_all(&dir).unwrap();
+                fixture = dir.join("nm-fixture-service.name");
+                std::fs::write(&fixture, "[VPN Connection]\nname=fixture\nservice=org.freedesktop.NetworkManager.fixture\n\
+                    program=/usr/libexec/nm-fixture-service\n\n[GNOME]\nauth-dialog=/usr/libexec/nm-fixture-auth-dialog\n\
+                    supports-external-ui-mode=true\nsupports-hints=true\n").unwrap();
+                fixture.clone()
+            }
+        };
+        let text = std::fs::read_to_string(&path).unwrap();
+        let keyfile = glib::KeyFile::new();
+        keyfile.load_from_data(&text, glib::KeyFileFlags::NONE).unwrap();
+        let service = keyfile.string("VPN Connection", "service").unwrap().to_string();
+        let dialog = keyfile.string("GNOME", "auth-dialog").unwrap().to_string();
+        let hints = keyfile.boolean("GNOME", "supports-hints").unwrap_or(false);
+        let external = keyfile.string("GNOME", "supports-external-ui-mode").map(|v| ["true", "yes", "1"].contains(&v.to_lowercase().as_str())).unwrap_or(false);
+        // libnm's own parser sees the same metadata (the installed copy is also found by service name).
+        let meta = match crate::libnm::VpnPluginInfo::from_file(&path.display().to_string()) {
+            Ok(info) => meta_of(&info),
+            Err(_) => plugin_meta(&service).expect("installed plugin found by service"),
+        };
+        assert_eq!(meta, PluginMeta { auth_dialog: Some(dialog.clone()), supports_hints: hints, external_ui: external });
+        let connection = vpn_connection();
+        connection.setting("vpn").unwrap().set_str("service-type", Some(&service));
+        connection.setting("vpn").unwrap().vpn_add_secret("password", "synthetic-never-in-argv");
+        let lookup = move |s: &str| (s == service).then(|| meta.clone());
+        let (argv, ext) = auth_command(&connection, &["password".into()], 1, &lookup, &|_| true).unwrap();
+        assert_eq!(argv[0], dialog);
+        assert_eq!(ext, external);
+        assert_eq!(argv.windows(2).any(|w| w == ["-t", "password"]), hints);
+        assert!(!argv.iter().any(|a| a.contains("synthetic")));
+        if Path::new(&dialog).exists() {
+            assert!(trusted_helper(Path::new(&dialog)), "the installed root-owned helper passes the trust check");
+        }
     }
 
     #[test]
