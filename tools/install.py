@@ -18,6 +18,10 @@ What a swap does, per component:
     The base unit and the other drop-ins (50-desktop-suite-recovery.conf, desktop-suite.conf,
     palette.conf) stay untouched; "zz-" sorts last, so this ExecStart is the one systemd runs,
   * points ~/.local/bin launchers and .desktop Exec lines that ran the Python entry at the binary,
+  * repoints labwc keybinds that ran a Python entry (wayshell: A-Tab / A-S-Tab -> wayshell-cli) in
+    ~/.config/labwc/rc.xml, changing only those command attributes (every other byte is kept);
+    --rollback restores the backup, or, if rc.xml changed since (Global Settings saves there), puts
+    back only the original command strings,
   * replaces only the Python entry scripts (incl. the *_status.py streams waydock runs with
     `python3 -u`) with shims that exec the binaries with the same argv: the porters' files from
     components/<name>/shim(s)/ where present, generated ones otherwise. Each shim carries the
@@ -32,13 +36,17 @@ Every changed file is backed up in ~/.local/state/desktop-suite/backups/rust-swa
 
 Nothing is started, stopped or restarted unless --restart is given; then only the swapped units
 that are active get `systemctl --user restart` (never labwc; waydock/wayshell also need
---restart-shell). --apply/--rollback run `systemctl --user daemon-reload` so systemd sees the
-drop-in change (pass --no-reload to skip it).
+--restart-shell), followed by the component's health check (waydock --check, wayshell-cli
+switcher-status). When rc.xml keybinds changed, `labwc --reconfigure` (a reload, never a restart)
+runs only with --restart --restart-shell inside the labwc session; otherwise run it yourself.
+--apply/--rollback run `systemctl --user daemon-reload` so systemd sees the drop-in change (pass
+--no-reload to skip it).
 """
 import argparse
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
+import html
 import json
 import os
 from pathlib import Path
@@ -50,6 +58,9 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
+from xml.sax.saxutils import escape as xml_escape
+import xml.etree.ElementTree as ET
 
 REPO = Path(__file__).resolve().parent.parent
 REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir)
@@ -62,6 +73,7 @@ DROPIN = "zz-desktop-suite-rust.conf"
 STATE = ".local/state/desktop-suite/rust-swap.json"
 BACKUPS = ".local/state/desktop-suite/backups"
 SHIM_MARKER = "desktop-suite-rust shim"
+RC_XML = ".config/labwc/rc.xml"
 SHARED = "_shared"            # state group for files shared by every component (locale)
 SHELL_UNITS = {"waydock.service", "wayshell.service"}
 NEVER_RESTART = {"labwc.service", "graphical-session.target"}
@@ -85,6 +97,14 @@ class Unit:
 
 
 @dataclass(frozen=True)
+class Keybind:
+    key: str                  # labwc keybind key ("A-Tab")
+    entry: str                # Python script (in the component dir) the Execute command ran with python3
+    binary: str               # Rust binary (same dir) that now runs instead
+    args: tuple = ()          # the arguments after the script; only commands with exactly these are changed
+
+
+@dataclass(frozen=True)
 class Component:
     key: str
     package: str              # cargo package (components/<package>)
@@ -103,6 +123,9 @@ class Component:
     requires_confirmation: bool = False   # --apply needs --i-am-at-the-keyboard
     signal_on_restart: bool = False       # resident without a unit: --restart SIGTERMs it
     requires_rpms: tuple = ()             # runtime packages the binary loads (checked with rpm -q)
+    keybinds: tuple = ()                  # rc.xml Execute commands repointed from the Python entry to a binary
+    python_entries: tuple = ()            # Python programs (kept, not shimmed) that --status recognises
+    health: tuple = ()                    # argv (binary in dir + args) that must exit 0 after a restart
 
 
 POPUP = ("--popup", "--popup-edge", "--popup-offset")
@@ -124,8 +147,8 @@ COMPONENTS = (
                     porter="components/keep-awake/shim/keep_awake.py", fallback="keep_awake_python.py"),),
         units=(Unit("keep-awake.service", "keep-awake", ("--background",)),),
         keeps=("keep_awake_ui.py", "keep_awake_client.py", "keep_awake_backend.py"),
-        clobbered_by=("wayshell/install_switcher.py",),
         notes=("idle_inhibit.sh / toggle_idle_inhibit.sh and waydock run keep_awake.py: served by the shim.",
+               "wayshell/install_switcher.py leaves a keep_awake.py that carries the shim marker alone.",
                "The porter shim falls back to keep_awake_python.py (the saved Python entry) if the binary is gone.")),
     Component(
         "battery-manager", "battery-manager", "battery-manager", ("battery-manager", "battery-status"),
@@ -318,9 +341,76 @@ COMPONENTS = (
                "right after restarting netman.service.",
                "Imported, network_manager.py / network_status.py re-export network_manager_impl / "
                "network_status_impl (the saved originals) for Global Settings.", STATUS_GUARD)),
+    # wayshell.service's own ExecStart (/usr/bin/wayshell) is stale: wayshell.service.d/palette.conf
+    # resets it to %h/.local/share/wayshell/wayshell, and that is what runs. The swap does NOT edit
+    # palette.conf: like every other unit here it adds zz-desktop-suite-rust.conf, which systemd reads
+    # after palette.conf ("p" < "z"), so its `ExecStart=` reset + binary is the effective command.
+    # That keeps one mechanism for all units, leaves palette.conf byte-identical (nothing to back up
+    # or merge on rollback, which just removes our file), and survives anything that rewrites
+    # palette.conf later. The Python daemon `wayshell` stays installed for --rollback, so the binary is
+    # installed as wayshell-rs next to it.
+    Component(
+        "wayshell", "wayshell", "wayshell", (("wayshell", "wayshell-rs"), "wayshell-cli"),
+        shims=(Shim("wayshell_cli.py", "wayshell-cli", ("--reverse", "--monitor"),
+                    porter="components/wayshell/shim/wayshell_cli.py"),),
+        units=(Unit("wayshell.service", "wayshell-rs", ()),),
+        keybinds=(Keybind("A-Tab", "wayshell_cli.py", "wayshell-cli", ("switch-window",)),
+                  Keybind("A-S-Tab", "wayshell_cli.py", "wayshell-cli", ("switch-window", "--reverse"))),
+        keeps=("wayshell", "wayshell_switcher.py", "wayshell_switcher_ui.py", "wayshell_theme.py", "switcher_model.py",
+               "overview.py", "wayshell-overview", "wayshell-toplevel", "window_backend.py", "app_catalog.py",
+               "companion_theme.py", "wallpaper_chooser.py", "desktop_file_ops.py"),
+        python_entries=("wayshell",),
+        health=("wayshell-cli", "switcher-status"),
+        base=".local/share", requires_confirmation=True,
+        notes=("wayshell.service runs palette.conf's ExecStart (the base unit's is stale); zz- sorts after it, "
+               "palette.conf and 50-desktop-suite-recovery.conf stay untouched.",
+               "rc.xml A-Tab / A-S-Tab run ~/.local/share/wayshell/wayshell-cli directly (no Python startup); "
+               "labwc reads them after `labwc --reconfigure` (only with --restart --restart-shell).",
+               "wayshell_cli.py becomes the porter shim: waydock hot corners run it, wayshell_switcher.py imports "
+               "monitor_name; desktop-suite-action greps no wayshell file.",
+               "Restarts the desktop/switcher: --apply needs --i-am-at-the-keyboard.",
+               "btmanager installers skip these entries while the swap is active (install_switcher.py: A-Tab "
+               "keybinds and shims; install_all.py: the prompt / capture picker / waydock steps).")),
+    Component(
+        "wayshell-prompt", "wayshell-prompt", "wayshell", ("wayshell-prompt",),
+        shims=(),
+        launchers=((".local/bin/wayshell-prompt", None, ".local/share/wayshell/wayshell_prompt.py"),),
+        keeps=("wayshell_prompt.py", "wayshell_theme.py"),
+        base=".local/share",
+        clobbered_by=("wayshell/install_prompts.py",),
+        notes=("rc.xml promptCommand/errorCommand keep calling ~/.local/bin/wayshell-prompt (same here-doc "
+               "delimiter); only the launcher changes. wayshell_prompt.py stays Python (nothing runs it directly).",)),
+    Component(
+        "wayshell-capture-picker", "wayshell-capture-picker", "wayshell", ("wayshell-capture-picker",),
+        shims=(),
+        launchers=((".local/bin/wayshell-capture-picker", None, ".local/share/wayshell/capture_picker.py"),),
+        keeps=("capture_picker.py", "capture_picker_ui.py", "capture_sources.py", "capture_output.py",
+               "capture_selection.py"),
+        base=".local/share",
+        clobbered_by=("wayshell/install_capture_picker.py",),
+        notes=("xdg-desktop-portal-wlr's chooser_cmd keeps running ~/.local/bin/wayshell-capture-picker; "
+               "the picker finds ~/.local/share/waydock/waydock-toplevel for window icons.",)),
+    Component(
+        "waydock", "waydock", "waydock", ("waydock",),
+        shims=(),
+        units=(Unit("waydock.service", "waydock", ()),),
+        launchers=((".local/bin/waydock", None, ".local/share/waydock/waydock.py"),),
+        keeps=("waydock.py", "companion_theme.py", "app_catalog.py", "window_backend.py", "waydock-toplevel",
+               "dock_style.py", "dock_config.py", "settings_api.py", "group_layout_settings.py", "dock_appearance.py",
+               "lock_media.py", "application_audio.py", "labwc_titlebar_theme.py",
+               "icons/waydock-app-menu-symbolic.svg"),
+        python_entries=("waydock.py",),
+        health=("waydock", "--check"),
+        base=".local/share", requires_confirmation=True,
+        clobbered_by=("waydock/install.py",),
+        notes=("The drop-in changes only ExecStart; Type=notify, NotifyAccess=main (the binary is the main PID), "
+               "TimeoutStartSec and Restart stay in the base unit.",
+               "Every Python module stays: Global Settings embeds waydock.py's SettingsWindow, ~25 components "
+               "import waydock modules, and the dock runs app_catalog.py inside each launched app's unit.",
+               "~/.local/bin/waydock execs the binary: keybinds (--menu-hotkey), showdesktop scripts and the "
+               ".desktop --settings entry are unchanged.",
+               "Restarts the dock and tray: --apply needs --i-am-at-the-keyboard.")),
 )
-# Future (wave 3): wayshell must override wayshell.service.d/palette.conf, which is what runs it
-# (the base unit's ExecStart is stale); "zz-" sorts after "palette.conf", so the same drop-in works.
 BY_KEY = {component.key: component for component in COMPONENTS}
 
 
@@ -369,11 +459,12 @@ def systemctl(*args, check=False):
 class Change:
     component: str
     path: Path
-    kind: str                 # binary | helper | shim | fallback | dropin | launcher | desktop | locale
+    kind: str                 # binary | helper | shim | fallback | dropin | launcher | desktop | rcxml | locale
     data: bytes = None        # None: binary not built yet (preview only)
     mode: int = 0o644
     note: str = ""
     source: Path = None
+    commands: dict = None     # rcxml: {key: original raw command}, kept in the state for --rollback
 
 
 def bins(component):
@@ -482,6 +573,106 @@ def desktop_text(text, component, home):
     binary = str(binary_path(home, component, component.shims[0].binary))
     pattern = entry_pattern(home, f"{component.base}/{component.dir}/{component.shims[0].entry}")
     return re.sub(r"(?m)^(Exec=)(.*)$", lambda m: m[1] + pattern.sub(lambda _: binary, m[2]), text)
+
+
+# ---- labwc rc.xml keybinds (only the command attribute of the matching Execute actions changes) ----
+
+KEYBIND_BLOCK = re.compile(r"<keybind\b(?P<attrs>[^>]*?)(?:/>|>(?P<body>.*?)</keybind\s*>)", re.S)
+EXECUTE_TAG = re.compile(r"<action\b[^>]*>", re.S)
+ATTRIBUTE = r"\b{name}\s*=\s*(?P<q>[\"'])(?P<value>.*?)(?P=q)"
+
+
+def mask_comments(text):
+    """text with every <!-- ... --> (and CDATA) blanked out, same length, so offsets stay valid."""
+    return re.sub(r"<!--.*?-->|<!\[CDATA\[.*?\]\]>", lambda m: " " * len(m[0]), text, flags=re.S)
+
+
+def attribute(tag, name):
+    return re.search(ATTRIBUTE.format(name=name), tag, re.S)
+
+
+def keybind_commands(text):
+    """[(key, start, end, raw value)] for each Execute command attribute inside a <keybind> (not commented)."""
+    masked = mask_comments(text)
+    found = []
+    for block in KEYBIND_BLOCK.finditer(masked):
+        key = attribute(block["attrs"], "key")
+        if not key or block["body"] is None:
+            continue
+        offset = block.start("body")
+        for tag in EXECUTE_TAG.finditer(block["body"]):
+            name = attribute(tag[0], "name")
+            command = attribute(tag[0], "command")
+            if not name or html.unescape(name["value"]) != "Execute" or not command:
+                continue
+            start, end = offset + tag.start() + command.start("value"), offset + tag.start() + command.end("value")
+            found.append((html.unescape(key["value"]), start, end, text[start:end]))
+    return found
+
+
+def rust_keybind_command(component, keybind):
+    """What labwc runs after the swap; labwc runs Execute through sh, which expands ~/ (no home in rc.xml)."""
+    return " ".join([f"~/{component.base}/{component.dir}/{keybind.binary}", *keybind.args])
+
+
+def runs_python_entry(raw, home, component, keybind):
+    try:
+        words = shlex.split(html.unescape(raw))
+    except ValueError:
+        return False
+    if len(words) < 2 or not PYTHON.match(Path(words[0]).name):
+        return False
+    script = words[1]
+    for prefix in ("~/", "$HOME/", "${HOME}/"):
+        if script.startswith(prefix):
+            script = str(home / script[len(prefix):])
+    return script == str(component_dir(home, component) / keybind.entry) and tuple(words[2:]) == tuple(keybind.args)
+
+
+def rc_edit(text, edits):
+    """Apply [(start, end, new raw value)] (non-overlapping) to text."""
+    for start, end, value in sorted(edits, reverse=True):
+        text = text[:start] + value + text[end:]
+    return text
+
+
+def rc_swap_text(text, component, home):
+    """(new text, {key: original raw command}) with the Python keybinds pointed at the binaries."""
+    by_key = {keybind.key: keybind for keybind in component.keybinds}
+    edits, originals = [], {}
+    for key, start, end, raw in keybind_commands(text):
+        keybind = by_key.get(key)
+        if keybind and runs_python_entry(raw, home, component, keybind):
+            edits.append((start, end, xml_escape(rust_keybind_command(component, keybind), {'"': "&quot;"})))
+            originals.setdefault(key, raw)
+    return rc_edit(text, edits), originals
+
+
+def rc_revert_text(text, component, originals):
+    """text with the swapped keybinds (still running the binary) back on their original commands."""
+    by_key = {keybind.key: keybind for keybind in component.keybinds}
+    edits = [(start, end, originals[key]) for key, start, end, raw in keybind_commands(text)
+             if key in by_key and key in originals
+             and html.unescape(raw) == rust_keybind_command(component, by_key[key])]
+    return rc_edit(text, edits)
+
+
+def keybind_states(home, component):
+    """{key: rust | python | other | missing} for --status."""
+    path = home / RC_XML
+    text = path.read_text(errors="replace") if path.is_file() else ""
+    states = {}
+    for keybind in component.keybinds:
+        values = [raw for key, _s, _e, raw in keybind_commands(text) if key == keybind.key]
+        if not values:
+            states[keybind.key] = "missing"
+        elif all(html.unescape(v) == rust_keybind_command(component, keybind) for v in values):
+            states[keybind.key] = "rust"
+        elif any(runs_python_entry(v, home, component, keybind) for v in values):
+            states[keybind.key] = "python"
+        else:
+            states[keybind.key] = "other"
+    return states
 
 
 def effective_execstart(home, unit_name, skip_ours=False):
@@ -607,6 +798,24 @@ def plan_component(component, home, sources):
         if new != text:
             changes.append(Change(component.key, path, "desktop", new.encode(), stat.S_IMODE(path.lstat().st_mode),
                                   "Exec runs the binary"))
+    rc = home / RC_XML
+    if component.keybinds and rc.is_symlink():
+        problems.append(f"{RC_XML} is a symlink; its keybinds are not changed")
+    elif component.keybinds and rc.is_file():
+        text = rc.read_text()
+        new, originals = rc_swap_text(text, component, home)
+        if new != text:
+            try:
+                ET.fromstring(text)
+            except ET.ParseError:
+                pass                # labwc's own parser is more lenient; only keep valid files valid
+            else:
+                ET.fromstring(new)
+            note = "; ".join(f"{key}: {html.unescape(raw)} -> "
+                             f"{rust_keybind_command(component, next(k for k in component.keybinds if k.key == key))}"
+                             for key, raw in originals.items())
+            changes.append(Change(component.key, rc, "rcxml", new.encode(), stat.S_IMODE(rc.stat().st_mode),
+                                  note, commands=originals))
     return changes, problems
 
 
@@ -745,6 +954,9 @@ def apply(home, components, sources, locale_source):
             if before["kind"] == "file":
                 record["mode"] = before["mode"]
             group["files"][str(change.path)] = record
+        if change.commands:
+            for key, raw in change.commands.items():
+                record.setdefault("commands", {}).setdefault(key, raw)
         record["installed_sha256"] = digest(change.data)
     known = state.setdefault("dirs", [])
     known += [d for directories in created_dirs.values() for d in directories if d not in known]
@@ -775,6 +987,10 @@ def rollback_plan(home, keys, state):
             path = Path(name)
             if path.is_symlink():
                 steps.append((group, path, record, "refuse"))
+            elif current_digest(path) != record["installed_sha256"] and record.get("kind") == "rcxml" \
+                    and path.is_file() and group in BY_KEY and record.get("commands") \
+                    and rc_revert_text(path.read_text(), BY_KEY[group], record["commands"]) != path.read_text():
+                steps.append((group, path, record, "revert"))     # edited since the swap: undo only our commands
             elif current_digest(path) != record["installed_sha256"]:
                 steps.append((group, path, record, "keep"))
             else:
@@ -790,9 +1006,11 @@ def rollback(home, keys, preview, force=False):
         return []
     groups, steps = rollback_plan(home, keys, state)
     for group, path, record, action in steps:
-        label = {"restore": "restore", "remove": "remove ", "keep": "KEEP   ", "refuse": "REFUSE "}[action]
+        label = {"restore": "restore", "remove": "remove ", "keep": "KEEP   ", "refuse": "REFUSE ",
+                 "revert": "revert "}[action]
         extra = {"keep": "  (changed since the swap; kept, use --force to restore the backup)",
-                 "refuse": "  (now a symlink)"}.get(action, "")
+                 "refuse": "  (now a symlink)",
+                 "revert": "  (changed since the swap; only the swapped keybind commands are put back)"}.get(action, "")
         if action == "keep" and force:
             label, extra = "restore", "  (changed since the swap; --force)"
         print(f"  {group:24} {label} {path}{extra}")
@@ -810,7 +1028,10 @@ def rollback(home, keys, preview, force=False):
         if current["kind"] == "file":
             atomic_write(backup / path.relative_to(home), current["data"], current["mode"])
         manifest.append({"path": str(path), "component": group, "before": current["kind"], "restored": record["before"]})
-        if record["before"] == "missing":
+        if action == "revert":
+            atomic_write(path, rc_revert_text(path.read_text(), BY_KEY[group], record["commands"]).encode(),
+                         current["mode"])
+        elif record["before"] == "missing":
             path.unlink(missing_ok=True)
         elif record["before"] == "file":
             original = Path(record["backup"]) / path.relative_to(home)
@@ -868,6 +1089,7 @@ def classify(info, home, component):
     binaries = {str(binary_path(home, component, name)) for name in installed_names(component)}
     entries = {str(entry_path(home, component, shim)) for shim in component.shims}
     entries |= {str(home / launcher_spec(component, l)[2]) for l in component.launchers}
+    entries |= {str(component_dir(home, component) / entry) for entry in component.python_entries}
     exe = info["exe"].removesuffix(" (deleted)")
     argv = info["argv"]
     if exe in binaries or (argv and argv[0] in binaries):
@@ -918,9 +1140,11 @@ def component_status(home, component, processes, state):
         units[unit.name] = {"dropin": dropin.is_file(), "exec_start": effective_execstart(home, unit.name),
                             "main_pid": pid, "running": (classify(info, home, component) or "other") if info else None,
                             "rss_kb": info["rss_kb"] if info else 0}
+    keybinds = keybind_states(home, component)
     running = [dict(info, impl=impl) for info in processes for impl in [classify(info, home, component)] if impl]
     configured = (list(shims.values()) + [v for v in launchers.values() if v != "other"]
-                  + ["rust" if u["dropin"] else "python" for u in units.values()])
+                  + ["rust" if u["dropin"] else "python" for u in units.values()]
+                  + [v for v in keybinds.values() if v in ("rust", "python")])
     if all(state == "missing" for state in [*shims.values(), *launchers.values()]):
         mode = "not installed"
     elif any(state == "python (shim overwritten)" for state in configured):
@@ -933,6 +1157,7 @@ def component_status(home, component, processes, state):
         mode = "mixed"
     warnings = guard_warnings(component) + list(component.notes) if mode != "python" and mode != "not installed" else []
     return {"component": component.key, "configured": mode, "shims": shims, "launchers": launchers, "units": units,
+            "keybinds": keybinds,
             "binaries": {n: binary_path(home, component, n).is_file() for n in installed_names(component)},
             "processes": [{"pid": p["pid"], "impl": p["impl"], "rss_kb": p["rss_kb"]} for p in running],
             "rss_kb": sum(p["rss_kb"] for p in running), "warnings": warnings}
@@ -958,6 +1183,8 @@ def status(home, components, as_json):
         for entry, shim_state in item["shims"].items():
             if shim_state != "rust" and item["configured"] != "python":
                 print(f"    {entry}: {shim_state}")
+        for key, key_state in item["keybinds"].items():
+            print(f"    rc.xml {key}: {key_state}")
         for warning in item["warnings"]:
             print(f"    warn: {warning}")
     print(f"{'total':68}{total / 1024:>8.1f} MB")
@@ -999,6 +1226,14 @@ def check(home, components, sources, locale_source):
               + (f" (missing now: {', '.join(missing)})" if missing else ""))
         for unit in component.units:
             print(f"  autostart unchanged: systemctl --user start {unit.name}")
+        swapped_keys = {key for change in changes if change.commands for key in change.commands}
+        for key, key_state in keybind_states(home, component).items():
+            if key_state in ("other", "missing") and key not in swapped_keys:
+                print(f"  warn     {RC_XML} {key}: {key_state} (no Python {key} keybind to repoint; left as is)")
+        if component.health:
+            print(f"  health   after --restart: {shlex.join(health_argv(home, component))} must exit 0")
+        if component.keybinds:
+            print("  reload   labwc --reconfigure only with --restart --restart-shell (labwc is never restarted)")
         for note in component.notes:
             print(f"  note     {note}")
         for warning in guard_warnings(component):
@@ -1032,7 +1267,45 @@ def stop_resident(component, home):
                 pass
 
 
-def restart_units(components, home, allow_shell):
+def health_argv(home, component):
+    return [str(binary_path(home, component, component.health[0])), *component.health[1:]]
+
+
+def wait_healthy(home, component, timeout=20):
+    """Poll the component's health command until it exits 0 (and, for JSON, reports ready)."""
+    argv = health_argv(home, component)
+    deadline = time.monotonic() + timeout
+    failure = "no answer"
+    while True:
+        try:
+            result = subprocess.run(argv, capture_output=True, text=True, timeout=5)
+            try:
+                data = json.loads(result.stdout)
+            except ValueError:
+                data = None
+            ready = not isinstance(data, dict) or "ready" not in data or bool(data["ready"])
+            if result.returncode == 0 and ready:
+                print(f"healthy: {shlex.join(argv)}")
+                return
+            failure = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
+        except (OSError, subprocess.TimeoutExpired) as error:
+            failure = str(error)
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f"{component.key}: {shlex.join(argv)} did not become healthy ({failure}). "
+                               f"Roll back with --rollback --only {component.key} --restart --restart-shell.")
+        time.sleep(0.25)
+
+
+def reconfigure_labwc():
+    """Reload labwc's rc.xml (SIGHUP to $LABWC_PID); never a restart, and only inside the labwc session."""
+    if not os.environ.get("LABWC_PID"):
+        print("Not in the labwc session (no LABWC_PID); run `labwc --reconfigure` there to load the keybinds.")
+        return
+    print("labwc --reconfigure")
+    subprocess.run(["labwc", "--reconfigure"], check=True)
+
+
+def restart_units(components, home, allow_shell, keybinds_changed=False, check_health=True):
     for component in components:
         if component.signal_on_restart:
             stop_resident(component, home)
@@ -1045,6 +1318,13 @@ def restart_units(components, home, allow_shell):
                 continue
             print(f"systemctl --user restart {unit.name}")
             systemctl("restart", unit.name, check=True)
+            if check_health and component.health:
+                wait_healthy(home, component)
+    if keybinds_changed:
+        if allow_shell:
+            reconfigure_labwc()
+        else:
+            print("rc.xml keybinds changed; labwc --reconfigure needs --restart-shell (or run it yourself).")
 
 
 def main(argv=None):
@@ -1061,12 +1341,14 @@ def main(argv=None):
     parser.add_argument("--locale-source", type=Path, default=DEFAULT_LOCALE_SOURCE)
     parser.add_argument("--home", type=Path, default=Path.home(), help=argparse.SUPPRESS)
     parser.add_argument("--restart", action="store_true", help="systemctl --user restart the swapped active units")
-    parser.add_argument("--restart-shell", action="store_true", help="also allow restarting waydock/wayshell")
+    parser.add_argument("--restart-shell", action="store_true",
+                        help="also allow restarting waydock/wayshell and `labwc --reconfigure` (never a labwc restart)")
     parser.add_argument("--no-reload", action="store_true", help="skip systemctl --user daemon-reload")
     parser.add_argument("--force", action="store_true", help="rollback: also restore files changed since the swap")
     parser.add_argument("--json", action="store_true", help="--status as JSON")
     parser.add_argument("--i-am-at-the-keyboard", action="store_true", dest="confirmed",
-                        help="allow --apply for components that need a live check (authentication-manager)")
+                        help="allow --apply for components that need a live check (authentication-manager, "
+                             "network-manager, wayshell, waydock)")
     args = parser.parse_args(argv)
     home = args.home.resolve()
     components = selected(args.only)
@@ -1086,24 +1368,31 @@ def main(argv=None):
             if not args.no_reload:
                 systemctl("daemon-reload")
             if args.restart:
-                restart_units([BY_KEY[g] for g in groups if g in BY_KEY], home, args.restart_shell)
+                swapped = [BY_KEY[g] for g in groups if g in BY_KEY]
+                restart_units(swapped, home, args.restart_shell,
+                              keybinds_changed=any(c.keybinds for c in swapped), check_health=False)
+            elif any(BY_KEY[g].keybinds for g in groups if g in BY_KEY):
+                print("rc.xml keybinds restored; run `labwc --reconfigure` (or use --restart --restart-shell).")
         return 0
     if not args.apply or args.check:
         return 0 if check(home, components, resolve_sources(components, prebuilt), args.locale_source) else 1
     unconfirmed = [c.key for c in components if c.requires_confirmation]
     if unconfirmed and not args.confirmed:
         raise RuntimeError("Nothing was changed: " + ", ".join(unconfirmed) + " must be tested right after the swap "
-                           "(a password prompt). Re-run with --i-am-at-the-keyboard, or leave it out with --only.")
+                           "(a password prompt, Wi-Fi, the dock or Alt+Tab). Re-run with --i-am-at-the-keyboard, or leave it out with --only.")
     if not prebuilt and not args.no_build:
         build(components)
     sources = resolve_sources(components, prebuilt)     # after the build: helpers live in OUT_DIR
     changed = apply(home, components, sources, args.locale_source)
     if any(change.kind == "dropin" for change in changed) and not args.no_reload:
         systemctl("daemon-reload")
+    keybinds_changed = any(change.kind == "rcxml" for change in changed)
     if args.restart:
-        restart_units(components, home, args.restart_shell)
+        restart_units(components, home, args.restart_shell, keybinds_changed=keybinds_changed)
     else:
         print("Running services were not restarted; use --restart (or restart them yourself) to run Rust.")
+        if keybinds_changed:
+            print("rc.xml keybinds changed; run `labwc --reconfigure` (or use --restart --restart-shell).")
     return 0
 
 

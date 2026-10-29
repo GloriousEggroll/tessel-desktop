@@ -41,7 +41,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 8. **netman** has no mature Rust libnm: raw NetworkManager D-Bus + secret agent in zbus, and C FFI
    (libnm / VPN editor plugins) only where libnm-only logic is unavoidable.
 9. `wayshell.service` ExecStart is stale; the `palette.conf` drop-in is what actually runs it —
-   the swap edits that drop-in.
+   the swap overrides it with `zz-desktop-suite-rust.conf` (sorts after `palette.conf`, which stays untouched).
 10. Every new user-facing option still gets a Global Settings entry + 30 translations.
 
 ## Layout
@@ -67,8 +67,8 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | calendar / weather / media / discovery / tiling / session-manager | ~8.7k | ported except session-manager; not swapped |
 | 2 | way-displays, language-manager, session-startup (+ session-manager) | ~3.7k | ported, not swapped |
 | 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
-| 3 | wayshell | 4077 | ported (+prompt, capture-picker, theme), not swapped |
-| 3 | waydock | 14739 | ported, tests + 0 px screenshot parity, not swapped (swap with user present) |
+| 3 | wayshell | 4077 | ported (+prompt, capture-picker, theme); install.py entries ready (wayshell, wayshell-prompt, wayshell-capture-picker), not swapped (swap with user present) |
+| 3 | waydock | 14739 | ported, tests + 0 px screenshot parity; install.py entry ready, not swapped (swap with user present) |
 | 4 | apps: calculator, text-editor, picture-viewer, system-monitor, hdr-calibration, capture-manager, file-manager | ~19k | |
 | 4 | global-settings, welcome | ~9.4k | |
 | 5 | lock-screen, login-manager (PAM, security review) | ~5.2k | |

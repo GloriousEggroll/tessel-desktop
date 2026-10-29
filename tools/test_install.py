@@ -28,6 +28,36 @@ DSA_PROBE = 'grep -q -E -e "[\\"\']$2[\\"\']" "$1"'   # supports() in desktop-su
 PY_ENTRY = "#!/usr/bin/python3\n# python original of {name}\nimport time\nFLAGS = {flags!r}\ntime.sleep(60)\n"
 UNIT = "[Unit]\nDescription={name}\n\n[Service]\nType=simple\nExecStart=/usr/bin/python3 %h/{entry} {args}\nRestart=on-failure\n"
 RECOVERY = "[Unit]\nStartLimitBurst=5\n\n[Service]\nRestart=on-failure\nRestartSec=1\n"
+LABWC = """#!/bin/sh
+echo "$@" >> "$LABWC_LOG"
+exit 0
+"""
+# A trimmed copy of the live rc.xml: the Python Alt+Tab keybinds, a commented-out copy that must stay,
+# the prompt here-doc, odd spacing/quoting and an unrelated python3 keybind.
+RC = """<?xml version="1.0"?>
+<labwc_config>
+  <core>
+    <promptCommand>exec "$HOME"/.local/bin/wayshell-prompt --message-stdin &lt;&lt;'WAYSHELL_PROMPT_x'
+WAYSHELL_PROMPT_x</promptCommand>
+  </core>
+  <keyboard>
+    <!-- <keybind key="A-Tab"><action name="Execute" command="/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window"/></keybind> -->
+    <keybind key="W-S-0"><action name="SendToDesktop" to="10"/></keybind>
+    <keybind key="A-Tab">
+      <action name="Execute" command="/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window"/>
+    </keybind>
+    <keybind  key='A-S-Tab' >
+      <action   name="Execute"  command='/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window --reverse' />
+    </keybind>
+    <keybind key="W-Tab"><action name="Execute" command="/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py show-activities"/></keybind>
+    <keybind key="Super_L" onRelease="yes">
+      <action name="Execute" command="~/.local/bin/waydock --menu-hotkey"/>
+    </keybind>
+  </keyboard>
+</labwc_config>
+"""
+RC_PY_TAB = "/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window"
+RC_RUST_TAB = "~/.local/share/wayshell/wayshell-cli switch-window"
 SYSTEMCTL = """#!/bin/sh
 echo "$@" >> "$SYSTEMCTL_LOG"
 case "$*" in
@@ -74,10 +104,13 @@ class InstallerTest(unittest.TestCase):
         self.locale = self.root / "locale"
         self.bin = self.root / "bin"
         self.log = self.root / "systemctl.log"
+        self.labwc_log = self.root / "labwc.log"
         for directory in (self.home, self.prebuilt, self.locale, self.bin):
             directory.mkdir()
         (self.bin / "systemctl").write_text(SYSTEMCTL)
         (self.bin / "systemctl").chmod(0o755)
+        (self.bin / "labwc").write_text(LABWC)
+        (self.bin / "labwc").chmod(0o755)
         (self.bin / "rpm").write_text("#!/bin/sh\n[ -n \"$FAKE_RPM_OK\" ]\n")
         (self.bin / "rpm").chmod(0o755)
         (self.bin / "cargo").write_text("#!/bin/sh\necho cargo must not run in tests >&2\nexit 99\n")
@@ -113,9 +146,12 @@ class InstallerTest(unittest.TestCase):
             for unit in component.units:
                 units = home / install.UNITS
                 (units / (unit.name + ".d")).mkdir(parents=True, exist_ok=True)
-                (units / unit.name).write_text(UNIT.format(name=unit.name, entry=f"{scripts(component)}/"
-                                                          f"{component.shims[0].entry}", args=" ".join(unit.args or ())))
+                entry = component.shims[0].entry if component.shims else component.python_entries[0]
+                (units / unit.name).write_text(UNIT.format(name=unit.name, entry=f"{scripts(component)}/{entry}",
+                                                           args=" ".join(unit.args or ())))
                 (units / (unit.name + ".d") / "50-desktop-suite-recovery.conf").write_text(RECOVERY)
+            for entry in component.python_entries:
+                (directory / entry).write_text(PY_ENTRY.format(name=entry, flags=()))
         notif = home / install.UNITS / "notifications.service"
         notif.write_text("[Service]\nExecStart=dunst\n[Install]\nWantedBy=graphical-session.target\n")
         (home / install.UNITS / "notifications.service.d/desktop-suite.conf").write_text(
@@ -127,8 +163,25 @@ class InstallerTest(unittest.TestCase):
         loop = home / install.UNITS / "audio-manager-loopbacks.service"
         loop.write_text('[Service]\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/audio-manager/'
                         'loopback_service.py"\nEnvironment=PYTHONUNBUFFERED=1\n')
+        # As installed: wayshell.service's ExecStart is stale; palette.conf is what runs the daemon.
+        units = home / install.UNITS
+        (units / "wayshell.service").write_text(
+            "[Unit]\nDescription=Wayshell Daemon\n\n[Service]\nEnvironmentFile=%h/.config/labwc/environment\n"
+            "ExecStart=/usr/bin/wayshell\nRestart=on-failure\nType=simple\n\n[Install]\n"
+            "WantedBy=graphical-session.target\n")
+        (units / "wayshell.service.d/palette.conf").write_text(
+            "[Service]\nExecStart=\nExecStart=%h/.local/share/wayshell/wayshell\n")
+        (units / "waydock.service").write_text(
+            "[Unit]\nDescription=Waydock\nPartOf=graphical-session.target\n\n[Service]\nType=notify\n"
+            "NotifyAccess=main\nTimeoutStartSec=30\nEnvironment=GDK_BACKEND=wayland\n"
+            'ExecStart=/usr/bin/python3 "%h/.local/share/waydock/waydock.py"\nRestart=on-failure\nRestartSec=1\n')
+        (home / ".config/labwc").mkdir(parents=True)
+        (home / install.RC_XML).write_text(RC)
         local_bin = home / ".local/bin"
         local_bin.mkdir(parents=True)
+        for name, entry in (("waydock", "waydock/waydock.py"), ("wayshell-prompt", "wayshell/wayshell_prompt.py"),
+                            ("wayshell-capture-picker", "wayshell/capture_picker.py")):
+            (local_bin / name).write_text(f"#!/bin/sh\nexec /usr/bin/python3 {home}/.local/share/{entry} \"$@\"\n")
         (local_bin / "notifications").write_text(
             '#!/bin/sh\nexec /usr/bin/python3 "$HOME/.config/waybar/scripts/notification-manager/notification_manager.py" "$@"\n')
         for name, entry in (("waymedia", "media-manager/media_manager.py"), ("waytile", "tiling-manager/tiling_manager.py")):
@@ -159,8 +212,8 @@ class InstallerTest(unittest.TestCase):
 
     def env(self, **extra):
         env = dict(os.environ, HOME=str(self.home), PATH=f"{self.bin}:{os.environ['PATH']}",
-                   SYSTEMCTL_LOG=str(self.log), TMPDIR=str(SCRATCH))
-        for name in ("XDG_DATA_HOME", "KEEP_AWAKE_BINARY", "WAYTILE_BINARY", "TILING_STATUS_BINARY",
+                   SYSTEMCTL_LOG=str(self.log), LABWC_LOG=str(self.labwc_log), TMPDIR=str(SCRATCH))
+        for name in ("LABWC_PID", "WAYLAND_DISPLAY", "DISPLAY", "XDG_DATA_HOME", "KEEP_AWAKE_BINARY", "WAYTILE_BINARY", "TILING_STATUS_BINARY",
                      "NETWORK_DISCOVERY_BINARY"):
             env.pop(name, None)
         env.update(extra)
@@ -176,6 +229,9 @@ class InstallerTest(unittest.TestCase):
 
     def systemctl_calls(self):
         return self.log.read_text().splitlines() if self.log.exists() else []
+
+    def labwc_calls(self):
+        return self.labwc_log.read_text().splitlines() if self.labwc_log.exists() else []
 
     def entry(self, key, name):
         return self.home / scripts(install.BY_KEY[key]) / name
@@ -478,6 +534,173 @@ class InstallerTest(unittest.TestCase):
         self.assertEqual(install.effective_execstart(self.home, "netman.service"),
                          "%h/.config/waybar/scripts/network-manager/network-manager --background")
 
+    # ---- wave 3: wayshell (+ prompt, capture picker) and waydock ---------------------------
+
+    def expected_rc(self, rc=RC):
+        """rc with exactly the two live Alt+Tab commands repointed (the commented copy and W-Tab stay)."""
+        tab = f'\n      <action name="Execute" command="{RC_PY_TAB}"/>'
+        reverse = f"command='{RC_PY_TAB} --reverse'"
+        self.assertEqual((rc.count(tab), rc.count(reverse)), (1, 1))
+        return (rc.replace(tab, f'\n      <action name="Execute" command="{RC_RUST_TAB}"/>')
+                .replace(reverse, f"command='{RC_RUST_TAB} --reverse'"))
+
+    def test_wayshell_swap_edits_only_the_alt_tab_commands(self):
+        before = tree(self.home)
+        rc = self.home / install.RC_XML
+        units = self.home / install.UNITS
+        palette = (units / "wayshell.service.d/palette.conf").read_bytes()
+        result = self.run_installer("--apply", "--only", "wayshell", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--i-am-at-the-keyboard", result.stderr)
+        self.assertEqual(tree(self.home), before)
+        out = self.run_installer("--only", "wayshell").stdout
+        self.assertIn(f"A-Tab: {RC_PY_TAB} -> {RC_RUST_TAB}", out)
+        self.assertIn("ExecStart: %h/.local/share/wayshell/wayshell -> %h/.local/share/wayshell/wayshell-rs", out)
+        self.assertIn("labwc --reconfigure only with --restart --restart-shell", out)
+        self.assertIn("wayshell-cli switcher-status must exit 0", out)
+
+        result = self.run_installer("--apply", "--only", "wayshell", "--i-am-at-the-keyboard")
+        self.assertIn("labwc --reconfigure", result.stdout)
+        self.assertEqual(rc.read_text(), self.expected_rc())          # every other byte preserved
+        self.assertEqual(rc.stat().st_mode & 0o777, before[install.RC_XML][1])
+        # zz- sorts after palette.conf, which stays byte-identical; the base unit too.
+        self.assertEqual(install.effective_execstart(self.home, "wayshell.service"),
+                         "%h/.local/share/wayshell/wayshell-rs")
+        self.assertEqual((units / "wayshell.service.d/palette.conf").read_bytes(), palette)
+        self.assertEqual(tree(self.home)[f"{install.UNITS}/wayshell.service"], before[f"{install.UNITS}/wayshell.service"])
+        directory = self.home / ".local/share/wayshell"
+        self.assertEqual((directory / "wayshell-rs").read_text(), (self.prebuilt / "wayshell").read_text())
+        self.assertIn("python original of wayshell", (directory / "wayshell").read_text())     # kept for rollback
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "wayshell_cli.py"), "switch-window", "--reverse"],
+                             capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-wayshell-cli-v1 switch-window --reverse")
+        # labwc runs the new command through sh with ~ expanded: it reaches the binary.
+        ran = subprocess.run(["sh", "-c", RC_RUST_TAB + " --reverse"], capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-wayshell-cli-v1 switch-window --reverse")
+        self.assertEqual(self.labwc_calls(), [])
+        self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
+        report = self.statuses("wayshell")["wayshell"]
+        self.assertEqual(report["keybinds"], {"A-Tab": "rust", "A-S-Tab": "rust"})
+        self.assertEqual(report["configured"], "rust")
+
+        swapped = tree(self.home)
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "wayshell",
+                                                              "--i-am-at-the-keyboard").stdout)
+        self.assertEqual(tree(self.home), swapped)                   # re-apply is idempotent
+        self.assertEqual(rc.read_text(), self.expected_rc())
+        self.run_installer("--rollback", "--only", "wayshell")
+        self.assertEqual(tree(self.home), before)
+        self.assertEqual(rc.read_text(), RC)
+        self.assertEqual(self.statuses("wayshell")["wayshell"]["keybinds"], {"A-Tab": "python", "A-S-Tab": "python"})
+
+    def test_rc_xml_edited_after_the_swap_rolls_back_only_the_keybinds(self):
+        rc = self.home / install.RC_XML
+        theme = "  <theme><cornerRadius>8</cornerRadius></theme>\n  <keyboard>\n"
+        self.run_installer("--apply", "--only", "wayshell", "--i-am-at-the-keyboard")
+        # Global Settings saves into rc.xml after the swap.
+        edited = rc.read_text().replace("  <keyboard>\n", theme)
+        rc.write_text(edited)
+        self.assertIn("revert", self.run_installer("--rollback", "--check", "--only", "wayshell").stdout)
+        self.assertEqual(rc.read_text(), edited)
+        result = self.run_installer("--rollback", "--only", "wayshell")
+        self.assertIn("only the swapped keybind commands are put back", result.stdout)
+        self.assertEqual(rc.read_text(), RC.replace("  <keyboard>\n", theme))
+        self.assertFalse((self.home / ".local/share/wayshell/wayshell-rs").exists())
+        # A keybind the user re-pointed elsewhere after the swap is left alone.
+        self.run_installer("--apply", "--only", "wayshell", "--i-am-at-the-keyboard")
+        custom = rc.read_text().replace(f'command="{RC_RUST_TAB}"', 'command="my-switcher"')
+        rc.write_text(custom)
+        self.run_installer("--rollback", "--only", "wayshell")
+        self.assertIn('command="my-switcher"', rc.read_text())
+        self.assertIn(f"command='{RC_PY_TAB} --reverse'", rc.read_text())
+
+    def test_waydock_prompt_and_picker_swap_change_only_execstart_and_launchers(self):
+        before = tree(self.home)
+        units = self.home / install.UNITS
+        base = (units / "waydock.service").read_bytes()
+        only = "waydock,wayshell-prompt,wayshell-capture-picker"
+        self.assertNotEqual(self.run_installer("--apply", "--only", "waydock", check=False).returncode, 0)
+        self.run_installer("--apply", "--only", only, "--i-am-at-the-keyboard")
+        dropin = (units / "waydock.service.d" / install.DROPIN).read_text()
+        body = [line for line in dropin.splitlines() if line and not line.startswith("#")]
+        self.assertEqual(body, ["[Service]", "ExecStart=", "ExecStart=%h/.local/share/waydock/waydock"])
+        self.assertEqual((units / "waydock.service").read_bytes(), base)      # Type=notify, NotifyAccess=main stay
+        self.assertIn("Type=notify\nNotifyAccess=main\n", base.decode())
+        dock = self.home / ".local/share/waydock"
+        self.assertEqual((dock / "waydock").read_text(), (self.prebuilt / "waydock").read_text())
+        for keep in set(install.BY_KEY["waydock"].keeps) - set(install.BY_KEY["waydock"].python_entries):
+            self.assertEqual((dock / keep).read_text(), f"# module {keep}\n")
+        self.assertIn("python original of waydock.py", (dock / "waydock.py").read_text())
+        for launcher, binary, args in (("waydock", "waydock", ["--check"]),
+                                       ("wayshell-prompt", "wayshell-prompt", ["--error"]),
+                                       ("wayshell-capture-picker", "wayshell-capture-picker", [])):
+            ran = subprocess.run([str(self.home / ".local/bin" / launcher), *args], capture_output=True, text=True,
+                                 env=self.env())
+            self.assertEqual(ran.stdout.strip(), " ".join([f"rust-{binary}-v1", *args]), launcher)
+        self.assertEqual((self.home / install.RC_XML).read_text(), RC)          # only wayshell edits rc.xml
+        self.assertEqual(json.loads((self.home / install.LOCALE / "de.json").read_text()), {"Hello": "de"})
+        reports = self.statuses(only)
+        self.assertEqual({k: v["configured"] for k, v in reports.items()},
+                         {"waydock": "rust", "wayshell-prompt": "rust", "wayshell-capture-picker": "rust"})
+        swapped = tree(self.home)
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", only,
+                                                              "--i-am-at-the-keyboard").stdout)
+        self.assertEqual(tree(self.home), swapped)
+        self.run_installer("--rollback", "--only", only)
+        self.assertEqual(tree(self.home), before)
+
+    def test_shell_restart_needs_restart_shell_then_reconfigures_and_checks_health(self):
+        self.run_installer("--apply", "--only", "wayshell,waydock", "--i-am-at-the-keyboard", "--restart",
+                           SYSTEMCTL_ACTIVE="1", LABWC_PID="1")
+        self.assertFalse(any("restart " in call for call in self.systemctl_calls()))
+        self.assertEqual(self.labwc_calls(), [])
+        self.run_installer("--rollback")
+        self.log.unlink()
+        result = self.run_installer("--apply", "--only", "wayshell,waydock", "--i-am-at-the-keyboard", "--restart",
+                                    "--restart-shell", SYSTEMCTL_ACTIVE="1", LABWC_PID="1")
+        restarts = [call for call in self.systemctl_calls() if "restart " in call]
+        self.assertEqual(restarts, ["--user restart wayshell.service", "--user restart waydock.service"])
+        self.assertNotIn("labwc.service", " ".join(self.systemctl_calls()))
+        self.assertEqual(self.labwc_calls(), ["--reconfigure"])                # a reload, never a restart
+        self.assertIn(f"healthy: {self.home}/.local/share/waydock/waydock --check", result.stdout)
+        self.assertIn(f"healthy: {self.home}/.local/share/wayshell/wayshell-cli switcher-status", result.stdout)
+        # Rollback reloads the restored keybinds the same way; outside labwc it only says so.
+        result = self.run_installer("--rollback", "--restart", "--restart-shell", SYSTEMCTL_ACTIVE="1")
+        self.assertEqual(self.labwc_calls(), ["--reconfigure"])
+        self.assertIn("no LABWC_PID", result.stdout)
+        self.assertEqual((self.home / install.RC_XML).read_text(), RC)
+
+    @unittest.skipUnless((REAL_HOME / install.RC_XML).is_file(), "no live rc.xml to copy")
+    def test_live_rc_xml_copy_changes_only_the_two_commands(self):
+        """Read-only copy of the user's rc.xml: the swap and its reverse touch only the Alt+Tab commands."""
+        text = (REAL_HOME / install.RC_XML).read_text()
+        component = install.BY_KEY["wayshell"]
+        new, originals = install.rc_swap_text(text, component, self.home)
+        if not originals:
+            self.skipTest("the live rc.xml has no Python Alt+Tab keybind")
+        old_lines, new_lines = text.splitlines(keepends=True), new.splitlines(keepends=True)
+        self.assertEqual(len(old_lines), len(new_lines))
+        changed = [(a, b) for a, b in zip(old_lines, new_lines) if a != b]
+        self.assertLessEqual(len(changed), 2)
+        for before, after in changed:
+            self.assertIn("wayshell_cli.py switch-window", before)
+            self.assertEqual(after, before.replace("/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py",
+                                                   "~/.local/share/wayshell/wayshell-cli"))
+        self.assertEqual(install.rc_revert_text(new, component, originals), text)
+        self.assertEqual(install.rc_swap_text(new, component, self.home)[0], new)
+
+    def test_health_check_waits_for_ready_and_fails_loudly(self):
+        self.run_installer("--apply", "--only", "waydock", "--i-am-at-the-keyboard")
+        binary = self.home / ".local/share/waydock/waydock"
+        flag = self.root / "ready"
+        binary.write_text(f'#!/bin/sh\nif [ -e "{flag}" ]; then echo \'{{"ready": true}}\'; '
+                          'else echo \'{"ready": false}\'; fi\n')
+        component = install.BY_KEY["waydock"]
+        with self.assertRaisesRegex(RuntimeError, "did not become healthy.*--rollback --only waydock"):
+            install.wait_healthy(self.home, component, timeout=0.3)
+        flag.write_text("")
+        install.wait_healthy(self.home, component, timeout=2)
+
     def test_table_is_consistent(self):
         keys = [c.key for c in install.COMPONENTS]
         self.assertEqual(len(keys), len(set(keys)))
@@ -512,7 +735,7 @@ class CrateTableTest(unittest.TestCase):
                 self.assertIn(f'"{shim.binary}"', text, shim.porter)
                 compile(install.shim_text(component, shim), shim.entry, "exec")
             for launcher in component.launchers:
-                if isinstance(launcher, tuple):
+                if isinstance(launcher, tuple) and launcher[1]:
                     self.assertTrue((install.REPO / launcher[1]).is_file(), launcher)
         used = {}
         for component in install.COMPONENTS:
