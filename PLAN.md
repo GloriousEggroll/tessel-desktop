@@ -54,13 +54,13 @@ live desktop until each Rust component reaches parity and is swapped in.
 ## Order (waves) and status
 | Wave | Component | Py LOC | Status |
 |---|---|---|---|
-| 0 | suite-core, suite-gtk (from shared/) | 4249 | in progress |
-| 1 | keep-awake | 1239 | |
-| 1 | battery-manager | 1340 | |
-| 1 | power-manager | 4564 | |
-| 1 | notification-manager | 2362 | |
-| 1 | on-screen-keyboard | 1068 | |
-| 1 | audio-manager (loopback service first) | 4046 | |
+| 0 | suite-core, suite-gtk (from shared/) | 4249 | done (wallpaper_*, application_audio, capture_selection deferred) |
+| 1 | keep-awake | 1239 | ported, tests pass, not swapped |
+| 1 | battery-manager | 1340 | ported, tests pass, not swapped |
+| 1 | power-manager | 4564 | ported, tests pass, not swapped |
+| 1 | notification-manager | 2362 | ported, tests pass, not swapped |
+| 1 | on-screen-keyboard | 1068 | ported, tests pass, not swapped |
+| 1 | audio-manager (loopback service first) | 4046 | ported, tests pass, not swapped |
 | 2 | brightness-manager | 3797 | |
 | 2 | network-manager (netman) | 6934 | |
 | 2 | authentication-manager (polkitman) | 663 | |

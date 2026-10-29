@@ -1,0 +1,41 @@
+[package]
+name = "audio-manager"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Audio Settings, the volume popup/keys OSD and the persistent PipeWire loopback service."
+
+[lib]
+name = "audio_manager"
+path = "src/lib.rs"
+
+# Python: audio_manager.py (GTK app: --settings/--popup/--volume-*)
+[[bin]]
+name = "audio-manager"
+path = "src/bin/audio_manager.rs"
+
+# Python: loopback_service.py (audio-manager-loopbacks.service)
+[[bin]]
+name = "audio-manager-loopbacks"
+path = "src/bin/loopback_service.rs"
+
+[dependencies]
+suite-core.workspace = true
+suite-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+gtk4-layer-shell.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+indexmap = "2"
+
+[[test]]
+name = "loopback_integration"
+path = "tests/loopback_integration.rs"
+harness = false
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false
