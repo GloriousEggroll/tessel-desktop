@@ -180,7 +180,7 @@ fn cli() {
     assert_eq!(reply.get::<(bool, String)>(), Some((true, String::new())));
     assert!(wait_for(|| client.active(), 5.0));
     let until = client.until().expect("a 30 minute timer has an end time");
-    let now = keep_awake::compat::now();
+    let now = suite_core::timer::now();
     assert!((until - now - 1800.0).abs() < 30.0);
     assert_eq!(env.timer()["duration"], 30);
     assert_eq!(env.timer()["until"].as_f64(), Some(until));

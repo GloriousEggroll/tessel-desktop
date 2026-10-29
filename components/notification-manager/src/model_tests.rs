@@ -240,7 +240,7 @@ fn raw_images_reject_oversized_short_wrong_format_and_copy_valid_padding() {
         Hint::Other((w, h, stride, alpha, bits, ch, data).to_variant())
     };
     let data = image_data(&image(2, 2, 8, false, 8, 3, (0..14).collect())).unwrap();
-    assert_eq!(crate::compat::base64_decode_strict(&data.data).unwrap(), (0..14).collect::<Vec<u8>>());
+    assert_eq!(suite_core::base64::decode_strict(&data.data).unwrap(), (0..14).collect::<Vec<u8>>());
     for raw in [image(2, 2, 8, false, 8, 3, b"short".to_vec()), image(2048, 2048, 8192, true, 8, 4, vec![]),
                 image(2, 2, 5, false, 8, 3, b"0123456789".to_vec()), image(2, 2, 8, true, 8, 3, vec![0; 16]),
                 image(1, 1, 3, false, 16, 3, vec![0; 3]), image(1, 1, 3, false, 8, 3, vec![0; MAX_IMAGE_BYTES + 1])] {

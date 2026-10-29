@@ -1,6 +1,6 @@
 //! Read-only power status for Waybar/Waydock streams (power_status.py).
 
-use crate::backend::BackendState;
+use suite_power::backend::BackendState;
 use serde_json::{json, Value};
 use suite_core::tr;
 

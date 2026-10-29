@@ -1,7 +1,7 @@
 //! `power_status.py`: stream read-only power status as Waybar JSON lines.
 //! gio only (no GTK); a profiles-only backend keeps it tiny.
 
-use power_manager::backend::{Mode, Options, PowerBackend, PowerSystem};
+use suite_power::backend::{Mode, Options, PowerBackend, PowerSystem};
 use std::cell::RefCell;
 use std::io::Write;
 use std::rc::{Rc, Weak};
@@ -10,7 +10,7 @@ fn main() {
     suite_core::i18n::initialize();
     let main_loop = glib::MainLoop::new(None, false);
     let previous: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
-    let slot: Rc<RefCell<Weak<power_manager::backend::Inner>>> = Rc::new(RefCell::new(Weak::new()));
+    let slot: Rc<RefCell<Weak<suite_power::backend::Inner>>> = Rc::new(RefCell::new(Weak::new()));
     let emit = {
         let (previous, slot, main_loop) = (previous.clone(), slot.clone(), main_loop.clone());
         Rc::new(move || {
@@ -35,7 +35,7 @@ fn main() {
     slot.replace(Rc::downgrade(&backend.0));
     for signal in [libc::SIGTERM, libc::SIGINT] {
         let main_loop = main_loop.clone();
-        glib_unix::unix_signal_add_local(signal, move || {
+        suite_core::glib_compat::unix_signal_add_local(signal, move || {
             main_loop.quit();
             glib::ControlFlow::Break
         });

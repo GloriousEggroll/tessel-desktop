@@ -28,7 +28,6 @@ gio.workspace = true
 serde_json.workspace = true
 libc.workspace = true
 regex.workspace = true
-glib-unix = "0.22"
 udev = "0.9"
 unicode-normalization = "0.1"
 

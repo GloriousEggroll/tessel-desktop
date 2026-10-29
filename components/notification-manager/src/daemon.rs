@@ -180,7 +180,7 @@ impl Daemon {
         self.0.monitor_signal.replace(Some(signal));
         for signum in [libc::SIGINT, libc::SIGTERM] {
             let weak = self.weak();
-            let id = crate::compat_ffi::unix_signal_add_local(signum, move || {
+            let id = suite_core::glib_compat::unix_signal_add_local(signum, move || {
                 if let Some(d) = upgrade(&weak) {
                     d.0.sources.borrow_mut().retain(|_| false);
                     d.stop();

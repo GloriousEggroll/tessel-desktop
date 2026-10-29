@@ -9,7 +9,6 @@ pub mod fake;
 pub mod graph;
 pub mod level;
 pub mod model;
-pub mod pyjson;
 pub mod service;
 pub mod store;
 pub mod supervisor;

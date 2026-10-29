@@ -55,7 +55,7 @@ pub fn dock_edge() -> String {
         .map(|edge| match edge {
             None => "bottom".to_owned(),
             Some(Value::String(edge)) => edge,
-            Some(other) => crate::compat::py_str(&other),
+            Some(other) => suite_core::pyjson::py_str_or_empty(&other),
         }).unwrap_or_else(|| "bottom".into())
 }
 
@@ -65,7 +65,7 @@ pub fn group_notifications<M: MonitorLike>(items: &[Value], monitors: &[M], fall
     let edge = edge.map(String::from).unwrap_or_else(dock_edge);
     let mut groups: Vec<((M, bool), Vec<Value>)> = Vec::new();
     for item in items {
-        let workspace = item.get("workspace").is_some_and(crate::compat::truthy);
+        let workspace = item.get("workspace").is_some_and(suite_core::pyjson::truthy);
         let monitor = if workspace {
             workspace_monitor(monitors, &edge)
         } else {

@@ -34,7 +34,7 @@ struct Fixture {
 
 fn fixture(index: usize) -> Fixture {
     let name = format!("org.test.Settings{index}x{}", std::process::id());
-    let app = gio::Application::new(Some(&name), gio::ApplicationFlags::FLAGS_NONE);
+    let app = gio::Application::new(Some(&name), gio::ApplicationFlags::empty());
     app.register(None::<&gio::Cancellable>).unwrap();
     let state = Rc::new(RefCell::new(json!({"ready": true, "settings": {"timeout": 10}})));
     let writes = Rc::new(RefCell::new(Vec::new()));

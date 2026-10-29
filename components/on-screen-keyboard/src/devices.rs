@@ -125,7 +125,7 @@ impl DeviceMonitor {
                 let fd = socket.as_raw_fd();
                 let changed = Rc::new(changed);
                 let weak = Rc::downgrade(&inner);
-                let id = glib_unix::unix_fd_add_local(fd, glib::IOCondition::IN, move |_, _| {
+                let id = suite_core::glib_compat::unix_fd_add_local(fd, glib::IOCondition::IN, move |_, _| {
                     while socket.iter().next().is_some() {}
                     let Some(inner) = weak.upgrade() else { return glib::ControlFlow::Break };
                     if inner.borrow().pending.is_none() {

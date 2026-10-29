@@ -235,13 +235,8 @@ impl LoopbackSupervisor {
     }
 }
 
-/// `str(OSError)`: `[Errno 2] No such file or directory: 'pw-loopback'`.
-pub fn python_os_error(error: &io::Error) -> String {
-    match error.raw_os_error() {
-        Some(code) => format!("[Errno {code}] {}", crate::store::strerror(error)),
-        None => error.to_string(),
-    }
-}
+
+use suite_core::pyerr::os_error_text as python_os_error;
 
 #[cfg(test)]
 mod tests {

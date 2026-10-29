@@ -1,8 +1,8 @@
 //! Battery/plug status for Waybar and Waydock (`battery_status.py`), without any
 //! automatic power actions. Printed as JSON lines, only when changed.
 
-use crate::power::values::text;
-use crate::power::BatteryModel;
+use suite_core::values::text;
+use suite_power::BatteryModel;
 use serde_json::{json, Value};
 use suite_core::pyfmt::{format_value, json_dumps, JsonStyle};
 use suite_core::{tr, Arg};

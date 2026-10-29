@@ -7,9 +7,9 @@
 //! power key inhibitor is only held while the compositor has an XF86PowerOff
 //! keybind that forwards presses to `--power-button`.
 
-use crate::backend::{LOGIN, UPOWER};
-use crate::bus::{Bus, BusError, Call, Signal, PROPERTIES};
-use crate::values;
+use suite_power::backend::{LOGIN, UPOWER};
+use suite_core::bus::{Bus, BusError, Call, Signal, PROPERTIES};
+use suite_core::values;
 use gio::prelude::*;
 use regex::Regex;
 use serde_json::Value;
@@ -60,7 +60,7 @@ impl SessionSwitches {
         Self(Rc::new(Inner {
             on_lid_closed: Box::new(on_lid_closed), on_error: Box::new(on_error),
             rc_path: rc_path.unwrap_or_else(keybind_path),
-            connector: connector.unwrap_or_else(|| Box::new(|done| crate::bus::connect(gio::BusType::System, None, done))),
+            connector: connector.unwrap_or_else(|| Box::new(|done| suite_core::bus::connect(gio::BusType::System, None, done))),
             lid_closed: Cell::new(None), lid_present: Cell::new(None), power_key_bound: Cell::new(false),
             inhibitors: RefCell::new(BTreeMap::new()), pending: RefCell::new(BTreeSet::new()), bus: RefCell::new(None),
             subscription: Cell::new(None), monitor: RefCell::new(None), cancel: gio::Cancellable::new(), closed: Cell::new(false),
@@ -248,7 +248,7 @@ impl SessionSwitches {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bus::FakeBus;
+    use suite_core::bus::FakeBus;
 
     struct Fx {
         switches: SessionSwitches,

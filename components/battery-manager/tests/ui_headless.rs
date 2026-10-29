@@ -4,7 +4,7 @@
 
 mod support;
 
-use battery_manager::power::BatteryModel;
+use suite_power::BatteryModel;
 use battery_manager::ui::{AppHooks, BatteryPopup, BatterySettingsWindow};
 use gtk::prelude::*;
 use serde_json::{json, Value};
@@ -548,7 +548,7 @@ fn style_css_parses() {
     let errors = Rc::new(RefCell::new(Vec::new()));
     let sink = errors.clone();
     provider.connect_parsing_error(move |_, _, error| sink.borrow_mut().push(error.to_string()));
-    provider.load_from_string(battery_manager::power_ui::style::STYLE_CSS);
+    provider.load_from_string(suite_power::ui::style::STYLE_CSS);
     assert!(errors.borrow().is_empty(), "{:?}", errors.borrow());
 }
 
@@ -646,7 +646,7 @@ fn application_and_measurements() {
     println!("measure rust battery-status: first device line {stream_ready} ms, RSS {stream_rss}");
 
     // Python twins, run the same way (read-only, private buses), if requested.
-    if let Ok(source) = std::env::var("BATTERY_PYTHON_SOURCE") {
+    if let Some(source) = std::env::var("BATTERY_PYTHON_SOURCE").ok().filter(|source| !source.is_empty()) {
         let script = format!("{source}/battery_manager.py");
         let check = || Command::new("python3").args([script.as_str(), "--check"]).output().unwrap();
         let (child, rss, ready_ms) = measure_service("python3", &[script.as_str(), "--background"], &check);

@@ -6,11 +6,11 @@
 
 mod support;
 
-use battery_manager::power::backend::Options;
-use battery_manager::power::bus::{Bus, BusError, Call, GioBus};
-use battery_manager::power::charge_limits::{self, encode_arguments, qstring};
-use battery_manager::power::scheduler::GlibScheduler;
-use battery_manager::power::{BatteryModel, PowerBackend};
+use suite_power::backend::{Mode, Options};
+use suite_core::bus::{Bus, BusError, Call, GioBus};
+use suite_power::charge_limits::{self, encode_arguments, qstring};
+use suite_core::scheduler::GlibScheduler;
+use suite_power::{BatteryModel, PowerBackend, PowerSystem};
 use gio::prelude::*;
 use serde_json::json;
 use std::cell::RefCell;
@@ -42,7 +42,7 @@ fn mouse(upower: &FakeUPower, announce: bool) {
         ("NativePath", "/org/bluez/hci0/dev_01".to_variant()), ("Percentage", 55.0f64.to_variant()), ("State", 2u32.to_variant())], announce);
 }
 
-fn private_connector(address: String) -> battery_manager::power::backend::Connector {
+fn private_connector(address: String) -> suite_power::backend::Connector {
     Box::new(move |done| {
         gio::DBusConnection::for_address(&address,
             gio::DBusConnectionFlags::AUTHENTICATION_CLIENT | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION,
@@ -53,14 +53,15 @@ fn private_connector(address: String) -> battery_manager::power::backend::Connec
     })
 }
 
-fn backend(bus: &PrivateBus, inspect: battery_manager::power::backend::Inspector) -> (PowerBackend, Rc<RefCell<usize>>) {
+fn backend(bus: &PrivateBus, inspect: suite_power::backend::Inspector) -> (PowerBackend, Rc<RefCell<usize>>) {
     let changed = Rc::new(RefCell::new(0));
     let count = changed.clone();
-    let options = Options { connector: private_connector(bus.address.clone()), scheduler: Rc::new(GlibScheduler::default()), inspect };
+    let options = Options { mode: Mode::BatteriesOnly, connector: private_connector(bus.address.clone()),
+                           scheduler: Rc::new(GlibScheduler::default()), inspect, ..Options::default() };
     (PowerBackend::new(move || *count.borrow_mut() += 1, |_| {}, options), changed)
 }
 
-fn no_limits(dir: &Path) -> battery_manager::power::backend::Inspector {
+fn no_limits(dir: &Path) -> suite_power::backend::Inspector {
     let root = dir.to_path_buf();
     Box::new(move |devices| charge_limits::inspect_limits(devices, &root, &[]))
 }
@@ -104,7 +105,7 @@ fn upower_backend_follows_signals_and_owner_changes() {
     assert!(wait_until(5 * SECOND, || backend.power_ready() && backend.batteries().len() == 2), "owner back");
 
     // UPower charge protection through EnableChargeThreshold, with read-back.
-    assert!(backend.set_charge_thresholds(LAPTOP, true));
+    assert!(BatteryModel::set_charge_thresholds(&backend, LAPTOP, true));
     assert!(wait_until(5 * SECOND, || !backend.busy()), "threshold write finished");
     assert_eq!(upower.state.borrow().enable_calls, [(LAPTOP.to_owned(), true, true)]);
     assert_eq!(backend.batteries()[0]["charge_threshold_enabled"], true);

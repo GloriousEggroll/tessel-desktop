@@ -114,7 +114,7 @@ impl NotificationClient {
     fn apply_state(&self, encoded: &str) {
         match serde_json::from_str::<Value>(encoded) {
             Ok(Value::Object(state)) => {
-                let error = state.get("error").map(crate::compat::py_str).unwrap_or_default();
+                let error = state.get("error").map(suite_core::pyjson::py_str_or_empty).unwrap_or_default();
                 self.0.state.replace(state);
                 self.0.ready.set(true);
                 self.0.error.replace(error);

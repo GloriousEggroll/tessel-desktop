@@ -757,7 +757,7 @@ impl LoopbackDialog {
     fn validate(&self) {
         let ready = self.view.upgrade().is_some_and(|v| v.backend().state().ready);
         let node = self.selected_node();
-        let enabled = !crate::pyjson::py_strip(&self.name_entry.text()).is_empty() && ready && node.is_some() && target_available(node.as_ref());
+        let enabled = !suite_core::pyjson::py_strip(&self.name_entry.text()).is_empty() && ready && node.is_some() && target_available(node.as_ref());
         self.dialog.set_response_sensitive(gtk::ResponseType::Ok, enabled);
     }
 
@@ -802,7 +802,7 @@ impl LoopbackDialog {
             self.refresh();
             return;
         };
-        let name = crate::pyjson::py_strip(&self.name_entry.text()).to_owned();
+        let name = suite_core::pyjson::py_strip(&self.name_entry.text()).to_owned();
         match backend.add_loopback(&name, node.id, node.serial) {
             Err(error) => self.error_label.set_text(&error),
             Ok(false) => {

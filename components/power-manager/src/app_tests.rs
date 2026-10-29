@@ -4,7 +4,7 @@
 use crate::app::*;
 use crate::config::{defaults, ConfigError};
 use crate::fakes::FakeSystem;
-use crate::util::FakeScheduler;
+use suite_core::scheduler::FakeScheduler;
 use serde_json::{json, Value};
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;

@@ -420,7 +420,7 @@ fn icon_images_stay_compact_and_real_images_use_the_picture(ui: &mut Ui) {
     assert_eq!(card.0.avatar.get_visible(), card.0.avatar.storage_type() != gtk::ImageType::Empty);
     // Real image data keeps the large picture.
     let data = json!({"width": 2, "height": 2, "rowstride": 8, "channels": 4, "has_alpha": true,
-                      "data": notification_manager::compat::base64_encode(&[0xff; 16])});
+                      "data": suite_core::base64::encode(&[0xff; 16])});
     view.update(&[notification(1, json!({"image": data}))]);
     assert!(card.0.picture.get_visible());
 }
@@ -445,7 +445,7 @@ fn dnd_choices_wrap_instead_of_truncating(ui: &mut Ui) {
 
 fn images_are_bounded_and_never_remote(_ui: &mut Ui) {
     let texture = ui::notification_texture(&json!({"width": 1, "height": 2, "rowstride": 4, "channels": 3, "has_alpha": false,
-        "data": notification_manager::compat::base64_encode(b"\xff\0\0\0\0\xff\0")})).unwrap();
+        "data": suite_core::base64::encode(b"\xff\0\0\0\0\xff\0")})).unwrap();
     assert_eq!((texture.intrinsic_width(), texture.intrinsic_height()), (1, 2));
     assert!(ui::notification_texture(&json!("dialog-information-symbolic")).is_some());
     assert!(ui::notification_texture(&json!("https://example.invalid/notification.png")).is_none());

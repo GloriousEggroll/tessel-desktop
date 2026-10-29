@@ -1,4 +1,5 @@
 //! Waykeys service: a themed automatic touch keyboard for the labwc session (osk_manager.py).
+use suite_core::values::truthy;
 use crate::backend::{Command, InputBridge};
 use crate::config::{environment_path, layout_name, Config, Settings};
 use crate::devices::{automatic_available, discover, Device, DeviceMonitor};
@@ -46,18 +47,6 @@ pub fn parse_arguments<S: AsRef<str>>(args: &[S]) -> Option<Action> {
     }
     Some(if has("--quit") { Action::Quit } else if has("--settings") { Action::Settings } else if has("--background") {
         Action::Background } else if has("--hide") { Action::Hide } else if has("--show") { Action::Show } else { Action::Toggle })
-}
-
-/// Python truthiness of a JSON value.
-fn truthy(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(b)) => *b,
-        Some(Value::Number(n)) => n.as_f64() != Some(0.0),
-        Some(Value::String(s)) => !s.is_empty(),
-        Some(Value::Array(a)) => !a.is_empty(),
-        Some(Value::Object(o)) => !o.is_empty(),
-    }
 }
 
 /// Panel width for a monitor: `min(1100, max(300, width - 24))`, narrow below 700.

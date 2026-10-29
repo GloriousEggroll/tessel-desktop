@@ -291,7 +291,7 @@ impl WindowBackend {
                     _ => return Err(()),
                 }
                 let parent = match event.get("parent") {
-                    Some(value) if crate::compat::truthy(value) => self.id(value)?,
+                    Some(value) if suite_core::pyjson::truthy(value) => self.id(value)?,
                     _ => String::new(),
                 };
                 let flag = |key: &str| event.get(key) == Some(&Value::Bool(true));
@@ -329,7 +329,7 @@ impl WindowBackend {
                 }
             }
             "error" => {
-                let message = event.get("message").map(crate::compat::py_str)
+                let message = event.get("message").map(suite_core::pyjson::py_str_or_empty)
                     .unwrap_or_else(|| "The window request failed.".into());
                 self.fail(&message);
                 return Ok(());

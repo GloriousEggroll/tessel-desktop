@@ -152,7 +152,7 @@ fn extras_error(extras: &[String], usage: &str, prog: &str) -> Result<(), Exit> 
 
 /// `int(text)` with Python's rules.
 pub fn python_int(text: &str) -> Option<i64> {
-    crate::pyjson::py_int(Some(&serde_json::Value::String(text.to_owned())))
+    suite_core::pyjson::py_int(Some(&serde_json::Value::String(text.to_owned())))
 }
 
 /// `audio_manager.arguments(argv)` (argv without the program name).

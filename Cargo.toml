@@ -18,8 +18,11 @@ panic = "abort"
 [workspace.dependencies]
 suite-core = { path = "crates/suite-core" }
 suite-gtk = { path = "crates/suite-gtk" }
+suite-power = { path = "crates/suite-power" }
 glib = "0.22"
-gio = "0.22"
+# v2_80: DBusConnection::connect_closed and friends (system GLib is newer).
+gio = { version = "0.22", features = ["v2_80"] }
+glib-unix = "0.22"
 gtk = { package = "gtk4", version = "0.11", features = ["v4_22"] }
 gtk4-layer-shell = "0.8"
 serde_json = { version = "1", features = ["preserve_order"] }

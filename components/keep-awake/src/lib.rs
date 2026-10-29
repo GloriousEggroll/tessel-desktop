@@ -6,7 +6,6 @@ pub mod app;
 pub mod args;
 pub mod backend;
 pub mod client;
-pub mod compat;
 pub mod status;
 pub mod timed;
 pub mod ui;

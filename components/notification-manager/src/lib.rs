@@ -3,8 +3,6 @@
 pub mod backend;
 pub mod cli;
 pub mod client;
-pub mod compat;
-pub mod compat_ffi;
 pub mod daemon;
 pub mod model;
 pub mod placement;

@@ -1,6 +1,7 @@
-# Foundation crates: `suite-core` and `suite-gtk`
+# Foundation crates: `suite-core`, `suite-gtk` and `suite-power`
 
-Rust ports of `~/btmanager/shared` (plus Waydock's palette theme). Behaviour,
+Rust ports of `~/btmanager/shared` (plus Waydock's palette theme, and the
+power backend shared by power-manager and battery-manager). Behaviour,
 file paths, CSS class names and strings match the Python modules; read this
 instead of the source. Depend on them from a component with:
 
@@ -10,7 +11,11 @@ suite-core.workspace = true
 suite-gtk.workspace = true          # GUI components only
 gtk.workspace = true                # = gtk4 0.11, feature v4_22 (system GTK 4.22)
 gtk4-layer-shell.workspace = true   # if you use layer shell directly
+suite-power = { workspace = true, features = ["gtk"] }   # power/battery components only
 ```
+
+`gio` is built with feature `v2_80` workspace-wide. Unix signal/fd sources come
+from `suite_core::glib_compat` (no direct `glib-unix` dependency needed).
 
 Startup order in every `main`: `suite_core::i18n::initialize();` **before**
 `gtk::init()` / `Application::run` (GTK calls setlocale too).
@@ -105,6 +110,72 @@ become the primary (status queries, tray clicks; only `--background` may).
 `json_dumps(&Value, &JsonStyle)` with `JsonStyle::{DEFAULT, COMPACT}` or custom
 (`ensure_ascii`, `sort_keys`, `indent`, separators). serde_json is built with
 `preserve_order`, so maps keep insertion order like Python dicts.
+
+
+### `glib_compat` (APIs gtk-rs 0.22 dropped from glib/gio)
+`unix_signal_add_local(signum, FnMut() -> ControlFlow) -> SourceId` and
+`unix_fd_add_local(fd, IOCondition, FnMut(fd, cond) -> ControlFlow)` (re-exported
+from `glib-unix`; default main context, main thread), `source_remove(SourceId)`
+(only if the source still exists, Python's `find_source_by_id` guard),
+`desktop_app_info(desktop_id) -> Option<gio::AppInfo>` (`Gio.DesktopAppInfo.new`).
+
+### `timer` (thread-default main context)
+`once(ms, FnOnce) -> Timeout`, `repeat(ms, FnMut() -> bool) -> Timeout`
+(`Timeout::cancel()`, `is_pending()`) attach to the *thread-default* context
+(the global default unless one was pushed), so tests can run each case on a
+private `MainContext::with_thread_default`. `settle(&ctx, dur)`,
+`wait_for(&ctx, timeout, predicate) -> bool` iterate a context; `now()` = `time.time()`.
+
+### `scheduler` (injectable `GLib.timeout_add`)
+`trait Scheduler { timeout(ms, Box<dyn FnOnce()>) -> u64; cancel(id) }`;
+`GlibScheduler` (real, via `timer::once`), `FakeScheduler` for tests
+(`pending`, `cancelled`, `fire(id)`, `delays()`, `ids()`, `created()`).
+
+### `bus` (gio D-Bus client behind a trait; Python `FakeConnection` tests)
+`trait Bus { call, call_with_fd ((h) reply + one fd), subscribe(sender, iface,
+member, path, arg0, handler) -> u32, unsubscribe, cancel_reads, on_closed }`.
+`Call::new(name, path, iface, method, params)` (`.mutation()` = interactive
+write: never cancelled, 120 s; reads 10 s, cancellable), `Signal`, `Reply`,
+`BusError {name, message}` (`from_glib` splits the remote error name, `local`,
+`remote`), `PROPERTIES`. `GioBus::new(connection)`, `connect(BusType, cancellable,
+done)` (honours `DBUS_SYSTEM_BUS_ADDRESS`). `FakeBus` records `calls`, defers
+`pending` replies: `reply(method, result, path, name, index)`, `has_pending`,
+`called`, `last_call`, `last_pending`, `methods`, `signals`, `unsubscribed`,
+`cancelled`, `closed_handler`.
+
+### `values` (GVariant → Python-like JSON, PyGObject `unpack()`)
+`to_value(&Variant)` (`a{sv}` → object, `ay`/tuples → arrays, non-finite → null),
+`first(&reply)`, and checks on optional dict entries: `number` (int/float, not
+bool), `int` (`type(v) is int`), `is_true`/`is_false` (`v is True/False`),
+`truthy`, `text` (`str(v or "")`), `py_eq` (`1 == 1.0 == True`, missing = None),
+`int_in`.
+
+### `pyjson` (Python value semantics on `serde_json::Value`)
+`truthy`, `first_truthy`, `py_int(Option<&Value>)` (`int()`: `" -1_0 "` → -10),
+`py_float` (`float()`, inf/nan), `py_str` (`str(v)`), `py_str_or_empty`
+(`str(v or "")`), `py_str_opt`, `py_repr_value`, `eq_int`, `contains_int`,
+`is_true_value` (`v in (True, "true", 1)`), `py_strip`, `is_py_space`, `casefold`.
+(`service_settings::truthy` re-exports `pyjson::truthy`.)
+
+### `pyerr` (Python exception text)
+`python_error_text(&glib::Error)` = PyGObject `str(GLib.Error)`
+(`"g-io-error-quark: gone (1)"`), `strerror(&io::Error)` (`exc.strerror`),
+`os_error_text` (`"[Errno 2] No such file or directory"`),
+`os_error_path(&err, path)` (`"…: '/path'"`).
+
+### `base64`, `secrets`, `shell`, `fsutil`
+- `base64::encode`, `decode_strict` (`b64decode(validate=True)`),
+  `encode_urlsafe_unpadded`.
+- `secrets::token_urlsafe(n)` (getrandom), `compare_digest(a, b)` (constant time).
+- `shell::shell_quote`/`shell_join`/`shell_split` (`shlex`, POSIX),
+  `which(name)` (`shutil.which`: executable regular file on `PATH`), `is_executable`.
+- `fsutil::write_private(dir, name, prefix, bytes)` — `mkstemp(prefix)` +
+  `os.replace`: directory created 0700, file 0600, temporary removed on failure,
+  errors as Python `OSError` text.
+
+### `service_settings::SettingsClient::proxy()`
+`Option<gio::DBusProxy>` once connected (Python `self._proxy`), for raw calls on
+another interface of the same object (keep-awake's `SetDuration`).
 
 ---
 
@@ -215,8 +286,50 @@ saturation ≥ 0.45 with ≥ 4.5:1 contrast, blue fallback for colourless input.
 
 ---
 
+## suite-power (power_backend.py, power_charge_limits.py; `gtk` feature: power_style.py, power_battery_ui.py)
+
+Used by power-manager (`Mode::Full`) and battery-manager (`Mode::BatteriesOnly`).
+Without the `gtk` feature it links only GLib/GIO (status-stream binaries).
+
+- `backend::PowerBackend::new(on_changed, on_error, Options {mode, connector,
+  scheduler, inspect, session_id})` (`Options::default()`: system bus,
+  `GlibScheduler`, sysfs/KAuth inspection, `$XDG_SESSION_ID`), or
+  `PowerBackend::batteries_only(on_changed, on_error)` (= Python
+  `batteries_only=True`: UPower only, 120 s fallback refresh). `Mode::ProfilesOnly`
+  (Rust-only) serves the power status stream.
+- `trait PowerSystem` (`state() -> Ref<BackendState>`, `start`, `close`,
+  `set_profile`, `idle_inhibited`, `sleep(action, interactive, guard)`,
+  `explicit_power`). `BackendState`: ready/profiles/power/sleep readiness, busy,
+  error, profiles, active_profile, performance_degraded, has_battery, on_battery,
+  percentage, warning_level, batteries (normalized dicts), power_source_known,
+  capabilities, charge_limit.
+- `trait BatteryModel` (what battery UIs/indicators read: `power_ready`,
+  `power_source_known`, `on_battery`, `has_battery`, `percentage`, `busy`, `error`,
+  `batteries`, `charge_limit`, `set_charge_thresholds(path, enabled)`,
+  `set_charge_limit(&Value)`), implemented by `PowerBackend` and UI fakes.
+- Inherent: `ready()`, `warning_level()`, `attach(bus)`, `refresh*()`,
+  `subscribe()`, `has_source(key)`, `owner_changed(name)`, `power_signal(&Signal)`,
+  `bus_closed()`, `publish_batteries()`, `power_devices()`/`set_power_device()`,
+  `state_mut()`, `set_charge_thresholds(&Value, &Value)` (Python argument checks),
+  `set_charge_limit`. Constants `PPD_ENDPOINTS`, `UPOWER`, `UPOWER_DEVICE`, `LOGIN`,
+  `SLEEP_METHODS`, `CAPABILITIES`; `inhibited(rows, subjects)`.
+- `devices` — `device_batteries(devices, busy_path)`, `is_system_battery`,
+  `system_batteries`, `battery_percentage` (energy-weighted), `device_identity`,
+  `device_kind`/`battery_state`/`battery_level`/`battery_warning`, `bounded`.
+- `charge_limits` — `inspect_limits(devices, sysfs_root, helper_files)` →
+  (UI state, `Records`), `initial_state`, `arguments_for`, `identity`,
+  KAuth `parameters(action, args)`, `encode_arguments`, `decode_reply`,
+  `reply_blob`, `qstring`, `parse_int` (Python `int()`), `ENDPOINT`, `SUPPLIES`.
+- `ui::style` (`STYLE_CSS`, `style`, `margins`, `icon`, `set_icon`, `icon_names`,
+  `label`, `install_style`, `ICON_FALLBACKS`) and `ui::battery_ui`
+  (`BatterySection`, `BatteryRow`, `ChargeLimitControls`, `time_label`,
+  `level_label`, `status_label`, `weak_fn`).
+
+---
+
 ## Tests
-`cargo test` (unit tests ported from test_suite_i18n / test_clock_preferences /
+`cargo test` (suite-power: test_power_backend / test_power_charge_limits for both
+modes; suite-core: unit tests ported from test_suite_i18n / test_clock_preferences /
 test_service_settings (private `gio::TestDBus`) / test_color_palette /
 test_companion_theme / test_gtk4_utils icon fallbacks; byte-for-byte parity of
 generated CSS/SVG with Python in `suite-gtk/tests/python_parity.rs`).

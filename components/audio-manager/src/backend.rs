@@ -171,7 +171,7 @@ pub struct AudioBackend(pub(crate) Rc<Inner>);
 type Fallible<T> = Result<T, String>;
 
 fn int(text: Option<String>) -> Option<i64> {
-    crate::pyjson::py_int(text.map(serde_json::Value::String).as_ref())
+    suite_core::pyjson::py_int(text.map(serde_json::Value::String).as_ref())
 }
 
 impl AudioBackend {
@@ -427,7 +427,7 @@ impl AudioBackend {
         node.volume_available = data.is_some();
         let Some(data) = data else { return };
         let mut ordered = data.channels.clone();
-        ordered.sort_by_key(|(key, _, _)| crate::pyjson::py_int(Some(&serde_json::Value::String(key.clone()))).unwrap_or(0));
+        ordered.sort_by_key(|(key, _, _)| suite_core::pyjson::py_int(Some(&serde_json::Value::String(key.clone()))).unwrap_or(0));
         node.channel_volumes = ordered.iter().map(|(_, v, _)| v.unwrap_or(0.0)).collect();
         node.channels = ordered
             .iter()

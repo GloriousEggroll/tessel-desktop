@@ -5,7 +5,8 @@
 //! [`Event`]s that the owner drains with [`NotificationModel::take_events`]
 //! (or through [`SharedModel`], which dispatches them to observers in order).
 
-use crate::compat::{base64_encode, py_float, py_str, truthy};
+use suite_core::base64::encode as base64_encode;
+use suite_core::pyjson::{py_float, py_str_or_empty as py_str, truthy};
 use glib::Variant;
 use indexmap::IndexMap;
 use serde_json::{json, Map, Number, Value};
@@ -799,7 +800,7 @@ impl NotificationModel {
         let payload = json!({"version": 1, "next_id": self.next_id, "settings": self.settings.clone(), "history": history});
         let text = suite_core::pyfmt::json_dumps(&payload, &suite_core::pyfmt::JsonStyle { ensure_ascii: false,
             ..suite_core::pyfmt::JsonStyle::DEFAULT });
-        self.storage_error = match crate::compat::write_private(&self.directory, "state.json", ".notifications-", text.as_bytes()) {
+        self.storage_error = match suite_core::fsutil::write_private(&self.directory, "state.json", ".notifications-", text.as_bytes()) {
             Ok(()) => String::new(),
             Err(error) => error,
         };

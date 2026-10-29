@@ -20,9 +20,9 @@ path = "src/bin/power-status.rs"
 [dependencies]
 suite-core.workspace = true
 suite-gtk.workspace = true
+suite-power = { workspace = true, features = ["gtk"] }
 glib.workspace = true
-gio = { workspace = true, features = ["v2_80"] }
-glib-unix = "0.22"
+gio.workspace = true
 gtk.workspace = true
 gtk4-layer-shell.workspace = true
 serde_json.workspace = true

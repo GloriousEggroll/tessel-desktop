@@ -2,7 +2,7 @@
 //! (audio_backend.py:42-227). Pure functions, no I/O or audio writes.
 
 use crate::model::{Choice, Device, Node};
-use crate::pyjson::{contains_int, first_truthy, is_true_value, py_float, py_int, py_str, py_str_opt, truthy};
+use suite_core::pyjson::{contains_int, first_truthy, is_true_value, py_float, py_int, py_str, py_str_opt, truthy};
 use indexmap::{IndexMap, IndexSet};
 use serde_json::{Map, Value};
 

@@ -18,7 +18,7 @@ suite-core.workspace = true
 suite-gtk.workspace = true
 gtk.workspace = true
 glib.workspace = true
-gio = { workspace = true, features = ["v2_80"] }
+gio.workspace = true
 serde_json.workspace = true
 libc.workspace = true
 

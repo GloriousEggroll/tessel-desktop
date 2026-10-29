@@ -1,20 +1,10 @@
 //! Waydock status line (osk_status.py) and the daemon's state file.
+use suite_core::values::truthy;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 
 /// `$XDG_RUNTIME_DIR/waykeys/state.json`.
 pub fn state_path() -> PathBuf { suite_core::paths::runtime_dir().join("waykeys/state.json") }
-
-fn truthy(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(b)) => *b,
-        Some(Value::Number(n)) => n.as_f64() != Some(0.0),
-        Some(Value::String(s)) => !s.is_empty(),
-        Some(Value::Array(a)) => !a.is_empty(),
-        Some(Value::Object(o)) => !o.is_empty(),
-    }
-}
 
 /// One status object. A missing/invalid file or a dead `pid` reads as "Off".
 pub fn status(path: Option<&Path>) -> Value {

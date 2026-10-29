@@ -3,11 +3,11 @@
 //! Effects (subprocesses, timers, dimming, windows) are injected traits.
 
 use crate::alerts::BatteryAlerts;
-use crate::backend::PowerSystem;
+use suite_power::backend::PowerSystem;
 use crate::config::{self, ConfigError, SLEEP_ACTIONS};
 use crate::idle::IdleController;
 use crate::logind::SessionSwitches;
-use crate::util::Scheduler;
+use suite_core::scheduler::Scheduler;
 use serde_json::{json, Value};
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashSet};
@@ -39,7 +39,7 @@ pub trait Runner {
     /// stderr is captured when `capture_stderr`, else silenced.
     fn run(&self, argv: &[String], capture_stderr: bool, done: Box<dyn FnOnce(Exit)>) -> Result<(), String>;
     fn which(&self, name: &str) -> Option<PathBuf> {
-        crate::util::which(name)
+        suite_core::shell::which(name)
     }
 }
 
@@ -93,8 +93,8 @@ impl Default for Services {
     fn default() -> Self {
         let scripts_root = std::env::var_os("POWER_MANAGER_SCRIPTS_DIR").map(PathBuf::from)
             .unwrap_or_else(|| suite_core::paths::config_home().join("waybar/scripts"));
-        let python = crate::util::which("python3").map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| "/usr/bin/python3".into());
-        Self { runner: Rc::new(GioRunner), scheduler: Rc::new(crate::util::GlibScheduler::default()),
+        let python = suite_core::shell::which("python3").map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| "/usr/bin/python3".into());
+        Self { runner: Rc::new(GioRunner), scheduler: Rc::new(suite_core::scheduler::GlibScheduler::default()),
                monotonic: Box::new(|| glib::monotonic_time() as f64 / 1e6),
                saver: Box::new(|settings| config::save_settings(settings, None)), scripts_root, python }
     }

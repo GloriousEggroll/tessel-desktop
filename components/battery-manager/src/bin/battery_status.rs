@@ -4,12 +4,10 @@
 //! GTK), so the stream needs just GLib/GIO.
 #![allow(dead_code)]
 
-#[path = "../power/mod.rs"]
-mod power;
 #[path = "../status.rs"]
 mod status;
 
-use power::PowerBackend;
+use suite_power::{PowerBackend, PowerSystem};
 use status::encode;
 use std::cell::RefCell;
 use std::io::Write;
@@ -37,11 +35,11 @@ fn main() {
         })
     };
     let (on_changed, on_error) = (changed.clone(), changed.clone());
-    let backend = PowerBackend::system(move || on_changed(), move |_| on_error());
+    let backend = PowerBackend::batteries_only(move || on_changed(), move |_| on_error());
     slot.replace(Some(backend.clone()));
     for signal in [libc::SIGTERM, libc::SIGINT] {
         let main_loop = main_loop.clone();
-        glib_unix::unix_signal_add_local(signal, move || {
+        suite_core::glib_compat::unix_signal_add_local(signal, move || {
             main_loop.quit();
             glib::ControlFlow::Break
         });

@@ -1,7 +1,7 @@
 //! Own a logind idle/sleep inhibitor for this desktop session
 //! (port of keep_awake_backend.py `InhibitorBackend`).
 
-use crate::compat::{python_error_text, python_os_error_text};
+use suite_core::pyerr::{os_error_text as python_os_error_text, python_error_text};
 use gio::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::os::fd::{AsRawFd, OwnedFd};

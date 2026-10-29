@@ -13,9 +13,9 @@ pub fn status(ready: bool, error: &str, state: &Map<String, Value>) -> Value {
     let empty = Map::new();
     let settings = state.get("settings").and_then(Value::as_object).unwrap_or(&empty);
     let unread = state.get("unread").cloned().unwrap_or(json!(0));
-    let paused = settings.get("do_not_disturb").map_or(false, crate::compat::truthy);
-    let fullscreen = settings.get("suppress_fullscreen").map_or(true, crate::compat::truthy)
-        && state.get("presentation").and_then(|p| p.get("fullscreen")).is_some_and(crate::compat::truthy);
+    let paused = settings.get("do_not_disturb").map_or(false, suite_core::pyjson::truthy);
+    let fullscreen = settings.get("suppress_fullscreen").map_or(true, suite_core::pyjson::truthy)
+        && state.get("presentation").and_then(|p| p.get("fullscreen")).is_some_and(suite_core::pyjson::truthy);
     let mut text = vec![tr!("Notifications")];
     if !ready {
         text.push(if error.is_empty() { tr!("Notification service unavailable") } else { error.to_owned() });
@@ -23,7 +23,7 @@ pub fn status(ready: bool, error: &str, state: &Map<String, Value>) -> Value {
         let count = match &unread {
             Value::Number(n) if !n.is_f64() => suite_core::Arg::Int(n.as_i64().unwrap_or(0)),
             Value::Number(n) => suite_core::Arg::Float(n.as_f64().unwrap_or(0.0)),
-            other => suite_core::Arg::Str(crate::compat::py_str(other)),
+            other => suite_core::Arg::Str(suite_core::pyjson::py_str_or_empty(other)),
         };
         text.push(suite_core::translate_with("{count} unread", &[("count", count)]));
         if paused {
@@ -33,7 +33,7 @@ pub fn status(ready: bool, error: &str, state: &Map<String, Value>) -> Value {
         }
     }
     text.push(tr!("Click for history · Right-click for settings"));
-    let unread_truthy = crate::compat::truthy(&unread);
+    let unread_truthy = suite_core::pyjson::truthy(&unread);
     json!({"text": if paused { "\u{f1f6}" } else { "\u{f0f3}" }, "tooltip": text.join("\n"),
            "class": if !ready { "unavailable" } else if paused || fullscreen { "paused" }
                     else if unread_truthy { "unread" } else { "notifications" }})
@@ -70,7 +70,7 @@ pub fn run() -> i32 {
     client_slot.replace(Some(client.clone()));
     for signal in [libc::SIGTERM, libc::SIGINT] {
         let main_loop = main_loop.clone();
-        crate::compat_ffi::unix_signal_add_local(signal, move || {
+        suite_core::glib_compat::unix_signal_add_local(signal, move || {
             main_loop.quit();
             glib::ControlFlow::Break
         });

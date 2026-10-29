@@ -3,7 +3,8 @@
 use crate::config::defaults;
 use crate::fakes::{FakeProcesses, FakeSystem};
 use crate::idle::{dim_delay, IdleController};
-use crate::util::{shell_split, FakeScheduler};
+use suite_core::scheduler::FakeScheduler;
+use suite_core::shell::shell_split;
 use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::BTreeMap;

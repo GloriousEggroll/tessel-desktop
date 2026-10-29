@@ -236,7 +236,7 @@ pub fn level_bar() -> gtk::LevelBar {
 }
 
 pub fn casefold(text: &str) -> String {
-    crate::pyjson::casefold(text)
+    suite_core::pyjson::casefold(text)
 }
 
 /// Selectable default-device choices: visible outputs or inputs.

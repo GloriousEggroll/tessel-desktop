@@ -100,7 +100,7 @@ pub fn timer_text(duration: u32, until: Option<f64>) -> String {
 
 impl TimedBackend {
     pub fn new(backend: Rc<dyn Inhibit>, path: Option<PathBuf>, clock: Option<Box<dyn Fn() -> f64>>) -> Self {
-        let clock = clock.unwrap_or_else(|| Box::new(crate::compat::now));
+        let clock = clock.unwrap_or_else(|| Box::new(suite_core::timer::now));
         let (duration, until) = path.as_deref().map(|p| load_timer(p, clock())).unwrap_or((0, None));
         Self(Rc::new(Inner {
             backend, path, clock, duration: Cell::new(duration), until: Cell::new(until), timer: RefCell::new(None),

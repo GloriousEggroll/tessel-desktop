@@ -1,7 +1,7 @@
 //! Test doubles shared by unit tests and the headless UI test binary.
 //! Nothing here touches a real bus, display power or sleep state.
 
-use crate::backend::{BackendState, Guard, PowerSystem};
+use suite_power::backend::{BackendState, Guard, PowerSystem};
 use crate::idle::Processes;
 use std::cell::{Cell, Ref, RefCell};
 use std::path::PathBuf;

@@ -2,7 +2,7 @@
 //! window (port of keep_awake_client.py `KeepAwakeClient`).
 
 use crate::ui::Controls;
-use glib::prelude::*;
+use gio::prelude::*;
 use serde_json::Value;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -40,25 +40,17 @@ impl KeepAwakeClient {
 
     fn flag(&self, key: &str) -> bool { self.client.state().get(key).is_some_and(truthy) }
 
-    fn has_owner(&self) -> bool {
-        // SettingsClient replaces the state with {ready, error=unavailable} when the owner goes away.
-        !(self.client.error() == self.unavailable && !self.client.state().contains_key("active"))
-    }
-
-    /// Raw `SetDuration(u)` on the Duration interface (`NO_AUTO_START`, 15 s).
+    /// Raw `SetDuration(u)` on the Duration interface of the settings proxy's
+    /// object (`NO_AUTO_START`, 15 s), exactly like the Python client.
     pub fn request_duration(&self, minutes: u32) -> bool {
-        if !self.has_owner() {
-            self.error.replace(Some(self.unavailable.clone()));
-            (self.on_changed)();
-            return false;
-        }
-        let Ok(connection) = gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>) else {
+        let Some(proxy) = self.client.proxy().filter(|proxy| proxy.name_owner().is_some()) else {
             self.error.replace(Some(self.unavailable.clone()));
             (self.on_changed)();
             return false;
         };
         let (error, notify) = (self.error.clone(), self.on_changed.clone());
-        connection.call(Some(BUS_NAME), OBJECT_PATH, DURATION_INTERFACE, "SetDuration", Some(&(minutes,).to_variant()),
+        let name = proxy.name().map(|name| name.to_string()).unwrap_or_else(|| BUS_NAME.into());
+        proxy.connection().call(Some(name.as_str()), &proxy.object_path(), DURATION_INTERFACE, "SetDuration", Some(&(minutes,).to_variant()),
                         None, gio::DBusCallFlags::NO_AUTO_START, 15000, None::<&gio::Cancellable>, move |result| {
             if let Err(mut failure) = result {
                 gio::DBusError::strip_remote_error(&mut failure);

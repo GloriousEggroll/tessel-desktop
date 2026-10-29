@@ -6,11 +6,6 @@ use std::path::{Path, PathBuf};
 pub const FORWARDED_ENVIRONMENT: [&str; 7] = ["WAYLAND_DISPLAY", "DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR",
                                               "DBUS_SESSION_BUS_ADDRESS", "XDG_CURRENT_DESKTOP", "XDG_SESSION_TYPE"];
 
-/// `shutil.which`: first executable regular file named `name` on PATH.
-pub fn which(name: &str) -> Option<PathBuf> {
-    glib::find_program_in_path(name).filter(|path| path.is_file())
-}
-
 /// The suite's scripts root (`~/.config/waybar/scripts`, the Python file's
 /// `parent.parent`); the binary's own `../..` wins when it holds the Bluetooth manager.
 pub fn script_roots() -> Vec<PathBuf> {
@@ -30,7 +25,7 @@ pub fn bluetooth_script(roots: &[PathBuf]) -> Option<PathBuf> {
 
 /// The Python interpreter that runs the (still Python) Bluetooth manager.
 pub fn python() -> PathBuf {
-    which("python3").unwrap_or_else(|| PathBuf::from("/usr/bin/python3"))
+    suite_core::shell::which("python3").unwrap_or_else(|| PathBuf::from("/usr/bin/python3"))
 }
 
 /// `systemd-run --user --collect --quiet --service-type=exec --slice=app.slice

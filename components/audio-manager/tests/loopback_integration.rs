@@ -60,7 +60,7 @@ struct Isolated {
 }
 
 fn which(name: &str) -> bool {
-    std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(name).is_file()))
+    suite_core::shell::which(name).is_some()
 }
 
 impl Isolated {

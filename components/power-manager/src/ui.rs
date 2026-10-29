@@ -3,9 +3,9 @@
 //! policies through `on_save`.
 #![allow(deprecated)] // ComboBoxText/ComboBox/ListStore: kept for parity with the GTK4 Python UI.
 
-use crate::backend::PowerSystem;
+use suite_power::backend::PowerSystem;
 use crate::config::{validate_settings, CRITICAL_LEVELS};
-use crate::style::{icon, install_style, label, margins, style};
+use suite_power::ui::style::{icon, install_style, label, margins, style};
 use gtk::prelude::*;
 use gtk::{gdk, glib};
 use serde_json::Value;

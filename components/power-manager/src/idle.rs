@@ -7,9 +7,11 @@
 //! and does not require that application: swayidle runs resume commands while
 //! terminating.
 
-use crate::backend::PowerSystem;
+use suite_power::backend::PowerSystem;
 use crate::config::{validate_settings, SLEEP_ACTIONS};
-use crate::util::{compare_digest, is_executable, shell_join, token_urlsafe, Scheduler};
+use suite_core::scheduler::Scheduler;
+use suite_core::secrets::{compare_digest, token_urlsafe};
+use suite_core::shell::{is_executable, shell_join};
 use serde_json::Value;
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
@@ -50,16 +52,11 @@ pub fn exit_code(status: i32) -> i32 {
     }
 }
 
-pub fn os_error_text(error: &std::io::Error) -> String {
-    match error.raw_os_error() {
-        Some(code) => format!("[Errno {code}] {}", error.to_string().split(" (os error").next().unwrap_or("")),
-        None => error.to_string(),
-    }
-}
+use suite_core::pyerr::os_error_text;
 
 impl Processes for RealProcesses {
     fn which(&self, name: &str) -> Option<PathBuf> {
-        crate::util::which(name)
+        suite_core::shell::which(name)
     }
 
     fn spawn(&self, argv: &[String]) -> Result<u32, String> {

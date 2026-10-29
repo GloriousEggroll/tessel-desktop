@@ -7,11 +7,11 @@ use gio::prelude::*;
 use power_manager::alerts::BatteryAlerts;
 use power_manager::app::{App, Services, APPLICATION_ID, INTERFACE};
 use power_manager::args::{self, Args};
-use power_manager::backend::{Options, PowerBackend, PowerSystem};
+use suite_power::backend::{Options, PowerBackend, PowerSystem};
 use power_manager::gui::{GtkDimmer, GtkSurfaces};
 use power_manager::idle::{self_command, IdleController, RealProcesses};
 use power_manager::logind::SessionSwitches;
-use power_manager::util::{GlibScheduler, Scheduler};
+use suite_core::scheduler::{GlibScheduler, Scheduler};
 use std::cell::RefCell;
 use std::rc::Rc;
 use suite_core::pyfmt::{json_dumps, JsonStyle};
@@ -126,7 +126,7 @@ fn main() -> glib::ExitCode {
             held.replace(Some(gapp.hold()));
             for signal in [libc::SIGTERM, libc::SIGINT] {
                 let weak = gapp.downgrade();
-                signals.borrow_mut().push(glib_unix::unix_signal_add_local(signal, move || {
+                signals.borrow_mut().push(suite_core::glib_compat::unix_signal_add_local(signal, move || {
                     if let Some(gapp) = weak.upgrade() {
                         gapp.quit();
                     }

@@ -8,6 +8,7 @@ description = "Non-GUI shared helpers of the desktop suite: i18n, paths, setting
 [dependencies]
 glib.workspace = true
 gio.workspace = true
+glib-unix.workspace = true
 serde_json.workspace = true
 libc.workspace = true
 regex.workspace = true

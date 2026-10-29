@@ -197,7 +197,7 @@ pub fn notification_texture(value: &Value) -> Option<gdk::Paintable> {
     if encoded.len() > 6 * 1024 * 1024 {
         return None;
     }
-    let mut data = crate::compat::base64_decode_strict(encoded)?;
+    let mut data = suite_core::base64::decode_strict(encoded)?;
     let needed = ((height - 1) * rowstride + width * channels) as usize;
     if !(needed <= data.len() && data.len() <= (rowstride * height) as usize) {
         return None;
@@ -233,7 +233,7 @@ fn desktop_icon(entry: Option<&Value>) -> Option<gio::Icon> {
         return None;
     }
     let name = if entry.ends_with(".desktop") { entry } else { entry + ".desktop" };
-    crate::compat_ffi::desktop_app_icon(&name)
+    suite_core::glib_compat::desktop_app_info(&name).and_then(|info| info.icon())
 }
 
 /// A paintable, a GIcon or nothing.
@@ -361,7 +361,7 @@ fn is_today(date: &glib::DateTime) -> bool {
 /// Human end time for an active timed Do Not Disturb, else empty.
 pub fn dnd_until_text(settings: &Map<String, Value>) -> String {
     let until = settings.get("dnd_until");
-    let dnd = settings.get("do_not_disturb").is_some_and(crate::compat::truthy);
+    let dnd = settings.get("do_not_disturb").is_some_and(suite_core::pyjson::truthy);
     let Some(until) = until.and_then(Value::as_f64).filter(|u| *u != 0.0) else { return String::new() };
     if !dnd {
         return String::new();
@@ -372,7 +372,7 @@ pub fn dnd_until_text(settings: &Map<String, Value>) -> String {
 }
 
 pub fn time_label(timestamp: Option<&Value>) -> String {
-    let Some(date) = timestamp.and_then(crate::compat::py_float_opt).and_then(local_time) else { return String::new() };
+    let Some(date) = timestamp.and_then(suite_core::pyjson::py_float).and_then(local_time) else { return String::new() };
     let format = if is_today(&date) { "%H:%M" } else { "%b %d · %H:%M" };
     date.format(format).map(|s| s.to_string()).unwrap_or_default()
 }
@@ -509,7 +509,7 @@ impl NotificationCard {
     }
 
     fn active(&self) -> bool {
-        self.0.notification.borrow().get("active").map_or(true, crate::compat::truthy)
+        self.0.notification.borrow().get("active").map_or(true, suite_core::pyjson::truthy)
     }
 
     fn close(&self) {
@@ -528,19 +528,19 @@ impl NotificationCard {
         let map = notification.as_object().cloned().unwrap_or_default();
         self.0.notification.replace(map.clone());
         let inner = &self.0;
-        let active = map.get("active").map_or(true, crate::compat::truthy);
+        let active = map.get("active").map_or(true, suite_core::pyjson::truthy);
         let app = text(map.get("app_name"), 240);
         inner.app_label.set_text(&if app.is_empty() { tr!("Notification") } else { app });
         inner.time_label.set_text(&time_label(map.get("timestamp")));
         inner.time_label.set_visible(inner.history);
-        inner.unread_dot.set_visible(inner.history && !map.get("read").is_some_and(crate::compat::truthy));
+        inner.unread_dot.set_visible(inner.history && !map.get("read").is_some_and(suite_core::pyjson::truthy));
         inner.close_button.set_visible(inner.history || active);
         inner.summary_label.set_text(&text(map.get("summary"), 16000));
         inner.summary_label.set_visible(!inner.summary_label.text().is_empty());
         inner.body_label.set_text(&text(map.get("body"), 16000));
         inner.body_label.set_visible(!inner.body_label.text().is_empty());
         let app_icon = app_icon(&map);
-        let value = map.get("image").filter(|v| crate::compat::truthy(v)).or_else(|| map.get("image_path")).cloned();
+        let value = map.get("image").filter(|v| suite_core::pyjson::truthy(v)).or_else(|| map.get("image_path")).cloned();
         if *inner.image_value.borrow() != value {
             inner.image_value.replace(value.clone());
             let icon_like = image_is_icon(value.as_ref(), &map);
@@ -581,7 +581,7 @@ impl NotificationCard {
         if let Some(Value::Array(pairs)) = map.get("actions") {
             for pair in pairs {
                 if let Some([key, title]) = pair.as_array().map(Vec::as_slice) {
-                    let key = match key { Value::String(k) => k.clone(), other => crate::compat::py_str_any(other) };
+                    let key = match key { Value::String(k) => k.clone(), other => suite_core::pyjson::py_str(other) };
                     let title = text(Some(title), 160);
                     actions.push((key, if title.is_empty() { tr!("Open") } else { title }));
                 }
@@ -678,7 +678,7 @@ impl NotificationGroup {
         inner.name_label.set_text(&name);
         inner.count_label.set_text(&count.to_string());
         let mut sample = group.items.first().and_then(Value::as_object).cloned().unwrap_or_default();
-        if !sample.get("icon").is_some_and(crate::compat::truthy) {
+        if !sample.get("icon").is_some_and(suite_core::pyjson::truthy) {
             sample.insert("icon".into(), group.icon.clone());
         }
         sample.entry("app_name").or_insert_with(|| json!(group.name));
@@ -1022,13 +1022,13 @@ impl NotificationCenter {
         let ready = client.ready();
         let settings = state.get("settings").and_then(Value::as_object).cloned().unwrap_or_default();
         inner.syncing.set(true);
-        inner.dnd_switch.set_active(settings.get("do_not_disturb").is_some_and(crate::compat::truthy));
+        inner.dnd_switch.set_active(settings.get("do_not_disturb").is_some_and(suite_core::pyjson::truthy));
         inner.syncing.set(false);
         inner.dnd_switch.set_sensitive(ready);
         inner.dnd_options.set_sensitive(ready);
         let unread = state.get("unread").cloned().unwrap_or(json!(0));
-        inner.count_label.set_text(&crate::compat::py_str_any(&unread));
-        inner.count_label.set_visible(crate::compat::truthy(&unread));
+        inner.count_label.set_text(&suite_core::pyjson::py_str(&unread));
+        inner.count_label.set_visible(suite_core::pyjson::truthy(&unread));
         let error = client.error();
         let until = dnd_until_text(&settings);
         let status = if !error.is_empty() {
@@ -1037,7 +1037,7 @@ impl NotificationCenter {
             tr!("Connecting to the notification service…")
         } else if !until.is_empty() {
             tr!("Popups are paused until {time}. Notifications are kept here.", time = until.as_str())
-        } else if settings.get("do_not_disturb").is_some_and(crate::compat::truthy) {
+        } else if settings.get("do_not_disturb").is_some_and(suite_core::pyjson::truthy) {
             tr!("Popups are paused. Notifications are kept here.")
         } else {
             String::new()
@@ -1362,8 +1362,8 @@ impl SettingsPage {
         let state = inner.client.state();
         let settings = state.get("settings").and_then(Value::as_object).cloned().unwrap_or_default();
         inner.syncing.set(true);
-        inner.dnd_switch.set_active(settings.get("do_not_disturb").is_some_and(crate::compat::truthy));
-        inner.fullscreen_switch.set_active(settings.get("suppress_fullscreen").map_or(true, crate::compat::truthy));
+        inner.dnd_switch.set_active(settings.get("do_not_disturb").is_some_and(suite_core::pyjson::truthy));
+        inner.fullscreen_switch.set_active(settings.get("suppress_fullscreen").map_or(true, suite_core::pyjson::truthy));
         inner.timeout_spin.set_value(settings.get("timeout_ms").and_then(Value::as_f64).unwrap_or(6000.0) / 1000.0);
         let until = dnd_until_text(&settings);
         inner.dnd_until_label.set_text(&if until.is_empty() { String::new() } else { tr!("Paused until {time}", time = until.as_str()) });

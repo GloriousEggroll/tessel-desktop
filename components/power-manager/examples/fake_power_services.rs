@@ -18,7 +18,7 @@ fn main() {
     }
     let main_loop = glib::MainLoop::new(None, false);
     let quit = main_loop.clone();
-    glib_unix::unix_signal_add_local(libc::SIGTERM, move || {
+    suite_core::glib_compat::unix_signal_add_local(libc::SIGTERM, move || {
         quit.quit();
         glib::ControlFlow::Break
     });

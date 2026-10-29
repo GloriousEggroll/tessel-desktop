@@ -2,7 +2,7 @@
 //! (loopback_store.py). Error strings are English and untranslated, as in Python.
 
 use crate::model::Loopback;
-use crate::pyjson::{casefold, py_strip};
+use suite_core::pyjson::{casefold, py_strip};
 use crate::timer::{self, Timeout};
 use gio::prelude::*;
 use indexmap::IndexMap;
@@ -44,13 +44,7 @@ impl From<StoreError> for Failure {
     }
 }
 
-/// `exc.strerror or exc` for an OSError.
-pub fn strerror(error: &io::Error) -> String {
-    match error.raw_os_error() {
-        Some(code) => unsafe { std::ffi::CStr::from_ptr(libc::strerror(code)) }.to_string_lossy().into_owned(),
-        None => error.to_string(),
-    }
-}
+use suite_core::pyerr::strerror;
 
 fn text(value: Option<&Value>, field: &str, limit: usize) -> Result<String, StoreError> {
     let Some(Value::String(value)) = value else { return err(format!("The loopback {field} must be text.")) };

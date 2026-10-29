@@ -3,7 +3,7 @@
 
 use crate::bluetooth;
 use crate::cli::{self, Mode};
-use crate::power::{BatteryModel, PowerBackend};
+use suite_power::{BatteryModel, PowerBackend, PowerSystem};
 use crate::ui::{AppHooks, BatteryPopup, BatterySettingsWindow};
 use crate::APPLICATION_ID;
 use gtk::gio;
@@ -29,8 +29,8 @@ pub trait BatteryBackendHandle: BatteryModel {
 }
 
 impl BatteryBackendHandle for PowerBackend {
-    fn start(&self) { PowerBackend::start(self) }
-    fn close(&self) { PowerBackend::close(self) }
+    fn start(&self) { PowerSystem::start(self) }
+    fn close(&self) { PowerSystem::close(self) }
     fn as_model(self: Rc<Self>) -> Rc<dyn BatteryModel> { self }
 }
 
@@ -76,7 +76,7 @@ mod imp {
             let app = self.obj();
             std::mem::forget(app.hold());
             let factory = self.factory.take().unwrap_or_else(|| Box::new(|changed, failed| {
-                Rc::new(PowerBackend::system(changed, failed)) as Rc<dyn BatteryBackendHandle>
+                Rc::new(PowerBackend::batteries_only(changed, failed)) as Rc<dyn BatteryBackendHandle>
             }));
             let (weak, weak_error) = (app.downgrade(), app.downgrade());
             let backend = factory(
@@ -87,7 +87,7 @@ mod imp {
             backend.start();
             for signal in [libc::SIGTERM, libc::SIGINT] {
                 let weak = app.downgrade();
-                let id = glib_unix::unix_signal_add_local(signal, move || {
+                let id = suite_core::glib_compat::unix_signal_add_local(signal, move || {
                     if let Some(app) = weak.upgrade() {
                         app.quit();
                     }
@@ -169,7 +169,7 @@ impl AppHooks for Hooks {
     }
 
     fn bluetooth_available(&self) -> bool {
-        bluetooth::bluetooth_script(&bluetooth::script_roots()).is_some() && bluetooth::which("systemd-run").is_some()
+        bluetooth::bluetooth_script(&bluetooth::script_roots()).is_some() && suite_core::shell::which("systemd-run").is_some()
     }
 
     fn open_bluetooth(&self) -> bool {
@@ -294,7 +294,7 @@ impl BatteryApplication {
         if WidgetExt::display(window).type_().name() != "GdkWaylandDisplay" {
             return;
         }
-        let Some(wlrctl) = bluetooth::which("wlrctl") else { return };
+        let Some(wlrctl) = suite_core::shell::which("wlrctl") else { return };
         let app_id = format!("app_id:{}", self.application_id().unwrap_or_default());
         let title = format!("title:{}", window.title().unwrap_or_default());
         let argv = [wlrctl.as_os_str(), "toplevel".as_ref(), "focus".as_ref(), app_id.as_ref(), title.as_ref()];
@@ -310,7 +310,7 @@ impl BatteryApplication {
 
     pub fn open_bluetooth(&self) -> bool {
         let script = bluetooth::bluetooth_script(&bluetooth::script_roots());
-        let (Some(script), Some(launcher)) = (script, bluetooth::which("systemd-run")) else {
+        let (Some(script), Some(launcher)) = (script, suite_core::shell::which("systemd-run")) else {
             self.set_error(tr!("Bluetooth settings are not installed."));
             return false;
         };

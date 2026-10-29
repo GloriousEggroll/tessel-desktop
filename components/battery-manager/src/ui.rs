@@ -1,8 +1,8 @@
 //! Battery status and charge controls, separate from power and idle policies (`battery_ui.py`).
 
-use crate::power::BatteryModel;
-use crate::power_ui::battery_ui::{BatterySection, Bluetooth};
-use crate::power_ui::style::{icon, install_style, label, margins, set_icon, style};
+use suite_power::BatteryModel;
+use suite_power::ui::battery_ui::{BatterySection, Bluetooth};
+use suite_power::ui::style::{icon, install_style, label, margins, set_icon, style};
 use crate::status::{valid_percentage, whole};
 use gtk::prelude::*;
 use gtk::{gdk, glib};

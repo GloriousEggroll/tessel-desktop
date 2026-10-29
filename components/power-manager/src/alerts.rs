@@ -2,8 +2,8 @@
 //! action (power_alerts.py). Only the resident Power Manager creates this
 //! controller, so each warning is sent exactly once per discharge cycle.
 
-use crate::backend::{Capabilities, PowerSystem};
-use crate::util::Scheduler;
+use suite_power::backend::{Capabilities, PowerSystem};
+use suite_core::scheduler::Scheduler;
 use gio::prelude::*;
 use serde_json::Value;
 use std::cell::{Cell, RefCell};
@@ -322,7 +322,7 @@ mod tests {
     use super::*;
     use crate::config::defaults;
     use crate::fakes::FakeSystem;
-    use crate::util::FakeScheduler;
+    use suite_core::scheduler::FakeScheduler;
 
     #[derive(Default)]
     struct FakeNotifier {

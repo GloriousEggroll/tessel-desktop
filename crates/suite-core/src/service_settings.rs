@@ -137,6 +137,9 @@ impl SettingsClient {
     /// Owner-managed "request in flight" flag; reset whenever the service owner changes.
     pub fn busy(&self) -> bool { self.0.busy.get() }
     pub fn set_busy(&self, busy: bool) { self.0.busy.set(busy) }
+    /// The underlying proxy once connected (Python `self._proxy`), e.g. for a raw
+    /// call on another interface of the same object via `proxy.connection()`.
+    pub fn proxy(&self) -> Option<gio::DBusProxy> { self.0.proxy.borrow().clone() }
 
     fn notify(&self) { (self.0.on_changed)() }
 
@@ -300,27 +303,6 @@ impl SettingsClient {
     }
 }
 
-/// Python truthiness of a JSON value.
-pub fn truthy(value: &Value) -> bool {
-    match value {
-        Value::Null => false,
-        Value::Bool(flag) => *flag,
-        Value::Number(number) => number.as_f64().is_some_and(|n| n != 0.0),
-        Value::String(text) => !text.is_empty(),
-        Value::Array(items) => !items.is_empty(),
-        Value::Object(map) => !map.is_empty(),
-    }
-}
-
-// `str(value or '')`.
-fn py_str_or_empty(value: &Value) -> String {
-    if !truthy(value) {
-        return String::new();
-    }
-    match value {
-        Value::String(text) => text.clone(),
-        Value::Bool(_) => "True".into(),
-        Value::Number(number) if number.is_f64() => crate::pyfmt::float_repr(number.as_f64().unwrap()),
-        other => json_dumps(other, &JsonStyle::DEFAULT).replace("\"", "'"),
-    }
-}
+/// Python truthiness of a JSON value (re-exported for existing callers).
+pub use crate::pyjson::truthy;
+use crate::pyjson::py_str_or_empty;

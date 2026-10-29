@@ -61,10 +61,10 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 1 | notification-manager | 2362 | ported, tests pass, not swapped |
 | 1 | on-screen-keyboard | 1068 | ported, tests pass, not swapped |
 | 1 | audio-manager (loopback service first) | 4046 | ported, tests pass, not swapped |
-| 2 | brightness-manager | 3797 | |
+| 2 | brightness-manager | 3797 | porting |
 | 2 | network-manager (netman) | 6934 | |
-| 2 | authentication-manager (polkitman) | 663 | |
-| 2 | calendar / weather / media / discovery / tiling / session-manager | ~8.7k | |
+| 2 | authentication-manager (polkitman) | 663 | porting |
+| 2 | calendar / weather / media / discovery / tiling / session-manager | ~8.7k | porting (all but session-manager) |
 | 2 | way-displays, language-manager, session-startup | ~2.9k | |
 | 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | |
 | 3 | wayshell | 4077 | |

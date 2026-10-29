@@ -5,10 +5,10 @@
 
 use gtk::glib;
 use gtk::prelude::*;
-use power_manager::backend::PowerSystem;
+use suite_power::backend::PowerSystem;
 use power_manager::dim::DimOverlay;
 use power_manager::fakes::FakeSystem;
-use power_manager::style;
+use suite_power::ui::style;
 use power_manager::ui::{Control, PowerPopup, PowerSettingsWindow};
 use serde_json::{json, Value};
 use std::cell::RefCell;

@@ -40,7 +40,7 @@ mod imp {
         pub position: RefCell<Option<(String, i32)>>,
         pub settings_service: RefCell<Option<SettingsService>>,
         pub duration_service: RefCell<Option<SettingsService>>,
-        pub signals: RefCell<Vec<u32>>,
+        pub signals: RefCell<Vec<glib::SourceId>>,
         pub held: RefCell<Option<gio::ApplicationHoldGuard>>,
         pub stopping: Cell<bool>,
         pub shut_down: Cell<bool>,
@@ -139,7 +139,7 @@ impl KeepAwakeApplication {
         self.imp().held.replace(Some(self.hold()));
         for number in [libc::SIGTERM, libc::SIGINT] {
             let weak = self.downgrade();
-            let id = crate::compat::unix_signal_add_local(number, move || {
+            let id = suite_core::glib_compat::unix_signal_add_local(number, move || {
                 if let Some(app) = weak.upgrade() {
                     app.quit();
                 }
@@ -252,7 +252,7 @@ impl KeepAwakeApplication {
             service.close();
         }
         for id in imp.signals.take() {
-            crate::compat::source_remove(id);
+            suite_core::glib_compat::source_remove(id);
         }
         if let Some(backend) = imp.backend.borrow().clone() {
             backend.close();

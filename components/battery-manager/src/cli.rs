@@ -55,7 +55,7 @@ fn error(prog: &str, message: &str) -> Exit {
 
 /// Python `int(text)` (whitespace, sign, `_` separators).
 fn python_int(text: &str) -> Option<i64> {
-    crate::power::charge_limits::parse_int(text)
+    suite_power::charge_limits::parse_int(text)
 }
 
 /// argparse's test for "looks like an option, not a value" (no option looks like a negative number).

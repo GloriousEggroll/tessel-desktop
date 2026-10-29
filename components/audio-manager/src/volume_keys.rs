@@ -35,38 +35,7 @@ pub struct Shown {
     pub detail: String,
 }
 
-/// `GLib.timeout_add` / `GLib.source_remove`, injectable for tests.
-pub trait Scheduler {
-    fn timeout_add(&self, milliseconds: u32, callback: Box<dyn FnOnce()>) -> u64;
-    fn source_remove(&self, id: u64);
-}
-
-#[derive(Default)]
-pub struct GlibScheduler {
-    next: Cell<u64>,
-    sources: Rc<RefCell<std::collections::HashMap<u64, crate::timer::Timeout>>>,
-}
-
-impl Scheduler for GlibScheduler {
-    fn timeout_add(&self, milliseconds: u32, callback: Box<dyn FnOnce()>) -> u64 {
-        let id = self.next.get() + 1;
-        self.next.set(id);
-        let sources = Rc::downgrade(&self.sources);
-        let timeout = crate::timer::once(milliseconds, move || {
-            if let Some(sources) = sources.upgrade() {
-                sources.borrow_mut().remove(&id);
-            }
-            callback();
-        });
-        self.sources.borrow_mut().insert(id, timeout);
-        id
-    }
-    fn source_remove(&self, id: u64) {
-        if let Some(timeout) = self.sources.borrow_mut().remove(&id) {
-            timeout.cancel();
-        }
-    }
-}
+use suite_core::scheduler::Scheduler;
 
 #[derive(Clone, Debug)]
 struct Target {
@@ -277,7 +246,7 @@ impl VolumeKeys {
     fn watch(&self) {
         if self.0.timer.get() == 0 {
             let weak = self.0.weak.borrow().clone();
-            let id = self.0.scheduler.timeout_add(100, Box::new(move || {
+            let id = self.0.scheduler.timeout(100, Box::new(move || {
                 if let Some(inner) = weak.upgrade() {
                     VolumeKeys(inner).tick();
                 }
@@ -306,7 +275,7 @@ impl VolumeKeys {
     fn stop_watch(&self) {
         let timer = self.0.timer.replace(0);
         if timer != 0 {
-            self.0.scheduler.source_remove(timer);
+            self.0.scheduler.cancel(timer);
         }
         self.0.deadline.set(0.0);
     }
@@ -335,12 +304,12 @@ mod tests {
     }
 
     impl Scheduler for Sched {
-        fn timeout_add(&self, _ms: u32, callback: Box<dyn FnOnce()>) -> u64 {
+        fn timeout(&self, _ms: u32, callback: Box<dyn FnOnce()>) -> u64 {
             self.serial.set(self.serial.get() + 1);
             self.callbacks.borrow_mut().insert(self.serial.get(), callback);
             self.serial.get()
         }
-        fn source_remove(&self, id: u64) {
+        fn cancel(&self, id: u64) {
             self.callbacks.borrow_mut().remove(&id);
         }
     }

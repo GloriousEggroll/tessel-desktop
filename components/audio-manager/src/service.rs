@@ -2,7 +2,8 @@
 //! (loopback_service.py `LoopbackService` + `main`).
 
 use crate::backend::{AudioBackend, BackendOptions};
-use crate::store::{strerror, with_suffix, Entries, LoopbackMonitor, LoopbackStore};
+use crate::store::{with_suffix, Entries, LoopbackMonitor, LoopbackStore};
+use suite_core::pyerr::strerror;
 use crate::supervisor::{spawn_loopback, LoopbackSupervisor, Spawn};
 use crate::timer::{self, Timeout};
 use std::cell::{Cell, RefCell};
@@ -135,7 +136,7 @@ pub fn main(argv: Vec<String>) -> i32 {
     };
     let store = LoopbackStore::new(config);
     if let Err(error) = store.ensure_directory() {
-        crate::log!("ERROR", "{}", crate::supervisor::python_os_error(&error));
+        crate::log!("ERROR", "{}", suite_core::pyerr::os_error_text(&error));
         return 1;
     }
     // The service and an accidental manual launch must not create duplicates.
@@ -161,9 +162,9 @@ pub fn main(argv: Vec<String>) -> i32 {
     };
     for signal in [libc::SIGINT, libc::SIGTERM] {
         let main_loop = main_loop.clone();
-        timer::unix_signal(signal, move || {
+        suite_core::glib_compat::unix_signal_add_local(signal, move || {
             main_loop.quit();
-            false
+            glib::ControlFlow::Break
         });
     }
     let started = service.start();
