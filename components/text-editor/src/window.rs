@@ -368,7 +368,7 @@ impl EditorWindow {
         let weak = this.weak();
         controller.connect_key_pressed(move |_, key, _, _| {
             if let Some(w) = weak.upgrade() {
-                if key == gdk::Key::Escape && w.search_panel.is_visible() {
+                if key == gdk::Key::Escape && w.search_panel.get_visible() {
                     EditorWindow(w).hide_search();
                     return glib::Propagation::Stop;
                 }
@@ -839,7 +839,7 @@ impl EditorWindow {
                 continue;
             }
             let reuse = self.document.borrow().untitled() && !self.modified() && !self.busy.get()
-                && !self.recovery_bar.is_visible() && !self.restoring.get();
+                && !self.recovery_bar.get_visible() && !self.restoring.get();
             let window = if reuse { self.clone() } else { self.new_window() };
             window.restore_draft(draft);
         }

@@ -94,7 +94,7 @@ impl MediaApp {
                 let popup = MediaPopup::new(&self.app, host, edge, offset);
                 let weak = self.weak();
                 popup.window.connect_visible_notify(move |window| {
-                    if !window.is_visible() {
+                    if !window.get_visible() {
                         let (weak, window) = (weak.clone(), window.clone());
                         glib::idle_add_local_once(move || if let Some(this) = weak.upgrade() { this.hidden(&window) });
                     }
@@ -119,7 +119,7 @@ impl MediaApp {
     fn hidden(&self, window: &gtk::ApplicationWindow) {
         // show_pending: set_position() hid it only to reappear on another edge.
         let Some(popup) = self.popup() else { return };
-        if &popup.window == window && !window.is_visible() && !popup.controller().show_pending() {
+        if &popup.window == window && !window.get_visible() && !popup.controller().show_pending() {
             self.popup.replace(None);
             popup.destroy();
         }

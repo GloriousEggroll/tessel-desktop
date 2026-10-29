@@ -116,7 +116,7 @@ pub fn shortcuts_window(parent: Option<&gtk::Window>, shortcuts: &[ShortcutSecti
             row.set_visible(query.is_empty() || text.contains(&query));
         }
         for (heading, members) in &headings {
-            heading.set_visible(members.iter().any(|member| member.is_visible()));
+            heading.set_visible(members.iter().any(|member| member.get_visible()));
         }
     });
     let keys = gtk::EventControllerKey::new();

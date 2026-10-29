@@ -145,7 +145,7 @@ impl WeatherApp {
 
     fn visibility(&self, window: &gtk::ApplicationWindow) {
         let current = self.popup().is_some_and(|p| &p.window == window);
-        if !window.is_visible() && current {
+        if !window.get_visible() && current {
             let weak = self.weak();
             let window = window.clone();
             glib::idle_add_local_once(move || if let Some(this) = weak.upgrade() { this.close_hidden_popup(&window) });
@@ -155,7 +155,7 @@ impl WeatherApp {
     fn close_hidden_popup(&self, window: &gtk::ApplicationWindow) {
         // show_pending: set_position() hid it only to reappear on another edge.
         let Some(popup) = self.popup() else { return };
-        if &popup.window == window && !window.is_visible() && !popup.controller().show_pending() {
+        if &popup.window == window && !window.get_visible() && !popup.controller().show_pending() {
             self.popup.replace(None);
             popup.destroy();
         }

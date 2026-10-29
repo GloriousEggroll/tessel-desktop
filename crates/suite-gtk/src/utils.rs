@@ -289,7 +289,7 @@ pub fn raise_window(application_id: &str, window: &gtk::Window, still_valid: imp
 
 fn raise_attempt(id: String, window: glib::WeakRef<gtk::Window>, valid: std::rc::Rc<dyn Fn(&gtk::Window) -> bool>, attempt: u32) {
     let Some(target) = window.upgrade() else { return };
-    if !target.is_visible() || !valid(&target) {
+    if !target.get_visible() || !valid(&target) {
         return;
     }
     let display = WidgetExt::display(&target);

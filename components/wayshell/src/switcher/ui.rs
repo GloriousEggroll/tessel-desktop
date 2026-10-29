@@ -264,7 +264,7 @@ impl SwitcherView {
         let weak = Rc::downgrade(&view);
         let handler = monitors.connect_items_changed(move |_, _, _, _| {
             if let Some(v) = weak.upgrade() {
-                if !v.closed.get() && v.window.is_visible() {
+                if !v.closed.get() && v.window.get_visible() {
                     // Reopening resolves the new output set.
                     (v.on_cancel)();
                 }
@@ -666,7 +666,7 @@ impl SwitcherView {
             return;
         }
         let monitor = monitor.or_else(|| crate::monitors::monitor_list(&WidgetExt::display(&self.window)).into_iter().next());
-        if self.window.is_visible() && monitor != *self.monitor.borrow() {
+        if self.window.get_visible() && monitor != *self.monitor.borrow() {
             // A layer surface's output is immutable after its first configure.
             self.dismiss();
         }
@@ -719,7 +719,7 @@ impl SwitcherView {
         if self.closed.get() || (self.mode.get() == Mode::Activities && self.capture.borrow().is_none()) {
             return;
         }
-        if self.window.is_visible() {
+        if self.window.get_visible() {
             return;
         }
         for (_, backdrop, _) in self.backdrops.borrow().iter() {
@@ -746,7 +746,7 @@ impl SwitcherView {
                 *self.identities.borrow_mut() = counts;
             }
             CaptureFrame::Desktop(texture) => {
-                if !self.window.is_visible() {
+                if !self.window.get_visible() {
                     *self.desktop_texture.borrow_mut() = Some(texture);
                     self.present();
                 }

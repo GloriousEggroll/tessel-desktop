@@ -24,7 +24,7 @@ pub fn check_text() -> String {
 /// `wlrctl toplevel focus app_id:org.waydock.SystemMonitor` (output silenced).
 fn raise_window(window: &glib::WeakRef<MonitorWindowHandle>) {
     let Some(window) = window.upgrade() else { return };
-    if !window.is_visible() || glib::find_program_in_path("wlrctl").is_none() {
+    if !window.get_visible() || glib::find_program_in_path("wlrctl").is_none() {
         return;
     }
     let argv = ["wlrctl", "toplevel", "focus", &format!("app_id:{APP_ID}")].map(std::ffi::OsString::from);

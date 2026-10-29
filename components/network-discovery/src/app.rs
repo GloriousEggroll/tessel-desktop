@@ -252,7 +252,7 @@ impl Discovery {
     fn hidden(&self, window: &gtk::Window) {
         // show_pending: set_position() hid it only to reappear on another edge.
         let Some(popup) = self.popup() else { return };
-        if popup.window() != window || window.is_visible() || popup.controller().show_pending() {
+        if popup.window() != window || window.get_visible() || popup.controller().show_pending() {
             return;
         }
         self.0.popup.replace(None);
@@ -390,7 +390,7 @@ impl DiscoveryPopup {
         popup.0.controller.replace(Some(controller));
         let owner = app_state.weak();
         window.connect_visible_notify(move |window| {
-            if !window.is_visible() {
+            if !window.get_visible() {
                 let (owner, window) = (owner.clone(), window.clone());
                 glib::idle_add_local_once(move || {
                     if let Some(inner) = owner.upgrade() {

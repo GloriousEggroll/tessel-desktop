@@ -288,7 +288,7 @@ impl LocationCompletion {
             return true;
         }
         let count = self.items.borrow().len() as i32;
-        if !self.popover.is_visible() || count == 0 {
+        if !self.popover.get_visible() || count == 0 {
             return false;
         }
         let mut index = self.rows.selected_row().map(|r| r.index()).unwrap_or(-1);

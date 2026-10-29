@@ -533,7 +533,7 @@ impl PicturesWindow {
         save.connect_clicked({ let f = weak!(this, |w| w.save(false, None)); move |_| f() });
         this.undo_button.connect_clicked({ let f = weak!(this, |w| w.undo(false)); move |_| f() });
         this.redo_button.connect_clicked({ let f = weak!(this, |w| w.undo(true)); move |_| f() });
-        edit_tools.connect_clicked({ let f = weak!(this, |w| w.tools.set_visible(!w.tools.is_visible())); move |_| f() });
+        edit_tools.connect_clicked({ let f = weak!(this, |w| w.tools.set_visible(!w.tools.get_visible())); move |_| f() });
         this.slide_button.connect_clicked({ let f = weak!(this, |w| w.toggle_slideshow()); move |_| f() });
         fullscreen.connect_clicked({ let f = weak!(this, |w| w.toggle_fullscreen()); move |_| f() });
         save_changes.connect_clicked({ let f = weak!(this, |w| w.save(false, None)); move |_| f() });
@@ -670,8 +670,8 @@ impl PicturesWindow {
             "compare" => self.compare_selected(),
             "restore-trash" => self.restore_trash(),
             "print" => self.print_picture(),
-            "sidebar" => self.sidebar.set_visible(!self.sidebar.is_visible()),
-            "thumbnails" => self.thumb_scroll.set_visible(!self.thumb_scroll.is_visible()),
+            "sidebar" => self.sidebar.set_visible(!self.sidebar.get_visible()),
+            "thumbnails" => self.thumb_scroll.set_visible(!self.thumb_scroll.get_visible()),
             "set-default" => self.set_default_viewer(),
             "preferences" => self.show_preferences(),
             other => self.file_action(other),
@@ -760,7 +760,7 @@ impl PicturesWindow {
 
     /// `guard(action)`: ask about unsaved edits before an action that replaces the document.
     pub fn guard(&self, action: Action) {
-        if self.busy.get() || self.confirm.borrow().as_ref().is_some_and(|c| c.is_visible()) {
+        if self.busy.get() || self.confirm.borrow().as_ref().is_some_and(|c| c.get_visible()) {
             return;
         }
         let Some(info) = self.doc_info().filter(|i| i.dirty) else {
@@ -1215,7 +1215,7 @@ impl PicturesWindow {
 
     fn fullscreen_changed(&self) {
         if self.window.is_fullscreen() {
-            let controls: Vec<(gtk::Widget, bool)> = self.fullscreen_widgets().into_iter().map(|w| { let v = w.is_visible(); (w, v) }).collect();
+            let controls: Vec<(gtk::Widget, bool)> = self.fullscreen_widgets().into_iter().map(|w| { let v = w.get_visible(); (w, v) }).collect();
             self.fullscreen_controls.replace(Some(controls));
             self.header.set_visible(false);
             for widget in self.fullscreen_widgets() {
@@ -1246,7 +1246,7 @@ impl PicturesWindow {
         let id = glib::timeout_add_local_once(std::time::Duration::from_millis(2000), move || {
             let Some(window) = weak.upgrade().map(PicturesWindow) else { return };
             window.fullscreen_reveal_timer.replace(None);
-            let menu_open = window.menu_button.popover().is_some_and(|m| m.is_visible());
+            let menu_open = window.menu_button.popover().is_some_and(|m| m.get_visible());
             if window.window.is_fullscreen() && !menu_open {
                 window.toolbar.set_visible(false);
             }

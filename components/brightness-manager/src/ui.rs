@@ -908,7 +908,7 @@ impl BrightnessPopup {
         });
         let weak = Rc::downgrade(&popup);
         popup.window.connect_visible_notify(move |window| {
-            if !window.is_visible() {
+            if !window.get_visible() {
                 if let Some(p) = weak.upgrade() {
                     p.controls.cancel();
                 }

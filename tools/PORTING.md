@@ -26,3 +26,11 @@
 7. Do not git commit (the parent commits). Final report <= 400 words: done/gaps, tests + results,
    measurements, compat items to upstream, what the installer/swap step must do (paths, units,
    shims at the old .py paths incl. flag strings that desktop-suite-action greps for).
+8. Widget visibility: Python `widget.get_visible()` / `widget.props.visible` is the widget's
+   OWN flag; port it as gtk-rs `.get_visible()`. gtk-rs `WidgetExt::is_visible()` is
+   gtk_widget_is_visible(), which is false whenever any ancestor (or the not-yet-shown window)
+   is hidden — use it only where the Python code really called `widget.is_visible()`. Mixing
+   them up latches state: `a.set_visible(b.is_visible())` run before the window is shown, or
+   with `a` an ancestor of `b`, hides `a` forever (waydock 1b3fc6d). Non-widget getters keep
+   their names (`ColumnViewColumn::is_visible()` is its own `visible` property;
+   `EntryExt::is_visible()` is the password-visibility flag).

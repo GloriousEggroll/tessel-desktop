@@ -625,7 +625,7 @@ impl FilesWindow {
             self.lookup_action("back").set_enabled(pane.history_index() > 0);
             self.lookup_action("forward").set_enabled(pane.history_index() + 1 < pane.history_len() as i64);
         }
-        if self.active_pane().as_ref() != Some(pane) || !self.information.widget().is_visible() {
+        if self.active_pane().as_ref() != Some(pane) || !self.information.widget().get_visible() {
             return;
         }
         let items: Vec<Item> = pane.selected().into_iter().map(|i| Rc::new(i) as Item).collect();
@@ -633,7 +633,7 @@ impl FilesWindow {
     }
 
     pub fn restore_information_width(&self) {
-        if !self.information.widget().is_visible() || self.restoring_information_width.get() {
+        if !self.information.widget().get_visible() || self.restoring_information_width.get() {
             return;
         }
         self.restoring_information_width.set(true);
@@ -647,7 +647,7 @@ impl FilesWindow {
                 return glib::ControlFlow::Continue;
             }
             if let Some(window) = weak.upgrade().map(FilesWindow) {
-                if window.alive.get() && window.information.widget().is_visible() {
+                if window.alive.get() && window.information.widget().get_visible() {
                     let width = bridge::pget(&window.app().preferences(), "information_width").as_i64().unwrap_or(360) as i32;
                     window.content_split.set_position(160.max(window.content_split.width() - width - 5));
                 }
@@ -658,7 +658,7 @@ impl FilesWindow {
     }
 
     fn information_resized(&self) {
-        if self.restoring_information_width.get() || !self.information.widget().is_visible() {
+        if self.restoring_information_width.get() || !self.information.widget().get_visible() {
             return;
         }
         if let Some(source) = self.information_width_source.borrow_mut().take() {
@@ -678,7 +678,7 @@ impl FilesWindow {
         if let Some(source) = self.information_width_source.borrow_mut().take() {
             source.remove();
         }
-        if self.alive.get() && self.information.widget().is_visible() && !self.restoring_information_width.get() {
+        if self.alive.get() && self.information.widget().get_visible() && !self.restoring_information_width.get() {
             let width = self.information.widget().width();
             let prefs = self.app().preferences();
             if width >= 300 && bridge::pget(&prefs, "information_width").as_i64() != Some(width as i64) {
@@ -706,9 +706,9 @@ impl FilesWindow {
             let location: &gtk::Widget = pane.location.upcast_ref();
             if focus.as_ref().is_some_and(|f| f == location || f.is_ancestor(location)) {
                 pane.finish_location_edit(true);
-            } else if pane.search_box.is_visible() {
+            } else if pane.search_box.get_visible() {
                 pane.stop_search();
-            } else if pane.filter_entry.is_visible() {
+            } else if pane.filter_entry.get_visible() {
                 pane.show_filter(false);
             } else {
                 pane.selection().unselect_all();
@@ -987,15 +987,15 @@ impl FilesWindow {
             }
             "information" | "sidebar" => {
                 let widget: gtk::Widget = if name == "information" { self.information.widget().clone().upcast() } else { self.sidebar_scroll.clone().upcast() };
-                if name == "information" && widget.is_visible() {
+                if name == "information" && widget.get_visible() {
                     self.save_information_width();
                     self.information.clear();
                 }
-                widget.set_visible(!widget.is_visible());
-                self.lookup_action(name).set_state(&widget.is_visible().to_variant());
+                widget.set_visible(!widget.get_visible());
+                self.lookup_action(name).set_state(&widget.get_visible().to_variant());
                 let key = if name == "information" { "show_information" } else { "show_sidebar" };
-                let _ = bridge::pset(&app.preferences(), key, Value::Bool(widget.is_visible()));
-                if name == "information" && widget.is_visible() {
+                let _ = bridge::pset(&app.preferences(), key, Value::Bool(widget.get_visible()));
+                if name == "information" && widget.get_visible() {
                     self.restore_information_width();
                 }
                 self.selection_changed_impl(&pane);
@@ -2013,7 +2013,7 @@ impl FilesWindow {
         if !self.alive.get() {
             return glib::ControlFlow::Break;
         }
-        if self.window.is_visible() && self.sidebar_scroll.is_visible() {
+        if self.window.get_visible() && self.sidebar_scroll.get_visible() {
             for usage in self.disk_usage.borrow().iter() {
                 usage.refresh();
             }

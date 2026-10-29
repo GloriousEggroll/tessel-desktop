@@ -131,7 +131,7 @@ impl GlobalSettingsApplication {
                     .is_some_and(|w| w.window.upcast_ref::<gtk::Window>() == candidate);
                 let is_sheet = sheet.upgrade().and_then(|s| s.borrow().clone())
                     .is_some_and(|s| &s.window() == candidate);
-                (is_window || is_sheet) && candidate.is_visible()
+                (is_window || is_sheet) && candidate.get_visible()
             };
             if valid(&target) {
                 suite_gtk::utils::raise_window(&id, &target, valid);

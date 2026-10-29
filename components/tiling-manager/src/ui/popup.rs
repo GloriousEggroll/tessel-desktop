@@ -160,7 +160,7 @@ impl Shortcuts {
     pub fn has_timer(&self) -> bool { self.0.timer.borrow().is_some() }
 
     pub fn refresh(&self, force: bool) {
-        if !force && !self.0.window.is_visible() {
+        if !force && !self.0.window.get_visible() {
             return;
         }
         self.0.controls.refresh();

@@ -159,7 +159,7 @@ impl Gui {
         let Some(window) = window else { return };
         self.ensure_style(window);
         if let Some(settings) = self.settings.borrow().as_ref() {
-            if settings.window.is_visible() && window.transient_for().is_none() && window != &settings.window {
+            if settings.window.get_visible() && window.transient_for().is_none() && window != &settings.window {
                 window.set_transient_for(Some(&settings.window));
             }
         }

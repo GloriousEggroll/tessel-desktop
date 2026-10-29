@@ -114,7 +114,7 @@ impl PopupController {
             let weak = self.downgrade();
             let id = self.0.monitors.connect_items_changed(move |_, _, _, _| {
                 if let Some(this) = upgrade(&weak) {
-                    if this.0.window.is_visible() {
+                    if this.0.window.get_visible() {
                         this.dismiss();
                     }
                 }
@@ -245,7 +245,7 @@ impl PopupController {
 
     /// Tray click: raise a suspended child window, else toggle the popup.
     pub fn activate(&self) {
-        let child = self.0.children.borrow().iter().rev().find(|w| w.is_visible()).cloned();
+        let child = self.0.children.borrow().iter().rev().find(|w| w.get_visible()).cloned();
         if let Some(child) = child {
             self.dismiss();
             child.unminimize();
@@ -253,7 +253,7 @@ impl PopupController {
             if let Some(raise) = self.0.raise_window.borrow().clone() {
                 glib::idle_add_local_once(move || raise(&child));
             }
-        } else if self.0.window.is_visible() {
+        } else if self.0.window.get_visible() {
             self.dismiss();
         } else {
             self.show();
@@ -307,14 +307,14 @@ impl PopupController {
         if self.0.layer_shell {
             return;
         }
-        if self.0.window.is_visible() && !self.0.window.is_active() {
+        if self.0.window.get_visible() && !self.0.window.is_active() {
             let weak = self.downgrade();
             let id = glib::timeout_add_local_once(Duration::from_millis(150), move || {
                 let Some(this) = upgrade(&weak) else { return };
                 this.0.focus_check.replace(None);
                 let toplevels = gtk::Window::toplevels();
                 let active = (0..toplevels.n_items()).filter_map(|i| toplevels.item(i).and_downcast::<gtk::Window>())
-                    .any(|w| w.is_visible() && w.is_active());
+                    .any(|w| w.get_visible() && w.is_active());
                 if !active {
                     this.dismiss();
                 }

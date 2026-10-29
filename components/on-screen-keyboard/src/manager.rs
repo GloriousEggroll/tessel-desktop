@@ -375,7 +375,7 @@ impl Manager {
             if show {
                 keyboard.body().set_sensitive(self.bridge_ready.get());
                 keyboard.message(&self.error.borrow());
-                if !panel.is_visible() && self.pointer_probe.borrow().is_none() {
+                if !panel.get_visible() && self.pointer_probe.borrow().is_none() {
                     let weak = self.weak();
                     let probe = PointerMonitor::new(move |monitor| if let Some(m) = weak.upgrade() { m.pointer_ready(monitor) });
                     *self.pointer_probe.borrow_mut() = Some(probe);
@@ -501,7 +501,7 @@ impl Manager {
         }
         let monitor = self.monitor().or_else(|| monitors.item(0).and_downcast()).unwrap();
         if panel.monitor().as_ref() != Some(&monitor) {
-            let shown = panel.is_visible();
+            let shown = panel.get_visible();
             panel.set_visible(false);
             panel.set_monitor(Some(&monitor));
             launcher.set_monitor(Some(&monitor));
@@ -518,7 +518,7 @@ impl Manager {
 
     /// `$XDG_RUNTIME_DIR/waykeys/state.json`, written only when it changes.
     fn publish(&self) {
-        let value = json!({"pid": std::process::id(), "visible": self.panel().is_some_and(|p| p.is_visible()),
+        let value = json!({"pid": std::process::id(), "visible": self.panel().is_some_and(|p| p.get_visible()),
                            "automatic_available": self.policy.borrow().eligible, "ready": self.bridge_ready.get(),
                            "error": self.error.borrow().clone()});
         if self.status.borrow().as_ref() == Some(&value) {

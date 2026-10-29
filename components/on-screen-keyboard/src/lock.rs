@@ -278,7 +278,7 @@ impl LockKeyboard {
 
     fn reserve(&self) {
         let widget = self.widget();
-        match widget.filter(|w| w.root().is_visible()) {
+        match widget.filter(|w| w.root().get_visible()) {
             Some(widget) => {
                 let (minimum, natural, _, _) = widget.root().measure(gtk::Orientation::Vertical, -1);
                 self.0.host.scroll.set_margin_bottom(minimum.max(natural) + 16);
@@ -311,7 +311,7 @@ impl LockKeyboard {
     }
 
     pub fn toggle(&self) {
-        if self.widget().is_some_and(|w| w.root().is_visible()) { self.hide() } else { self.show() }
+        if self.widget().is_some_and(|w| w.root().get_visible()) { self.hide() } else { self.show() }
     }
 
     pub fn reveal(&self, visible: bool) {

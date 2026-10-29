@@ -255,7 +255,7 @@ impl WeatherPopup {
     }
 
     fn visibility(self: &Rc<Self>) {
-        if self.window.is_visible() {
+        if self.window.get_visible() {
             if self.timer.borrow().is_none() {
                 let weak: Weak<Self> = Rc::downgrade(self);
                 let id = glib::timeout_add_seconds_local(2, move || match weak.upgrade() {

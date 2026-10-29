@@ -64,7 +64,7 @@ pub struct BluetoothApplication(pub Rc<Inner>);
 pub fn raise_child(app: &gtk::Application, window: &gtk::Window) {
     let id = app.application_id().map(|s| s.to_string()).unwrap_or_else(|| APPLICATION_ID.into());
     let window = window.clone();
-    glib::idle_add_local_once(move || suite_gtk::utils::raise_window(&id, &window, |w| w.is_visible()));
+    glib::idle_add_local_once(move || suite_gtk::utils::raise_window(&id, &window, |w| w.get_visible()));
 }
 
 impl BluetoothApplication {

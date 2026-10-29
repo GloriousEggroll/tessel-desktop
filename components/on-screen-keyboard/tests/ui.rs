@@ -424,6 +424,51 @@ fn lock_keyboard_edits_the_selected_lock_field_without_ipc(_: &Fixture) {
     window.destroy();
 }
 
+/// Regression (gtk_widget_is_visible vs get_visible): a lock window created while the
+/// login is already visible (lock-screen monitor hot-plug) reveals the touch keyboard
+/// before it is mapped. osk_lock.py reserve()/toggle() read the keyboard's own
+/// visible flag, so the form still gets its bottom margin and toggle() hides it;
+/// WidgetExt::is_visible() (false until the window is shown) left the margin at 0
+/// and made toggle() re-show instead of hiding.
+fn lock_keyboard_revealed_before_the_window_is_mapped(_: &Fixture) {
+    let config_home = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap());
+    let store = Config::new(config_home.join(format!("lock-{}", unique())).join("config.json"));
+    let window = gtk::Window::builder().default_width(800).default_height(500).build();
+    let overlay = gtk::Overlay::new();
+    let scroll = gtk::ScrolledWindow::new();
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    let entry = gtk::Entry::new();
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    content.append(&entry);
+    content.append(&actions);
+    scroll.set_child(Some(&content));
+    overlay.set_child(Some(&scroll));
+    window.set_child(Some(&overlay));
+    let entry_for_host = entry.clone();
+    let lock = waykeys::lock::LockKeyboard::new(waykeys::lock::LockHost {
+        entry: Rc::new(move || entry_for_host.clone()), submit: Rc::new(|| {}), is_visible: Rc::new(|| true), focus: Rc::new(|| {}),
+        overlay: overlay.clone(), scroll: scroll.clone().upcast(), monitor: None, button_box: actions, size_group: None,
+        button_class: "lock-action".into(), scale_factor: 1, direction: gtk::TextDirection::Ltr,
+        helper: Some(PathBuf::from(waykeys::BUILT_HELPER)), store: Some(store), watch_devices: false,
+    });
+    lock.devices_changed(&[touch()]);
+    assert!(!window.is_visible(), "window not shown yet");
+    let widget = lock.widget().expect("lock keyboard revealed");
+    assert!(widget.root().get_visible());
+    assert!(scroll.margin_bottom() > 16, "space reserved before the window is mapped: {}", scroll.margin_bottom());
+    lock.toggle();
+    assert!(!widget.root().get_visible(), "toggle hides the revealed keyboard");
+    assert_eq!(scroll.margin_bottom(), 0);
+    lock.toggle();
+    assert!(widget.root().get_visible());
+    window.present();
+    settle(0.2);
+    assert!(widget.root().is_visible());
+    assert!(scroll.margin_bottom() > 16, "still reserved once mapped");
+    lock.close();
+    window.destroy();
+}
+
 type Case = (&'static str, fn(&Fixture));
 
 fn main() {
@@ -438,7 +483,7 @@ fn main() {
     gtk::init().expect("GTK");
     assert!(gtk4_layer_shell::is_supported(), "layer shell");
     let only: Vec<String> = std::env::args().skip(1).filter(|a| !a.starts_with('-')).collect();
-    let cases: [Case; 12] = [
+    let cases: [Case; 13] = [
         ("keyboard_uses_pointer_output_without_moving_text_focus", keyboard_uses_pointer_output_without_moving_text_focus),
         ("real_wayland_text_entry_and_hide_button_without_focus_theft", real_wayland_text_entry_and_hide_button_without_focus_theft),
         ("automatic_and_live_keyboard_attach_detach", automatic_and_live_keyboard_attach_detach),
@@ -451,6 +496,7 @@ fn main() {
         ("failed_input_helper_can_be_reopened_in_automatic_mode", failed_input_helper_can_be_reopened_in_automatic_mode),
         ("state_file_tracks_visibility", state_file_tracks_visibility),
         ("lock_keyboard_edits_the_selected_lock_field_without_ipc", lock_keyboard_edits_the_selected_lock_field_without_ipc),
+        ("lock_keyboard_revealed_before_the_window_is_mapped", lock_keyboard_revealed_before_the_window_is_mapped),
     ];
     let failures = RefCell::new(Vec::new());
     for (name, case) in cases {

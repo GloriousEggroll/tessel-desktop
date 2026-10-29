@@ -344,7 +344,7 @@ impl WindowSwitcher {
         let view = self.ensure_view();
         view.set_mode(Mode::Activities);
         self.render();
-        if !view.window.is_visible() || *view.monitor.borrow() != monitor {
+        if !view.window.get_visible() || *view.monitor.borrow() != monitor {
             view.show(monitor);
         }
         self.do_refresh_theme();

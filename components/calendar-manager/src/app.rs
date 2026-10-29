@@ -244,12 +244,12 @@ impl CalendarApp {
 
     fn tick(&self) {
         if let Some(popup) = self.popup() {
-            if popup.window().is_visible() {
+            if popup.window().get_visible() {
                 popup.refresh();
             }
         }
         if let Some(settings) = self.settings() {
-            if settings.window().is_visible() {
+            if settings.window().get_visible() {
                 settings.refresh();
             }
         }
