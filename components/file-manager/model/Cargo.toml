@@ -1,0 +1,20 @@
+[package]
+name = "files-model"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Files model without GTK widgets: file_model.py, file_launch.py, file_manager_bus.py, location_completion/file_goto logic, files_devices data."
+
+[lib]
+name = "files_model"
+path = "src/lib.rs"
+
+[dependencies]
+suite-core.workspace = true
+glib.workspace = true
+gio.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+regex.workspace = true
+async-channel = "2"
+waydock = { path = "../../waydock" }

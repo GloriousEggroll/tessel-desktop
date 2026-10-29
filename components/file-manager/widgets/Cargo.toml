@@ -1,0 +1,30 @@
+[package]
+name = "files-widgets"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Files GTK widgets: files_style.py, files_information.py, file_print.py, file_quicklook.py, file_dialogs.py, file_jobs.py, files_devices.DiskUsage."
+
+[lib]
+name = "files_widgets"
+path = "src/lib.rs"
+
+[dependencies]
+files-ops = { path = "../ops" }
+files-model = { path = "../model" }
+waydock = { path = "../../waydock" }
+suite-core.workspace = true
+suite-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+# GtkSourceView 5 links by soname via the workspace .cargo/config.toml (see text-editor).
+sourceview5 = { version = "0.11", features = ["v5_18"] }
+kamadak-exif = "0.6"
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false
