@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "name": "Win",
+  "dock": {
+    "alignment": "center",
+    "always_show_tray": [
+      "id:dnf-app-center-updater",
+      "id:steam"
+    ],
+    "always_visible_apps": [
+      "idle_inhibitor",
+      "capslock",
+      "bluetooth",
+      "audio",
+      "showdesktop"
+    ],
+    "app_dock_auto_hide": false,
+    "app_dock_background_color": "#38373a",
+    "app_dock_edge": "left",
+    "app_dock_expand": true,
+    "app_dock_float_mode": false,
+    "app_dock_frost_strength": 50,
+    "app_dock_frosted": false,
+    "app_dock_gap": 8,
+    "app_dock_group_layout": {
+      "start": [
+        "app_menu",
+        "pinned",
+        "running",
+        "files"
+      ],
+      "center": [],
+      "end": []
+    },
+    "app_dock_icon_size": 40,
+    "app_dock_match_wallpaper": false,
+    "app_dock_rounded_corners": false,
+    "app_dock_transparency": 5,
+    "app_dock_transparency_enabled": false,
+    "application_display": "icons",
+    "apps_frost_strength": 50,
+    "apps_frosted": true,
+    "apps_rounded_corners": true,
+    "apps_transparency": 10,
+    "apps_transparency_enabled": true,
+    "auto_hide": false,
+    "background_color": null,
+    "bar_border_color": "#777777",
+    "bar_border_enabled": false,
+    "bar_border_sides": [],
+    "bar_float_mode": false,
+    "bar_rounded_corners": true,
+    "colored_window_buttons": false,
+    "compact_bar": false,
+    "edge": "bottom",
+    "float_mode": true,
+    "frost_strength": 50,
+    "frosted": true,
+    "gap": 8,
+    "group_layouts": {
+      "bar": {
+        "start": [
+          "weather",
+          "workspaces",
+          "focused_title"
+        ],
+        "center": [
+          "app_menu",
+          "activities",
+          "pinned",
+          "running",
+          "files"
+        ],
+        "end": [
+          "media",
+          "system_tray",
+          "service_apps",
+          "clock",
+          "session"
+        ]
+      }
+    },
+    "group_visibility": {
+      "app_menu": true,
+      "pinned": true,
+      "running": true,
+      "files": true,
+      "workspaces": true,
+      "media": true,
+      "system_tray": true,
+      "service_apps": true,
+      "weather": true,
+      "clock": true,
+      "session": true
+    },
+    "hide_delay_ms": 500,
+    "hide_on_fullscreen": true,
+    "hot_corner_delay_ms": 150,
+    "hot_corners": {
+      "DP-2": [
+        "top_left",
+        "bottom_left"
+      ],
+      "HDMI-A-1": [
+        "top_right",
+        "bottom_right"
+      ]
+    },
+    "hover_scale": 1.0,
+    "icon_size": 40,
+    "magnification": false,
+    "match_wallpaper": true,
+    "menu_hotkey_fullscreen": false,
+    "mode": "bar",
+    "monitor": "all",
+    "monitor_overrides": {
+      "DP-2": {
+        "edge": "bottom",
+        "alignment": "center"
+      },
+      "HDMI-A-1": {
+        "edge": "bottom",
+        "alignment": "center"
+      }
+    },
+    "reveal_delay_ms": 120,
+    "rounded_corners": true,
+    "separate_app_dock": false,
+    "transparency": 50,
+    "transparency_enabled": true,
+    "window_buttons_left": false
+  },
+  "workspaces": 4,
+  "gapless": true,
+  "clock": {
+    "stacked": true,
+    "date_first": false,
+    "use_24_hour": false,
+    "date_order": "mdy",
+    "date_separator": "/",
+    "show_date": true,
+    "show_year": true,
+    "show_weekday": false,
+    "month_name": false,
+    "short_names": false
+  }
+}

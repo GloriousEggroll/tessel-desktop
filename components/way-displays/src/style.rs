@@ -51,6 +51,15 @@ window.way-displays-overlay { background: transparent; }
 .way-displays-overlay label { color: inherit; }
 "#;
 
+const STYLE_KEY: &str = "way-displays-style";
+
+/// The display CSS provider `style_window` added (Python `window._display_style`);
+/// an embedded window is never realized, so its host removes it explicitly.
+pub fn display_style(window: &impl IsA<gtk::Window>) -> Option<gtk::CssProvider> {
+    // SAFETY: STYLE_KEY only ever stores a CssProvider.
+    unsafe { window.upcast_ref::<gtk::Window>().data::<gtk::CssProvider>(STYLE_KEY).map(|p| p.as_ref().clone()) }
+}
+
 /// `style_window(window, overlay=…)`: class, CSS at APPLICATION+10 (removed on
 /// unrealize) and the dock palette binding.
 pub fn style_window(window: &impl IsA<gtk::Window>, overlay: bool) -> WindowTheme {
@@ -60,6 +69,8 @@ pub fn style_window(window: &impl IsA<gtk::Window>, overlay: bool) -> WindowThem
     provider.load_from_string(CSS);
     let display = WidgetExt::display(window);
     gtk::style_context_add_provider_for_display(&display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 10);
+    // SAFETY: STYLE_KEY only ever stores a CssProvider.
+    unsafe { window.set_data(STYLE_KEY, provider.clone()) };
     window.connect_unrealize(move |window| {
         gtk::style_context_remove_provider_for_display(&WidgetExt::display(window), &provider);
     });

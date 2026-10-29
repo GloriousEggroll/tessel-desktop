@@ -1,0 +1,32 @@
+[package]
+name = "gs-desktop"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Global Settings desktop pages."
+
+[lib]
+name = "gs_desktop"
+path = "src/lib.rs"
+
+[dependencies]
+gs-base = { path = "../base" }
+gs-system = { path = "../system" }
+suite-core.workspace = true
+suite-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+indexmap = "2"
+waydock = { path = "../../waydock" }
+wayshell = { path = "../../wayshell" }
+way-displays = { path = "../../way-displays" }
+tiling-manager = { path = "../../tiling-manager" }
+weather-manager = { path = "../../weather-manager" }
+
+[[test]]
+name = "desktop_headless"
+path = "tests/desktop_headless.rs"
+harness = false

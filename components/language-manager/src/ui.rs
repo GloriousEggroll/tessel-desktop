@@ -66,7 +66,7 @@ pub struct Row {
 
 pub struct Inner {
     pub window: gtk::Window,
-    backend: Arc<dyn WizardBackend>,
+    pub backend: Arc<dyn WizardBackend>,
     pub status: RefCell<Option<Value>>,
     pub selected: Cell<Option<&'static Language>>,
     pub busy: Cell<bool>,
@@ -75,6 +75,9 @@ pub struct Inner {
     pub result: RefCell<Option<ApplyResult>>,
     /// Set by a host (Welcome / Global Settings) that drives the wizard with its own buttons.
     pub on_wizard_changed: RefCell<Option<Rc<dyn Fn()>>>,
+    /// Embedding hook: Global Settings' `EmbeddedWizard` overrides `close()`
+    /// (return to the first page instead of closing). `None` = close the window.
+    pub close_override: RefCell<Option<Rc<dyn Fn()>>>,
     jobs: Worker,
     progress_poster: Cell<Option<Poster>>,
     pub theme: WindowTheme,
@@ -289,7 +292,7 @@ impl LanguageWizard {
         let wizard = LanguageWizard(Rc::new(Inner {
             window, backend, status: RefCell::new(None), selected: Cell::new(None), busy: Cell::new(false),
             closed: Cell::new(false), page: Cell::new("choose"), result: RefCell::new(None),
-            on_wizard_changed: RefCell::new(None), jobs: Worker::new(), progress_poster: Cell::new(None),
+            on_wizard_changed: RefCell::new(None), close_override: RefCell::new(None), jobs: Worker::new(), progress_poster: Cell::new(None),
             theme, language_style_close, root, step_label, stack, message, progress_row, spinner, progress,
             footer_separator, footer, cancel_button, back_button, next_button,
             search: choose.search, language_list: choose.list, rows: choose.rows, current_label: choose.current_label,
@@ -326,7 +329,7 @@ impl LanguageWizard {
             if key == gdk::Key::Escape {
                 if let Some(wizard) = upgrade(&w) {
                     if !wizard.busy.get() {
-                        wizard.window.close();
+                        wizard.close();
                     }
                 }
                 return glib::Propagation::Stop;
@@ -342,7 +345,7 @@ impl LanguageWizard {
         let w = weak.clone();
         self.language_list.set_filter_func(move |row| upgrade(&w).map(|wizard| wizard.row_visible(row)).unwrap_or(true));
         let w = weak.clone();
-        self.cancel_button.connect_clicked(move |_| if let Some(wizard) = upgrade(&w) { wizard.window.close() });
+        self.cancel_button.connect_clicked(move |_| if let Some(wizard) = upgrade(&w) { wizard.close() });
         let w = weak.clone();
         self.back_button.connect_clicked(move |_| if let Some(wizard) = upgrade(&w) { wizard.back() });
         let w = weak;
@@ -539,7 +542,7 @@ impl LanguageWizard {
                 self.show_page("review");
             }
             "review" => self.apply(),
-            _ => self.window.close(),
+            _ => self.close(),
         }
     }
 
@@ -626,7 +629,18 @@ impl LanguageWizard {
         false
     }
 
-    fn unrealized(&self) {
+    /// `close()`: the embedding override when installed, else close the window.
+    pub fn close(&self) {
+        let hook = self.close_override.borrow().clone();
+        match hook {
+            Some(hook) => hook(),
+            None => self.window.close(),
+        }
+    }
+
+    /// `_unrealized(window)`: stop the workers (also called by an embedding
+    /// page whose window is never realized).
+    pub fn unrealized(&self) {
         self.closed.set(true);
         self.jobs.shutdown();
         if let Some(poster) = self.progress_poster.take() {

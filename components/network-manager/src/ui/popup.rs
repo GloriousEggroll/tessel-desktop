@@ -708,6 +708,11 @@ impl NetworkPopup {
         self.destroyed.get()
     }
 
+    /// `popup.controller` (`None` when embedded).
+    pub fn controller(&self) -> Option<PopupController> {
+        self.controller.borrow().clone()
+    }
+
     pub fn destroy(&self) {
         if self.destroyed.get() {
             return;

@@ -1,0 +1,5 @@
+#!/bin/sh
+# ~/.local/bin/global-settings after the swap: exec the Rust binary installed
+# next to the (still installed) Python modules. Rollback restores
+#   exec /usr/bin/python3 '~/.local/share/global-settings/global_settings.py' "$@"
+exec "$HOME/.local/share/global-settings/global-settings" "$@"

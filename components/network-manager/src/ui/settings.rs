@@ -103,6 +103,8 @@ pub struct NetworkSettingsWindow {
     pub status_label: gtk::Label,
     css: gtk::CssProvider,
     weak: RefCell<Weak<NetworkSettingsWindow>>,
+    /// `_settings_host`: the Global Settings window embedding these controls.
+    pub settings_host: RefCell<Option<gtk::Window>>,
 }
 
 impl NetworkSettingsWindow {
@@ -179,7 +181,7 @@ impl NetworkSettingsWindow {
             window: window.clone(), gui: gui.weak(), backend: backend.clone(), rows: RefCell::default(), destroyed: Cell::new(false),
             error: RefCell::default(), dialogs: RefCell::default(), order: RefCell::default(), add_button: add_button.clone(),
             search_entry: search_entry.clone(), type_combo: type_combo.clone(), count_label, stack, listbox: listbox.clone(),
-            empty_label, status_label, css, weak: RefCell::new(Weak::new()),
+            empty_label, status_label, css, weak: RefCell::new(Weak::new()), settings_host: RefCell::new(None),
         });
         settings.weak.replace(Rc::downgrade(&settings));
         let g = gui.weak();
@@ -468,7 +470,8 @@ impl NetworkSettingsWindow {
         if !self.backend.ready() || profile_busy(&self.backend, profile) {
             return None;
         }
-        let dialog = gtk::MessageDialog::new(Some(&self.window), gtk::DialogFlags::MODAL | gtk::DialogFlags::DESTROY_WITH_PARENT,
+        let parent = self.settings_host.borrow().clone().unwrap_or_else(|| self.window.clone());
+        let dialog = gtk::MessageDialog::new(Some(&parent), gtk::DialogFlags::MODAL | gtk::DialogFlags::DESTROY_WITH_PARENT,
                                              gtk::MessageType::Question, gtk::ButtonsType::None, &tr!("Remove saved connection?"));
         dialog.set_secondary_text(Some(&format!("“{}” and its saved settings will be removed.", profile.name)));
         dialog.add_button(&tr!("Cancel"), gtk::ResponseType::Cancel);
@@ -501,7 +504,8 @@ impl NetworkSettingsWindow {
         self.refresh();
     }
 
-    fn on_destroy(&self) {
+    /// `_on_destroy(window)` (also called by an embedding page).
+    pub fn on_destroy(&self) {
         if self.destroyed.get() {
             return;
         }

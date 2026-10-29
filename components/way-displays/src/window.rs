@@ -729,6 +729,19 @@ impl WayDisplaysApp {
     pub fn overlay_count(&self) -> usize {
         self.overlays.borrow().len()
     }
+
+    /// Global Settings' "Identify displays" keeps the overlays it shows here
+    /// (Python appends to `owner.overlays`).
+    pub fn push_overlay(&self, overlay: MonitorOverlay) {
+        self.overlays.borrow_mut().push(overlay);
+    }
+
+    /// Destroy every identify overlay (Python `for o in owner.overlays: o.destroy(); owner.overlays = []`).
+    pub fn hide_overlays(&self) {
+        for overlay in self.overlays.take() {
+            overlay.destroy();
+        }
+    }
 }
 
 /// Python's `MainApp(Gtk.Application)` → `do_activate`.

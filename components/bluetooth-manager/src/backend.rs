@@ -203,12 +203,15 @@ pub struct Bt {
     pub devices: RefCell<OMap<Device>>,
     /// Test seam (`mock.patch.object(bt, "rescan_async")`).
     pub rescan_hook: RefCell<Option<Rc<RescanHook>>>,
+    /// ObjectManager signal subscriptions (Global Settings' `ObservedBluetooth`
+    /// releases them in [`Bt::close`]).
+    pub objmgr_ids: RefCell<Vec<u32>>,
 }
 
 impl Bt {
     pub fn new(conn: Rc<dyn Conn>) -> Rc<Self> {
         Rc::new(Self { conn, has_object_manager: Cell::new(false), adapters: RefCell::default(), devices: RefCell::default(),
-                       rescan_hook: RefCell::new(None) })
+                       rescan_hook: RefCell::new(None), objmgr_ids: RefCell::default() })
     }
 
     pub fn call_async(&self, path: &str, iface: &str, method: &str, params: Option<Variant>, timeout: i32,
@@ -225,8 +228,17 @@ impl Bt {
     }
 
     pub fn subscribe_object_manager(&self, cb: SignalHandler) {
-        self.subscribe(BLUEZ, BLUEZ_ROOT, OBJMGR_IFACE, "InterfacesAdded", cb.clone());
-        self.subscribe(BLUEZ, BLUEZ_ROOT, OBJMGR_IFACE, "InterfacesRemoved", cb);
+        let added = self.subscribe(BLUEZ, BLUEZ_ROOT, OBJMGR_IFACE, "InterfacesAdded", cb.clone());
+        let removed = self.subscribe(BLUEZ, BLUEZ_ROOT, OBJMGR_IFACE, "InterfacesRemoved", cb);
+        self.objmgr_ids.borrow_mut().extend([added, removed]);
+    }
+
+    /// `ObservedBluetooth.close()`: drop the ObjectManager subscriptions (the
+    /// standalone app keeps them for its lifetime).
+    pub fn close(&self) {
+        for id in self.objmgr_ids.take() {
+            self.conn.unsubscribe(id);
+        }
     }
 
     /// `discover(cb)`: GetManagedObjects (8 s), else the introspection fallback.

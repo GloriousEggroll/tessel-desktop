@@ -1006,6 +1006,23 @@ impl SettingsWindow {
     pub fn mode_appearance(&self, mode: &str) -> Option<(bool, bool)> {
         self.inner.state.borrow().mode_appearance.get(mode).copied()
     }
+    /// Global Settings (dock_pages.py) sets Python's `controller._switching_mode`
+    /// while it syncs shared appearance values, so no preview is sent per control.
+    pub fn set_switching_mode(&self, value: bool) {
+        self.inner.switching_mode.set(value);
+    }
+    /// Python `controller.update_material_controls()`.
+    pub fn update_material_controls(&self) {
+        self.inner.update_material_controls();
+    }
+    /// Python `controller.preview_appearance()`.
+    pub fn preview_appearance(&self) {
+        self.inner.preview_appearance();
+    }
+    /// Python `controller.tray_choices.add(ident)` (Global Settings tests).
+    pub fn add_tray_choice(&self, ident: &str) {
+        self.inner.state.borrow_mut().tray_choices.insert(ident.to_owned());
+    }
     /// Recover the handle of a window built by [`SettingsWindow::new`].
     pub fn from_window(window: &gtk::ApplicationWindow) -> Option<Self> {
         let inner = unsafe { window.data::<Rc<Inner>>("waydock-settings-window") }?;

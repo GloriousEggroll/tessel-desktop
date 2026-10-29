@@ -172,6 +172,9 @@ pub struct Ui {
     trust_columns: gtk::SizeGroup,
     sender_factory: SenderFactory,
     weak: RefCell<Weak<Ui>>,
+    /// `App._settings_host`: the Global Settings window embedding this UI
+    /// (dialogs are transient for it instead of the never-shown window).
+    pub settings_host: RefCell<Option<gtk::Window>>,
 }
 
 fn style<W: IsA<gtk::Widget>>(widget: W, classes: &[&str]) -> W {
@@ -351,6 +354,25 @@ pub fn info_text(properties: &[(String, Variant)]) -> String {
 
 impl Ui {
     pub fn new(options: Options) -> Rc<Ui> {
+        Self::build(options, None)
+    }
+
+    /// `App(embedded=True, host_window=host)`: the controls are built but the
+    /// window is never shown (Global Settings moves its content into a page),
+    /// no SIGINT handler is installed and dialogs are transient for `host`.
+    pub fn new_embedded(mut options: Options, host: &gtk::Window) -> Rc<Ui> {
+        options.handle_sigint = false;
+        options.popup = false;
+        Self::build(options, Some(host.clone()))
+    }
+
+    /// `_settings_host or self.window`.
+    pub fn dialog_parent(&self) -> gtk::Window {
+        self.settings_host.borrow().clone().unwrap_or_else(|| self.window.clone())
+    }
+
+    fn build(options: Options, host: Option<gtk::Window>) -> Rc<Ui> {
+        let embedded = host.is_some();
         crate::i18n::set_language(&options.lang);
         let manager = Manager::new(options.bt.clone(), options.env.clone(), options.popup, &options.lang, options.services.clone());
         let popup = options.popup;
@@ -551,7 +573,7 @@ impl Ui {
             content_stack: content_stack.clone(), devices_scroll: scroll, list_connected, list_known, off_title, off_description,
             event_bar: event_bar.clone(), event_icon, event_lbl, add: RefCell::new(None), rows: RefCell::default(),
             dialogs: RefCell::default(), transfers: RefCell::default(), trust_columns, sender_factory: options.sender_factory.clone(),
-            weak: RefCell::new(Weak::new()),
+            weak: RefCell::new(Weak::new()), settings_host: RefCell::new(host),
         });
         ui.weak.replace(Rc::downgrade(&ui));
 
@@ -622,6 +644,7 @@ impl Ui {
         let controller = ui.popup.borrow().clone();
         match controller {
             Some(controller) => controller.show(),
+            None if embedded => {}
             None => window.set_visible(true),
         }
         manager.apply_state();
@@ -686,7 +709,7 @@ impl Ui {
         }
         let window = style(gtk::Window::new(), &["btmanager"]);
         if !self.popup_mode {
-            window.set_transient_for(Some(&self.window));
+            window.set_transient_for(Some(&self.dialog_parent()));
         }
         window.set_modal(false);
         window.set_destroy_with_parent(true);
@@ -781,7 +804,8 @@ impl Ui {
         self.manager.add_window_destroyed();
     }
 
-    fn on_window_destroyed(&self) {
+    /// `_on_window_destroyed(window)` (also called by an embedding page).
+    pub fn on_window_destroyed(&self) {
         self.manager.window_destroyed();
         let dialogs: Vec<Tracked> = self.dialogs.borrow().clone();
         for dialog in dialogs {
@@ -1042,7 +1066,7 @@ impl Ui {
     fn track_dialog(&self, window: &gtk::Window) -> Tracked {
         match self.popup.borrow().as_ref() {
             Some(popup) => popup.suspend_for_child(window),
-            None => window.set_transient_for(Some(&self.window)),
+            None => window.set_transient_for(Some(&self.dialog_parent())),
         }
         window.set_destroy_with_parent(true);
         window.add_css_class("btmanager");

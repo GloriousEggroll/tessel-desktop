@@ -449,6 +449,10 @@ pub struct PowerSettingsWindow {
     syncing: Cell<bool>,
     destroyed: Cell<bool>,
     css: gtk::CssProvider,
+    /// Embedding hooks (Global Settings' `PowerPageWindow` subclass overrides
+    /// `refresh` and `_save`); `None` keeps the standalone behaviour.
+    pub refresh_override: RefCell<Option<Rc<dyn Fn()>>>,
+    pub save_override: RefCell<Option<Rc<dyn Fn()>>>,
 }
 
 fn card(title: &str, explanation: &str) -> (gtk::Box, gtk::Box) {
@@ -628,7 +632,8 @@ impl PowerSettingsWindow {
                    lock_choice, dim_switch, extra_controls, lid_rows, buttons_hint, battery_card, battery_hint, status_label,
                    close_button, save_button, saved: RefCell::new(settings.clone()), settings: RefCell::new(settings.clone()),
                    backend, app_error, on_save, message: RefCell::new(String::new()), syncing: Cell::new(false),
-                   destroyed: Cell::new(false), css }
+                   destroyed: Cell::new(false), css, refresh_override: RefCell::new(None),
+                   save_override: RefCell::new(None) }
         });
         let w = window.clone();
         this.close_button.connect_clicked(move |_| w.destroy());
@@ -761,7 +766,17 @@ impl PowerSettingsWindow {
         String::new()
     }
 
+    /// `refresh()`: the embedding override when one is installed, else [`Self::refresh_base`].
     pub fn refresh(&self) {
+        let hook = self.refresh_override.borrow().clone();
+        match hook {
+            Some(hook) => hook(),
+            None => self.refresh_base(),
+        }
+    }
+
+    /// `PowerSettingsWindow.refresh` itself (what an override calls as `super().refresh()`).
+    pub fn refresh_base(&self) {
         if self.destroyed.get() {
             return;
         }
@@ -823,7 +838,37 @@ impl PowerSettingsWindow {
         self.status_label.set_visible(!message.is_empty());
     }
 
+    /// `_message`: the status line's leading message.
+    pub fn set_message(&self, message: &str) {
+        self.message.replace(message.to_owned());
+    }
+
+    /// `_syncing`: suppresses change handlers while controls are set programmatically.
+    pub fn syncing(&self) -> bool {
+        self.syncing.get()
+    }
+
+    pub fn set_syncing(&self, syncing: bool) {
+        self.syncing.set(syncing);
+    }
+
+    /// `_on_destroy(window)`: stop refreshing and release the style provider
+    /// (Global Settings embeds a window that is never realized).
+    pub fn on_destroy(&self) {
+        self.destroyed.set(true);
+        gtk::style_context_remove_provider_for_display(&WidgetExt::display(&self.window), &self.css);
+    }
+
+    /// `_save(button)`: the embedding override when one is installed.
     pub fn save(&self) {
+        let hook = self.save_override.borrow().clone();
+        match hook {
+            Some(hook) => hook(),
+            None => self.save_base(),
+        }
+    }
+
+    pub fn save_base(&self) {
         let settings = self.settings.borrow().clone();
         if settings == *self.saved.borrow() || !self.validation_error().is_empty() {
             return;

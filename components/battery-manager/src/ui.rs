@@ -252,6 +252,7 @@ pub struct BatterySettingsWindow {
     backend: Rc<dyn BatteryModel>,
     destroyed: Cell<bool>,
     message: RefCell<String>,
+    css: gtk::CssProvider,
 }
 
 impl BatterySettingsWindow {
@@ -324,14 +325,15 @@ impl BatterySettingsWindow {
                 glib::Propagation::Proceed
             });
             let owner = weak.clone();
+            let provider = css.clone();
             window.connect_unrealize(move |window| {
                 if let Some(settings) = owner.upgrade() {
                     settings.destroyed.set(true);
                 }
-                remove_css(&WidgetExt::display(window), &css);
+                remove_css(&WidgetExt::display(window), &provider);
             });
             Self { window, source_icon, source_label, batteries, status_label, close_button, hooks, backend,
-                   destroyed: Cell::new(false), message: RefCell::new(String::new()) }
+                   destroyed: Cell::new(false), message: RefCell::new(String::new()), css }
         })
         .tap_refresh()
     }
@@ -350,5 +352,12 @@ impl BatterySettingsWindow {
 
     pub fn is_destroyed(&self) -> bool {
         self.destroyed.get()
+    }
+
+    /// `_on_destroy(window)`: stop refreshing and release the style provider
+    /// (Global Settings embeds a window that is never realized).
+    pub fn on_destroy(&self) {
+        self.destroyed.set(true);
+        remove_css(&WidgetExt::display(&self.window), &self.css);
     }
 }

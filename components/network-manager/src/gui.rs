@@ -43,7 +43,17 @@ pub fn launch_context() -> Option<gio::AppLaunchContext> {
     gtk::gdk::Display::default().map(|d| d.app_launch_context().upcast())
 }
 
+/// Global Settings' facade (`NetworkPageApplication`): dialogs belong to the
+/// settings host window, and "show settings"/"show popup" switch the page's
+/// tabs instead of opening windows. The popup is a page and never dismissed.
+pub struct Embedding {
+    pub host: gtk::Window,
+    pub show_settings: Rc<dyn Fn()>,
+    pub show_popup: Rc<dyn Fn()>,
+}
+
 pub struct Gui {
+    embedding: RefCell<Option<Embedding>>,
     app: Weak<AppInner>,
     popup: RefCell<Option<Rc<NetworkPopup>>>,
     position: RefCell<Option<(String, i64)>>,
@@ -57,11 +67,56 @@ pub struct Gui {
 
 impl Gui {
     pub fn new(app: &App) -> Rc<Self> {
-        let gui = Rc::new(Self { app: app.downgrade(), popup: RefCell::new(None), position: RefCell::new(None), settings: RefCell::new(None),
+        let gui = Rc::new(Self { embedding: RefCell::new(None), app: app.downgrade(), popup: RefCell::new(None), position: RefCell::new(None), settings: RefCell::new(None),
                                  children: RefCell::default(), infos: RefCell::default(), editors: RefCell::default(),
                                  css: RefCell::new(None), weak: RefCell::new(Weak::new()) });
         gui.weak.replace(Rc::downgrade(&gui));
         gui
+    }
+
+    /// Switch to the embedded facade behaviour (see [`Embedding`]).
+    pub fn set_embedding(&self, embedding: Embedding) {
+        self.embedding.replace(Some(embedding));
+    }
+
+    pub fn embedded(&self) -> bool {
+        self.embedding.borrow().is_some()
+    }
+
+    /// The facade's `settings` / `popup`: views created by the embedder.
+    pub fn adopt(&self, settings: Option<Rc<NetworkSettingsWindow>>, popup: Option<Rc<NetworkPopup>>) {
+        if settings.is_some() {
+            self.settings.replace(settings);
+        }
+        if popup.is_some() {
+            self.popup.replace(popup);
+        }
+    }
+
+    /// `_children`: dialogs prepared by [`Gui::prepare_dialog`].
+    pub fn children(&self) -> Vec<gtk::Window> {
+        self.children.borrow().clone()
+    }
+
+    /// `_editors` (keyed by profile uuid or "new").
+    pub fn editors(&self) -> Vec<(String, Rc<ConnectionWizard>)> {
+        self.editors.borrow().iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+    }
+
+    /// The facade's page close: destroy every child dialog, forget editors and
+    /// release the shared style (the embedder closes its own views).
+    pub fn close_children(&self) {
+        let windows: Vec<gtk::Window> = self.children.take();
+        for window in windows {
+            window.destroy();
+        }
+        self.editors.borrow_mut().clear();
+        self.infos.borrow_mut().clear();
+        if let Some(css) = self.css.take() {
+            if let Some(display) = gtk::gdk::Display::default() {
+                gtk::style_context_remove_provider_for_display(&display, &css);
+            }
+        }
     }
 
     pub fn weak(&self) -> Weak<Gui> {
@@ -96,6 +151,10 @@ impl Gui {
 
     /// `prepare_dialog(window)`: dismiss the popup; `None` only dismisses.
     pub fn prepare_dialog(&self, window: Option<&gtk::Window>) {
+        let host = self.embedding.borrow().as_ref().map(|e| e.host.clone());
+        if let Some(host) = host {
+            return self.prepare_embedded_dialog(window, &host);
+        }
         self.dismiss_popup();
         let Some(window) = window else { return };
         self.ensure_style(window);
@@ -120,7 +179,42 @@ impl Gui {
         self.present(window);
     }
 
+    /// `NetworkPageApplication.prepare_dialog`: the dialog belongs to the host.
+    fn prepare_embedded_dialog(&self, window: Option<&gtk::Window>, host: &gtk::Window) {
+        let Some(window) = window else { return };
+        self.ensure_style(window);
+        if window.application().is_none() {
+            if let Some(application) = self.app().and_then(|a| a.0.gapp.clone().downcast::<gtk::Application>().ok()) {
+                window.set_application(Some(&application));
+            }
+        }
+        let settings = self.settings.borrow().as_ref().map(|s| s.window.clone());
+        let parent = window.transient_for();
+        if parent.is_none() || parent == settings {
+            window.set_transient_for(Some(host));
+        }
+        window.set_destroy_with_parent(true);
+        let known = self.children.borrow().iter().any(|w| w == window);
+        if !known {
+            self.children.borrow_mut().push(window.clone());
+            let weak = self.weak();
+            window.connect_destroy(move |w| {
+                if let Some(gui) = weak.upgrade() {
+                    gui.children.borrow_mut().retain(|c| c != w);
+                    gui.infos.borrow_mut().retain(|i| &i.window != w);
+                    gui.editors.borrow_mut().retain(|_, e| &e.window != w);
+                }
+            });
+        }
+        window.unminimize();
+        window.present();
+    }
+
     pub fn present(&self, window: &gtk::Window) {
+        if self.embedded() {
+            window.present();
+            return;
+        }
         window.unminimize();
         window.present();
         let weak = self.weak();
@@ -328,6 +422,10 @@ impl Surfaces for Gui {
     }
 
     fn show_popup(&self, edge: &str, offset: i64) {
+        let hook = self.embedding.borrow().as_ref().map(|e| e.show_popup.clone());
+        if let Some(hook) = hook {
+            return hook();
+        }
         let Some(app) = self.app() else { return };
         if !ensure_gtk() {
             return;
@@ -353,6 +451,10 @@ impl Surfaces for Gui {
     }
 
     fn show_settings(&self) {
+        let hook = self.embedding.borrow().as_ref().map(|e| e.show_settings.clone());
+        if let Some(hook) = hook {
+            return hook();
+        }
         let Some(app) = self.app() else { return };
         self.dismiss_popup();
         if !ensure_gtk() {
@@ -372,6 +474,10 @@ impl Surfaces for Gui {
     }
 
     fn dismiss_popup(&self) {
+        if self.embedded() {
+            // The connections overview is a page, not a dismissible surface.
+            return;
+        }
         let popup = self.popup.borrow().clone();
         if let Some(popup) = popup {
             popup.dismiss();

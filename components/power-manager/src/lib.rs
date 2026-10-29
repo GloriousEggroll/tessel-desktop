@@ -5,6 +5,7 @@
 pub mod alerts;
 pub mod app;
 pub mod args;
+pub mod client;
 pub mod config;
 pub mod dim;
 pub mod fakes;

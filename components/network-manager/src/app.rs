@@ -46,6 +46,10 @@ pub struct AppInner {
     last_connections: RefCell<Option<BTreeMap<String, (String, bool)>>>,
     last_connectivity: RefCell<Option<String>>,
     pub notifications: RefCell<Vec<(String, Option<String>)>>,
+    /// Embedded facade (Global Settings' `NetworkPageApplication`): changes
+    /// refresh the windows but never send connection/portal notifications,
+    /// which stay with the resident network service.
+    pub quiet: Cell<bool>,
 }
 
 #[derive(Clone)]
@@ -57,6 +61,7 @@ impl App {
             gapp: gapp.clone(), backend: RefCell::new(None), agent: RefCell::new(None), preferences: RefCell::new(None),
             surfaces: RefCell::new(None), error: RefCell::default(), stopping: Cell::new(false),
             last_connections: RefCell::new(None), last_connectivity: RefCell::new(None), notifications: RefCell::default(),
+            quiet: Cell::new(false),
         }))
     }
 
@@ -91,6 +96,9 @@ impl App {
         }
         if let Some(surfaces) = self.surfaces() {
             surfaces.refresh();
+        }
+        if self.0.quiet.get() {
+            return;
         }
         self.notify_connections();
         self.notify_portal();

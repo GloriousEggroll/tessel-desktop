@@ -40,6 +40,9 @@ pub struct AudioSettingsWindow {
     pub pages: RefCell<IndexMap<&'static str, (gtk::Box, gtk::Label)>>,
     pub add_loopback_button: gtk::Button,
     pub status_label: gtk::Label,
+    /// `window._settings_host`: the Global Settings window that embeds these
+    /// controls; dialogs are transient for it instead of the hidden window.
+    pub settings_host: RefCell<Option<gtk::Window>>,
     css: gtk::CssProvider,
 }
 
@@ -147,7 +150,7 @@ impl AudioSettingsWindow {
         let this = Rc::new(Self {
             weak: RefCell::new(Weak::new()), backend, window, stack, navigation, node_rows: RefCell::default(), device_rows: RefCell::default(),
             loopback_rows: RefCell::default(), loopback_dialog: RefCell::new(None), pages: RefCell::new(page_map), add_loopback_button,
-            status_label, css,
+            status_label, settings_host: RefCell::new(None), css,
         });
         *this.weak.borrow_mut() = Rc::downgrade(&this);
         let weak = Rc::downgrade(&this);
@@ -169,7 +172,9 @@ impl AudioSettingsWindow {
 
     pub fn add_loopback(&self) {
         if self.loopback_dialog.borrow().is_none() {
-            let dialog = LoopbackDialog::new(self.view(), self.window.upcast_ref());
+            let host = self.settings_host.borrow().clone();
+            let parent = host.unwrap_or_else(|| self.window.clone().upcast());
+            let dialog = LoopbackDialog::new(self.view(), &parent);
             let weak = self.weak.borrow().clone();
             dialog.dialog.connect_unrealize(move |widget| {
                 if let Some(this) = weak.upgrade() {
@@ -314,6 +319,11 @@ impl AudioSettingsWindow {
             self.status_label.set_text(&text);
             self.status_label.set_tooltip_text(Some(&text));
         }
+    }
+
+    /// `window._css` (released by Global Settings when the embedded page closes).
+    pub fn css_provider(&self) -> &gtk::CssProvider {
+        &self.css
     }
 
     pub fn page_titles(&self) -> Vec<String> {

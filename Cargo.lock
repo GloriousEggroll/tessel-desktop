@@ -826,6 +826,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "global-settings"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gs-applets",
+ "gs-base",
+ "gs-desktop",
+ "gs-system",
+ "gtk4",
+ "regex",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "gobject-sys"
 version = "0.22.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -855,6 +873,81 @@ dependencies = [
  "glib-sys",
  "libc",
  "system-deps 9.0.1",
+]
+
+[[package]]
+name = "gs-applets"
+version = "0.1.0"
+dependencies = [
+ "audio-manager",
+ "battery-manager",
+ "bluetooth-manager",
+ "calendar-manager",
+ "capture-manager",
+ "gio",
+ "glib",
+ "gs-base",
+ "gtk4",
+ "keep-awake",
+ "language-manager",
+ "network-manager",
+ "notification-manager",
+ "power-manager",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+ "suite-power",
+ "weather-manager",
+]
+
+[[package]]
+name = "gs-base"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
+
+[[package]]
+name = "gs-desktop"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gs-base",
+ "gs-system",
+ "gtk4",
+ "indexmap",
+ "libc",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+ "tiling-manager",
+ "way-displays",
+ "waydock",
+ "wayshell",
+ "weather-manager",
+]
+
+[[package]]
+name = "gs-system"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gs-base",
+ "gtk4",
+ "libc",
+ "on-screen-keyboard",
+ "regex",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+ "tiling-manager",
 ]
 
 [[package]]
@@ -2505,6 +2598,25 @@ name = "weezl"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
+
+[[package]]
+name = "welcome"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "global-settings",
+ "gs-applets",
+ "gs-base",
+ "gs-desktop",
+ "gs-system",
+ "gtk4",
+ "language-manager",
+ "libc",
+ "serde_json",
+ "suite-core",
+ "suite-gtk",
+]
 
 [[package]]
 name = "windows-link"

@@ -1,0 +1,111 @@
+# global-settings — external contract
+
+Source: `~/btmanager/global-settings` (8,708 LOC without tests; 38 modules + `layouts/`), plus every
+applet UI it imports. Rust: `components/global-settings` (shell + binary) with page crates
+`gs-base` (shared API), `gs-applets`, `gs-desktop`, `gs-system` under it.
+
+## 1. Entry points
+
+| Item | Value | Ref |
+|---|---|---|
+| Installed tree | `~/.local/share/global-settings/*.py` (every non-test, non-install module) + shared `suite_i18n.py language_data.py suite_catalogs.py gtk4_utils.py service_settings.py companion_theme.py wallpaper_chooser.py wallpaper_import.py capture_settings.py background_blur.py libwaydock-background-blur.so media_chooser.py files_pane.py …` + `VERSION` + `layouts/{gnome,kde,mac,win}.{layout,svg}` | shared/install_gtk4.py:147-191 |
+| Launchers | `~/.local/bin/global-settings` = `#!/bin/sh\nexec /usr/bin/python3 '<~/.local/share/global-settings/global_settings.py>' "$@"\n`; `~/.local/bin/language-manager` = same + `--section language ` before `"$@"` | install_gtk4.py:163-166 |
+| .desktop | `~/.local/share/applications/org.waydock.GlobalSettings.desktop`: `Name=Settings`, `Comment=Configure your desktop, devices, and system language`, `Icon=preferences-system`, `Categories=Settings;DesktopSettings;`, `StartupNotify=true`, `StartupWMClass=org.waydock.GlobalSettings`, `Keywords=Audio;Bluetooth;Network;Displays;Power;Battery;Wallpaper;Dock;Language;` | install_gtk4.py:167-173 |
+| User unit | `~/.config/systemd/user/night-light.service` (copied from `global-settings/night-light.service`) | install_gtk4.py:83 |
+| GApplication | `org.waydock.GlobalSettings`, `HANDLES_COMMAND_LINE`, `do_local_command_line` returns False (so the primary parses argv), `GLib.set_prgname(app id)` | global_settings.py |
+| Launched by | waydock gear (`panel_actions.open_global_settings`: `~/.local/bin/global-settings`), applets' "Settings" buttons with `--section X`, keybind Super+/ → `--shortcuts`, Welcome (`desktop-suite-welcome`), desktop_suite_failed notification (`desktop-entry: global-settings`), session-startup keeps the `global-settings` rebind | |
+| Importers of GS Python modules | `tiling-manager/tiling_config.py` imports `workspace_config` from `~/.local/share/global-settings`; `welcome/welcome.py` imports `runtime_paths`, `global_style`, `desktop_pages.interface_settings`, `shortcuts_model.display_key` and builds GS pages; installers of weather/lock/osk/notification copy `settings_search.py`/pages into the GS tree | |
+
+### CLI (argparse, `allow_abbrev` — unique prefixes of the long options are accepted)
+- `--section KEY` (`type` alias applied before `choices`: `brightness` → `displays`); keys = §2 order.
+  Invalid → argparse usage error (exit 2, message on the remote stderr).
+- `--shortcuts` toggles the Keyboard Shortcuts cheat sheet (`shortcuts_page.CheatSheet`): a second call closes it.
+- `--quit` (suppressed in help): closes the window; if a page refuses (`can_close`), prints
+  `A settings operation is still in progress.\n` and returns 1; else quits.
+- no flags: show the window (section `audio` the first time), unminimize, present, then
+  `wlrctl toplevel focus app_id:org.waydock.GlobalSettings title:<title>` (≤4 retries/100 ms) on Wayland.
+- `main()` parses argv locally first (so `--help`/errors print in the launching process too).
+
+## 2. Window (global_ui.py)
+- `GlobalSettingsWindow`: title `Settings`, default 1090×810, min 830×580, `headerbar(tr('Settings'))`,
+  `global_style.install` (class `global-settings`, CSS+PAGE_CSS, companion palette).
+- Sidebar `.settings-navigation.suite-sidebar` 230 px: `.navigation-title` "Settings", `Gtk.SearchEntry.settings-search`
+  ("Search settings"), ListBox rows sorted by `tr(name).casefold()`; row = `.navigation-item` box (icon 16 + label).
+- Sections (key, name, icon, module): audio Audio audio-volume-high-symbolic applet_pages · bluetooth Bluetooth
+  bluetooth-active-symbolic applet_pages · network Network network-wired-symbolic applet_pages · displays Displays
+  video-display-symbolic desktop_pages · input "Mouse & Touchpad" input-mouse-symbolic input_page · keyboard Keyboard
+  input-keyboard-symbolic keyboard_page · shortcuts "Keyboard Shortcuts" preferences-desktop-keyboard-shortcuts-symbolic
+  shortcuts_page · power Power power-profile-balanced-symbolic applet_pages · battery Battery battery-good-symbolic ·
+  keepawake "Keep Awake" view-reveal-symbolic · notifications Notifications preferences-system-notifications-symbolic ·
+  weather Weather weather-clear-symbolic weather_page · theme "Theme & Wallpaper" preferences-desktop-wallpaper-symbolic
+  desktop_pages · layout "Desktop Layout" view-dual-symbolic layout_page · behavior "Desktop Behavior"
+  preferences-desktop-symbolic dock_pages · lock "Lock Screen" changes-prevent-symbolic lock_page · login "Login Screen"
+  system-users-symbolic login_page · dock Dock/Panel preferences-desktop-display-symbolic dock_pages · datetime
+  "Date & Time" preferences-system-time-symbolic applet_pages · language Language preferences-desktop-locale-symbolic
+  language_page · accessibility Accessibility preferences-desktop-accessibility-symbolic · defaultapps "Default Apps"
+  applications-system-symbolic · nightlight "Night Light" weather-clear-night-symbolic · users Users avatar-default-symbolic
+  · about About help-about-symbolic · capture Screenshots camera-photo-symbolic capture_page.
+- Pages are built lazily on first selection; a builder exception → `_error_page` (header + `empty_state`
+  "Settings are unavailable", error text, "Try Again" rebuilds; class `settings-error`). `_unify` restyles every
+  page header (`unify_header` + `align_page_gutter`, 24 px section icon). Stack transition NONE.
+- Lifecycle: previous page `deactivate()`, new page `activate()`; search hides the current page (deactivate) and
+  restores it (activate). `close-request`: first page whose `can_close()` is False is shown and close is refused;
+  else `cleanup()` closes every page and the style. Ctrl+F focuses search; Escape leaves search, else closes.
+- Search (settings_search.py, 178 `Setting`s + one `__section__` entry per section "Open {section} settings."):
+  NFKD + casefold + strip combining, tokens `[^\W_]+`; every word must occur in the terms; rank 0 exact title,
+  1 prefix, 2 token prefixes, 3 substrings, 4 term-token prefixes, 5 other; sort `(rank, title, section.casefold(), key)`.
+  Results page `.settings-search-page` with header "Search results" + subtitle "{n} result(s)", `.settings-search-results`
+  rows (icon, `.search-setting-title`, `.search-section`, `.search-detail`, go-next), empty state "No settings found".
+  Activating shows the section, calls `reveal_setting`, then spotlights the target (`search_targets[key]`, else
+  `getattr(controller, target)`, else a mapped label whose normalized text equals a translated label/title) with
+  class `settings-search-target` for 3.5 s, focuses the first focusable control, scrolls it to 30 % of the view;
+  retries every 100 ms ≤14 times; sub-pages (`page.tabs` stack child, or a ListBoxRow with `page_name`) first.
+
+## 3. Embedded components — import map (Python → Rust)
+
+Every page that Python built from another component's module is built from that component's Rust crate library
+(lib targets exist for all of them). Pub APIs added for embedding are listed in each group's PARITY.md.
+
+| GS module | Python import (component) | Python symbols used (incl. private) | Rust crate::path |
+|---|---|---|---|
+| applet_pages `_audio` | audio-manager `audio_ui`, `audio_backend` | `PAGES`, `AudioSettingsWindow(app, backend)`, `.refresh() .set_error() .loopback_dialog .node_rows[*]._destroyed() .stack .status_label`, `AudioBackend(changed, failed).start()/.close()` | `audio_manager::ui::settings::AudioSettingsWindow`, `audio_manager::backend` |
+| `_datetime` | calendar-manager `date_settings`, `date_backend` | `DateSettingsWindow(app, backend)`, `.refresh() ._destroyed(view)`, `DateBackend(changed, failed)` | `calendar_manager::settings::DateSettingsWindow`, `calendar_manager::backend` |
+| `_battery` | battery-manager `battery_ui`; power-manager `power_backend` | `BatterySettingsWindow(app, backend, open_bluetooth=)`, `._on_destroy`, `PowerBackend(..., batteries_only=True)` | `battery_manager::ui::BatterySettingsWindow`, `suite_power::backend::PowerBackend::batteries_only` |
+| `_bluetooth` | btmanager (repo root `btmanager.py`) | `BT` subclass (subscribe/close), `OBJMGR_IFACE`, `App(application, embedded=True, host_window, backend_factory)`, `.window ._add_window ._on_window_destroyed ._sub_ids ._unwatch_object ._refresh_ui .bt` | `bluetooth_manager::{manager, backend, ui}` |
+| `_network` | network-manager `network_manager`, `network_popup`, `network_settings`, `network_preferences`, `network_style`, `network_backend` | `NetworkApplication` subclass (facade, NON_UNIQUE `org.waydock.GlobalSettings.NetworkDialogs`, no agent), `NetworkSettingsWindow(facade, backend)`, `NetworkPopup(facade, backend, embedded=True)` (`.window .rows_box .subtitle .settings_button .refresh ._on_destroy`), `NotificationPreferences()`, `style(widget, cls)`, `NetworkBackend(changed, error)` | `network_manager::{gui, ui::settings, ui::popup, preferences, backend}` |
+| `_keepawake` | keep-awake `keep_awake_client`, `keep_awake_ui` | `KeepAwakeClient(changed)`, `KeepAwakePopup(app, client, embedded=True)` (`.window .status .refresh ._destroyed`) | `keep_awake::{client::KeepAwakeClient, ui::KeepAwakePopup}` |
+| `_power` | power-manager `power_client`, `power_config`, `power_ui`, `power_backend` | `PowerClient(changed)` (`.state .ready .error .set_settings`), `DEFAULTS`, `validate_settings`, `PowerSettingsWindow` subclass (`settings _saved controls lock_choice save_button status_label _message _syncing _destroyed _validation_error sync_extra_controls _on_destroy`), `duration_name` | `power_manager::{ui::PowerSettingsWindow, config, gui/client}` |
+| `_notifications` | notification-manager `notification_client`, `notification_ui` | `NotificationClient(changed)`, `SettingsPage(client)` (`.refresh .status_label .destroy`) | `notification_manager::{client, ui::SettingsPage}` |
+| weather_page | weather-manager `weather_settings` | `WeatherSettings()` widget (`.close .activate .deactivate .search_targets`) | `weather_manager::settings::WeatherSettings` |
+| language_page | language-manager `language_backend`, `language_ui` | `LanguageWizard` subclass (`close` override, `busy page _show_page _message spinner progress_row _run _loaded cancel_button _unrealized _language_style_close _close_requested`), `LanguageBackend()` | `language_manager::{ui::LanguageWizard, backend}` |
+| capture_page | capture-manager `capture_settings` | `build_page(path)` (`.switches`), | `capture_manager::settings::build_page` |
+| desktop_pages Displays | way-displays `way-displays-gui` (loaded by path as `desktop_suite_displays_editor`), `color_config` | `WayDisplaysApp(app, brightness_client_factory, embedded=True)`, `CONFIG_DATA`, `get_config_data()`, overlay, `read_status()` | `way_displays::{window::WayDisplaysApp, color_config}` |
+| desktop_pages Theme | waydock `settings_api.APPEARANCE_FIELDS`, `companion_theme.attach`; shared `wallpaper_chooser.WallpaperChooser`; GS `dock_pages.DockSettingsBridge` | | `waydock::dbus::settings_api`, `suite_gtk::theme`, `wayshell::wallpaper_chooser::WallpaperChooser` |
+| dock_pages | waydock `dock_config` (`ConfigStore`, `DockConfig`), `settings_api` (`BUS_NAME OBJECT_PATH INTERFACE DOCK_FIELDS DESKTOP_FIELDS APPEARANCE_FIELDS apply_patch`), `waydock.SettingsWindow(app, context=bridge, section, embedded=True, reset, extra_controls)` (`result_label match_wallpaper transparency transparency_enabled frosted frost_strength refresh_tray_rows _switching_mode update_material_controls preview_appearance workspace_count gapless_switch …`), `monitor_label`, `dock_style.CSS`; tiling-manager `tiling_settings.TilingControls` | | `waydock::{core::config, dbus::settings_api, ui::settings, core::monitors}`, `tiling_manager::ui::settings::TilingControls` |
+| layout_page / layout_presets | waydock `dock_config.DockConfig`, `settings_api.SETTINGS_FIELDS`; tiling-manager `tiling_config.TilingConfig`; shared `clock_preferences` | | `waydock::core::config`, `tiling_manager::config::TilingConfig`, `suite_core::clock` |
+| lock_page | lock-screen `lock_settings.LockSettings` (+ `lock_config`, `lock_weather.configured_weather`, power-manager `power_client`, `wallpaper_chooser`, file-manager `media_chooser`) | not yet ported (wave 5) | ported inside `gs-desktop::lock` (to move into lock-screen in wave 5) |
+| login_page | login-manager `login_model` (`Appearance`, `sessions`); helper `pkexec /usr/bin/python3 -I /usr/local/lib/waylogin/login_settings_helper.py` | not yet ported (wave 5) | `gs-desktop::login` |
+| keyboard_page | on-screen-keyboard `osk_settings.KeyboardSettings` | | `on_screen_keyboard::settings::KeyboardSettings` |
+| shortcuts_model | tiling-manager `bindings.BINDINGS` | | `tiling_manager::bindings::BINDINGS` |
+| input_page/mouse_polling | `pyudev` (optional), `openrazer_daemon.hardware.mouse`, ratbagd D-Bus | | local (udev via /sys, ratbag via gio) |
+| global_style / page_widgets / page_api | shared `gtk4_utils`, waydock `companion_theme` | | `gs_base::{style, widgets, page}`, `suite_gtk` |
+
+## 4. Files written (all byte-identical to Python; verified by fake-HOME parity tests)
+- rc.xml (labwc `-c/-C` of `LABWC_PID`, else `$XDG_CONFIG_HOME/labwc/rc.xml`): workspaces/input/keyboard/
+  shortcuts/accessibility/night light blocks via `labwc_settings` / `workspace_config` / `input_config`
+  (backups `$XDG_STATE_HOME/desktop-suite/backups/{input,…}`, reload `labwc --reconfigure`, restore on failure).
+- `labwc/environment` keys (`XCURSOR_SIZE`, `TERMINAL`, XKB_*), `night-light` config, `mimeapps.list`
+  (default apps), `~/.config/waydock/config.json` (when waydock is offline), `~/.config/desktop-suite/clock.json`,
+  `layout_presets` previous-layout state, tiling config, lock-screen config, login appearance (via pkexec helper).
+- Every embedded component keeps writing its own files exactly as its standalone Rust port does.
+
+## 5. External commands (all faked in tests; never run for real)
+`labwc --reconfigure`, `systemctl --user …` (night-light, orca, `try-restart` shell services, `is-active polkitman.service`),
+`localectl list-x11-keymap-layouts`, `libinput list-devices`, `wlr-randr --json`, `lspci -mm`, `labwc --version`,
+`setsid --ctty passwd` (PTY), `pkexec … login_settings_helper.py`, wallpaper import pkexec (wayshell chooser),
+language wizard pkexec/localed flow, `hdr-calibration --output X`, `wlrctl toplevel focus`.
+
+## 6. Tests to port
+test_global_ui, test_settings_search, test_applet_pages, test_desktop_pages, test_dock_pages, test_input_config,
+test_input_ui, test_keyboard?, test_layout_presets, test_mouse_polling, test_system_pages, test_system_ui,
+test_workspace_config, test_accent_ui.

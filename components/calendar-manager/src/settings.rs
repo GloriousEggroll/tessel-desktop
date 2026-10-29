@@ -364,6 +364,13 @@ impl DateSettingsWindow {
 
     pub fn window(&self) -> &gtk::ApplicationWindow { &self.0.window }
 
+    /// `_destroyed(window)`: release the window's style provider. Global
+    /// Settings embeds the controls of a window that is never realized, so
+    /// its unrealize handler never runs.
+    pub fn destroyed(&self) {
+        gtk::style_context_remove_provider_for_display(&WidgetExt::display(&self.0.window), &self.0.css);
+    }
+
     fn connect_signals(&self) {
         let s = &self.0;
         let weak = self.downgrade();
