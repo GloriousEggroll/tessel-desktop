@@ -41,6 +41,25 @@ switcher-status). When rc.xml keybinds changed, `labwc --reconfigure` (a reload,
 runs only with --restart --restart-shell inside the labwc session; otherwise run it yourself.
 --apply/--rollback run `systemctl --user daemon-reload` so systemd sees the drop-in change (pass
 --no-reload to skip it).
+
+System-wide entries (--system): the standalone apps desktop-apps/install.py puts in /usr/local
+(calculator, text-editor, picture-viewer, system-monitor, capture-manager, file-manager) and the
+Waylogin greeter (login-manager, /usr/local/lib/waylogin). They are a separate mode:
+  install.py --system [--check] [--only a,b]          preview (works as your user)
+  pkexec /usr/bin/python3 install.py --system --apply --only calculator
+  pkexec /usr/bin/python3 install.py --system --rollback [--only a,b]
+--system --apply/--rollback refuse unless the process already runs as root; this tool never runs
+sudo/pkexec itself and never runs cargo as root (build as your user first). The binary goes next to
+the Python files in /usr/local/lib/desktop-suite/<app>/ (Files: .../file-manager/wayfiles, a stable
+path), the catalogs into <that dir>/locale, and only the `exec` line of the /usr/local/bin launcher
+changes (the "# Desktop suite standalone application" marker line stays; a "desktop-suite-rust shim"
+line is added, so desktop-apps/install.py and file-manager/install.py keep the Rust launcher).
+login-manager changes only start-greeter's `--session` argument. State and backups live in
+/var/lib/desktop-suite/rust-swap.json and /var/backups/desktop-suite/rust-swap-*/.
+
+home-assistant-screen targets the Kasumi device (aarch64): it is planned and installed only into an
+explicit --target-root (the Kasumi user's home as mounted or staged here, never this machine's home),
+from aarch64 binaries, and never runs systemctl.
 """
 import argparse
 from dataclasses import dataclass
@@ -64,7 +83,23 @@ import xml.etree.ElementTree as ET
 
 REPO = Path(__file__).resolve().parent.parent
 REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir)
-DEFAULT_LOCALE_SOURCE = REAL_HOME / "btmanager/shared/locale"
+
+
+def invoking_home():
+    """The home of the user who ran pkexec/sudo (root's own home is not where ~/btmanager lives)."""
+    if os.getuid() == 0:
+        for name in ("PKEXEC_UID", "SUDO_UID"):
+            value = os.environ.get(name, "")
+            if value.isdigit():
+                try:
+                    return Path(pwd.getpwuid(int(value)).pw_dir)
+                except KeyError:
+                    pass
+    return REAL_HOME
+
+
+INVOKING_HOME = invoking_home()
+DEFAULT_LOCALE_SOURCE = INVOKING_HOME / "btmanager/shared/locale"
 
 SCRIPTS = ".config/waybar/scripts"
 LOCALE = ".local/share/desktop-suite/locale"
@@ -76,8 +111,17 @@ SHIM_MARKER = "desktop-suite-rust shim"
 RC_XML = ".config/labwc/rc.xml"
 SHARED = "_shared"            # state group for files shared by every component (locale)
 SHELL_UNITS = {"waydock.service", "wayshell.service"}
-NEVER_RESTART = {"labwc.service", "graphical-session.target"}
+# power-manager-lock.service runs only while the screen is locked: the next lock runs the new binary.
+NEVER_RESTART = {"labwc.service", "graphical-session.target", "power-manager-lock.service"}
 PYTHON = re.compile(r"^python3(?:\.\d+)?$")
+# --system: paths relative to the root prefix ("/"; tests inject a private prefix with --root).
+SYSTEM_STATE = "var/lib/desktop-suite/rust-swap.json"
+SYSTEM_BACKUPS = "var/backups/desktop-suite"
+SYSTEM_LIB = "usr/local/lib/desktop-suite"
+SYSTEM_BIN = "usr/local/bin"
+STANDALONE_MARKER = "# Desktop suite standalone application"     # desktop-apps/install.py WRAPPER_MARKER
+EM_AARCH64 = 183
+AARCH64_RELEASE = "target/aarch64-unknown-linux-gnu/release"
 
 
 @dataclass(frozen=True)
@@ -105,6 +149,13 @@ class Keybind:
 
 
 @dataclass(frozen=True)
+class TextEdit:
+    path: str                 # relative to the base (HOME or the root prefix)
+    old: str                  # exact text (once in the file) the Python install has; "{base}" = the prefix
+    new: str                  # what replaces it; nothing else in the file changes
+
+
+@dataclass(frozen=True)
 class Component:
     key: str
     package: str              # cargo package (components/<package>)
@@ -126,6 +177,12 @@ class Component:
     keybinds: tuple = ()                  # rc.xml Execute commands repointed from the Python entry to a binary
     python_entries: tuple = ()            # Python programs (kept, not shimmed) that --status recognises
     health: tuple = ()                    # argv (binary in dir + args) that must exit 0 after a restart
+    scope: str = "user"                   # user (HOME) | system (--system, root) | remote (--target-root)
+    locale_dir: str = None                # catalogs into <dir>/<locale_dir> (system entries: <exe dir>/locale)
+    edits: tuple = ()                     # TextEdit: one exact string replaced in an installed file
+    arch: str = None                      # "aarch64": ELF binaries must be built for it (Kasumi)
+    refuse_while_active: tuple = ()       # units that must be inactive for --apply (the locker)
+    warning: str = None                   # printed by --check and after --apply
 
 
 POPUP = ("--popup", "--popup-edge", "--popup-offset")
@@ -449,6 +506,112 @@ COMPONENTS = (
                "$XDG_STATE_HOME/desktop-suite/setup-done is missing) and the labwc menu item run the launcher; "
                "the .desktop Exec is the launcher path and does not change.",
                "setup-done is written by the binary exactly as welcome_ui.mark_setup_done did.")),
+    # ---- wave 4/5 user-level entries ------------------------------------------------------------
+    Component(
+        "hdr-calibration", "hdr-calibration", "hdr-calibration", ("hdr-calibration",),
+        shims=(Shim("hdr_calibration.py", "hdr-calibration", ("--output", "--sdr-editing", "--smoke-test")),),
+        launchers=(".local/bin/hdr-calibration",),
+        keeps=("calibration.py", "correction.py", "app_menu.py", "gtk4_utils.py", "hdr-pattern"),
+        base=".local/share",
+        clobbered_by=("hdr-calibration/install.py",),
+        notes=("way-displays' color_controls.py runs `python3 .../hdr-calibration/hdr_calibration.py --output <connector>`:"
+               " served by the shim. Global Settings runs ~/.local/bin/hdr-calibration (now execs the binary).",
+               "hdr-pattern stays the C helper; the binary finds it next to itself. The .desktop Exec is the launcher.")),
+    Component(
+        "lock-screen", "lock-screen", "lock-screen", ("lock-screen", "waylock-pam"),
+        shims=(Shim("lock_screen.py", "lock-screen", ("--preview", "--check"),
+                    porter="components/lock-screen/shim/lock_screen.py"),),
+        units=(Unit("power-manager-lock.service", "lock-screen", ()),),
+        keeps=("lock_auth.py", "lock_config.py", "lock_dashboard.py", "lock_fingerprint.py", "lock_info.py",
+               "lock_media.py", "lock_media_icons.py", "lock_palette.py", "lock_settings.py", "lock_status.py",
+               "lock_visuals.py", "lock_weather.py", "voice_state.py", "weather_backend.py", "osk_config.py",
+               "osk_devices.py", "osk_keyboard.py", "osk_lock.py", "waykeys-input", "suite_i18n.py"),
+        base=".local/share", requires_confirmation=True,
+        refuse_while_active=("power-manager-lock.service",),
+        clobbered_by=("lock-screen/install_lock.py", "on-screen-keyboard/install.py", "capture-manager/install_session.py"),
+        notes=("The drop-in changes only ExecStart (-> lock-screen); Type=notify, NotifyAccess=main, SuccessExitStatus=75, "
+               "LimitCORE=0 and Restart stay in the base unit. The unit is never restarted: the next lock runs Rust.",
+               "waylock-pam (the PAM helper next to the locker) becomes the Rust build, mode exactly 0755 (never setuid).",
+               "lock_screen.py becomes the porter shim (lock_settings.py runs it with --preview); every Python module stays "
+               "(Global Settings, capture-manager and the greeter import them).",
+               "--apply refuses while power-manager-lock.service is active and needs --i-am-at-the-keyboard."),
+        warning=("lock-screen: right after --apply, at the keyboard: run ~/.local/share/lock-screen/lock-screen --check "
+                 "(must print three true values), then lock with Super+L and unlock with your password. If it fails, "
+                 "switch to a TTY (Ctrl+Alt+F3), log in, run tools/install.py --rollback --only lock-screen, then "
+                 "`systemctl --user restart power-manager-lock.service`: the Python locker takes over the still-locked "
+                 "session (ext-session-lock keeps it locked when the client dies) and unlocks it.")),
+    # ---- --system entries (root-owned, /usr/local; see the module docstring) ---------------------
+    *(Component(
+        key, key, key, (binary,), shims=(),
+        launchers=((f"{SYSTEM_BIN}/{command}", None, f"{SYSTEM_LIB}/{key}/{entry}"),),
+        keeps=keeps, base=SYSTEM_LIB, scope="system", locale_dir="locale", requires_rpms=rpms,
+        notes=(f"Only the `exec` line of /{SYSTEM_BIN}/{command} changes (the standalone marker line stays); the .desktop "
+               f"files keep Exec=/{SYSTEM_BIN}/{command}. desktop-apps/install.py (and file-manager/install.py) keep a "
+               "launcher that carries the desktop-suite-rust marker; the Python files stay for --rollback.", *notes))
+      for key, binary, command, entry, keeps, rpms, notes in (
+        ("calculator", "calculator", "calculator", "calculator.py",
+         ("calculator_backend.py", "calculator_ui.py", "gtk4_utils.py", "suite_i18n.py"), (), ()),
+        ("text-editor", "text-editor", "text-editor", "text_editor.py",
+         ("document.py", "editor_ui.py", "recovery.py", "gtk4_utils.py", "suite_i18n.py"), ("gtksourceview5",), ()),
+        ("picture-viewer", "waypictures", "waypictures", "picture_viewer.py",
+         ("picture_ui.py", "picture_canvas.py", "picture_model.py", "picture_files.py", "picture_dialogs.py"), (), ()),
+        ("system-monitor", "system-monitor", "system-monitor", "system_monitor.py",
+         ("monitor_backend.py", "monitor_ui.py", "gtk4_utils.py", "suite_i18n.py"), (), ()),
+        ("capture-manager", "waycapture", "waycapture", "capture.py",
+         ("libcapture-pipewire.so", "capture_settings.py", "capture_shortcuts.py", "capture_selection.py",
+          "popup_placement.py", "capture_ui.py"), (),
+         ("libcapture-pipewire.so stays where it is (the binary dlopens it from its own directory); Global Settings "
+          "imports capture_settings.py / capture_shortcuts.py from this directory.",
+          "shared/install_popup_fixes.py keeps rewriting the Python capture modules here; the launcher is not touched.")),
+        ("file-manager", "wayfiles", "wayfiles", "file_manager.py",
+         ("files_ui.py", "files_pane.py", "file_operations.py", "file_model.py", "media_chooser.py", "app_catalog.py",
+          "dock_appearance.py"), ("gtksourceview5",),
+         ("The binary must stay at /usr/local/lib/desktop-suite/file-manager/wayfiles: the launch helper re-executes "
+          "current_exe() inside systemd-run --user services.",
+          "Verify: wayfiles --check, open Home, right-click a file near the screen middle, Ctrl+Q.")),
+    )),
+    Component(
+        "login-manager", "login-manager", "waylogin", ("login-ui", "session-transition", "login-settings-helper"),
+        shims=(),
+        edits=(TextEdit("usr/local/lib/waylogin/start-greeter",
+                        "--session '/usr/bin/python3 -I {base}/usr/local/lib/waylogin/login_ui.py'",
+                        "--session '{base}/usr/local/lib/waylogin/login-ui'"),),
+        keeps=("login_ui.py", "login_model.py", "login_protocol.py", "login_transition.py", "login_settings_helper.py",
+               "session_transition.py", "start-session", "lock_config.py", "lock_visuals.py", "lock_palette.py",
+               "osk_lock.py", "waykeys-input", "suite_i18n.py"),
+        base="usr/local/lib", scope="system", locale_dir="locale", requires_confirmation=True,
+        clobbered_by=("login-manager/install_login.py",),
+        notes=("Only start-greeter's --session argument changes. greetd.toml, PAM files, faillock, the polkit rule and "
+               "waylogin.service are never read or written; nothing is restarted (greetd runs the new greeter after the "
+               "next logout).",
+               "The greeter still starts sessions with the Python session_transition.py fade and Global Settings still "
+               "runs the Python login_settings_helper.py; the Rust session-transition / login-settings-helper are "
+               "installed next to them, unused until those callers switch.",
+               "login-manager/install_login.py rewrites start-greeter (Python again); re-run --system --apply after it."),
+        warning=("login-manager: a BROKEN GREETER BLOCKS GRAPHICAL LOGIN. Nothing is restarted; the Rust greeter runs at "
+                 "the next logout. Test it at the keyboard before you rely on it. If no login screen appears, switch to a "
+                 "TTY (Ctrl+Alt+F3), log in there and roll back: sudo /usr/bin/python3 " + str(Path(__file__).resolve())
+                 + " --system --rollback --only login-manager  (or copy start-greeter back from the backup printed "
+                 "above: /var/backups/desktop-suite/rust-swap-*/usr/local/lib/waylogin/start-greeter), then "
+                 "`sudo systemctl restart waylogin.service` from that TTY to get the Python greeter back.")),
+    # ---- --target-root entry (the Kasumi device, aarch64) --------------------------------------
+    Component(
+        "home-assistant-screen", "home-assistant-screen", "screensaver", ("luna-clock", "voice-controls"),
+        shims=(Shim("luna_clock.py", "luna-clock",
+                    ("--show", "--hide", "--status", "--next-wallpaper", "--quit", "--volume", "--brightness")),
+               Shim("voice_controls.py", "voice-controls")),
+        units=(Unit("luna-clock.service", "luna-clock"),),
+        keeps=("admin_panel.py", "screen_keyboard.py", "screen_levels.py", "level_controls.py", "screen_timers.py",
+               "screen_alarms.py", "timer_countdowns.py", "alarm_indicators.py", "config.json", "waykeys-input"),
+        base="makima", scope="remote", arch="aarch64",
+        clobbered_by=("home-assistant-screen/install_remote.py", "home-assistant-screen/install_media.py",
+                      "home-assistant-screen/install_keyboard.py"),
+        notes=("Kasumi only: --target-root is the Kasumi user's home (mounted or staged here); this machine's home and "
+               "units are never touched and systemctl is never run. Binaries must be aarch64 builds "
+               f"({AARCH64_RELEASE} or --prebuilt).",
+               "luna-clock.service gets the zz- drop-in (same flags as its Python ExecStart); config.json next to the "
+               "binary is read, never written. On the device: systemctl --user daemon-reload && systemctl --user "
+               "restart luna-clock.service.")),
 )
 BY_KEY = {component.key: component for component in COMPONENTS}
 
@@ -504,6 +667,7 @@ class Change:
     note: str = ""
     source: Path = None
     commands: dict = None     # rcxml: {key: original raw command}, kept in the state for --rollback
+    replacements: list = None # edit: [[old, new]] (formatted), kept in the state for --rollback
 
 
 def bins(component):
@@ -597,8 +761,70 @@ def launcher_text(component, home, porter=None):
     if porter:
         return (REPO / porter).read_text()
     binary = binary_path(home, component, main_binary(component))
+    if component.scope == "system":
+        # desktop-apps/install.py refuses launchers without STANDALONE_MARKER and keeps the ones with SHIM_MARKER.
+        return (f"#!/bin/sh\n{STANDALONE_MARKER}\n# {SHIM_MARKER} for {component.key}: installed by "
+                f"nobara-de-rust/tools/install.py --system; undo with --system --rollback --only {component.key}\n"
+                f"exec {shlex.quote(str(binary))} \"$@\"\n")
     return (f"#!/bin/sh\n# Desktop suite Rust swap for {component.key} (nobara-de-rust/tools/install.py).\n"
             f"exec '{binary}' \"$@\"\n")
+
+
+def edit_strings(home, edit):
+    """(old, new) of a TextEdit with {base} = the prefix ("" for /)."""
+    base = str(home).rstrip("/")
+    if "'" in base or "\\" in base:
+        raise RuntimeError(f"Refusing a prefix with quotes for a shell edit: {home}")
+    return edit.old.format(base=base), edit.new.format(base=base)
+
+
+def edit_revert_text(text, replacements):
+    """text with each swapped string (still present exactly once) put back to the Python original."""
+    for old, new in replacements:
+        if text.count(new) == 1:
+            text = text.replace(new, old)
+    return text
+
+
+def edit_state(home, edit):
+    path = home / edit.path
+    if not path.is_file() or path.is_symlink():
+        return "missing"
+    old, new = edit_strings(home, edit)
+    text = path.read_text(errors="replace")
+    return "rust" if new in text else "python" if old in text else "other"
+
+
+def elf_machine(path):
+    """e_machine of an ELF file (None for scripts and unreadable files)."""
+    try:
+        with open(path, "rb") as stream:
+            head = stream.read(20)
+    except OSError:
+        return None
+    if len(head) < 20 or head[:4] != b"\x7fELF":
+        return None
+    return int.from_bytes(head[18:20], "little" if head[5] == 1 else "big")
+
+
+def unsafe_directories(path, root):
+    """Existing directories from root down to path's parent that someone else could change under root."""
+    found = []
+    directory = path.parent
+    chain = []
+    while True:
+        chain.append(directory)
+        if directory == root or directory == directory.parent:
+            break
+        directory = directory.parent
+    owner = 0 if root == Path("/") else os.getuid()     # a private test prefix belongs to the test user
+    for directory in reversed(chain):
+        if not directory.exists():
+            continue
+        info = directory.stat()
+        if info.st_uid != owner or info.st_mode & 0o022:
+            found.append(f"{directory} (owner uid {info.st_uid}, mode {stat.S_IMODE(info.st_mode):o})")
+    return found
 
 
 def entry_pattern(home, entry):
@@ -745,8 +971,9 @@ def resolve_sources(components, prebuilt):
     """{(component key, file name): source path} for every binary and helper."""
     sources = {}
     for component in components:
+        release = REPO / (AARCH64_RELEASE if component.arch == "aarch64" else "target/release")
         for cargo, installed in bins(component):
-            sources[component.key, installed] = (prebuilt or REPO / "target/release") / cargo
+            sources[component.key, installed] = (prebuilt or release) / cargo
         for name in component.helpers:
             sources[component.key, name] = prebuilt / name if prebuilt else built_helper(component.package, name)
     return sources
@@ -768,7 +995,7 @@ def is_shim(path):
         return False
 
 
-def plan_component(component, home, sources):
+def plan_component(component, home, sources, locale_source=None):
     """[Change] for one component (unchanged files left out) and [problem] that block the swap."""
     changes, problems = [], []
     if not component_dir(home, component).is_dir():
@@ -779,8 +1006,13 @@ def plan_component(component, home, sources):
         target, source = binary_path(home, component, name), sources[component.key, name]
         kind = "helper" if name in component.helpers else "binary"
         if not valid_binary(source):
-            changes.append(Change(component.key, target, kind, None, 0o755,
-                                  f"not built: {source} (cargo build --release -p {component.package})"))
+            build = (f"cargo build --release --target aarch64-unknown-linux-gnu -p {component.package}, or --prebuilt"
+                     if component.arch == "aarch64" else f"cargo build --release -p {component.package}")
+            changes.append(Change(component.key, target, kind, None, 0o755, f"not built: {source} ({build})"))
+            continue
+        machine = elf_machine(source)
+        if component.arch == "aarch64" and machine is not None and machine != EM_AARCH64:
+            problems.append(f"{source} is not an aarch64 build (ELF machine {machine}); the Kasumi device needs aarch64")
             continue
         data = source.read_bytes()
         if target.is_symlink() or current_digest(target) != digest(data) or stat.S_IMODE(target.stat().st_mode) != 0o755:
@@ -855,6 +1087,37 @@ def plan_component(component, home, sources):
                              for key, raw in originals.items())
             changes.append(Change(component.key, rc, "rcxml", new.encode(), stat.S_IMODE(rc.stat().st_mode),
                                   note, commands=originals))
+    for edit in component.edits:
+        path = home / edit.path
+        old, new = edit_strings(home, edit)
+        if path.is_symlink():
+            problems.append(f"{edit.path} is a symlink; not edited")
+            continue
+        if not path.is_file():
+            problems.append(f"{edit.path} is not installed; install the Python component first")
+            continue
+        text = path.read_text()
+        if new in text and old not in text:
+            continue                                # already swapped
+        if text.count(old) != 1:
+            problems.append(f"{edit.path} does not contain exactly one `{old}`; not edited (changed by hand?)")
+            continue
+        changes.append(Change(component.key, path, "edit", text.replace(old, new).encode(),
+                              stat.S_IMODE(path.stat().st_mode), f"{old} -> {new}", replacements=[[old, new]]))
+    if component.locale_dir:
+        catalogs = sorted(locale_source.glob("*.json")) if locale_source and locale_source.is_dir() else []
+        if not catalogs:
+            problems.append(f"no translation catalogs in {locale_source}")
+        for source in catalogs:
+            target = component_dir(home, component) / component.locale_dir / source.name
+            data = source.read_bytes()
+            if current_digest(target) != digest(data) or target.is_symlink():
+                changes.append(Change(component.key, target, "locale", data, 0o644, f"from {source}", source))
+    if component.scope == "system":
+        for change in changes:
+            for directory in unsafe_directories(change.path, home):
+                problems.append(f"refusing to write as root below {directory}: not root-owned or group/world-writable")
+        problems = list(dict.fromkeys(problems))
     return changes, problems
 
 
@@ -878,9 +1141,14 @@ def guard_warnings(component):
     """Python-installer behaviour that undoes or trips over this swap."""
     shims = ", ".join(shim.entry for shim in component.shims)
     if not shims:
-        launchers = ", ".join(launcher_spec(component, l)[0] for l in component.launchers)
-        return [f"re-running {', '.join(component.clobbered_by)} rewrites {launchers}; re-run --apply"]
-    return [f"re-running {', '.join(CLOBBER_ALL + component.clobbered_by)} rewrites {shims}"
+        if not component.clobbered_by:
+            return []
+        files = ", ".join([launcher_spec(component, l)[0] for l in component.launchers]
+                          + [edit.path for edit in component.edits])
+        again = "--system --apply" if component.scope == "system" else "--apply"
+        return [f"re-running {', '.join(component.clobbered_by)} rewrites {files}; re-run {again}"]
+    installers = component.clobbered_by if component.scope == "remote" else CLOBBER_ALL + component.clobbered_by
+    return [f"re-running {', '.join(installers)} rewrites {shims}"
             f" (then --status shows 'python (shim overwritten)'; re-run --apply)"]
 
 
@@ -899,8 +1167,12 @@ def plan_locale(home, locale_source):
 
 # ---- state ------------------------------------------------------------------------------------
 
-def load_state(home):
-    path = home / STATE
+def state_path(home, system=False):
+    return home / (SYSTEM_STATE if system else STATE)
+
+
+def load_state(home, system=False):
+    path = state_path(home, system)
     if path.is_symlink():
         raise RuntimeError("Refusing a linked state file: " + str(path))
     if not path.is_file():
@@ -908,12 +1180,14 @@ def load_state(home):
     return json.loads(path.read_text())
 
 
-def save_state(home, state):
-    atomic_write(home / STATE, (json.dumps(state, indent=2, sort_keys=True) + "\n").encode(), 0o644)
+def save_state(home, state, system=False):
+    atomic_write(state_path(home, system), (json.dumps(state, indent=2, sort_keys=True) + "\n").encode(), 0o644)
 
 
-def make_backup(home, prefix):
-    root = home / BACKUPS
+def make_backup(home, prefix, system=False):
+    root = home / (SYSTEM_BACKUPS if system else BACKUPS)
+    if root.is_symlink():
+        raise RuntimeError("Refusing a linked backup directory: " + str(root))
     root.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ-")
     return Path(tempfile.mkdtemp(prefix=f"{prefix}-{stamp}", dir=root))
@@ -938,15 +1212,20 @@ def build(components):
         subprocess.run(["cargo", "build", "--release", "-p", package], cwd=REPO, check=True)
 
 
-def apply(home, components, sources, locale_source):
+def needs_shared_locale(components):
+    return any(component.scope != "system" for component in components)
+
+
+def apply(home, components, sources, locale_source, system=False):
     planned, problems = [], []
     for component in components:
-        changes, issues = plan_component(component, home, sources)
+        changes, issues = plan_component(component, home, sources, locale_source)
         planned += changes
         problems += [f"{component.key}: {issue}" for issue in issues]
-    locale_changes, issues = plan_locale(home, locale_source)
-    planned += locale_changes
-    problems += [f"locale: {issue}" for issue in issues]
+    if needs_shared_locale(components):
+        locale_changes, issues = plan_locale(home, locale_source)
+        planned += locale_changes
+        problems += [f"locale: {issue}" for issue in issues]
     problems += [f"{change.component}: {change.note}" for change in planned if change.data is None]
     for change in planned:
         if change.path.is_symlink():
@@ -957,7 +1236,7 @@ def apply(home, components, sources, locale_source):
         print("Everything is already swapped; nothing to change.")
         return []
     befores = [(change, snapshot(change.path)) for change in planned]
-    backup = make_backup(home, "rust-swap")
+    backup = make_backup(home, "rust-swap", system)
     manifest = []
     for change, before in befores:
         if before["kind"] == "file":
@@ -965,7 +1244,7 @@ def apply(home, components, sources, locale_source):
         manifest.append({"path": str(change.path), "component": change.component, "kind": change.kind,
                          "before": before["kind"], "after_sha256": digest(change.data)})
     (backup / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    state = load_state(home)
+    state = load_state(home, system)
     written, created_dirs = [], {}
     try:
         for change, before in befores:
@@ -996,10 +1275,13 @@ def apply(home, components, sources, locale_source):
         if change.commands:
             for key, raw in change.commands.items():
                 record.setdefault("commands", {}).setdefault(key, raw)
+        for pair in change.replacements or ():
+            if pair not in record.setdefault("replacements", []):
+                record["replacements"].append(pair)
         record["installed_sha256"] = digest(change.data)
     known = state.setdefault("dirs", [])
     known += [d for directories in created_dirs.values() for d in directories if d not in known]
-    save_state(home, state)
+    save_state(home, state, system)
     print(f"Swapped {len(planned)} files. Backup: {backup}")
     return planned
 
@@ -1030,6 +1312,10 @@ def rollback_plan(home, keys, state):
                     and path.is_file() and group in BY_KEY and record.get("commands") \
                     and rc_revert_text(path.read_text(), BY_KEY[group], record["commands"]) != path.read_text():
                 steps.append((group, path, record, "revert"))     # edited since the swap: undo only our commands
+            elif current_digest(path) != record["installed_sha256"] and record.get("kind") == "edit" \
+                    and path.is_file() and record.get("replacements") \
+                    and edit_revert_text(path.read_text(), record["replacements"]) != path.read_text():
+                steps.append((group, path, record, "revert"))     # edited since the swap: undo only our string
             elif current_digest(path) != record["installed_sha256"]:
                 steps.append((group, path, record, "keep"))
             else:
@@ -1037,8 +1323,8 @@ def rollback_plan(home, keys, state):
     return groups, steps
 
 
-def rollback(home, keys, preview, force=False):
-    state = load_state(home)
+def rollback(home, keys, preview, force=False, system=False):
+    state = load_state(home, system)
     keys = [key for key in keys if key in state["components"]]
     if not keys:
         print("Nothing to roll back: none of these components are swapped.")
@@ -1049,7 +1335,9 @@ def rollback(home, keys, preview, force=False):
                  "revert": "revert "}[action]
         extra = {"keep": "  (changed since the swap; kept, use --force to restore the backup)",
                  "refuse": "  (now a symlink)",
-                 "revert": "  (changed since the swap; only the swapped keybind commands are put back)"}.get(action, "")
+                 "revert": "  (changed since the swap; only the swapped keybind commands are put back)"
+                           if record.get("kind") == "rcxml" else
+                           "  (changed since the swap; only the swapped text is put back)"}.get(action, "")
         if action == "keep" and force:
             label, extra = "restore", "  (changed since the swap; --force)"
         print(f"  {group:24} {label} {path}{extra}")
@@ -1058,7 +1346,7 @@ def rollback(home, keys, preview, force=False):
     refused = [path for _, path, _, action in steps if action == "refuse"]
     if refused:
         raise RuntimeError("Refusing to replace linked files: " + ", ".join(map(str, refused)))
-    backup = make_backup(home, "rust-rollback")
+    backup = make_backup(home, "rust-rollback", system)
     manifest = []
     for group, path, record, action in steps:
         if action == "keep" and not force:
@@ -1067,7 +1355,9 @@ def rollback(home, keys, preview, force=False):
         if current["kind"] == "file":
             atomic_write(backup / path.relative_to(home), current["data"], current["mode"])
         manifest.append({"path": str(path), "component": group, "before": current["kind"], "restored": record["before"]})
-        if action == "revert":
+        if action == "revert" and record.get("kind") == "edit":
+            atomic_write(path, edit_revert_text(path.read_text(), record["replacements"]).encode(), current["mode"])
+        elif action == "revert":
             atomic_write(path, rc_revert_text(path.read_text(), BY_KEY[group], record["commands"]).encode(),
                          current["mode"])
         elif record["before"] == "missing":
@@ -1090,7 +1380,7 @@ def rollback(home, keys, preview, force=False):
         except OSError:
             kept.append(directory)
     state["dirs"] = sorted(kept)
-    save_state(home, state)
+    save_state(home, state, system)
     print(f"Rolled back {', '.join(groups)}. Backup of the Rust files: {backup}")
     return groups
 
@@ -1174,17 +1464,19 @@ def component_status(home, component, processes, state):
     units = {}
     for unit in component.units:
         dropin = home / UNITS / (unit.name + ".d") / DROPIN
-        pid = unit_pid(unit.name)
+        pid = unit_pid(unit.name) if component.scope == "user" else 0     # remote units are not on this machine
         info = proc_info(pid) if pid else None
         units[unit.name] = {"dropin": dropin.is_file(), "exec_start": effective_execstart(home, unit.name),
                             "main_pid": pid, "running": (classify(info, home, component) or "other") if info else None,
                             "rss_kb": info["rss_kb"] if info else 0}
     keybinds = keybind_states(home, component)
+    edits = {edit.path: edit_state(home, edit) for edit in component.edits}
     running = [dict(info, impl=impl) for info in processes for impl in [classify(info, home, component)] if impl]
     configured = (list(shims.values()) + [v for v in launchers.values() if v != "other"]
                   + ["rust" if u["dropin"] else "python" for u in units.values()]
-                  + [v for v in keybinds.values() if v in ("rust", "python")])
-    if all(state == "missing" for state in [*shims.values(), *launchers.values()]):
+                  + [v for v in keybinds.values() if v in ("rust", "python")]
+                  + [v for v in edits.values() if v != "other"])
+    if all(state == "missing" for state in [*shims.values(), *launchers.values(), *edits.values()]):
         mode = "not installed"
     elif any(state == "python (shim overwritten)" for state in configured):
         mode = "python (shim overwritten)"
@@ -1196,15 +1488,15 @@ def component_status(home, component, processes, state):
         mode = "mixed"
     warnings = guard_warnings(component) + list(component.notes) if mode != "python" and mode != "not installed" else []
     return {"component": component.key, "configured": mode, "shims": shims, "launchers": launchers, "units": units,
-            "keybinds": keybinds,
+            "keybinds": keybinds, "edits": edits,
             "binaries": {n: binary_path(home, component, n).is_file() for n in installed_names(component)},
             "processes": [{"pid": p["pid"], "impl": p["impl"], "rss_kb": p["rss_kb"]} for p in running],
             "rss_kb": sum(p["rss_kb"] for p in running), "warnings": warnings}
 
 
-def status(home, components, as_json):
+def status(home, components, as_json, system=False):
     processes = list(user_processes())
-    state = load_state(home)
+    state = load_state(home, system)
     report = [component_status(home, component, processes, state) for component in components]
     if as_json:
         print(json.dumps(report, indent=2))
@@ -1224,6 +1516,8 @@ def status(home, components, as_json):
                 print(f"    {entry}: {shim_state}")
         for key, key_state in item["keybinds"].items():
             print(f"    rc.xml {key}: {key_state}")
+        for path, edit_state_ in item["edits"].items():
+            print(f"    {path}: {edit_state_}")
         for warning in item["warnings"]:
             print(f"    warn: {warning}")
     print(f"{'total':68}{total / 1024:>8.1f} MB")
@@ -1235,7 +1529,7 @@ def status(home, components, as_json):
 def check(home, components, sources, locale_source):
     blocked = False
     for component in components:
-        changes, problems = plan_component(component, home, sources)
+        changes, problems = plan_component(component, home, sources, locale_source)
         print(f"{component.key}  (binaries: {', '.join(installed_names(component) + list(component.helpers))} "
               f"-> {component_dir(home, component)})")
         if component.optional and not component_dir(home, component).is_dir():
@@ -1243,12 +1537,17 @@ def check(home, components, sources, locale_source):
             continue
         if component.requires_confirmation:
             print("  confirm  --apply needs --i-am-at-the-keyboard for this component")
+        if component.scope == "system":
+            print("  root     --system --apply/--rollback only as root (pkexec /usr/bin/python3 tools/install.py "
+                  f"--system --apply --only {component.key}); never escalates by itself")
         for package in missing_rpms(component):
             print(f"  warn     runtime package {package} is not installed (rpm -q {package}); the binary needs it")
         for problem in problems:
             blocked = True
             print(f"  BLOCKED  {problem}")
         for change in changes:
+            if change.kind == "locale" and not change.path.is_symlink():
+                continue                    # summarised in the "locale" line below
             exists = "replace" if change.path.exists() or change.path.is_symlink() else "create "
             if change.path.is_symlink():
                 blocked, exists = True, "REFUSE (symlink)"
@@ -1277,21 +1576,44 @@ def check(home, components, sources, locale_source):
             print(f"  note     {note}")
         for warning in guard_warnings(component):
             print(f"  warn     {warning}")
-    changes, problems = plan_locale(home, locale_source)
-    print(f"locale -> {home / LOCALE}: {len(changes)} catalogs to write" + "".join(f"\n  BLOCKED  {p}" for p in problems))
+        if component.locale_dir:
+            print(f"  locale   {sum(c.kind == 'locale' for c in changes)} catalogs to write into "
+                  f"{component_dir(home, component) / component.locale_dir}")
+        if component.warning:
+            print(f"  WARNING  {component.warning}")
+    if needs_shared_locale(components):
+        changes, problems = plan_locale(home, locale_source)
+        blocked = blocked or bool(problems)
+        print(f"locale -> {home / LOCALE}: {len(changes)} catalogs to write"
+              + "".join(f"\n  BLOCKED  {p}" for p in problems))
+    others = sorted({c.scope for c in COMPONENTS} - {c.scope for c in components})
+    hints = {"system": "--system (root-owned /usr/local entries: " + ", ".join(
+                 c.key for c in COMPONENTS if c.scope == "system") + ")",
+             "remote": "--target-root <Kasumi home> (" + ", ".join(c.key for c in COMPONENTS if c.scope == "remote") + ")",
+             "user": "no --system/--target-root (the per-user entries)"}
+    for scope in others:
+        print(f"Not shown: preview with {hints[scope]}.")
     print("Preview only. Run with --apply to swap; nothing is restarted without --restart.")
     return not blocked
 
 
 # ---- main -----------------------------------------------------------------------------------
 
-def selected(only):
+SCOPE_FLAG = {"user": "neither --system nor --target-root", "system": "--system",
+              "remote": "--target-root <the Kasumi user's home, mounted or staged here>"}
+
+
+def selected(only, scope="user"):
+    """The components of one mode: all of its scope, or the --only keys (which must belong to it)."""
     if not only:
-        return list(COMPONENTS)
+        return [component for component in COMPONENTS if component.scope == scope]
     keys = [key.strip() for key in only.split(",") if key.strip()]
     unknown = [key for key in keys if key not in BY_KEY]
     if unknown:
         raise SystemExit(f"Unknown component(s): {', '.join(unknown)}. Known: {', '.join(BY_KEY)}")
+    wrong = [key for key in keys if BY_KEY[key].scope != scope]
+    if wrong:
+        raise SystemExit("; ".join(f"{key} needs {SCOPE_FLAG[BY_KEY[key].scope]}" for key in wrong))
     return [BY_KEY[key] for key in keys]
 
 
@@ -1366,6 +1688,25 @@ def restart_units(components, home, allow_shell, keybinds_changed=False, check_h
             print("rc.xml keybinds changed; labwc --reconfigure needs --restart-shell (or run it yourself).")
 
 
+def target_root(path):
+    """--target-root, refused when it is (or contains) this machine's home or /."""
+    resolved = path.resolve()
+    for protected in {REAL_HOME.resolve(), INVOKING_HOME.resolve(), Path.home().resolve(), Path("/")}:
+        if resolved == protected or protected.is_relative_to(resolved):
+            raise SystemExit(f"--target-root {resolved} is this machine's {protected}: give the Kasumi user's home as "
+                             "mounted or staged here (e.g. an sshfs mount), never the local home or /")
+    if not resolved.is_dir():
+        raise SystemExit(f"--target-root {resolved} is not a directory")
+    return resolved
+
+
+def require_root(action):
+    if os.geteuid() != 0:
+        raise RuntimeError(f"Nothing was changed: --system {action} needs root, and this tool never asks for it. Run it "
+                           f"yourself, e.g.: pkexec /usr/bin/python3 {Path(__file__).resolve()} --system {action} "
+                           "--only <keys> (preview first with --system --check as your user).")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     mode = parser.add_mutually_exclusive_group()
@@ -1379,6 +1720,13 @@ def main(argv=None):
     parser.add_argument("--no-build", action="store_true", help="use target/release as it is")
     parser.add_argument("--locale-source", type=Path, default=DEFAULT_LOCALE_SOURCE)
     parser.add_argument("--home", type=Path, default=Path.home(), help=argparse.SUPPRESS)
+    place = parser.add_mutually_exclusive_group()
+    place.add_argument("--system", action="store_true",
+                       help="the root-owned /usr/local entries (standalone apps, login-manager); --apply/--rollback "
+                            "only when already running as root")
+    place.add_argument("--target-root", type=Path,
+                       help="home-assistant-screen: the Kasumi user's home as mounted or staged here")
+    parser.add_argument("--root", type=Path, default=Path("/"), help=argparse.SUPPRESS)   # tests: private prefix
     parser.add_argument("--restart", action="store_true", help="systemctl --user restart the swapped active units")
     parser.add_argument("--restart-shell", action="store_true",
                         help="also allow restarting waydock/wayshell and `labwc --reconfigure` (never a labwc restart)")
@@ -1387,23 +1735,35 @@ def main(argv=None):
     parser.add_argument("--json", action="store_true", help="--status as JSON")
     parser.add_argument("--i-am-at-the-keyboard", action="store_true", dest="confirmed",
                         help="allow --apply for components that need a live check (authentication-manager, "
-                             "network-manager, wayshell, waydock)")
+                             "network-manager, wayshell, waydock, lock-screen, login-manager)")
     args = parser.parse_args(argv)
-    home = args.home.resolve()
-    components = selected(args.only)
-    prebuilt = args.prebuilt.resolve() if args.prebuilt else None
-
     if args.list:
         for c in COMPONENTS:
-            print(f"{c.key}: package {c.package}, into {c.base}/{c.dir}/: {', '.join(installed_names(c) + list(c.helpers))}; "
+            print(f"{c.key} [{c.scope}]: package {c.package}, into {c.base}/{c.dir}/: "
+                  f"{', '.join(installed_names(c) + list(c.helpers))}; "
                   f"units {', '.join(u.name for u in c.units) or '-'}; shims {', '.join(s.entry for s in c.shims)}")
         return 0
+    scope = "system" if args.system else "remote" if args.target_root else "user"
+    system = scope == "system"
+    if scope == "system":
+        home = args.root.resolve()
+    elif scope == "remote":
+        home = target_root(args.target_root)
+    else:
+        home = args.home.resolve()
+    components = selected(args.only, scope)
+    prebuilt = args.prebuilt.resolve() if args.prebuilt else None
+    user_units = scope == "user"           # systemctl --user only ever concerns this user's own units
+
     if args.status:
-        status(home, components, args.json)
+        status(home, components, args.json, system)
         return 0
     if args.rollback:
-        groups = rollback(home, [c.key for c in components], preview=args.check, force=args.force)
-        if groups and not args.check:
+        if system and not args.check:
+            require_root("--rollback")
+            os.umask(0o022)
+        groups = rollback(home, [c.key for c in components], preview=args.check, force=args.force, system=system)
+        if groups and not args.check and user_units:
             if not args.no_reload:
                 systemctl("daemon-reload")
             if args.restart:
@@ -1412,17 +1772,44 @@ def main(argv=None):
                               keybinds_changed=any(c.keybinds for c in swapped), check_health=False)
             elif any(BY_KEY[g].keybinds for g in groups if g in BY_KEY):
                 print("rc.xml keybinds restored; run `labwc --reconfigure` (or use --restart --restart-shell).")
+        elif groups and not args.check and scope == "remote":
+            print("On the Kasumi device: systemctl --user daemon-reload && systemctl --user restart luna-clock.service")
         return 0
     if not args.apply or args.check:
         return 0 if check(home, components, resolve_sources(components, prebuilt), args.locale_source) else 1
+    if system:
+        require_root("--apply")
+        os.umask(0o022)
     unconfirmed = [c.key for c in components if c.requires_confirmation]
     if unconfirmed and not args.confirmed:
         raise RuntimeError("Nothing was changed: " + ", ".join(unconfirmed) + " must be tested right after the swap "
-                           "(a password prompt, Wi-Fi, the dock or Alt+Tab). Re-run with --i-am-at-the-keyboard, or leave it out with --only.")
-    if not prebuilt and not args.no_build:
+                           "(a password prompt, Wi-Fi, the dock, Alt+Tab, the lock screen or the greeter). Re-run with "
+                           "--i-am-at-the-keyboard, or leave it out with --only.")
+    if user_units:
+        active = [unit for c in components for unit in c.refuse_while_active
+                  if systemctl("is-active", "--quiet", unit).returncode == 0]
+        if active:
+            raise RuntimeError("Nothing was changed: " + ", ".join(active) + " is active (the screen is locked); "
+                               "swap it while the session is unlocked.")
+    if scope != "user":
+        if not prebuilt:
+            print("cargo is not run in --system/--target-root mode (never as root, never for another machine): "
+                  "using the binaries already built in " + ("target/release" if system else AARCH64_RELEASE) + ".")
+    elif not prebuilt and not args.no_build:
         build(components)
     sources = resolve_sources(components, prebuilt)     # after the build: helpers live in OUT_DIR
-    changed = apply(home, components, sources, args.locale_source)
+    changed = apply(home, components, sources, args.locale_source, system)
+    for component in components:
+        if component.warning:
+            print(f"WARNING: {component.warning}")
+    if not user_units:
+        if args.restart:
+            print("--restart is ignored here: nothing is restarted for --system or --target-root entries.")
+        if scope == "remote" and changed:
+            print("On the Kasumi device: systemctl --user daemon-reload && systemctl --user restart luna-clock.service")
+        elif changed:
+            print("Nothing was restarted: the next launch of each app (the greeter: the next login screen) runs Rust.")
+        return 0
     if any(change.kind == "dropin" for change in changed) and not args.no_reload:
         systemctl("daemon-reload")
     keybinds_changed = any(change.kind == "rcxml" for change in changed)

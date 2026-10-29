@@ -69,16 +69,16 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | bluetooth (btmanager.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
 | 3 | wayshell | 4077 | ported (+prompt, capture-picker, theme); install.py entries ready (wayshell, wayshell-prompt, wayshell-capture-picker), not swapped (swap with user present) |
 | 3 | waydock | 14739 | ported, tests + 0 px screenshot parity; install.py entry ready, not swapped (swap with user present) |
-| 4 | calculator | 998 | ported (Python-decimal-compatible engine), 24 unit + 9 headless pass, not swapped |
-| 4 | text-editor | 1637 | ported (sourceview5 via .cargo/config.toml soname link), 31 unit + 21 headless pass, not swapped |
-| 4 | picture-viewer | 2320 | ported (image + kamadak-exif, lcms via dlopen), 15 unit + 10 headless pass, not swapped |
-| 4 | system-monitor | 1519 | ported (/proc+/sys instead of psutil), 28 unit + 15 headless pass, not swapped |
-| 4 | hdr-calibration | 926 | ported (hdr-pattern stays C), 19 unit + 6 headless pass, not swapped |
-| 4 | capture-manager (GUI + CLI; portal and capture_pipewire.c stay C) | 3420 | ported, 30 unit + 21 headless pass (fake portal/PipeWire; no real stream read), not swapped |
-| 4 | file-manager (wayfiles; crates files-ops/files-model/files-widgets + app) | 8448 | ported, 125 unit + 90 app headless + 25 widget headless + 6 private-GVfs checks pass; startup 343 vs 426 ms, idle PSS ≈47 vs 68 MB, after browsing ≈85 vs 115 MB; swap notes in PARITY.md, not swapped |
+| 4 | calculator | 998 | ported (Python-decimal-compatible engine), 24 unit + 9 headless pass, install.py `--system` entry ready (root only, never escalates), not swapped |
+| 4 | text-editor | 1637 | ported (sourceview5 via .cargo/config.toml soname link), 31 unit + 21 headless pass, install.py `--system` entry ready (root only, never escalates), not swapped |
+| 4 | picture-viewer | 2320 | ported (image + kamadak-exif, lcms via dlopen), 15 unit + 10 headless pass, install.py `--system` entry ready (root only, never escalates), not swapped |
+| 4 | system-monitor | 1519 | ported (/proc+/sys instead of psutil), 28 unit + 15 headless pass, install.py `--system` entry ready (root only, never escalates), not swapped |
+| 4 | hdr-calibration | 926 | ported (hdr-pattern stays C), 19 unit + 6 headless pass, install.py entry ready, not swapped |
+| 4 | capture-manager (GUI + CLI; portal and capture_pipewire.c stay C) | 3420 | ported, 30 unit + 21 headless pass (fake portal/PipeWire; no real stream read), install.py `--system` entry ready (root only, never escalates), not swapped |
+| 4 | file-manager (wayfiles; crates files-ops/files-model/files-widgets + app) | 8448 | ported, 125 unit + 90 app headless + 25 widget headless + 6 private-GVfs checks pass; startup 343 vs 426 ms, idle PSS ≈47 vs 68 MB, after browsing ≈85 vs 115 MB; swap notes in PARITY.md, install.py `--system` entry ready (root only, never escalates), not swapped |
 | 4 | global-settings | 8708 | ported (shell + gs-base/gs-applets/gs-desktop/gs-system; embeds the Rust applet crates), 94 unit + 113 headless checks, 859 files + 12 page scenarios byte-identical to Python, 0 px screenshot; install.py entry ready, not swapped |
 | 4 | welcome | 590 | ported, 6 unit + 11 headless pass, 0 px screenshot; install.py entry ready, not swapped |
 | 5 | suite-lock (lock_config, login_model, lock dashboard widgets) | ~1.4k | done (moved from gs-desktop + widgets; shared by the three below) |
-| 5 | lock-screen (+ Rust `waylock-pam` PAM helper) | ~3.1k | ported, security-reviewed (5 low fixes), 26 unit + 23 headless pass (incl. real ext-session-lock crash test in private labwc, fake libpam), not swapped |
-| 5 | login-manager (Waylogin greeter, root appearance helper) | ~1.7k | ported, security-reviewed (2 low parity fixes), 39 unit + 15 headless pass (fake greetd), not swapped (root swap: describe only) |
-| 5 | home-assistant-screen (Kasumi luna-clock, voice-controls) | 1454 | ported, security-reviewed (5 fixes), 12 unit + 11 headless pass (fake HTTP/scheduler), not swapped (Kasumi device, aarch64) |
+| 5 | lock-screen (+ Rust `waylock-pam` PAM helper) | ~3.1k | ported, security-reviewed (5 low fixes), 26 unit + 23 headless pass (incl. real ext-session-lock crash test in private labwc, fake libpam), install.py entry ready, not swapped (swap with user present) |
+| 5 | login-manager (Waylogin greeter, root appearance helper) | ~1.7k | ported, security-reviewed (2 low parity fixes), 39 unit + 15 headless pass (fake greetd), install.py `--system` entry ready (root only, never escalates), not swapped (swap with user present) |
+| 5 | home-assistant-screen (Kasumi luna-clock, voice-controls) | 1454 | ported, security-reviewed (5 fixes), 12 unit + 11 headless pass (fake HTTP/scheduler), install.py entry ready (`--target-root <Kasumi home>`, aarch64 builds only), not swapped |

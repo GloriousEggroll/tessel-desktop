@@ -10,6 +10,7 @@ from pathlib import Path
 import pwd
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -24,6 +25,23 @@ import install  # noqa: E402
 REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir).resolve()
 SCRATCH = Path(os.environ.get("TMPDIR") or f"/run/user/{os.getuid()}/cbt/rust-installer")
 DSA_PROBE = 'grep -q -E -e "[\\"\']$2[\\"\']" "$1"'   # supports() in desktop-suite-action
+USER = [c for c in install.COMPONENTS if c.scope == "user"]
+SYSTEM = [c for c in install.COMPONENTS if c.scope == "system"]
+SYSTEM_SKIP = ("var/lib/desktop-suite", "var/backups")
+# Runs install.py as if euid were 0 (only ever together with --root <private prefix>; see run_system).
+FAKE_ROOT_EUID = ("import os, runpy, sys; os.geteuid = lambda: 0; sys.argv = sys.argv[1:]; "
+                  "runpy.run_path(sys.argv[0], run_name='__main__')")
+# login-manager/start-greeter as installed (the comment block trimmed); {lib} = <prefix>/usr/local/lib/waylogin.
+START_GREETER = """#!/bin/sh
+# No user desktop autostart, portals, terminal shortcuts, or X11 fallback.
+unset DISPLAY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS
+export GDK_BACKEND=wayland
+export XDG_CONFIG_HOME=/etc/waylogin
+export PYTHONNOUSERSITE=1
+umask 077
+exec /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/waylogin/labwc \\
+    --session '/usr/bin/python3 -I {lib}/login_ui.py'
+"""
 
 PY_ENTRY = "#!/usr/bin/python3\n# python original of {name}\nimport time\nFLAGS = {flags!r}\ntime.sleep(60)\n"
 UNIT = "[Unit]\nDescription={name}\n\n[Service]\nType=simple\nExecStart=/usr/bin/python3 %h/{entry} {args}\nRestart=on-failure\n"
@@ -130,7 +148,7 @@ class InstallerTest(unittest.TestCase):
 
     def populate(self):
         home = self.home
-        for component in install.COMPONENTS:
+        for component in USER:
             directory = home / scripts(component)
             directory.mkdir(parents=True, exist_ok=True)
             for shim in component.shims:
@@ -180,7 +198,8 @@ class InstallerTest(unittest.TestCase):
         local_bin = home / ".local/bin"
         local_bin.mkdir(parents=True)
         for name, entry in (("waydock", "waydock/waydock.py"), ("wayshell-prompt", "wayshell/wayshell_prompt.py"),
-                            ("wayshell-capture-picker", "wayshell/capture_picker.py")):
+                            ("wayshell-capture-picker", "wayshell/capture_picker.py"),
+                            ("hdr-calibration", "hdr-calibration/hdr_calibration.py")):
             (local_bin / name).write_text(f"#!/bin/sh\nexec /usr/bin/python3 {home}/.local/share/{entry} \"$@\"\n")
         (local_bin / "notifications").write_text(
             '#!/bin/sh\nexec /usr/bin/python3 "$HOME/.config/waybar/scripts/notification-manager/notification_manager.py" "$@"\n')
@@ -209,6 +228,15 @@ class InstallerTest(unittest.TestCase):
             (apps / desktop).write_text(f"[Desktop Entry]\nName=X\nExec=/usr/bin/python3 {home}/{install.SCRIPTS}/{entry} "
                                         "--settings\nIcon=x\n")
         (apps / "org.waydock.Notifications.desktop").write_text("[Desktop Entry]\nExec=notifications --popup\n")
+        (apps / "org.desktop.HDRCalibration.desktop").write_text(
+            f"[Desktop Entry]\nName=HDR Calibration\nExec={home}/.local/bin/hdr-calibration\n")
+        # As install_lock.py writes it (the porter's copy with the Python ExecStart).
+        (home / install.UNITS / "power-manager-lock.service").write_text(
+            (install.REPO / "components/lock-screen/power-manager-lock.service").read_text().replace(
+                "ExecStart=%h/.local/share/lock-screen/lock-screen",
+                "ExecStart=/usr/bin/python3 %h/.local/share/lock-screen/lock_screen.py"))
+        (home / scripts(install.BY_KEY["lock-screen"]) / "waylock-pam").write_bytes(b"\x7fELF c pam helper")
+        (home / scripts(install.BY_KEY["lock-screen"]) / "waylock-pam").chmod(0o755)
 
     def env(self, **extra):
         env = dict(os.environ, HOME=str(self.home), PATH=f"{self.bin}:{os.environ['PATH']}",
@@ -246,7 +274,7 @@ class InstallerTest(unittest.TestCase):
         before = tree(self.home, skip=())
         out = self.run_installer().stdout
         self.assertEqual(tree(self.home, skip=()), before)
-        for component in install.COMPONENTS:
+        for component in USER:
             self.assertIn(component.key, out)
             for shim in component.shims:
                 self.assertIn(str(self.home / scripts(component) / shim.entry), out)
@@ -264,11 +292,11 @@ class InstallerTest(unittest.TestCase):
 
     def test_apply_swaps_everything_without_restarting(self):
         before = tree(self.home)
-        keeps = {(c.key, k): (self.home / scripts(c) / k).read_bytes() for c in install.COMPONENTS for k in c.keeps}
+        keeps = {(c.key, k): (self.home / scripts(c) / k).read_bytes() for c in USER for k in c.keeps}
         result = self.run_installer("--apply", "--i-am-at-the-keyboard")
         self.assertIn("were not restarted", result.stdout)
         home = self.home
-        for component in install.COMPONENTS:
+        for component in USER:
             directory = home / scripts(component)
             for cargo, name in (*install.bins(component), *((h, h) for h in component.helpers)):
                 self.assertEqual((directory / name).read_text(), (self.prebuilt / cargo).read_text())
@@ -309,7 +337,9 @@ class InstallerTest(unittest.TestCase):
         self.assertEqual(json.loads((home / install.LOCALE / "fr.json").read_text()), {"Hello": "fr"})
         for name in ("keep-awake.service", "notifications.service", "notifications.service.d/desktop-suite.conf"):
             self.assertEqual(tree(home)[f"{install.UNITS}/{name}"], before[f"{install.UNITS}/{name}"])
-        self.assertEqual(self.systemctl_calls(), ["--user daemon-reload"])
+        # Only read-only queries (the locker must be inactive) besides the reload.
+        self.assertEqual(self.systemctl_calls(), ["--user is-active --quiet power-manager-lock.service",
+                                                  "--user daemon-reload"])
         backups = list((home / install.BACKUPS).glob("rust-swap-*"))
         self.assertEqual(len(backups), 1)
         manifest = json.loads((backups[0] / "manifest.json").read_text())
@@ -700,6 +730,333 @@ class InstallerTest(unittest.TestCase):
             install.wait_healthy(self.home, component, timeout=0.3)
         flag.write_text("")
         install.wait_healthy(self.home, component, timeout=2)
+
+    # ---- wave 4/5 user entries: hdr-calibration, lock-screen ---------------------------------
+
+    def test_hdr_calibration_swap_reapply_and_rollback(self):
+        before = tree(self.home)
+        desktop = (self.home / install.APPS / "org.desktop.HDRCalibration.desktop").read_bytes()
+        self.run_installer("--apply", "--only", "hdr-calibration")
+        directory = self.home / ".local/share/hdr-calibration"
+        self.assertEqual((directory / "hdr-calibration").read_text(), (self.prebuilt / "hdr-calibration").read_text())
+        # way-displays' color_controls.py: python3 .../hdr_calibration.py --output <connector>
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "hdr_calibration.py"), "--output", "DP-1"],
+                             capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-hdr-calibration-v1 --output DP-1")
+        ran = subprocess.run([str(self.home / ".local/bin/hdr-calibration"), "--sdr-editing"], capture_output=True,
+                             text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-hdr-calibration-v1 --sdr-editing")
+        self.assertEqual((directory / "hdr-pattern").read_text(), "# module hdr-pattern\n")     # the C helper stays
+        self.assertEqual((self.home / install.APPS / "org.desktop.HDRCalibration.desktop").read_bytes(), desktop)
+        self.assertEqual(self.statuses("hdr-calibration")["hdr-calibration"]["configured"], "rust")
+        self.assertEqual(json.loads((self.home / install.LOCALE / "de.json").read_text()), {"Hello": "de"})
+        swapped = tree(self.home)
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "hdr-calibration").stdout)
+        self.assertEqual(tree(self.home), swapped)
+        self.run_installer("--rollback", "--only", "hdr-calibration")
+        self.assertEqual(tree(self.home), before)
+
+    def test_lock_screen_swap_needs_confirmation_and_an_unlocked_session(self):
+        before = tree(self.home)
+        units = self.home / install.UNITS
+        base = (units / "power-manager-lock.service").read_bytes()
+        result = self.run_installer("--apply", "--only", "lock-screen", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--i-am-at-the-keyboard", result.stderr)
+        result = self.run_installer("--apply", "--only", "lock-screen", "--i-am-at-the-keyboard", check=False,
+                                    SYSTEMCTL_ACTIVE="1")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("power-manager-lock.service is active", result.stderr)
+        self.assertEqual(tree(self.home), before)
+        out = self.run_installer("--only", "lock-screen").stdout
+        self.assertIn("lock-screen --check", out)
+        self.assertIn("ExecStart: /usr/bin/python3 %h/.local/share/lock-screen/lock_screen.py -> "
+                      "%h/.local/share/lock-screen/lock-screen\n", out)
+
+        result = self.run_installer("--apply", "--only", "lock-screen", "--i-am-at-the-keyboard", "--restart")
+        self.assertIn("WARNING: lock-screen", result.stdout)
+        self.assertNotIn("restart power-manager-lock", " ".join(self.systemctl_calls()))   # never restarted
+        dropin = (units / "power-manager-lock.service.d" / install.DROPIN).read_text()
+        body = [line for line in dropin.splitlines() if line and not line.startswith("#")]
+        self.assertEqual(body, ["[Service]", "ExecStart=", "ExecStart=%h/.local/share/lock-screen/lock-screen"])
+        self.assertEqual((units / "power-manager-lock.service").read_bytes(), base)   # Type=notify, LimitCORE=0 stay
+        self.assertIn("Type=notify\nNotifyAccess=main\n", base.decode())
+        directory = self.home / ".local/share/lock-screen"
+        for name in ("lock-screen", "waylock-pam"):
+            mode = (directory / name).stat().st_mode
+            self.assertEqual(stat.S_IMODE(mode), 0o755, name)
+            self.assertFalse(mode & (stat.S_ISUID | stat.S_ISGID), name)
+            self.assertEqual((directory / name).read_text(), (self.prebuilt / name).read_text())
+        for keep in install.BY_KEY["lock-screen"].keeps:
+            self.assertEqual((directory / keep).read_text(), f"# module {keep}\n")
+        # lock_settings.py: python3 lock_screen.py --preview
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "lock_screen.py"), "--preview"],
+                             capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-lock-screen-v1 --preview")
+        self.assertEqual(self.statuses("lock-screen")["lock-screen"]["configured"], "rust")
+        swapped = tree(self.home)
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "lock-screen",
+                                                              "--i-am-at-the-keyboard").stdout)
+        self.assertEqual(tree(self.home), swapped)
+        self.run_installer("--rollback", "--only", "lock-screen")
+        self.assertEqual(tree(self.home), before)
+        self.assertEqual((directory / "waylock-pam").read_bytes(), b"\x7fELF c pam helper")
+
+    # ---- --system entries (fake root prefix) ---------------------------------------------------
+
+    def populate_system(self):
+        root = self.root / "sysroot"
+        lib = root / install.SYSTEM_LIB
+        for component in SYSTEM:
+            directory = root / scripts(component)
+            directory.mkdir(parents=True, exist_ok=True)
+            for keep in component.keeps:
+                (directory / keep).write_text(f"# module {keep}\n")
+            for launcher in component.launchers:
+                relative, _porter, entry = install.launcher_spec(component, launcher)
+                (root / relative).parent.mkdir(parents=True, exist_ok=True)
+                (directory / Path(entry).name).write_text(PY_ENTRY.format(name=Path(entry).name, flags=()))
+                # desktop-apps/install.py's wrapper (here with the private prefix).
+                (root / relative).write_text(f'#!/bin/sh\n{install.STANDALONE_MARKER}\n'
+                                             f'exec /usr/bin/python3 "{root / entry}" "$@"\n')
+                (root / relative).chmod(0o755)
+        apps = root / "usr/share/applications"
+        apps.mkdir(parents=True)
+        (apps / "org.waydock.Calculator.desktop").write_text(f"[Desktop Entry]\nExec={root}/usr/local/bin/calculator\n")
+        login = root / "usr/local/lib/waylogin"
+        (login / "start-greeter").write_text(START_GREETER.format(lib=login))
+        (login / "start-greeter").chmod(0o755)
+        for relative in ("etc/waylogin/greetd.toml", "etc/pam.d/waylogin", "etc/pam.d/waylock",
+                         "etc/polkit-1/rules.d/50-waylogin-power.rules", "etc/systemd/system/waylogin.service",
+                         "etc/security/waylogin-faillock.conf"):
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(f"# {relative}\n")
+        for directory in [root, *(p for p in root.rglob("*") if p.is_dir())]:
+            directory.chmod(0o755)            # the safety check refuses group/world-writable parents
+        return root
+
+    def run_system(self, root, *args, euid0=True, check=True):
+        """install.py --system --root <private prefix>; euid0 fakes euid 0 (only with the private --root)."""
+        assert root != Path("/") and str(root).startswith(str(self.root) + "/")
+        argv = [str(INSTALL), "--system", "--root", str(root), "--prebuilt", str(self.prebuilt),
+                "--locale-source", str(self.locale), *args]
+        argv = [sys.executable, "-c", FAKE_ROOT_EUID, *argv] if euid0 else [sys.executable, *argv]
+        result = subprocess.run(argv, capture_output=True, text=True, env=self.env())
+        if check and result.returncode != 0:
+            self.fail(f"{argv} failed ({result.returncode}):\n{result.stdout}\n{result.stderr}")
+        return result
+
+    def test_system_mode_refuses_when_not_root(self):
+        root = self.populate_system()
+        before, home = tree(root, skip=()), tree(self.home, skip=())
+        for action in ("--apply", "--rollback"):
+            result = self.run_system(root, action, "--only", "calculator", "--i-am-at-the-keyboard",
+                                     euid0=False, check=False)
+            self.assertNotEqual(result.returncode, 0, action)
+            self.assertIn(f"--system {action} needs root", result.stderr)
+            self.assertIn("pkexec /usr/bin/python3", result.stderr)          # says how; never runs it
+        self.assertEqual(tree(root, skip=()), before)
+        self.assertEqual(tree(self.home, skip=()), home)
+        out = self.run_system(root, "--check", euid0=False).stdout     # the preview works as the user
+        self.assertIn("--system --apply/--rollback only as root", out)
+        self.assertEqual(tree(root, skip=()), before)
+        # System entries are not part of the per-user mode, and the reverse.
+        result = self.run_installer("--apply", "--only", "calculator", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("calculator needs --system", result.stderr)
+        result = self.run_system(root, "--apply", "--only", "keep-awake", check=False)
+        self.assertIn("keep-awake needs neither --system", result.stderr)
+        self.assertEqual(tree(root, skip=()), before)
+        self.assertEqual(self.systemctl_calls(), [])
+
+    def test_system_apps_swap_reapply_and_rollback(self):
+        root = self.populate_system()
+        before = tree(root, skip=("var",))
+        apps = [c.key for c in SYSTEM if c.key != "login-manager"]
+        out = self.run_system(root, "--apply", "--only", ",".join(apps)).stdout
+        self.assertIn("Nothing was restarted", out)
+        for component in SYSTEM:
+            if component.key == "login-manager":
+                continue
+            directory = root / scripts(component)
+            binary = install.installed_names(component)[0]
+            self.assertEqual((directory / binary).read_text(), (self.prebuilt / binary).read_text())
+            self.assertEqual(stat.S_IMODE((directory / binary).stat().st_mode), 0o755)
+            for keep in component.keeps:
+                self.assertEqual((directory / keep).read_text(), f"# module {keep}\n")
+            self.assertEqual(json.loads((directory / "locale/fr.json").read_text()), {"Hello": "fr"})
+            relative = install.launcher_spec(component, component.launchers[0])[0]
+            launcher = (root / relative).read_text()
+            lines = launcher.splitlines()
+            self.assertEqual(lines[:2], ["#!/bin/sh", install.STANDALONE_MARKER])
+            self.assertIn(install.SHIM_MARKER, lines[2])
+            self.assertEqual(lines[3], f"exec {directory / binary} \"$@\"")
+            self.assertEqual(stat.S_IMODE((root / relative).stat().st_mode), 0o755)
+            ran = subprocess.run([str(root / relative), "--check"], capture_output=True, text=True, env=self.env())
+            self.assertEqual(ran.stdout.strip(), f"rust-{binary}-v1 --check")
+        self.assertTrue((root / install.SYSTEM_LIB / "file-manager/wayfiles").is_file())        # the stable path
+        self.assertTrue((root / install.SYSTEM_LIB / "capture-manager/libcapture-pipewire.so").is_file())
+        self.assertEqual(tree(root, skip=("var",))["usr/share/applications/org.waydock.Calculator.desktop"],
+                         before["usr/share/applications/org.waydock.Calculator.desktop"])
+        self.assertTrue((root / install.SYSTEM_STATE).is_file())
+        self.assertEqual(len(list((root / install.SYSTEM_BACKUPS).glob("rust-swap-*"))), 1)
+        self.assertFalse((self.home / install.STATE).exists())                 # nothing in the user's home
+        self.assertFalse((self.home / install.LOCALE).exists())
+        self.assertEqual(self.systemctl_calls(), [])
+        status = json.loads(self.run_system(root, "--status", "--json", euid0=False).stdout)
+        self.assertEqual({item["component"]: item["configured"] for item in status if item["component"] in apps},
+                         {key: "rust" for key in apps})
+        swapped = tree(root, skip=("var",))
+        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", ",".join(apps)).stdout)
+        self.assertEqual(tree(root, skip=("var",)), swapped)
+        self.run_system(root, "--rollback")
+        self.assertEqual(tree(root, skip=("var",)), before)
+        self.assertEqual(json.loads((root / install.SYSTEM_STATE).read_text())["components"], {})
+
+    def test_desktop_apps_guard_keeps_the_rust_launcher(self):
+        """~/btmanager/desktop-apps/install.py (loaded, never run) skips launchers carrying the swap marker."""
+        source = REAL_HOME / "btmanager/desktop-apps/install.py"
+        if not source.is_file() or b"desktop-suite-rust" not in source.read_bytes():
+            self.skipTest("no guarded desktop-apps/install.py")
+        root = self.populate_system()
+        self.run_system(root, "--apply", "--only", "calculator")
+        launcher = root / "usr/local/bin/calculator"
+        swapped = launcher.read_bytes()
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("desktop_apps_install_probe", source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        python = f'#!/bin/sh\n{install.STANDALONE_MARKER}\nexec /usr/bin/python3 "x" "$@"\n'.encode()
+        kept, skipped = module.keep_rust_swaps([(launcher, python, 0o755)])
+        self.assertEqual((kept, skipped), ([], [launcher]))
+        self.assertEqual(launcher.read_bytes(), swapped)
+
+    def test_login_manager_changes_only_the_session_argument(self):
+        root = self.populate_system()
+        before = tree(root, skip=("var",))
+        greeter = root / "usr/local/lib/waylogin/start-greeter"
+        original = greeter.read_text()
+        result = self.run_system(root, "--apply", "--only", "login-manager", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--i-am-at-the-keyboard", result.stderr)
+        self.assertEqual(tree(root, skip=("var",)), before)
+        out = self.run_system(root, "--check", "--only", "login-manager", euid0=False).stdout
+        self.assertIn("BROKEN GREETER BLOCKS GRAPHICAL LOGIN", out)
+        self.assertIn("--system --rollback --only login-manager", out)
+        result = self.run_system(root, "--apply", "--only", "login-manager", "--i-am-at-the-keyboard", "--restart")
+        self.assertIn("BROKEN GREETER BLOCKS GRAPHICAL LOGIN", result.stdout)
+        self.assertIn("--restart is ignored", result.stdout)
+        lib = root / "usr/local/lib/waylogin"
+        changed = [(a, b) for a, b in zip(original.splitlines(), greeter.read_text().splitlines()) if a != b]
+        self.assertEqual(changed, [(f"    --session '/usr/bin/python3 -I {lib}/login_ui.py'",
+                                    f"    --session '{lib}/login-ui'")])
+        self.assertEqual(len(original.splitlines()), len(greeter.read_text().splitlines()))
+        self.assertEqual(stat.S_IMODE(greeter.stat().st_mode), 0o755)
+        for name in ("login-ui", "session-transition", "login-settings-helper"):
+            self.assertEqual((lib / name).read_text(), (self.prebuilt / name).read_text())
+        self.assertTrue((lib / "locale/de.json").is_file())
+        after = tree(root, skip=("var",))
+        for path in before:
+            if path.startswith("etc/"):
+                self.assertEqual(after[path], before[path], path)       # greetd.toml, PAM, polkit, unit, faillock
+        self.assertEqual(self.systemctl_calls(), [])
+        status = json.loads(self.run_system(root, "--status", "--json", "--only", "login-manager", euid0=False).stdout)
+        self.assertEqual(status[0]["configured"], "rust")
+        swapped = tree(root, skip=("var",))
+        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", "login-manager",
+                                                           "--i-am-at-the-keyboard").stdout)
+        self.assertEqual(tree(root, skip=("var",)), swapped)
+        self.run_system(root, "--rollback", "--only", "login-manager")
+        self.assertEqual(tree(root, skip=("var",)), before)
+        # install_login.py rewrote start-greeter after the swap (here: one more export): only our string goes back.
+        self.run_system(root, "--apply", "--only", "login-manager", "--i-am-at-the-keyboard")
+        greeter.write_text(greeter.read_text().replace("umask 077\n", "export X=1\numask 077\n"))
+        self.assertIn("revert", self.run_system(root, "--rollback", "--check", euid0=False).stdout)
+        self.run_system(root, "--rollback")
+        self.assertEqual(greeter.read_text(), original.replace("umask 077\n", "export X=1\numask 077\n"))
+
+    def test_system_mode_refuses_unsafe_directories_and_odd_greeters(self):
+        root = self.populate_system()
+        directory = root / install.SYSTEM_LIB / "calculator"
+        directory.chmod(0o777)
+        before = tree(root, skip=("var",))
+        result = self.run_system(root, "--apply", "--only", "calculator", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("group/world-writable", result.stderr)
+        self.assertEqual(tree(root, skip=("var",)), before)
+        directory.chmod(0o755)
+        greeter = root / "usr/local/lib/waylogin/start-greeter"
+        greeter.write_text(greeter.read_text().replace("login_ui.py'", "login_ui.py --debug'"))
+        result = self.run_system(root, "--apply", "--only", "login-manager", "--i-am-at-the-keyboard", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not contain exactly one", result.stderr)
+
+    # ---- --target-root entry (Kasumi, aarch64) ---------------------------------------------------
+
+    def populate_kasumi(self):
+        target = self.root / "kasumi-home"
+        component = install.BY_KEY["home-assistant-screen"]
+        directory = target / scripts(component)
+        directory.mkdir(parents=True)
+        for shim in component.shims:
+            (directory / shim.entry).write_text(PY_ENTRY.format(name=shim.entry, flags=shim.flags))
+            (directory / shim.entry).chmod(0o755)
+        for keep in component.keeps:
+            (directory / keep).write_text(f"# module {keep}\n")
+        units = target / install.UNITS
+        units.mkdir(parents=True)
+        (target / ".local").mkdir()
+        (units / "luna-clock.service").write_text(
+            "[Service]\nExecStart=/usr/bin/python3 %h/makima/screensaver/luna_clock.py\nRestart=always\n")
+        return target
+
+    def test_home_assistant_screen_only_into_an_explicit_target_root(self):
+        home_before = tree(self.home, skip=())
+        result = self.run_installer("--only", "home-assistant-screen", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("needs --target-root", result.stderr)
+        for protected in (self.home, REAL_HOME, Path("/")):
+            result = self.run_installer("--apply", "--only", "home-assistant-screen", "--target-root", str(protected),
+                                        check=False, HOME=str(protected))
+            self.assertNotEqual(result.returncode, 0, protected)
+            self.assertIn("never the local home", result.stderr)
+        target = self.populate_kasumi()
+        before = tree(target)
+        out = self.run_installer("--target-root", str(target)).stdout
+        self.assertIn("ExecStart: /usr/bin/python3 %h/makima/screensaver/luna_clock.py -> "
+                      "%h/makima/screensaver/luna-clock", out)
+        self.assertEqual(tree(target), before)
+        result = self.run_installer("--apply", "--target-root", str(target), "--restart")
+        self.assertIn("On the Kasumi device: systemctl --user daemon-reload", result.stdout)
+        directory = target / "makima/screensaver"
+        for name in ("luna-clock", "voice-controls"):
+            self.assertEqual((directory / name).read_text(), (self.prebuilt / name).read_text())
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "voice_controls.py"), "brightness", "up"],
+                             capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-voice-controls-v1 brightness up")
+        self.assertEqual(install.effective_execstart(target, "luna-clock.service"), "%h/makima/screensaver/luna-clock")
+        self.assertEqual((directory / "config.json").read_text(), "# module config.json\n")
+        self.assertTrue((target / install.LOCALE / "de.json").is_file())
+        self.assertEqual(self.systemctl_calls(), [])                 # never this machine's systemd
+        self.assertEqual(tree(self.home, skip=()), home_before)       # never this machine's home
+        swapped = tree(target)
+        self.assertIn("nothing to change", self.run_installer("--apply", "--target-root", str(target)).stdout)
+        self.assertEqual(tree(target), swapped)
+        self.run_installer("--rollback", "--target-root", str(target))
+        self.assertEqual(tree(target), before)
+        self.assertEqual(tree(self.home, skip=()), home_before)
+
+    def test_home_assistant_screen_refuses_non_aarch64_binaries(self):
+        target = self.populate_kasumi()
+        before = tree(target)
+        host = Path("/usr/bin/true")
+        if install.elf_machine(host) in (None, install.EM_AARCH64):
+            self.skipTest("needs a non-aarch64 host ELF")
+        shutil.copy(host, self.prebuilt / "luna-clock")
+        result = self.run_installer("--apply", "--target-root", str(target), check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("is not an aarch64 build", result.stderr)
+        self.assertEqual(tree(target), before)
 
     def test_table_is_consistent(self):
         keys = [c.key for c in install.COMPONENTS]

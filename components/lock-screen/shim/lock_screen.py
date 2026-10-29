@@ -8,5 +8,5 @@ through unchanged (the Rust CLI accepts the same argparse prefixes).
 import os
 import sys
 
-binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lock-screen')
+binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lock-screen")
 os.execv(binary, [binary] + sys.argv[1:])
