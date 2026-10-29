@@ -87,3 +87,25 @@ LOW-priority idle chunks after 200 ms. RSS per 10 menus: before 162/179/186/194/
 - Layer-shell unsupported → prints the message and exits 1 (Python raised in `do_startup`).
 - The menu icon is the installed `~/.local/share/waydock/icons/…` file, else an embedded copy extracted to
   `$XDG_RUNTIME_DIR/waydock/` (GTK recolours `-symbolic.svg` files only from a path).
+
+## Real-configuration memory (tools/realconfig/run.sh)
+Live after the swap: Rust waydock RSS 216 / PSS 131 MB ([heap] 71 MB) vs a 12-hour-old Python waydock at
+85 MB RSS. That comparison was not like for like: the live box had zram full and 29 GB of disk swap in use,
+so the long-running Python process was mostly paged out (fresh Python in the same configuration is 206 MB RSS).
+`tools/realconfig/run.sh` reproduces the real setup: fake HOME of copies of the real config (waydock,
+wayshell, gtk-4.0, labwc, wallpapers, Papirus mirror + ~/.local/share/icons, applications, flatpak exports,
+Desktop, ~/.cache/waydock), two 3840x2160 outputs, labwc `WLR_RENDERER=vulkan` on the GPU and GTK's default
+(Vulkan) GSK renderer, as the live units use. `ACTIVITY=1` adds 8 windows of 4 apps + 2 menu open/close cycles.
+
+Cause: with the Vulkan renderer, the first frames compile pipelines in RADV (massif: ~40 MB transient peak,
+plus icon-theme scans); glibc keeps the freed holes, so [heap] stayed at ~50 MB with ~29 MB live (cairo: 10 MB).
+Fix: `suite_gtk::utils::trim_heap_after` (coalesced `malloc_trim(0)`) 4 s and 30 s after startup and 1.5 s after
+the app menu closes. Nothing visible changes (compare/run.sh 0 px).
+
+| PSS / Pss_Anon MB (fresh, 20 s idle) | Python | Rust before | Rust after |
+|---|---|---|---|
+| waydock idle | 124 / 106 | 97 / 77 | 56 / 36 |
+| waydock after activity | 148 / 133 | 107 / 90 | 80 / 63 |
+
+Remaining waydock anon: ~13 MB GTK icon-theme index (worker-thread arena; Python has the same 14.8 MB) and,
+after the menu, the menu's cached icon textures (~11 MB, kept by design, see menu churn above).

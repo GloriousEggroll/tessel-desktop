@@ -331,6 +331,14 @@ impl App {
         self.startup_complete.set(true);
         self.started.set(true);
         self.notify_ready();
+        // The first frames compile GPU pipelines and scan icon themes; the
+        // freed transients stay in glibc's heap until trimmed. Trim once the
+        // first frames are out and again after the deferred startup work
+        // (icon prefetch, palette/papirus workers) has settled.
+        suite_gtk::utils::trim_heap_after(std::time::Duration::from_secs(4));
+        glib::timeout_add_local_once(std::time::Duration::from_secs(30), || {
+            suite_gtk::utils::trim_heap_after(std::time::Duration::ZERO);
+        });
     }
 
     /// Electron tray clients may give up when started before the watcher

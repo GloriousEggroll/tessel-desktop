@@ -212,6 +212,8 @@ impl AppMenu {
             if let Some(host) = self.host.upgrade() {
                 host.leave("menu");
             }
+            // The menu's tiles, listing and render caches are freed now.
+            suite_gtk::utils::trim_heap_after(std::time::Duration::from_millis(1500));
         }
     }
 

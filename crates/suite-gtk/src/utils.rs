@@ -390,3 +390,23 @@ mod tests {
         }
     }
 }
+
+thread_local! {
+    static TRIM_PENDING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Hand free heap pages back to the OS once `delay` has passed (coalesced:
+/// at most one pending trim). Startup and popup teardown leave large freed
+/// holes in glibc's heap (GPU shader compilation, icon-theme scans, menu
+/// tiles) that glibc only returns on `malloc_trim`. Purely a memory
+/// operation: nothing visible changes.
+pub fn trim_heap_after(delay: std::time::Duration) {
+    if TRIM_PENDING.with(|p| p.replace(true)) {
+        return;
+    }
+    glib::timeout_add_local_once(delay, || {
+        TRIM_PENDING.with(|p| p.set(false));
+        // SAFETY: malloc_trim only releases free memory of the allocator.
+        unsafe { libc::malloc_trim(0) };
+    });
+}

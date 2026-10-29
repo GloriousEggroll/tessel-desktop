@@ -76,6 +76,12 @@ impl DesktopApp {
             }));
         }
         *self.switcher.borrow_mut() = Some(switcher);
+        // Return the startup transients (wallpaper decode, GPU pipeline
+        // compilation, icon-theme scans) to the OS once the desktops are drawn.
+        suite_gtk::utils::trim_heap_after(std::time::Duration::from_secs(4));
+        glib::timeout_add_local_once(std::time::Duration::from_secs(30), || {
+            suite_gtk::utils::trim_heap_after(std::time::Duration::ZERO);
+        });
     }
 
     fn ensure_cli_socket(self: &Rc<Self>) {

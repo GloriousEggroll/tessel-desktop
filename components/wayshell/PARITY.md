@@ -81,6 +81,12 @@ paintable). Tests: `real_window_capture_and_overview_cleanup`, `overview_visual_
 | Overview open (show → mapped / first preview), in-process capture | 9–11 ms / 16–18 ms | 32 ms / 32 ms |
 | Release binaries | wayshell 2.5 MB (full), wayshell-cli 1.6 MB (libc only) | — |
 
+Real configuration (`tools/realconfig/run.sh`: copies of the real config, two 3840x2160 outputs, Vulkan
+labwc + GTK Vulkan renderer; see waydock notes/PARITY-E.md): idle PSS/anon Python 99/86 MB, Rust before
+68/53, after 58/44 MB (`malloc_trim` 4 s and 30 s after activation returns the startup transients). The
+remaining 24 MB anonymous block is the decoded 3840x2160 RGB wallpaper texture, shared by both outputs and
+the overview; Python keeps the same one.
+
 Runners: `tests/run_headless_switcher.sh` (`DAEMON=python` for the Python daemon,
 `EXTRA=…/tests/measure/py_overview.py`), `tests/run_switcher_native.sh` (`latency`, `python-latency`).
 
