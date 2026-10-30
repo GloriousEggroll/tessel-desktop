@@ -311,3 +311,35 @@ fn source_helper_rejects_unknown_operation() {
     assert_eq!(helper_main(&strings(&["--invalid"])), 2);
     assert_eq!(default_helper()[1], "--launch-helper");
 }
+
+#[test]
+fn program_launch_runs_literal_argv_in_folder_through_independent_service() {
+    crate::test_env();
+    let folder = "/srv/two words $(no-shell)";
+    let spawner = FakeSpawner::new();
+    let launch = launcher(&spawner, env(&[("PATH", "/test/bin")]), None);
+    let program = strings(&["/test/bin/wayarchive", "--batch", "--destination", folder, "/srv/a b.zip"]);
+    let (done, on_done) = done_log();
+    launch.launch_program(Path::new(folder), &program, None, Some(on_done)).unwrap();
+    let argv = spawner.last_argv();
+    let tail = argv.len() - program.len();
+    assert_eq!(argv[tail..], program[..]);
+    assert_eq!(argv[tail - 4..tail], ["/usr/local/bin/wayfiles", HELPER_FLAG, PROGRAM_FLAG, folder]);
+    assert!(argv.iter().any(|a| a == "--service-type=forking"));
+    for argument in ["--wait", "--pipe", "--scope", "sh", "-c"] {
+        assert!(!argv.iter().any(|a| a == argument), "{argument}");
+    }
+    assert!(done.borrow().is_empty());
+    spawner.finish_last(Ok((true, String::new())));
+    assert_eq!(*done.borrow(), [None]);
+    assert!(launch.launch_program(Path::new(folder), &[], None, None).is_err());
+}
+
+#[test]
+fn program_helper_spawns_argv_in_cwd_without_waiting() {
+    let backend = FakeHelper::default();
+    let args = strings(&["--program", "/srv/x", "/usr/bin/wayarchive", "--add", "a"]);
+    assert_eq!(helper_main_with(&args, &backend, || panic!("token is only for applications")), 0);
+    assert_eq!(backend.terminal.borrow().clone().unwrap(), ("/srv/x".to_owned(), strings(&["/usr/bin/wayarchive", "--add", "a"])));
+    assert_eq!(helper_main_with(&strings(&["--program", "/srv/x"]), &backend, || None), 2);
+}

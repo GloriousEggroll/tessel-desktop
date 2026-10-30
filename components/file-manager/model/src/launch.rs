@@ -5,7 +5,9 @@
 //! ([`waydock::core::app_catalog::launch_command`], `--service-type=forking`).
 //! The service runs this binary's helper mode: `[current_exe, "--launch-helper",
 //! "--application", <desktop id>, <uris>...]` or `[current_exe, "--launch-helper",
-//! "--terminal", <dir>, <terminal argv>...]` (Python: `python3 file_launch.py …`).
+//! "--terminal", <dir>, <terminal argv>...]` (Python: `python3 file_launch.py …`),
+//! or `[current_exe, "--launch-helper", "--program", <dir>, <argv>...]` (another
+//! program, e.g. the archive manager's service-menu commands; Rust only).
 //! The application's `main()` dispatches to [`helper_main`] with the arguments
 //! after `--launch-helper`.
 //!
@@ -28,6 +30,8 @@ pub type WhichFn = Box<dyn Fn(&str, Option<&str>) -> Option<String>>;
 
 /// The first argument of the helper mode.
 pub const HELPER_FLAG: &str = "--launch-helper";
+/// Helper mode that runs a program argv in a working directory.
+pub const PROGRAM_FLAG: &str = "--program";
 const TERMINALS: &[&str] = &[
     "x-terminal-emulator", "ptyxis", "kgx", "gnome-terminal", "konsole", "xfce4-terminal", "tilix", "alacritty", "kitty",
     "wezterm", "foot", "ghostty", "xterm",
@@ -168,6 +172,26 @@ impl FileLauncher {
         helper.extend(command);
         self.spawn_detached(helper, environment, context, token, on_done, "Could not open a terminal in this folder.")
     }
+
+    /// Run `argv` (no shell; `argv[0]` should be an absolute path) in
+    /// `directory`, in its own independent app service like a terminal.
+    pub fn launch_program(
+        &self,
+        directory: &Path,
+        argv: &[String],
+        context: Option<Rc<dyn LaunchContext>>,
+        on_done: Option<DoneFn>,
+    ) -> Result<(), LaunchError> {
+        if argv.is_empty() {
+            return Err(LaunchError::Value("Nothing to launch.".into()));
+        }
+        let folder = gio::File::for_path(directory);
+        let (environment, token) = (self.environment)(context.as_deref(), None, std::slice::from_ref(&folder));
+        let mut helper = self.helper.clone();
+        helper.extend([PROGRAM_FLAG.to_owned(), directory.to_string_lossy().into_owned()]);
+        helper.extend(argv.iter().cloned());
+        self.spawn_detached(helper, environment, context, token, on_done, "Could not start the program.")
+    }
 }
 
 /// `launch_with(app_info, files, context, on_done)` with the real spawner.
@@ -282,7 +306,7 @@ impl HelperBackend for GioHelper {
 /// (`token` is only consulted for `--application`). Returns the exit status:
 /// 0 ok, 1 failure (message on stderr), 2 bad usage.
 pub fn helper_main_with(args: &[String], backend: &dyn HelperBackend, token: impl FnOnce() -> Option<String>) -> i32 {
-    if args.len() >= 3 && args[0] == "--terminal" {
+    if args.len() >= 3 && (args[0] == "--terminal" || args[0] == PROGRAM_FLAG) {
         // The child stays in the independent app service; returning lets its
         // Type=forking startup complete without waiting for the terminal.
         return match backend.spawn_terminal(&args[1], &args[2..]) {

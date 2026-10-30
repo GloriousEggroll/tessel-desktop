@@ -36,6 +36,12 @@ const CHECKS: [(&str, &str); 6] = [("hidden", "show_hidden"), ("previews", "show
 
 pub const ARCHIVE_SUFFIXES: [&str; 9] = [".zip", ".tar", ".tar.gz", ".tar.bz2", ".tar.xz", ".tgz", ".iso", ".7z", ".rar"];
 
+/// `access(path, W_OK)`: can this process create files in `path`?
+fn folder_writable(path: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    std::ffi::CString::new(path.as_os_str().as_bytes()).is_ok_and(|c| unsafe { libc::access(c.as_ptr(), libc::W_OK) } == 0)
+}
+
 fn file_label(file: &gio::File) -> String {
     file.basename().map(|b| b.to_string_lossy().into_owned()).filter(|b| !b.is_empty()).unwrap_or_else(|| file.parse_name().to_string())
 }
@@ -1217,9 +1223,15 @@ impl FilesWindow {
             }
             menu.append_section(None, &edits);
             let archives = gio::Menu::new();
-            archives.append(Some("Compress…"), Some("win.compress"));
+            if let Some(program) = crate::service_menu::archive_manager() {
+                self.archive_service_menu(&archives, &program, &pane, &selected);
+            } else {
+                archives.append(Some("Compress…"), Some("win.compress"));
+                if selected.len() == 1 {
+                    archives.append(Some("Extract…"), Some("win.extract"));
+                }
+            }
             if selected.len() == 1 {
-                archives.append(Some("Extract…"), Some("win.extract"));
                 let lower = selected[0].name().to_lowercase();
                 if ARCHIVE_SUFFIXES.iter().any(|s| lower.ends_with(s)) {
                     archives.append(Some("Browse Archive"), Some("win.browse-archive"));
@@ -1673,6 +1685,69 @@ impl FilesWindow {
                     files_ops::tools::extract_archive(&archive, &output, Some(&*cancel), None).map(|_| ()).map_err(|e| e.to_string())
                 });
             }, ChooserMode::Folder, Some(&pane.current()), "");
+        }
+    }
+
+    /// Ark's Dolphin service menus: "Extract" (every item a local archive)
+    /// and "Compress" (every item local) submenus running `program`
+    /// (`wayarchive`). The actions capture this selection and live until the
+    /// next context menu, like the custom actions.
+    fn archive_service_menu(&self, archives: &gio::Menu, program: &str, pane: &BrowserPane, selected: &[FileItem]) {
+        use crate::service_menu::{plan, ServiceAction};
+        let flags: Vec<(bool, bool)> =
+            selected.iter().map(|i| (i.path().is_some(), !i.is_dir() && crate::service_menu::is_archive(&i.content_type(), &i.name()))).collect();
+        let plan = plan(&flags);
+        let paths: Vec<PathBuf> = selected.iter().filter_map(|i| i.path()).collect();
+        let current = pane.current().path();
+        let mut sections: Vec<(String, &[ServiceAction])> = Vec::new();
+        if plan.extract {
+            sections.push((tr!("Extract"), &ServiceAction::EXTRACT));
+        }
+        if plan.compress {
+            sections.push((tr!("Compress"), &ServiceAction::COMPRESS));
+        }
+        for (title, actions) in sections {
+            let submenu = gio::Menu::new();
+            for &kind in actions {
+                let Some(argv) = kind.argv(program, &paths, current.as_deref()) else { continue };
+                let ident = kind.action_name();
+                let action = gio::SimpleAction::new(ident, None);
+                let folder = kind.output_folder(&paths, current.as_deref());
+                if kind.writes_here() {
+                    action.set_enabled(folder.as_deref().is_some_and(folder_writable));
+                }
+                let cwd = folder.or_else(|| current.clone()).or_else(|| paths[0].parent().map(Path::to_path_buf)).unwrap_or_else(|| PathBuf::from("/"));
+                let weak = self.downgrade();
+                action.connect_activate(move |_, _| {
+                    if let Some(window) = weak.upgrade().map(FilesWindow) {
+                        window.launch_program(&cwd, &argv);
+                    }
+                });
+                self.window.add_action(&action);
+                self.custom_action_ids.borrow_mut().push(ident.to_owned());
+                submenu.append(Some(&kind.label()), Some(&format!("win.{ident}")));
+            }
+            archives.append_submenu(Some(&title), &submenu);
+        }
+    }
+
+    /// Run `argv` in `directory` as an independent app service (the same
+    /// `systemd-run --user` path as terminals); the folder monitor shows
+    /// whatever it creates.
+    fn launch_program(&self, directory: &Path, argv: &[String]) {
+        let mut launcher = files_model::launch::FileLauncher::default();
+        if let Some(spawner) = self.app().hooks.spawner.borrow().clone() {
+            launcher.spawner = spawner;
+        }
+        let weak = self.downgrade();
+        let context = WidgetExt::display(&self.window).app_launch_context();
+        let result = launcher.launch_program(directory, argv, Some(Rc::new(context.upcast::<gio::AppLaunchContext>()) as Rc<dyn waydock::core::app_catalog::LaunchContext>), Some(Box::new(move |error: Option<String>| {
+            if let (Some(error), Some(window)) = (error, weak.upgrade()) {
+                FilesWindow(window).message(&error);
+            }
+        })));
+        if let Err(error) = result {
+            self.message(&error.to_string());
         }
     }
 

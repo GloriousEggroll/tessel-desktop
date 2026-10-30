@@ -14,6 +14,7 @@ pub mod completion;
 pub mod goto;
 pub mod keys;
 pub mod pane;
+pub mod service_menu;
 pub mod thumbnails;
 pub mod tile;
 pub mod window;

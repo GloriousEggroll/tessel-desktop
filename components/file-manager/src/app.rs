@@ -36,6 +36,8 @@ pub struct Hooks {
     pub folder_index: RefCell<Option<Rc<dyn Fn() -> files_model::goto::FolderIndex>>>,
     /// Delay (ms) before a command-line location's classification is delivered.
     pub classify_delay: RefCell<Option<Rc<dyn Fn(&gio::File) -> u64>>>,
+    /// Replaces the `systemd-run` spawner of program launches (archive service menus).
+    pub spawner: RefCell<Option<Rc<dyn waydock::core::spawn::Spawner>>>,
 }
 
 pub struct AppInner {

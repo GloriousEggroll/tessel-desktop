@@ -1,0 +1,302 @@
+{
+  "ar": {
+    "Compress": "ضغط",
+    "Compress to…": "اضغط إلى…",
+    "Extract": "استخراج",
+    "Extract archive here": "استخرج الأرشيف هنا",
+    "Extract archive here, autodetect subfolder": "استخرج الأرشيف هنا، مع اكتشاف المجلد الفرعي تلقائيًا",
+    "Extract archive to…": "استخرج الأرشيف إلى…",
+    "Here (as TAR.GZ)": "هنا (بصيغة TAR.GZ)",
+    "Here (as ZIP)": "هنا (بصيغة ZIP)"
+  },
+  "cs": {
+    "Compress": "Komprimovat",
+    "Compress to…": "Komprimovat do…",
+    "Extract": "Rozbalit",
+    "Extract archive here": "Rozbalit archiv sem",
+    "Extract archive here, autodetect subfolder": "Rozbalit archiv sem, automaticky rozpoznat podsložku",
+    "Extract archive to…": "Rozbalit archiv do…",
+    "Here (as TAR.GZ)": "Sem (jako TAR.GZ)",
+    "Here (as ZIP)": "Sem (jako ZIP)"
+  },
+  "da": {
+    "Compress": "Komprimér",
+    "Compress to…": "Komprimér til…",
+    "Extract": "Udpak",
+    "Extract archive here": "Udpak arkiv her",
+    "Extract archive here, autodetect subfolder": "Udpak arkiv her, find undermappe automatisk",
+    "Extract archive to…": "Udpak arkiv til…",
+    "Here (as TAR.GZ)": "Her (som TAR.GZ)",
+    "Here (as ZIP)": "Her (som ZIP)"
+  },
+  "de": {
+    "Compress": "Komprimieren",
+    "Compress to…": "Komprimieren nach …",
+    "Extract": "Entpacken",
+    "Extract archive here": "Archiv hier entpacken",
+    "Extract archive here, autodetect subfolder": "Archiv hier entpacken, Unterordner automatisch erkennen",
+    "Extract archive to…": "Archiv entpacken nach …",
+    "Here (as TAR.GZ)": "Hier (als TAR.GZ)",
+    "Here (as ZIP)": "Hier (als ZIP)"
+  },
+  "el": {
+    "Compress": "Συμπίεση",
+    "Compress to…": "Συμπίεση σε…",
+    "Extract": "Αποσυμπίεση",
+    "Extract archive here": "Αποσυμπίεση αρχειοθήκης εδώ",
+    "Extract archive here, autodetect subfolder": "Αποσυμπίεση αρχειοθήκης εδώ, αυτόματος εντοπισμός υποφακέλου",
+    "Extract archive to…": "Αποσυμπίεση αρχειοθήκης σε…",
+    "Here (as TAR.GZ)": "Εδώ (ως TAR.GZ)",
+    "Here (as ZIP)": "Εδώ (ως ZIP)"
+  },
+  "es": {
+    "Compress": "Comprimir",
+    "Compress to…": "Comprimir en…",
+    "Extract": "Extraer",
+    "Extract archive here": "Extraer el archivo comprimido aquí",
+    "Extract archive here, autodetect subfolder": "Extraer el archivo comprimido aquí, detectar subcarpeta automáticamente",
+    "Extract archive to…": "Extraer el archivo comprimido en…",
+    "Here (as TAR.GZ)": "Aquí (como TAR.GZ)",
+    "Here (as ZIP)": "Aquí (como ZIP)"
+  },
+  "fi": {
+    "Compress": "Pakkaa",
+    "Compress to…": "Pakkaa kohteeseen…",
+    "Extract": "Pura",
+    "Extract archive here": "Pura arkisto tähän",
+    "Extract archive here, autodetect subfolder": "Pura arkisto tähän, tunnista alikansio automaattisesti",
+    "Extract archive to…": "Pura arkisto kohteeseen…",
+    "Here (as TAR.GZ)": "Tähän (TAR.GZ-muodossa)",
+    "Here (as ZIP)": "Tähän (ZIP-muodossa)"
+  },
+  "fr": {
+    "Compress": "Compresser",
+    "Compress to…": "Compresser vers…",
+    "Extract": "Extraire",
+    "Extract archive here": "Extraire l’archive ici",
+    "Extract archive here, autodetect subfolder": "Extraire l’archive ici, détecter automatiquement le sous-dossier",
+    "Extract archive to…": "Extraire l’archive vers…",
+    "Here (as TAR.GZ)": "Ici (en TAR.GZ)",
+    "Here (as ZIP)": "Ici (en ZIP)"
+  },
+  "he": {
+    "Compress": "דחיסה",
+    "Compress to…": "דחיסה אל…",
+    "Extract": "חילוץ",
+    "Extract archive here": "חילוץ הארכיון לכאן",
+    "Extract archive here, autodetect subfolder": "חילוץ הארכיון לכאן, זיהוי תיקיית משנה אוטומטית",
+    "Extract archive to…": "חילוץ הארכיון אל…",
+    "Here (as TAR.GZ)": "לכאן (בתור TAR.GZ)",
+    "Here (as ZIP)": "לכאן (בתור ZIP)"
+  },
+  "hi": {
+    "Compress": "संपीड़ित करें",
+    "Compress to…": "इसमें संपीड़ित करें…",
+    "Extract": "निकालें",
+    "Extract archive here": "आर्काइव यहाँ निकालें",
+    "Extract archive here, autodetect subfolder": "आर्काइव यहाँ निकालें, सबफ़ोल्डर स्वतः पहचानें",
+    "Extract archive to…": "आर्काइव इसमें निकालें…",
+    "Here (as TAR.GZ)": "यहाँ (TAR.GZ के रूप में)",
+    "Here (as ZIP)": "यहाँ (ZIP के रूप में)"
+  },
+  "hu": {
+    "Compress": "Tömörítés",
+    "Compress to…": "Tömörítés máshová…",
+    "Extract": "Kibontás",
+    "Extract archive here": "Archívum kibontása ide",
+    "Extract archive here, autodetect subfolder": "Archívum kibontása ide, almappa automatikus felismerése",
+    "Extract archive to…": "Archívum kibontása máshová…",
+    "Here (as TAR.GZ)": "Ide (TAR.GZ formátumban)",
+    "Here (as ZIP)": "Ide (ZIP formátumban)"
+  },
+  "id": {
+    "Compress": "Kompres",
+    "Compress to…": "Kompres ke…",
+    "Extract": "Ekstrak",
+    "Extract archive here": "Ekstrak arsip di sini",
+    "Extract archive here, autodetect subfolder": "Ekstrak arsip di sini, deteksi subfolder otomatis",
+    "Extract archive to…": "Ekstrak arsip ke…",
+    "Here (as TAR.GZ)": "Di sini (sebagai TAR.GZ)",
+    "Here (as ZIP)": "Di sini (sebagai ZIP)"
+  },
+  "it": {
+    "Compress": "Comprimi",
+    "Compress to…": "Comprimi in…",
+    "Extract": "Estrai",
+    "Extract archive here": "Estrai l'archivio qui",
+    "Extract archive here, autodetect subfolder": "Estrai l'archivio qui, rileva automaticamente la sottocartella",
+    "Extract archive to…": "Estrai l'archivio in…",
+    "Here (as TAR.GZ)": "Qui (come TAR.GZ)",
+    "Here (as ZIP)": "Qui (come ZIP)"
+  },
+  "ja": {
+    "Compress": "圧縮",
+    "Compress to…": "圧縮先を指定…",
+    "Extract": "展開",
+    "Extract archive here": "ここにアーカイブを展開",
+    "Extract archive here, autodetect subfolder": "ここにアーカイブを展開 (サブフォルダーを自動検出)",
+    "Extract archive to…": "展開先を指定してアーカイブを展開…",
+    "Here (as TAR.GZ)": "ここに (TAR.GZ として)",
+    "Here (as ZIP)": "ここに (ZIP として)"
+  },
+  "ko": {
+    "Compress": "압축",
+    "Compress to…": "다음 위치로 압축…",
+    "Extract": "압축 풀기",
+    "Extract archive here": "여기에 압축 풀기",
+    "Extract archive here, autodetect subfolder": "여기에 압축 풀기, 하위 폴더 자동 감지",
+    "Extract archive to…": "다음 위치에 압축 풀기…",
+    "Here (as TAR.GZ)": "여기에 (TAR.GZ로)",
+    "Here (as ZIP)": "여기에 (ZIP으로)"
+  },
+  "nb": {
+    "Compress": "Komprimer",
+    "Compress to…": "Komprimer til…",
+    "Extract": "Pakk ut",
+    "Extract archive here": "Pakk ut arkivet her",
+    "Extract archive here, autodetect subfolder": "Pakk ut arkivet her, oppdag undermappe automatisk",
+    "Extract archive to…": "Pakk ut arkivet til…",
+    "Here (as TAR.GZ)": "Her (som TAR.GZ)",
+    "Here (as ZIP)": "Her (som ZIP)"
+  },
+  "nl": {
+    "Compress": "Comprimeren",
+    "Compress to…": "Comprimeren naar…",
+    "Extract": "Uitpakken",
+    "Extract archive here": "Archief hier uitpakken",
+    "Extract archive here, autodetect subfolder": "Archief hier uitpakken, submap automatisch detecteren",
+    "Extract archive to…": "Archief uitpakken naar…",
+    "Here (as TAR.GZ)": "Hier (als TAR.GZ)",
+    "Here (as ZIP)": "Hier (als ZIP)"
+  },
+  "pl": {
+    "Compress": "Spakuj",
+    "Compress to…": "Spakuj do…",
+    "Extract": "Rozpakuj",
+    "Extract archive here": "Rozpakuj archiwum tutaj",
+    "Extract archive here, autodetect subfolder": "Rozpakuj archiwum tutaj, automatycznie wykryj podkatalog",
+    "Extract archive to…": "Rozpakuj archiwum do…",
+    "Here (as TAR.GZ)": "Tutaj (jako TAR.GZ)",
+    "Here (as ZIP)": "Tutaj (jako ZIP)"
+  },
+  "pt": {
+    "Compress": "Comprimir",
+    "Compress to…": "Comprimir para…",
+    "Extract": "Extrair",
+    "Extract archive here": "Extrair o arquivo aqui",
+    "Extract archive here, autodetect subfolder": "Extrair o arquivo aqui, detetar subpasta automaticamente",
+    "Extract archive to…": "Extrair o arquivo para…",
+    "Here (as TAR.GZ)": "Aqui (como TAR.GZ)",
+    "Here (as ZIP)": "Aqui (como ZIP)"
+  },
+  "pt_BR": {
+    "Compress": "Compactar",
+    "Compress to…": "Compactar para…",
+    "Extract": "Extrair",
+    "Extract archive here": "Extrair arquivo aqui",
+    "Extract archive here, autodetect subfolder": "Extrair arquivo aqui, detectar subpasta automaticamente",
+    "Extract archive to…": "Extrair arquivo para…",
+    "Here (as TAR.GZ)": "Aqui (como TAR.GZ)",
+    "Here (as ZIP)": "Aqui (como ZIP)"
+  },
+  "ro": {
+    "Compress": "Comprimă",
+    "Compress to…": "Comprimă în…",
+    "Extract": "Extrage",
+    "Extract archive here": "Extrage arhiva aici",
+    "Extract archive here, autodetect subfolder": "Extrage arhiva aici, detectează automat subdosarul",
+    "Extract archive to…": "Extrage arhiva în…",
+    "Here (as TAR.GZ)": "Aici (ca TAR.GZ)",
+    "Here (as ZIP)": "Aici (ca ZIP)"
+  },
+  "ru": {
+    "Compress": "Сжать",
+    "Compress to…": "Сжать в…",
+    "Extract": "Распаковать",
+    "Extract archive here": "Распаковать архив сюда",
+    "Extract archive here, autodetect subfolder": "Распаковать архив сюда, автоматически определить подпапку",
+    "Extract archive to…": "Распаковать архив в…",
+    "Here (as TAR.GZ)": "Сюда (как TAR.GZ)",
+    "Here (as ZIP)": "Сюда (как ZIP)"
+  },
+  "sk": {
+    "Compress": "Komprimovať",
+    "Compress to…": "Komprimovať do…",
+    "Extract": "Rozbaliť",
+    "Extract archive here": "Rozbaliť archív sem",
+    "Extract archive here, autodetect subfolder": "Rozbaliť archív sem, automaticky rozpoznať podpriečinok",
+    "Extract archive to…": "Rozbaliť archív do…",
+    "Here (as TAR.GZ)": "Sem (ako TAR.GZ)",
+    "Here (as ZIP)": "Sem (ako ZIP)"
+  },
+  "sv": {
+    "Compress": "Komprimera",
+    "Compress to…": "Komprimera till…",
+    "Extract": "Packa upp",
+    "Extract archive here": "Packa upp arkivet här",
+    "Extract archive here, autodetect subfolder": "Packa upp arkivet här, identifiera undermapp automatiskt",
+    "Extract archive to…": "Packa upp arkivet till…",
+    "Here (as TAR.GZ)": "Här (som TAR.GZ)",
+    "Here (as ZIP)": "Här (som ZIP)"
+  },
+  "th": {
+    "Compress": "บีบอัด",
+    "Compress to…": "บีบอัดไปยัง…",
+    "Extract": "แตกไฟล์",
+    "Extract archive here": "แตกไฟล์บีบอัดที่นี่",
+    "Extract archive here, autodetect subfolder": "แตกไฟล์บีบอัดที่นี่ ตรวจหาโฟลเดอร์ย่อยอัตโนมัติ",
+    "Extract archive to…": "แตกไฟล์บีบอัดไปยัง…",
+    "Here (as TAR.GZ)": "ที่นี่ (เป็น TAR.GZ)",
+    "Here (as ZIP)": "ที่นี่ (เป็น ZIP)"
+  },
+  "tr": {
+    "Compress": "Sıkıştır",
+    "Compress to…": "Şuraya sıkıştır…",
+    "Extract": "Çıkar",
+    "Extract archive here": "Arşivi buraya çıkar",
+    "Extract archive here, autodetect subfolder": "Arşivi buraya çıkar, alt klasörü otomatik algıla",
+    "Extract archive to…": "Arşivi şuraya çıkar…",
+    "Here (as TAR.GZ)": "Buraya (TAR.GZ olarak)",
+    "Here (as ZIP)": "Buraya (ZIP olarak)"
+  },
+  "uk": {
+    "Compress": "Стиснути",
+    "Compress to…": "Стиснути до…",
+    "Extract": "Розпакувати",
+    "Extract archive here": "Розпакувати архів сюди",
+    "Extract archive here, autodetect subfolder": "Розпакувати архів сюди, автоматично визначити підтеку",
+    "Extract archive to…": "Розпакувати архів до…",
+    "Here (as TAR.GZ)": "Сюди (як TAR.GZ)",
+    "Here (as ZIP)": "Сюди (як ZIP)"
+  },
+  "vi": {
+    "Compress": "Nén",
+    "Compress to…": "Nén vào…",
+    "Extract": "Giải nén",
+    "Extract archive here": "Giải nén tệp lưu trữ tại đây",
+    "Extract archive here, autodetect subfolder": "Giải nén tệp lưu trữ tại đây, tự động phát hiện thư mục con",
+    "Extract archive to…": "Giải nén tệp lưu trữ vào…",
+    "Here (as TAR.GZ)": "Tại đây (dạng TAR.GZ)",
+    "Here (as ZIP)": "Tại đây (dạng ZIP)"
+  },
+  "zh_CN": {
+    "Compress": "压缩",
+    "Compress to…": "压缩到…",
+    "Extract": "解压",
+    "Extract archive here": "解压缩到此处",
+    "Extract archive here, autodetect subfolder": "解压缩到此处并自动检测子文件夹",
+    "Extract archive to…": "解压缩到…",
+    "Here (as TAR.GZ)": "此处（TAR.GZ 格式）",
+    "Here (as ZIP)": "此处（ZIP 格式）"
+  },
+  "zh_TW": {
+    "Compress": "壓縮",
+    "Compress to…": "壓縮到…",
+    "Extract": "解壓縮",
+    "Extract archive here": "解壓縮到此處",
+    "Extract archive here, autodetect subfolder": "解壓縮到此處並自動偵測子資料夾",
+    "Extract archive to…": "解壓縮到…",
+    "Here (as TAR.GZ)": "此處（TAR.GZ 格式）",
+    "Here (as ZIP)": "此處（ZIP 格式）"
+  }
+}
