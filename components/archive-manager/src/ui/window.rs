@@ -41,6 +41,9 @@ pub struct InfoPanel {
     pub comment_scroll: gtk::ScrolledWindow,
 }
 
+/// Called on every new row cell; set by `install_dnd`.
+pub type DragHook = Rc<RefCell<Option<Rc<dyn Fn(&gtk::Widget)>>>>;
+
 /// A new archive that has no file yet (Ark writes it with the first files added).
 #[derive(Clone)]
 pub struct Pending {
@@ -81,6 +84,8 @@ pub struct Inner {
     pub closed: Cell<bool>,
     /// Ark D-Bus extraction requests received (drag and drop).
     pub dnd_calls: Cell<u32>,
+    /// Attaches the drag source to each row cell (see `install_dnd`).
+    pub drag_hook: DragHook,
 }
 
 #[derive(Clone)]
@@ -171,7 +176,7 @@ fn compare(a: &EntryObject, b: &EntryObject, key: &str) -> std::cmp::Ordering {
     order.then_with(|| model::natural_cmp(x.name(), y.name()))
 }
 
-fn column(key: &'static str, title: &str) -> gtk::ColumnViewColumn {
+fn column(key: &'static str, title: &str, drag_hook: DragHook) -> gtk::ColumnViewColumn {
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(move |_, item| {
         let item = item.downcast_ref::<gtk::ListItem>().expect("list item");
@@ -185,6 +190,9 @@ fn column(key: &'static str, title: &str) -> gtk::ColumnViewColumn {
             row.append(&label);
             expander.set_child(Some(&row));
             item.set_child(Some(&expander));
+            if let Some(attach) = drag_hook.borrow().as_ref() {
+                attach(expander.upcast_ref());
+            }
         } else {
             let label = gtk::Label::builder().xalign(if matches!(key, "size" | "compressed" | "ratio") { 1.0 } else { 0.0 })
                 .ellipsize(pango::EllipsizeMode::End).build();
@@ -192,6 +200,9 @@ fn column(key: &'static str, title: &str) -> gtk::ColumnViewColumn {
                 label.add_css_class("monospace");
             }
             item.set_child(Some(&label));
+            if let Some(attach) = drag_hook.borrow().as_ref() {
+                attach(label.upcast_ref());
+            }
         }
     });
     factory.connect_bind(move |_, item| {
@@ -329,9 +340,10 @@ impl ArchiveWindow {
         view.set_show_column_separators(false);
         view.set_reorderable(true);
         let titles = column_titles();
+        let drag_hook = DragHook::default();
         let mut columns = Vec::new();
         for (i, (key, _)) in COLUMNS.iter().enumerate() {
-            let c = column(key, &titles[i]);
+            let c = column(key, &titles[i], drag_hook.clone());
             view.append_column(&c);
             columns.push((*key, c));
         }
@@ -431,7 +443,7 @@ impl ArchiveWindow {
             sort_model, columns, search_bar, search, paned, info: InfoPanel { root: info_root, icon, name, details, comment_title, comment, comment_scroll },
             status, progress, cancel, progress_box, job: Rc::default(), busy: Cell::new(false), clipboard: RefCell::new(None),
             exports: RefCell::new(Vec::new()), scratch: RefCell::new(Vec::new()), monitors: RefCell::new(Vec::new()), drag: RefCell::new(None),
-            drop_highlight: Cell::new(false), recent_menu, empty_hint, closed: Cell::new(false), dnd_calls: Cell::new(0),
+            drop_highlight: Cell::new(false), recent_menu, empty_hint, closed: Cell::new(false), dnd_calls: Cell::new(0), drag_hook,
         }));
         this.install_actions();
         this.connect_signals();
@@ -1513,12 +1525,27 @@ impl ArchiveWindow {
     // ------------------------------------------------------------ drag & drop
 
     fn install_dnd(&self) {
+        // The drag source sits on each row cell, not on the view: a row's own click
+        // gesture claims a press on an unselected row, so a view-level source only
+        // started from rows that were already selected (Files does the same).
+        let weak = self.downgrade();
+        *self.drag_hook.borrow_mut() = Some(Rc::new(move |cell: &gtk::Widget| {
+            if let Some(w) = weak.upgrade() {
+                w.attach_drag_source(cell);
+            }
+        }));
+        self.install_drop_target();
+    }
+
+    fn attach_drag_source(&self, cell: &gtk::Widget) {
         // COPY only: other applications must never delete anything; a drop on this window moves.
         let source = gtk::DragSource::builder().actions(gdk::DragAction::COPY).build();
         let weak = self.downgrade();
+        let target = cell.downgrade();
         source.connect_prepare(move |_, x, y| {
-            let w = weak.upgrade()?;
-            w.drag_content(x, y).map(|c| c.upcast())
+            let (w, cell) = (weak.upgrade()?, target.upgrade()?);
+            let point = cell.compute_point(&w.view, &gtk::graphene::Point::new(x as f32, y as f32))?;
+            w.drag_content(point.x() as f64, point.y() as f64).map(|c| c.upcast())
         });
         let weak = self.downgrade();
         source.connect_drag_begin(move |source, _| {
@@ -1544,8 +1571,10 @@ impl ArchiveWindow {
                 }
             });
         });
-        self.view.add_controller(source);
+        cell.add_controller(source);
+    }
 
+    fn install_drop_target(&self) {
         let formats = gdk::ContentFormats::new(&["text/uri-list", dnd::SERVICE]).union(&gdk::ContentFormats::for_type(gdk::FileList::static_type()));
         let target = gtk::DropTargetAsync::new(Some(formats), gdk::DragAction::COPY);
         let weak = self.downgrade();

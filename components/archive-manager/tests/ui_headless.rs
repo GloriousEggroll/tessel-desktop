@@ -870,11 +870,19 @@ fn test_real_drag_from_the_archive_into_files(f: &mut Fixture) -> Outcome {
         };
         let bounds = label.compute_bounds(&window.window).ok_or("no bounds")?;
         let (x, y) = ((bounds.x() + 10.0) as f64, (bounds.y() + bounds.height() / 2.0) as f64);
+        // Start on an unselected row and move right away, as a user does: the
+        // drag must not need a first click to select the row.
+        window.selection.unselect_all();
         let mut pointer = pointer::Pointer::new((geometry.width() as u32, geometry.height() as u32))?;
         pointer.move_to(x, y);
         settle(0.3);
         pointer.button(true);
-        settle(0.2);
+        settle(0.01);
+        // Small first steps like a real mouse, then the long way to Files.
+        for step in 1..=12 {
+            pointer.move_to(x + step as f64, y);
+            settle(0.01);
+        }
         for step in 1..=30 {
             pointer.move_to(x + (960.0 - x) * step as f64 / 30.0, y + (350.0 - y) * step as f64 / 30.0);
             settle(0.03);
