@@ -43,7 +43,8 @@ runs only with --restart --restart-shell inside the labwc session; otherwise run
 --no-reload to skip it).
 
 System-wide entries (--system): the standalone apps desktop-apps/install.py puts in /usr/local
-(calculator, text-editor, picture-viewer, system-monitor, capture-manager, file-manager) and the
+(calculator, text-editor, picture-viewer, system-monitor, capture-manager, file-manager), the new
+archive-manager (a fresh install: there is no Python twin, it replaces KDE's Ark) and the
 Waylogin greeter (login-manager, /usr/local/lib/waylogin). They are a separate mode:
   install.py --system [--check] [--only a,b]          preview (works as your user)
   pkexec /usr/bin/python3 install.py --system --apply --only calculator
@@ -56,6 +57,10 @@ changes (the "# Desktop suite standalone application" marker line stays; a "desk
 line is added, so desktop-apps/install.py and file-manager/install.py keep the Rust launcher).
 login-manager changes only start-greeter's `--session` argument. State and backups live in
 /var/lib/desktop-suite/rust-swap.json and /var/backups/desktop-suite/rust-swap-*/.
+
+archive-manager-mime (user scope, only with --only archive-manager-mime) sets the [Default Applications]
+of ~/.config/mimeapps.list for every archive type to org.waydock.ArchiveManager.desktop; --rollback --only
+archive-manager-mime puts back the previous values of the keys that still point at Archive Manager.
 
 home-assistant-screen targets the Kasumi device (aarch64): it is planned and installed only into an
 explicit --target-root (the Kasumi user's home as mounted or staged here, never this machine's home),
@@ -156,6 +161,13 @@ class TextEdit:
 
 
 @dataclass(frozen=True)
+class MimeDefaults:
+    path: str                 # home-relative mimeapps.list
+    desktop: str              # desktop id every listed mime type defaults to
+    mimes: tuple              # the mime types ([Default Applications] keys)
+
+
+@dataclass(frozen=True)
 class Component:
     key: str
     package: str              # cargo package (components/<package>)
@@ -183,9 +195,27 @@ class Component:
     arch: str = None                      # "aarch64": ELF binaries must be built for it (Kasumi)
     refuse_while_active: tuple = ()       # units that must be inactive for --apply (the locker)
     warning: str = None                   # printed by --check and after --apply
+    fresh: bool = False                   # no Python original: launcher/files are created, --rollback removes them
+    files: tuple = ()                     # (path relative to the base, repo source, mode) installed verbatim
+    mime_defaults: tuple = ()             # MimeDefaults: only these keys of [Default Applications] change
+    uses_locale: bool = True              # user entries: needs the shared catalogs in ~/.local/share/desktop-suite
+    explicit: bool = False                # only with --only <key> (never part of "every component")
 
 
 POPUP = ("--popup", "--popup-edge", "--popup-offset")
+ARCHIVE_DESKTOP = "org.waydock.ArchiveManager.desktop"
+ARCHIVE_DESKTOP_SOURCE = "components/archive-manager/data/" + ARCHIVE_DESKTOP
+
+
+def desktop_mimes(relative):
+    """The MimeType= list of a desktop file in the repository (the single source of the archive types)."""
+    for line in (REPO / relative).read_text().splitlines():
+        if line.startswith("MimeType="):
+            return tuple(m for m in line[len("MimeType="):].split(";") if m)
+    return ()
+
+
+ARCHIVE_MIMES = desktop_mimes(ARCHIVE_DESKTOP_SOURCE)
 APPS = ".local/share/applications"
 # Python installers that copy every component *.py back, so they overwrite every shim.
 CLOBBER_ALL = ("shared/install_gtk4.py", "install_all.py")
@@ -573,6 +603,19 @@ COMPONENTS = (
           "Verify: wayfiles --check, open Home, right-click a file near the screen middle, Ctrl+Q.")),
     )),
     Component(
+        "archive-manager", "archive-manager", "archive-manager", ("wayarchive",), shims=(),
+        launchers=((f"{SYSTEM_BIN}/wayarchive", None, f"{SYSTEM_LIB}/archive-manager/wayarchive"),),
+        files=((f"usr/local/share/applications/{ARCHIVE_DESKTOP}", ARCHIVE_DESKTOP_SOURCE, 0o644),),
+        base=SYSTEM_LIB, scope="system", locale_dir="locale", fresh=True, requires_rpms=("libarchive",),
+        notes=("A fresh install (there is no Python twin, it replaces KDE's Ark): the binary, its catalogs, the "
+               "/usr/local/bin/wayarchive launcher (standalone + desktop-suite-rust markers) and "
+               f"/usr/local/share/applications/{ARCHIVE_DESKTOP} are created; --system --rollback --only "
+               "archive-manager removes exactly those (and the folders it created, once empty).",
+               "Optional tools used when present: 7z (7zip-standalone), zip/unzip/zipinfo/zipnote, unar/lsar; lzop, "
+               "lrzip and lzip for those tar filters. libarchive.so.13 is linked by soname.",
+               "Default handler for archives: user-scope entry archive-manager-mime (only with --only).",
+               "Verify: wayarchive --check, then open an archive and drag an entry into Files.")),
+    Component(
         "login-manager", "login-manager", "waylogin", ("login-ui", "session-transition", "login-settings-helper"),
         shims=(),
         edits=(TextEdit("usr/local/lib/waylogin/start-greeter",
@@ -596,6 +639,15 @@ COMPONENTS = (
                  + " --system --rollback --only login-manager  (or copy start-greeter back from the backup printed "
                  "above: /var/backups/desktop-suite/rust-swap-*/usr/local/lib/waylogin/start-greeter), then "
                  "`sudo systemctl restart waylogin.service` from that TTY to get the Python greeter back.")),
+    # ---- explicit user entries (never part of a plain --apply) -----------------------------------
+    Component(
+        "archive-manager-mime", "archive-manager", "", (), shims=(), base=".config", fresh=True, uses_locale=False,
+        explicit=True, mime_defaults=(MimeDefaults(".config/mimeapps.list", ARCHIVE_DESKTOP, ARCHIVE_MIMES),),
+        notes=("Makes Archive Manager the default application for every archive type it opens: only those keys of "
+               "[Default Applications] in ~/.config/mimeapps.list change (Ark's [Added Associations] lines and every "
+               "other byte stay). Install the system entry archive-manager first.",
+               "--rollback --only archive-manager-mime restores the previous defaults (keys you changed since are "
+               "left alone). Runs only when named: --apply --only archive-manager-mime.")),
     # ---- --target-root entry (the Kasumi device, aarch64) --------------------------------------
     Component(
         "home-assistant-screen", "home-assistant-screen", "screensaver", ("luna-clock", "voice-controls"),
@@ -795,6 +847,90 @@ def edit_state(home, edit):
     old, new = edit_strings(home, edit)
     text = path.read_text(errors="replace")
     return "rust" if new in text else "python" if old in text else "other"
+
+
+def mimeapps_section(lines):
+    """(start, end) line indices of the [Default Applications] body, or None."""
+    for index, line in enumerate(lines):
+        if line.strip() == "[Default Applications]":
+            end = index + 1
+            while end < len(lines) and not lines[end].lstrip().startswith("["):
+                end += 1
+            return index + 1, end
+    return None
+
+
+def mimeapps_swap_text(text, mimes, desktop):
+    """(new text, {mime: [original values] or None}): each key of [Default Applications] set to `desktop`."""
+    lines = text.splitlines(keepends=True)
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    section = mimeapps_section(lines)
+    if section is None:
+        if lines and lines[-1].strip():
+            lines.append("\n")
+        lines.append("[Default Applications]\n")
+        section = (len(lines), len(lines))
+    start, end = section
+    value = f"{desktop};"
+    originals, seen = {}, set()
+    for index in range(start, end):
+        key, sep, current = lines[index].rstrip("\n").partition("=")
+        if sep and key.strip() in mimes:
+            originals.setdefault(key.strip(), []).append(current)
+            seen.add(key.strip())
+            lines[index] = f"{key.strip()}={value}\n"
+    insert = end
+    while insert > start and not lines[insert - 1].strip():
+        insert -= 1
+    added = [f"{mime}={value}\n" for mime in mimes if mime not in seen]
+    for mime in mimes:
+        if mime not in seen:
+            originals[mime] = None
+    lines[insert:insert] = added
+    return "".join(lines), originals
+
+
+def mimeapps_revert_text(text, originals, desktop):
+    """Put back the original values of keys that still point at `desktop` (added keys go)."""
+    lines = text.splitlines(keepends=True)
+    section = mimeapps_section(lines)
+    if section is None:
+        return text
+    start, end = section
+    value = f"{desktop};"
+    used = {}
+    keep = []
+    for index, line in enumerate(lines):
+        key, sep, current = line.rstrip("\n").partition("=")
+        key = key.strip()
+        if start <= index < end and sep and key in originals and current == value:
+            original = originals[key]
+            if original is None:
+                continue
+            n = used.get(key, 0)
+            used[key] = n + 1
+            if n < len(original):
+                keep.append(f"{key}={original[n]}\n")
+            continue
+        keep.append(line)
+    return "".join(keep)
+
+
+def mime_state(home, defaults):
+    path = home / defaults.path
+    if not path.is_file() or path.is_symlink():
+        return "missing"
+    lines = path.read_text(errors="replace").splitlines()
+    section = mimeapps_section(lines)
+    if section is None:
+        return "other"
+    values = {}
+    for line in lines[section[0]:section[1]]:
+        key, sep, current = line.partition("=")
+        if sep:
+            values.setdefault(key.strip(), current.split(";")[0])
+    return "rust" if all(values.get(m) == defaults.desktop for m in defaults.mimes) else "other"
 
 
 def elf_machine(path):
@@ -1000,7 +1136,7 @@ def is_shim(path):
 def plan_component(component, home, sources, locale_source=None):
     """[Change] for one component (unchanged files left out) and [problem] that block the swap."""
     changes, problems = [], []
-    if not component_dir(home, component).is_dir():
+    if not component.fresh and not component_dir(home, component).is_dir():
         if component.optional:
             return changes, []
         return changes, [f"{component.base}/{component.dir} is not installed; install the Python component first"]
@@ -1054,14 +1190,43 @@ def plan_component(component, home, sources, locale_source=None):
     for launcher in component.launchers:
         relative, porter, entry = launcher_spec(component, launcher)
         path = home / relative
+        data = launcher_text(component, home, porter).encode()
+        if component.fresh:
+            if path.is_symlink() or (path.exists() and path.read_bytes() != data
+                                     and SHIM_MARKER not in path.read_text(errors="replace")):
+                problems.append(f"{relative} exists and was not installed by this tool; not replaced")
+            elif not path.exists() or path.read_bytes() != data:
+                changes.append(Change(component.key, path, "launcher", data, 0o755,
+                                      f"new launcher: exec {binary_path(home, component, main_binary(component))}"))
+            continue
         if not path.is_file():
             continue
-        data = launcher_text(component, home, porter).encode()
         text = path.read_text(errors="replace")
         if path.read_bytes() != data and (entry in text or path.is_symlink()):
             changes.append(Change(component.key, path, "launcher", data, stat.S_IMODE(path.lstat().st_mode),
                                   f"exec {binary_path(home, component, main_binary(component))}"
                                   + (f" ({porter})" if porter else "")))
+    for relative, source, mode in component.files:
+        path = home / relative
+        data = (REPO / source).read_bytes()
+        if path.is_symlink():
+            problems.append(f"{relative} is a symlink; not replaced")
+        elif current_digest(path) != digest(data) or stat.S_IMODE(path.stat().st_mode) != mode:
+            changes.append(Change(component.key, path, "desktop" if relative.endswith(".desktop") else "file", data, mode,
+                                  f"from {source}", REPO / source))
+    for defaults in component.mime_defaults:
+        path = home / defaults.path
+        if path.is_symlink():
+            problems.append(f"{defaults.path} is a symlink; not edited")
+            continue
+        text = path.read_text() if path.is_file() else ""
+        new, originals = mimeapps_swap_text(text, defaults.mimes, defaults.desktop)
+        if new != text:
+            changed = sorted(m for m in defaults.mimes if originals.get(m) != [f"{defaults.desktop};"])
+            changes.append(Change(component.key, path, "mimeapps", new.encode(), stat.S_IMODE(path.stat().st_mode)
+                                  if path.exists() else 0o644,
+                                  f"[Default Applications]: {len(changed)} archive types -> {defaults.desktop}",
+                                  commands=originals))
     for relative in component.desktop:
         path = home / relative
         if not path.is_file():
@@ -1215,7 +1380,7 @@ def build(components):
 
 
 def needs_shared_locale(components):
-    return any(component.scope != "system" for component in components)
+    return any(component.scope != "system" and component.uses_locale for component in components)
 
 
 def apply(home, components, sources, locale_source, system=False):
@@ -1288,6 +1453,11 @@ def apply(home, components, sources, locale_source, system=False):
     return planned
 
 
+def mime_desktop(group):
+    defaults = BY_KEY[group].mime_defaults
+    return defaults[0].desktop if defaults else ARCHIVE_DESKTOP
+
+
 def restore(path, before):
     if before["kind"] == "file":
         atomic_write(path, before["data"], before["mode"])
@@ -1314,6 +1484,10 @@ def rollback_plan(home, keys, state):
                     and path.is_file() and group in BY_KEY and record.get("commands") \
                     and rc_revert_text(path.read_text(), BY_KEY[group], record["commands"]) != path.read_text():
                 steps.append((group, path, record, "revert"))     # edited since the swap: undo only our commands
+            elif current_digest(path) != record["installed_sha256"] and record.get("kind") == "mimeapps" \
+                    and path.is_file() and group in BY_KEY and record.get("commands") \
+                    and mimeapps_revert_text(path.read_text(), record["commands"], mime_desktop(group)) != path.read_text():
+                steps.append((group, path, record, "revert"))     # edited since the swap: undo only our defaults
             elif current_digest(path) != record["installed_sha256"] and record.get("kind") == "edit" \
                     and path.is_file() and record.get("replacements") \
                     and edit_revert_text(path.read_text(), record["replacements"]) != path.read_text():
@@ -1339,6 +1513,8 @@ def rollback(home, keys, preview, force=False, system=False):
                  "refuse": "  (now a symlink)",
                  "revert": "  (changed since the swap; only the swapped keybind commands are put back)"
                            if record.get("kind") == "rcxml" else
+                           "  (changed since the swap; only the archive defaults still set by the swap are put back)"
+                           if record.get("kind") == "mimeapps" else
                            "  (changed since the swap; only the swapped text is put back)"}.get(action, "")
         if action == "keep" and force:
             label, extra = "restore", "  (changed since the swap; --force)"
@@ -1357,7 +1533,10 @@ def rollback(home, keys, preview, force=False, system=False):
         if current["kind"] == "file":
             atomic_write(backup / path.relative_to(home), current["data"], current["mode"])
         manifest.append({"path": str(path), "component": group, "before": current["kind"], "restored": record["before"]})
-        if action == "revert" and record.get("kind") == "edit":
+        if action == "revert" and record.get("kind") == "mimeapps":
+            atomic_write(path, mimeapps_revert_text(path.read_text(), record["commands"], mime_desktop(group)).encode(),
+                         current["mode"])
+        elif action == "revert" and record.get("kind") == "edit":
             atomic_write(path, edit_revert_text(path.read_text(), record["replacements"]).encode(), current["mode"])
         elif action == "revert":
             atomic_write(path, rc_revert_text(path.read_text(), BY_KEY[group], record["commands"]).encode(),
@@ -1473,6 +1652,7 @@ def component_status(home, component, processes, state):
                             "rss_kb": info["rss_kb"] if info else 0}
     keybinds = keybind_states(home, component)
     edits = {edit.path: edit_state(home, edit) for edit in component.edits}
+    edits.update({defaults.path: mime_state(home, defaults) for defaults in component.mime_defaults})
     running = [dict(info, impl=impl) for info in processes for impl in [classify(info, home, component)] if impl]
     configured = (list(shims.values()) + [v for v in launchers.values() if v != "other"]
                   + ["rust" if u["dropin"] else "python" for u in units.values()]
@@ -1608,7 +1788,7 @@ SCOPE_FLAG = {"user": "neither --system nor --target-root", "system": "--system"
 def selected(only, scope="user"):
     """The components of one mode: all of its scope, or the --only keys (which must belong to it)."""
     if not only:
-        return [component for component in COMPONENTS if component.scope == scope]
+        return [component for component in COMPONENTS if component.scope == scope and not component.explicit]
     keys = [key.strip() for key in only.split(",") if key.strip()]
     unknown = [key for key in keys if key not in BY_KEY]
     if unknown:

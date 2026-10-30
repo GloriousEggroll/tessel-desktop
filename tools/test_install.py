@@ -25,7 +25,8 @@ import install  # noqa: E402
 REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir).resolve()
 SCRATCH = Path(os.environ.get("TMPDIR") or f"/run/user/{os.getuid()}/cbt/rust-installer")
 DSA_PROBE = 'grep -q -E -e "[\\"\']$2[\\"\']" "$1"'   # supports() in desktop-suite-action
-USER = [c for c in install.COMPONENTS if c.scope == "user"]
+USER = [c for c in install.COMPONENTS if c.scope == "user" and not c.explicit]
+EXPLICIT = [c for c in install.COMPONENTS if c.explicit]
 SYSTEM = [c for c in install.COMPONENTS if c.scope == "system"]
 SYSTEM_SKIP = ("var/lib/desktop-suite", "var/backups")
 # Runs install.py as if euid were 0 (only ever together with --root <private prefix>; see run_system).
@@ -808,6 +809,8 @@ class InstallerTest(unittest.TestCase):
         root = self.root / "sysroot"
         lib = root / install.SYSTEM_LIB
         for component in SYSTEM:
+            if component.fresh:
+                continue                     # no Python original (archive-manager)
             directory = root / scripts(component)
             directory.mkdir(parents=True, exist_ok=True)
             for keep in component.keeps:
@@ -912,6 +915,95 @@ class InstallerTest(unittest.TestCase):
         self.run_system(root, "--rollback")
         self.assertEqual(tree(root, skip=("var",)), before)
         self.assertEqual(json.loads((root / install.SYSTEM_STATE).read_text())["components"], {})
+
+    def test_archive_manager_is_a_fresh_install_and_rolls_back_to_nothing(self):
+        root = self.populate_system()
+        before = tree(root, skip=("var",))
+        self.assertFalse((root / install.SYSTEM_LIB / "archive-manager").exists())
+        out = self.run_system(root, "--check", "--only", "archive-manager", euid0=False).stdout
+        self.assertIn("create  launcher", out)
+        self.assertIn(f"usr/local/share/applications/{install.ARCHIVE_DESKTOP}", out)
+        self.assertEqual(tree(root, skip=("var",)), before)
+        self.run_system(root, "--apply", "--only", "archive-manager")
+        directory = root / install.SYSTEM_LIB / "archive-manager"
+        self.assertEqual((directory / "wayarchive").read_text(), (self.prebuilt / "wayarchive").read_text())
+        self.assertEqual(stat.S_IMODE((directory / "wayarchive").stat().st_mode), 0o755)
+        self.assertEqual(json.loads((directory / "locale/de.json").read_text()), {"Hello": "de"})
+        launcher = root / install.SYSTEM_BIN / "wayarchive"
+        lines = launcher.read_text().splitlines()
+        self.assertEqual(lines[:2], ["#!/bin/sh", install.STANDALONE_MARKER])
+        self.assertIn(install.SHIM_MARKER, lines[2])
+        self.assertEqual(lines[3], f"exec {directory / 'wayarchive'} \"$@\"")
+        ran = subprocess.run([str(launcher), "--check"], capture_output=True, text=True, env=self.env())
+        self.assertEqual(ran.stdout.strip(), "rust-wayarchive-v1 --check")
+        desktop = root / f"usr/local/share/applications/{install.ARCHIVE_DESKTOP}"
+        self.assertEqual(desktop.read_bytes(), (install.REPO / install.ARCHIVE_DESKTOP_SOURCE).read_bytes())
+        self.assertEqual(stat.S_IMODE(desktop.stat().st_mode), 0o644)
+        self.assertIn("application/x-7z-compressed", install.ARCHIVE_MIMES)
+        status = json.loads(self.run_system(root, "--status", "--json", "--only", "archive-manager", euid0=False).stdout)
+        self.assertEqual(status[0]["configured"], "rust")
+        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", "archive-manager").stdout)
+        # Someone else's wayarchive launcher is never replaced.
+        self.run_system(root, "--rollback", "--only", "archive-manager")
+        self.assertEqual(tree(root, skip=("var",)), before)
+        foreign = root / install.SYSTEM_BIN / "wayarchive"
+        foreign.write_text("#!/bin/sh\nexec /opt/other/wayarchive \"$@\"\n")
+        result = self.run_system(root, "--apply", "--only", "archive-manager", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("was not installed by this tool", result.stderr)
+        self.assertFalse((root / install.SYSTEM_LIB / "archive-manager").exists())
+
+    def test_archive_mime_defaults_only_when_named_and_revert_only_our_keys(self):
+        mimeapps = self.home / ".config/mimeapps.list"
+        mimeapps.parent.mkdir(parents=True, exist_ok=True)
+        original = ("[Default Applications]\ninode/directory=org.waydock.Files.desktop\n"
+                    "application/zip=org.kde.ark.desktop;\napplication/x-tar=org.kde.ark.desktop;\n"
+                    "text/plain=org.waydock.TextEditor.desktop\n\n"
+                    "[Added Associations]\napplication/zip=org.kde.ark.desktop;\n")
+        mimeapps.write_text(original)
+        self.run_installer("--apply", "--only", "keep-awake")
+        self.assertEqual(mimeapps.read_text(), original)          # not part of the other user entries
+        self.assertNotIn("archive-manager-mime", self.run_installer("--check").stdout)
+        self.run_installer("--apply", "--only", "archive-manager-mime")
+        text = mimeapps.read_text()
+        defaults = text.split("[Added Associations]")[0]
+        for mime in install.ARCHIVE_MIMES:
+            self.assertEqual(defaults.count(f"\n{mime}={install.ARCHIVE_DESKTOP};\n"), 1, mime)
+        self.assertIn("inode/directory=org.waydock.Files.desktop\n", text)
+        self.assertIn("text/plain=org.waydock.TextEditor.desktop\n", text)
+        self.assertTrue(text.endswith("[Added Associations]\napplication/zip=org.kde.ark.desktop;\n"))
+        self.assertEqual(self.statuses("archive-manager-mime")["archive-manager-mime"]["configured"], "rust")
+        backups = list((self.home / install.BACKUPS).glob("rust-swap-*/.config/mimeapps.list"))
+        self.assertEqual([b.read_text() for b in backups], [original])
+        # unchanged since: exact restore
+        self.run_installer("--rollback", "--only", "archive-manager-mime")
+        self.assertEqual(mimeapps.read_text(), original)
+        # changed since (another default chosen, a new line): only our keys go back
+        self.run_installer("--apply", "--only", "archive-manager-mime")
+        edited = mimeapps.read_text().replace(f"application/x-tar={install.ARCHIVE_DESKTOP};",
+                                              "application/x-tar=org.gnome.FileRoller.desktop;")
+        edited = edited.replace("text/plain=org.waydock.TextEditor.desktop\n", "text/plain=gedit.desktop\n")
+        mimeapps.write_text(edited)
+        self.assertIn("revert", self.run_installer("--rollback", "--check", "--only", "archive-manager-mime").stdout)
+        self.run_installer("--rollback", "--only", "archive-manager-mime")
+        self.assertEqual(mimeapps.read_text(), original.replace("application/x-tar=org.kde.ark.desktop;",
+                                                                "application/x-tar=org.gnome.FileRoller.desktop;")
+                         .replace("text/plain=org.waydock.TextEditor.desktop", "text/plain=gedit.desktop"))
+        # no mimeapps.list at all: created, and removed again
+        mimeapps.unlink()
+        self.run_installer("--apply", "--only", "archive-manager-mime")
+        self.assertTrue(mimeapps.read_text().startswith("[Default Applications]\n"))
+        self.run_installer("--rollback", "--only", "archive-manager-mime")
+        self.assertFalse(mimeapps.exists())
+
+    def test_mimeapps_text_helpers(self):
+        text = "# comment\n[Default Applications]\na/b=x.desktop;\na/b=y.desktop;\n\n[Other]\nc/d=z\n"
+        new, originals = install.mimeapps_swap_text(text, ("a/b", "c/d"), "w.desktop")
+        self.assertEqual(new, "# comment\n[Default Applications]\na/b=w.desktop;\na/b=w.desktop;\nc/d=w.desktop;\n\n[Other]\nc/d=z\n")
+        self.assertEqual(originals, {"a/b": ["x.desktop;", "y.desktop;"], "c/d": None})
+        self.assertEqual(install.mimeapps_revert_text(new, originals, "w.desktop"), text)
+        new, originals = install.mimeapps_swap_text("[Other]\nk=v", ("a/b",), "w.desktop")
+        self.assertEqual(new, "[Other]\nk=v\n\n[Default Applications]\na/b=w.desktop;\n")
 
     def test_desktop_apps_guard_keeps_the_rust_launcher(self):
         """~/btmanager/desktop-apps/install.py (loaded, never run) skips launchers carrying the swap marker."""
