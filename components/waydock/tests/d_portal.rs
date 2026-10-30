@@ -120,7 +120,7 @@ fn portal_color_scheme_on_private_bus() {
         let appearance = AppearanceController::new(
             Some(Box::new(move |c: &AppearanceController| sink.borrow_mut().push((c.is_dark(), c.icon_theme_name())))),
             ControllerOptions { settings: Some(settings.clone()), icon_theme: Some(Rc::new(Icons(vec![icons.clone()]))),
-                                portal: PortalSource::Connection(client), no_gtk_defaults: true });
+                                portal: PortalSource::Connection(client), desktop_icon_theme: None, no_gtk_defaults: true });
         appearance.start();
         assert_eq!(events.borrow()[0], (false, Some("Papirus-Light".into())), "GTK fallback first");
         assert!(settle(&context, 3.0, || appearance.is_dark()), "initial ReadAll applies portal dark");
