@@ -311,6 +311,8 @@ fn teardown(fixture: &Fixture) {
     *hooks.run_operation.borrow_mut() = None;
     *hooks.folder_index.borrow_mut() = None;
     *hooks.classify_delay.borrow_mut() = None;
+    *hooks.spawner.borrow_mut() = None;
+    remove_fake_wayarchive();
     for window in fixture.app.app.windows() {
         window.close();
     }
@@ -1336,6 +1338,10 @@ fn more_checks() -> Vec<(&'static str, Check)> {
         ("test_stale_lookup_invalid_path_and_tab_switch_never_restore_old_suggestions", test_stale_lookup_invalid_path_and_tab_switch_never_restore_old_suggestions),
         ("test_both_panes_and_preview_width_restore_after_reopening", test_both_panes_and_preview_width_restore_after_reopening),
         ("test_selection_title_follows_folder_and_multi_selection", test_selection_title_follows_folder_and_multi_selection),
+        ("test_archive_service_menus_follow_the_selection", test_archive_service_menus_follow_the_selection),
+        ("test_without_wayarchive_the_internal_archive_items_remain", test_without_wayarchive_the_internal_archive_items_remain),
+        ("test_archive_service_actions_run_wayarchive_and_the_folder_updates", test_archive_service_actions_run_wayarchive_and_the_folder_updates),
+        ("test_archive_service_submenus_screenshot", test_archive_service_submenus_screenshot),
     ]
 }
 
@@ -2614,5 +2620,301 @@ fn test_git_status_labels_appear_and_refresh_is_throttled(f: &mut Fixture) -> Ou
     let alpha = f.source.join("Alpha.txt").to_string_lossy().into_owned();
     wait!(6.0, || pane.git_status().get(&alpha).is_some());
     ensure!(pane.icons.factory() == factories);
+    Ok(())
+}
+
+// ------------------------------------------ archive service menus (wayarchive)
+
+/// $R (the run's private root): TMPDIR is $R/tmp.
+fn run_root() -> PathBuf {
+    std::env::temp_dir().parent().unwrap().to_path_buf()
+}
+
+fn fake_wayarchive() -> PathBuf {
+    run_root().join("bin/wayarchive")
+}
+
+fn wayarchive_log() -> PathBuf {
+    std::env::temp_dir().join("wayarchive.log")
+}
+
+/// Install `$R/bin/wayarchive`, which records its cwd and argv and, unless a
+/// dialog was asked for, creates something where the real one would.
+fn install_fake_wayarchive() {
+    let script = format!(r#"#!/bin/sh
+{{ printf 'cwd=%s\n' "$PWD"; for a in "$0" "$@"; do printf 'arg=%s\n' "$a"; done; printf 'end\n'; }} >> "{log}"
+dest=$PWD; prev=; ext=
+for a in "$@"; do
+  [ "$prev" = --destination ] && dest=$a
+  [ "$prev" = --autofilename ] && ext=$a
+  prev=$a
+done
+case " $* " in *" --dialog "*) exit 0;; esac
+if [ -n "$ext" ]; then : > "$dest/Made by fake.$ext"; else mkdir -p "$dest/Extracted by fake"; fi
+"#, log = wayarchive_log().display());
+    std::fs::write(fake_wayarchive(), script).unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(fake_wayarchive(), std::fs::Permissions::from_mode(0o755)).unwrap();
+    let _ = std::fs::remove_file(wayarchive_log());
+    wayfiles::service_menu::forget_archive_manager();
+}
+
+fn remove_fake_wayarchive() {
+    let _ = std::fs::remove_file(fake_wayarchive());
+    wayfiles::service_menu::forget_archive_manager();
+}
+
+/// Completed (cwd, argv) records of the fake.
+fn wayarchive_calls() -> Vec<(String, Vec<String>)> {
+    let text = std::fs::read_to_string(wayarchive_log()).unwrap_or_default();
+    let (mut calls, mut cwd, mut argv) = (Vec::new(), String::new(), Vec::new());
+    for line in text.lines() {
+        if let Some(value) = line.strip_prefix("cwd=") {
+            cwd = value.to_owned();
+            argv.clear();
+        } else if let Some(value) = line.strip_prefix("arg=") {
+            argv.push(value.to_owned());
+        } else if line == "end" {
+            calls.push((std::mem::take(&mut cwd), std::mem::take(&mut argv)));
+        }
+    }
+    calls
+}
+
+/// Stands in for systemd-run: records its argv, then runs the real
+/// `wayfiles --launch-helper …` part after `--` (the helper spawns the fake
+/// `wayarchive` detached, as inside the app service).
+struct HelperSpawner {
+    commands: Rc<RefCell<Vec<Vec<String>>>>,
+}
+
+impl waydock::core::spawn::Spawner for HelperSpawner {
+    fn spawn(&self, argv: &[String], _environment: Option<&[(String, String)]>, on_finish: waydock::core::spawn::FinishFn) -> Result<(), glib::Error> {
+        self.commands.borrow_mut().push(argv.to_vec());
+        let start = argv.iter().position(|a| a == "--").map(|i| i + 1).unwrap_or(argv.len());
+        let helper = &argv[start..];
+        let output = Command::new(env!("CARGO_BIN_EXE_wayfiles")).args(&helper[1.min(helper.len())..]).output();
+        glib::idle_add_local_once(move || match output {
+            Ok(output) => on_finish(Ok((output.status.success(), String::from_utf8_lossy(&output.stderr).into_owned()))),
+            Err(error) => on_finish(Err(glib::Error::new(gio::IOErrorEnum::Failed, &error.to_string()))),
+        });
+        Ok(())
+    }
+}
+
+fn archive_fixture(f: &Fixture) -> Outcome {
+    files_ops::tools::create_archive(&[f.source.join("Alpha.txt")], &f.source.join("Pack.zip"), None, None).map_err(|e| e.to_string())?;
+    files_ops::tools::create_archive(&[f.source.join("Beta.txt")], &f.source.join("Bundle.tar.gz"), None, None).map_err(|e| e.to_string())?;
+    wait!(|| f.names().contains(&"Pack.zip".to_string()) && f.names().contains(&"Bundle.tar.gz".to_string()));
+    Ok(())
+}
+
+fn select_names(f: &Fixture, names: &[&str]) -> Outcome {
+    let pane = f.pane();
+    let selection = pane.selection();
+    selection.unselect_all();
+    let visible = f.names();
+    for name in names {
+        let index = visible.iter().position(|n| n == name).ok_or(format!("no {name} in {visible:?}"))?;
+        selection.select_item(index as u32, false);
+    }
+    ensure_eq!(f.selected_names().len(), names.len());
+    Ok(())
+}
+
+/// Open the selection's context menu (no pointer: keeps a multi-selection).
+fn open_selection_menu(f: &Fixture) -> Outcome {
+    let name = f.selected_names().first().cloned().ok_or("nothing selected")?;
+    let anchor = f.tile(&name).ok_or("no tile")?;
+    f.window.context_menu(&f.pane(), anchor.upcast_ref(), 5., 5.);
+    wait!(|| f.popover_visible());
+    Ok(())
+}
+
+const EXTRACT_ACTIONS: [&str; 3] = ["win.archive-extract-here", "win.archive-extract-to", "win.archive-extract-subfolder"];
+const COMPRESS_ACTIONS: [&str; 3] = ["win.archive-compress-tar-gz", "win.archive-compress-zip", "win.archive-compress-to"];
+
+fn has_all(f: &Fixture, actions: &[&str]) -> bool {
+    actions.iter().all(|a| f.menu_action(a).is_some())
+}
+
+fn has_none(f: &Fixture, actions: &[&str]) -> bool {
+    actions.iter().all(|a| f.menu_action(a).is_none())
+}
+
+/// The submenu titled `title` in the open context menu, as (action, label)s.
+fn submenu_items(f: &Fixture, title: &str) -> Option<Vec<(String, String)>> {
+    let popover = f.popover();
+    let menu = popover.downcast_ref::<gtk::PopoverMenu>()?.menu_model()?;
+    fn find(model: &gio::MenuModel, title: &str) -> Option<gio::MenuModel> {
+        for index in 0..model.n_items() {
+            let label = model.item_attribute_value(index, "label", None).and_then(|v| v.str().map(str::to_string));
+            if let Some(sub) = model.item_link(index, "submenu") {
+                if label.as_deref() == Some(title) {
+                    return Some(sub);
+                }
+            }
+            if let Some(section) = model.item_link(index, "section") {
+                if let Some(found) = find(&section, title) {
+                    return Some(found);
+                }
+            }
+        }
+        None
+    }
+    let sub = find(&menu, title)?;
+    Some((0..sub.n_items()).map(|i| {
+        let get = |key: &str| sub.item_attribute_value(i, key, None).and_then(|v| v.str().map(str::to_string)).unwrap_or_default();
+        (get("action"), get("label"))
+    }).collect())
+}
+
+fn pairs(items: &[(&str, &str)]) -> Vec<(String, String)> {
+    items.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()
+}
+
+fn test_archive_service_menus_follow_the_selection(f: &mut Fixture) -> Outcome {
+    archive_fixture(f)?;
+    install_fake_wayarchive();
+    // One archive: Extract and Compress submenus replace Compress…/Extract….
+    select_names(f, &["Pack.zip"])?;
+    open_selection_menu(f)?;
+    ensure!(has_all(f, &EXTRACT_ACTIONS) && has_all(f, &COMPRESS_ACTIONS), "{:?}", f.menu_actions());
+    ensure!(f.menu_action("win.compress").is_none() && f.menu_action("win.extract").is_none());
+    ensure!(f.menu_action("win.browse-archive").is_some());
+    ensure_eq!(submenu_items(f, "Extract").unwrap(), pairs(&[
+        ("win.archive-extract-here", "Extract archive here"),
+        ("win.archive-extract-to", "Extract archive to…"),
+        ("win.archive-extract-subfolder", "Extract archive here, autodetect subfolder")]));
+    ensure_eq!(submenu_items(f, "Compress").unwrap(), pairs(&[
+        ("win.archive-compress-tar-gz", "Here (as TAR.GZ)"),
+        ("win.archive-compress-zip", "Here (as ZIP)"),
+        ("win.archive-compress-to", "Compress to…")]));
+    // Two archives: still extractable together.
+    select_names(f, &["Pack.zip", "Bundle.tar.gz"])?;
+    open_selection_menu(f)?;
+    ensure!(has_all(f, &EXTRACT_ACTIONS) && has_all(f, &COMPRESS_ACTIONS));
+    // Not an archive, a folder, or a mixed selection: Compress only.
+    for names in [&["Alpha.txt"][..], &["Documents"][..], &["Pack.zip", "Alpha.txt"][..]] {
+        select_names(f, names)?;
+        open_selection_menu(f)?;
+        ensure!(has_none(f, &EXTRACT_ACTIONS) && has_all(f, &COMPRESS_ACTIONS), "{names:?}: {:?}", f.menu_actions());
+        ensure!(submenu_items(f, "Extract").is_none());
+        ensure!(f.menu_action("win.compress").is_none() && f.menu_action("win.extract").is_none());
+    }
+    // A read-only folder disables only the "here" actions (Ark).
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&f.source, std::fs::Permissions::from_mode(0o555)).unwrap();
+    select_names(f, &["Pack.zip"])?;
+    open_selection_menu(f)?;
+    let states: Vec<bool> = ["archive-extract-here", "archive-extract-to", "archive-extract-subfolder", "archive-compress-tar-gz",
+                             "archive-compress-zip", "archive-compress-to"].into_iter().map(|n| f.window.lookup_action(n).is_enabled()).collect();
+    std::fs::set_permissions(&f.source, std::fs::Permissions::from_mode(0o755)).unwrap();
+    ensure_eq!(states, vec![false, true, false, false, false, true]);
+    remove_fake_wayarchive();
+    Ok(())
+}
+
+fn test_without_wayarchive_the_internal_archive_items_remain(f: &mut Fixture) -> Outcome {
+    archive_fixture(f)?;
+    remove_fake_wayarchive();
+    // Hide any real wayarchive as well, for this check only.
+    let original = std::env::var("PATH").unwrap_or_default();
+    let filtered: Vec<&str> = original.split(':').filter(|d| !Path::new(d).join("wayarchive").exists()).collect();
+    std::env::set_var("PATH", filtered.join(":"));
+    let result = (|| -> Outcome {
+        select_names(f, &["Pack.zip"])?;
+        open_selection_menu(f)?;
+        ensure_eq!(f.menu_action("win.compress").as_deref(), Some("Compress…"));
+        ensure_eq!(f.menu_action("win.extract").as_deref(), Some("Extract…"));
+        ensure!(f.menu_action("win.browse-archive").is_some());
+        ensure!(has_none(f, &EXTRACT_ACTIONS) && has_none(f, &COMPRESS_ACTIONS));
+        ensure!(submenu_items(f, "Extract").is_none() && submenu_items(f, "Compress").is_none());
+        select_names(f, &["Pack.zip", "Alpha.txt"])?;
+        open_selection_menu(f)?;
+        ensure!(f.menu_action("win.compress").is_some() && f.menu_action("win.extract").is_none());
+        Ok(())
+    })();
+    std::env::set_var("PATH", original);
+    wayfiles::service_menu::forget_archive_manager();
+    result
+}
+
+fn test_archive_service_actions_run_wayarchive_and_the_folder_updates(f: &mut Fixture) -> Outcome {
+    archive_fixture(f)?;
+    install_fake_wayarchive();
+    let commands: Rc<RefCell<Vec<Vec<String>>>> = Rc::default();
+    *f.app.hooks.spawner.borrow_mut() = Some(Rc::new(HelperSpawner { commands: commands.clone() }));
+    let program = fake_wayarchive().to_string_lossy().into_owned();
+    let here = f.source.to_string_lossy().into_owned();
+    let cases: [(&[&str], &str, &[&str], Option<&str>); 6] = [
+        (&["Pack.zip", "Bundle.tar.gz"], "win.archive-extract-here", &["--batch", "--destination", "<here>"], Some("Extracted by fake")),
+        (&["Pack.zip"], "win.archive-extract-to", &["--batch", "--dialog"], None),
+        (&["Bundle.tar.gz"], "win.archive-extract-subfolder", &["--batch", "--autosubfolder", "--destination", "<here>"], None),
+        (&["Alpha.txt", "Documents"], "win.archive-compress-tar-gz", &["--add", "--changetofirstpath", "--autofilename", "tar.gz"],
+         Some("Made by fake.tar.gz")),
+        (&["Beta.txt"], "win.archive-compress-zip", &["--add", "--changetofirstpath", "--autofilename", "zip"], Some("Made by fake.zip")),
+        (&["Pack.zip", "Beta.txt"], "win.archive-compress-to", &["--add", "--changetofirstpath", "--dialog"], None),
+    ];
+    for (index, (names, action, flags, created)) in cases.into_iter().enumerate() {
+        select_names(f, names)?;
+        let mut expected = vec![program.clone()];
+        expected.extend(flags.iter().map(|a| if *a == "<here>" { here.clone() } else { a.to_string() }));
+        // Selected paths, in view order.
+        expected.extend(f.selected_names().iter().map(|n| f.source.join(n).to_string_lossy().into_owned()));
+        open_selection_menu(f)?;
+        ensure!(f.activate(action), "{action} did not activate");
+        wait!(|| wayarchive_calls().len() == index + 1);
+        let (cwd, argv) = wayarchive_calls().pop().unwrap();
+        ensure_eq!(cwd, here);
+        ensure_eq!(argv, expected);
+        let command = commands.borrow().last().cloned().unwrap();
+        for flag in ["--user", "--collect", "--service-type=forking", "--launch-helper", "--program"] {
+            ensure!(command.iter().any(|a| a == flag), "{flag} missing from {command:?}");
+        }
+        ensure!(!command.iter().any(|a| a == "--scope" || a == "sh"));
+        if let Some(created) = created {
+            // The folder monitor shows the new item without a reload.
+            wait!(|| f.names().iter().any(|n| n == created));
+        }
+        settle(0.05);
+        ensure!(!f.window.error_row.get_visible(), "error: {}", f.window.error_label.text());
+    }
+    ensure_eq!(commands.borrow().len(), 6);
+    remove_fake_wayarchive();
+    Ok(())
+}
+
+/// Click the context-menu item labelled `title` with the real pointer.
+fn click_menu_item(f: &Fixture, title: &str) -> Outcome {
+    let label = tile::descendants(f.popover().upcast_ref()).into_iter()
+        .find(|w| w.is_visible() && w.downcast_ref::<gtk::Label>().is_some_and(|l| l.text() == title))
+        .ok_or(format!("no {title} item"))?;
+    let button = label.parent().ok_or("no button")?;
+    f.pointer_click(&button, "left", false)?;
+    settle(0.3);
+    Ok(())
+}
+
+fn test_archive_service_submenus_screenshot(f: &mut Fixture) -> Outcome {
+    archive_fixture(f)?;
+    install_fake_wayarchive();
+    let shot = std::env::var("WAYFILES_UI_SHOT").ok().filter(|s| !s.is_empty());
+    for (title, first) in [("Extract", "Extract archive here"), ("Compress", "Here (as ZIP)")] {
+        f.select("Pack.zip")?;
+        f.right_click(&f.tile("Pack.zip").ok_or("no tile")?, false)?;
+        click_menu_item(f, title)?;
+        let visible: Vec<String> = tile::descendants(f.popover().upcast_ref()).into_iter()
+            .filter(|w| w.is_visible()).filter_map(|w| w.downcast::<gtk::Label>().ok()).map(|l| l.text().to_string()).collect();
+        ensure!(visible.iter().any(|t| t == first), "{title} submenu not shown: {visible:?}");
+        if let Some(shot) = &shot {
+            let _ = Command::new("grim").arg(format!("{shot}.{}.png", title.to_lowercase())).status();
+        }
+        if let Some(popover) = f.window.popover.borrow().clone() {
+            popover.popdown();
+        }
+        settle(0.1);
+    }
+    remove_fake_wayarchive();
     Ok(())
 }

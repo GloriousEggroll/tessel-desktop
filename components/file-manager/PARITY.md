@@ -178,7 +178,7 @@ Gaps / differences (honest):
 - Media "prepared"/Duration rows are not asserted (headless GStreamer timing); print-dialog (non-export) path untested.
 
 ## wayfiles application (src/, tests/)
-Tests: `cargo test -p file-manager` (unit: CLI argparse, key positions) and `tests/run_headless.sh` (90 checks in a
+Tests: `cargo test -p file-manager` (unit: CLI argparse, key positions) and `tests/run_headless.sh` (95 checks in a
 private headless labwc; `tests/ui_headless.rs`). Measurements: `tests/measure_headless.sh`.
 
 | Contract item | Status | Test |
@@ -207,6 +207,7 @@ private headless labwc; `tests/ui_headless.rs`). Measurements: `tests/measure_he
 | Preview width/pane visibility persistence, title for folder/multi-selection | done | `test_both_panes_and_preview_width_restore_after_reopening`, `test_selection_title_follows_folder_and_multi_selection` |
 | Drops: COPY-only external, choice menu, modifiers, internal kinds, rubberband suspension, Ark negotiation + D-Bus request | done | `test_external_sources_*`, `test_external_drop_menu_*`, `test_item_press_*`, `test_ark_drop_*` |
 | Git labels + throttled refresh | done | `test_git_status_labels_appear_and_refresh_is_throttled` (real git in a temp repo; test_git_refresh.py's mocked throttling internals not ported 1:1) |
+| **Ark-style archive service menus** (Rust-only, `src/service_menu.rs`): with `wayarchive` on PATH (looked up once, cached) the context menu shows an "Extract" submenu (every selected item a local archive: Ark's mime set, exact/alias match, name guess for unknown types) — here `--batch --destination <folder>`, to… `--batch --dialog`, autodetect subfolder `--batch --autosubfolder --destination <folder>` — and a "Compress" submenu (every item local) — `--add --changetofirstpath --autofilename tar.gz\|zip`, to… `--add --changetofirstpath --dialog`; local paths in view order; hidden for non-local selections; "here" items disabled in read-only folders. Runs through the `systemd-run --user` launcher (`--launch-helper --program <cwd> <argv>`); the folder monitor shows the result. Without `wayarchive` the internal Compress…/Extract… stay unchanged | done | `service_menu::tests::*`, `launch::tests::program_*`, `test_archive_service_menus_follow_the_selection`, `test_without_wayarchive_the_internal_archive_items_remain`, `test_archive_service_actions_run_wayarchive_and_the_folder_updates` (fake `$R/bin/wayarchive`, real helper), `test_archive_service_submenus_screenshot` |
 
 Gaps (app crate):
 - `test_open_files_window_follows_live_transparency_and_blur` and `test_preview_screenshot` (live palette/blur render, grim
