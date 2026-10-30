@@ -273,3 +273,16 @@ mod tests {
         let _ = std::fs::remove_dir_all(dir);
     }
 }
+
+#[cfg(test)]
+mod desktop_tests {
+    #[test]
+    fn desktop_file_lists_every_archive_type() {
+        let text = include_str!("../data/org.waydock.ArchiveManager.desktop");
+        let line = text.lines().find(|l| l.starts_with("MimeType=")).unwrap();
+        let listed: Vec<&str> = line["MimeType=".len()..].split(';').filter(|m| !m.is_empty()).collect();
+        assert_eq!(listed, archive_settings::plugins::Kind::all_mimes());
+        assert!(text.contains("\nExec=wayarchive %U\n"));
+        assert!(text.contains("\nStartupWMClass=org.waydock.ArchiveManager\n"));
+    }
+}
