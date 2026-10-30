@@ -334,6 +334,7 @@ pub fn factories(fakes: &Rc<Fakes>, scratch: &Path) -> Factories {
         ..Default::default()
     });
     f.capture_path = Some(scratch.join("capture/config.json"));
+    f.archive_path = Some(scratch.join("archive/archive-manager.json"));
     f
 }
 
@@ -738,6 +739,27 @@ fn test_weather_and_capture_register_search_targets(fx: &Fx) {
     check!(controls.controls.page.margin_top() == 24);
 }
 
+fn test_archive_page_edits_the_archive_manager_settings_file(fx: &Fx) {
+    let page = fx.page("archive");
+    let controls = controller::<gs_applets::ArchivePage>(&page).controls.clone();
+    let path = fx.factories.archive_path.clone().unwrap();
+    for key in ["show_info_panel", "open_destination", "close_after_extraction", "preserve_paths", "extract_subfolder",
+                "internal_preview", "limit_preview_size", "plugin-cli7z", "preview_max_mb"] {
+        check!(page.search_targets.borrow().contains_key(key), "archive target {key}");
+    }
+    check!(controls.page.margin_top() == 24);
+    check!(controls.page.first_child().is_some());
+    controls.switches["open_destination"].set_active(true);
+    controls.plugin_switches["clizip"].set_active(false);
+    let saved: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    check!(saved["open_destination"] == serde_json::json!(true));
+    check!(saved["disabled_plugins"] == serde_json::json!(["clizip"]));
+    // Archive Manager writes the same file: the page follows.
+    archive_settings::Store::new(Some(path.clone())).update(|s| s.preserve_paths = false).unwrap();
+    check!(wait(|| !controls.switches["preserve_paths"].is_active()), "page did not reload");
+    page.close();
+}
+
 /// Every `target=` of these sections in settings_search.py resolves to a widget.
 fn test_search_targets_match_settings_search(fx: &Fx) {
     let source = std::env::var("BTMANAGER").map(PathBuf::from).unwrap_or_default().join("global-settings/settings_search.py");
@@ -810,7 +832,7 @@ fn test_multiple_embedded_applets_and_language_share_one_lifecycle(fx: &Fx) {
 
 fn test_unknown_section_is_an_error(fx: &Fx) {
     check!(build_page_with("displays", &fx.dyn_host, &fx.factories).is_err());
-    check!(SECTIONS.len() == 11);
+    check!(SECTIONS.len() == 12);
 }
 
 // --------------------------------------------------------------------- main
@@ -834,6 +856,7 @@ const TESTS: &[Test] = &[
     ("language_wizard_is_embedded_with_close_and_can_close", test_language_wizard_is_embedded_with_close_and_can_close),
     ("weather_and_capture_register_search_targets", test_weather_and_capture_register_search_targets),
     ("search_targets_match_settings_search", test_search_targets_match_settings_search),
+    ("archive_page_edits_the_archive_manager_settings_file", test_archive_page_edits_the_archive_manager_settings_file),
     ("multiple_embedded_applets_and_language_share_one_lifecycle",
      test_multiple_embedded_applets_and_language_share_one_lifecycle),
     ("unknown_section_is_an_error", test_unknown_section_is_an_error),

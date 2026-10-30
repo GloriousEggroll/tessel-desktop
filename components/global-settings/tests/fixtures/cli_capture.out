@@ -1,48 +1,48 @@
 === --help
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
 
 Shared GTK4 settings for the desktop suite; no background service required.
 
 options:
   -h, --help            show this help message and exit
-  --section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}
+  --section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}
   --shortcuts           show or hide the keyboard shortcut overview (Super+/)
 rc=0
 === --section bogus
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
-global_settings.py: error: argument --section: invalid choice: 'bogus' (choose from 'audio', 'bluetooth', 'network', 'displays', 'input', 'keyboard', 'shortcuts', 'power', 'battery', 'keepawake', 'notifications', 'weather', 'theme', 'layout', 'behavior', 'lock', 'login', 'dock', 'datetime', 'language', 'accessibility', 'defaultapps', 'nightlight', 'users', 'about', 'capture')
+global_settings.py: error: argument --section: invalid choice: 'bogus' (choose from 'audio', 'bluetooth', 'network', 'displays', 'input', 'keyboard', 'shortcuts', 'power', 'battery', 'keepawake', 'notifications', 'weather', 'theme', 'layout', 'behavior', 'lock', 'login', 'dock', 'datetime', 'language', 'accessibility', 'defaultapps', 'nightlight', 'users', 'about', 'capture', 'archive')
 rc=2
 === --s
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
 global_settings.py: error: ambiguous option: --s could match --section, --shortcuts
 rc=2
 === extra
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
 global_settings.py: error: unrecognized arguments: extra
 rc=2
 === --section
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
 global_settings.py: error: argument --section: expected one argument
 rc=2
 === --quit=1
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
 global_settings.py: error: argument --quit: ignored explicit argument '1'
 rc=2
 === -x
 usage: global_settings.py [-h]
-                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture}]
+                          [--section {audio,bluetooth,network,displays,input,keyboard,shortcuts,power,battery,keepawake,notifications,weather,theme,layout,behavior,lock,login,dock,datetime,language,accessibility,defaultapps,nightlight,users,about,capture,archive}]
                           [--shortcuts]
 global_settings.py: error: unrecognized arguments: -x
 rc=2

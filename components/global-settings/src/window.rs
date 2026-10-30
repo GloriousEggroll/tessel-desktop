@@ -39,6 +39,7 @@ pub const SECTIONS: &[Section] = &[
     ("users", "Users", "avatar-default-symbolic", "users_page"),
     ("about", "About", "help-about-symbolic", "about_page"),
     ("capture", "Screenshots", "camera-photo-symbolic", "capture_page"),
+    ("archive", "Archive Manager", "package-x-generic-symbolic", "archive_page"),
 ];
 
 pub fn section_keys() -> Vec<&'static str> { SECTIONS.iter().map(|s| s.0).collect() }

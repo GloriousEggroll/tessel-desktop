@@ -29,6 +29,7 @@ calendar-manager = { path = "../../calendar-manager" }
 weather-manager = { path = "../../weather-manager" }
 language-manager = { path = "../../language-manager" }
 capture-manager = { path = "../../capture-manager" }
+archive-settings = { path = "../../archive-manager/settings" }
 
 # GTK checks: run only through components/global-settings/tests/headless.sh
 # (private headless labwc + private bus); under plain `cargo test` they skip.

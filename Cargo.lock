@@ -1072,6 +1072,7 @@ dependencies = [
 name = "gs-applets"
 version = "0.1.0"
 dependencies = [
+ "archive-settings",
  "audio-manager",
  "battery-manager",
  "bluetooth-manager",

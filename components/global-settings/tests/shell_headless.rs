@@ -419,6 +419,8 @@ fn audio_result_reveals_nested_audio_page() {
 /// session) must give the same ordered (section, key) lists.
 /// Search entries added after the port (no Python counterpart).
 const RUST_ONLY: &[(&str, &str)] = &[("theme", "icons")];
+/// Sections the Python suite does not have at all (Archive Manager replaces KDE's Ark).
+const RUST_ONLY_SECTIONS: &[&str] = &["archive"];
 
 fn search_ranking_matches_python() {
     let Ok(btmanager) = std::env::var("BTMANAGER") else { panic!("BTMANAGER unset") };
@@ -434,7 +436,8 @@ fn search_ranking_matches_python() {
     let index = SearchIndex::new(SECTIONS, &|t: &str| t.to_owned());
     for (i, query) in queries.iter().enumerate() {
         // Settings the Python suite does not have are left out of the comparison.
-        let rust: Vec<serde_json::Value> = index.search(query).iter().filter(|s| !RUST_ONLY.contains(&(s.section, s.key)))
+        let rust: Vec<serde_json::Value> = index.search(query).iter()
+            .filter(|s| !RUST_ONLY.contains(&(s.section, s.key)) && !RUST_ONLY_SECTIONS.contains(&s.section))
             .map(|s| serde_json::json!([s.section, s.key])).collect();
         assert_eq!(serde_json::Value::Array(rust), value["results"][i], "query {query:?}");
         assert_eq!(global_settings::search::normalize(query), value["norm"][i].as_str().unwrap(), "{query:?}");

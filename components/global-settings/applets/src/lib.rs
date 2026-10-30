@@ -1,5 +1,6 @@
 //! Global Settings pages that host the desktop applets' own controls
-//! (applet_pages.py, weather_page.py, language_page.py, capture_page.py).
+//! (applet_pages.py, weather_page.py, language_page.py, capture_page.py), plus the
+//! Rust-only Archive Manager page.
 //!
 //! Each page owns only its display subscriptions: persistent power policy,
 //! idle inhibition, notifications and Bluetooth stay in their resident
@@ -14,6 +15,7 @@ use gs_base::{Host, SettingsPage};
 pub mod embed;
 pub mod services;
 
+mod archive;
 mod audio;
 mod battery;
 mod bluetooth;
@@ -29,6 +31,7 @@ mod weather;
 pub use embed::{embed, Embed};
 pub use services::*;
 
+pub use archive::ArchivePage;
 pub use audio::AudioPage;
 pub use battery::BatteryPage;
 pub use bluetooth::BluetoothPage;
@@ -44,7 +47,7 @@ pub use weather::WeatherPage;
 /// Sections built here, in the order of `applet_pages.BUILDERS` followed by
 /// the stand-alone page modules.
 pub const SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                                 "datetime", "weather", "language", "capture"];
+                                 "datetime", "weather", "language", "capture", "archive"];
 
 /// `applet_pages.BUILDERS` keys (the sections `applet_pages.build_page` accepts).
 pub const APPLET_SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "datetime", "keepawake",
@@ -84,6 +87,8 @@ pub struct Factories {
     pub language: Option<Box<dyn Fn() -> Arc<dyn language_manager::ui::WizardBackend>>>,
     /// `capture_page.build_page(section, host, path)`.
     pub capture_path: Option<PathBuf>,
+    /// The Archive Manager settings file (default `~/.config/desktop-suite/archive-manager.json`).
+    pub archive_path: Option<PathBuf>,
 }
 
 /// Build one page lazily with the real services.
@@ -105,6 +110,7 @@ pub fn build_page_with(section: &str, host: &Host, factories: &Factories) -> Res
         "weather" => weather::build(host, factories),
         "language" => language::build(host, factories),
         "capture" => capture::build(host, factories),
+        "archive" => archive::build(host, factories),
         other => Err(format!("Unknown settings section: {other}")),
     }
 }
@@ -122,7 +128,7 @@ mod tests {
     #[test]
     fn sections_cover_every_builder_once() {
         assert_eq!(SECTIONS, &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                               "datetime", "weather", "language", "capture"]);
+                               "datetime", "weather", "language", "capture", "archive"]);
         let mut unique = SECTIONS.to_vec();
         unique.sort();
         unique.dedup();
