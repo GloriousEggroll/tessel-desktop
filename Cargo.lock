@@ -18,6 +18,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "archive-manager"
+version = "0.1.0"
+dependencies = [
+ "archive-settings",
+ "async-channel",
+ "file-manager",
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "md-5",
+ "serde_json",
+ "sha1",
+ "sha2 0.10.9",
+ "suite-core",
+ "suite-gtk",
+ "wayland-client",
+ "wayland-protocols-wlr",
+]
+
+[[package]]
+name = "archive-settings"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "serde_json",
+ "suite-core",
+]
+
+[[package]]
 name = "arraydeque"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

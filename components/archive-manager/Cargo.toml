@@ -29,6 +29,8 @@ sha1 = "0.10.6"
 sha2 = "0.10.9"
 
 [dev-dependencies]
+# Files' own Ark drop client (components/file-manager/src/ark_drop.rs) drives the protocol test.
+file-manager = { path = "../file-manager" }
 wayland-client = "0.31"
 wayland-protocols-wlr = { version = "0.3", features = ["client"] }
 

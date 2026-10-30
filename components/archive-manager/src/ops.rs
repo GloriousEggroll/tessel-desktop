@@ -450,6 +450,17 @@ pub fn add(archive: &Archive, sources: &[PathBuf], folder: &str, options: &Creat
     writer_backend(archive)?.add(&archive.path, archive.kind, &items, &options, &ctx)
 }
 
+/// Add explicit (file, archive path) items.
+pub fn add_items(archive: &Archive, items: &[AddItem], options: &CreateOptions, ctx: &Ctx) -> Result<()> {
+    let ctx = archive.ctx(ctx);
+    let mut options = options.clone();
+    if options.password.is_none() && archive.listing.encrypted {
+        options.password = archive.password.clone();
+        options.encrypt_header = archive.listing.header_encrypted;
+    }
+    writer_backend(archive)?.add(&archive.path, archive.kind, items, &options, &ctx)
+}
+
 pub fn items_for(sources: &[PathBuf], folder: &str) -> Vec<AddItem> {
     sources.iter().filter_map(|source| {
         let name = source.file_name()?.to_string_lossy().into_owned();
@@ -567,19 +578,23 @@ pub fn create_folder(archive: &Archive, parent: &str, name: &str, ctx: &Ctx) -> 
 
 /// Create a new archive at `path` from `sources` (relative to their folders).
 pub fn create(path: &Path, kind: Kind, sources: &[PathBuf], options: &CreateOptions, settings: &Settings, ctx: &Ctx) -> Result<()> {
+    create_items(path, kind, &items_for(sources, ""), options, settings, ctx)
+}
+
+/// Create a new archive from explicit (file, archive path) items.
+pub fn create_items(path: &Path, kind: Kind, items: &[AddItem], options: &CreateOptions, settings: &Settings, ctx: &Ctx) -> Result<()> {
     let plugin = writer(kind, settings).ok_or_else(|| Error::NoBackend(tr!("No enabled plugin can create {format} files.", format = tr!(kind.label()))))?;
     if std::fs::symlink_metadata(path).is_ok() {
         return Err(Error::Failed(tr!("{name} already exists.", name = path.display().to_string())));
     }
-    if kind.is_single_file() && (sources.len() != 1 || !sources[0].is_file()) {
+    if kind.is_single_file() && (items.len() != 1 || !items[0].source.is_file()) {
         return Err(Error::Unsupported(tr!("A compressed file holds exactly one file. Choose a tar archive for several files.")));
     }
     if options.volume_size.is_some() && plugin.id != "cli7z" && plugin.id != "clizip" {
         return Err(Error::Unsupported(tr!("Split volumes need 7-Zip or Info-ZIP.")));
     }
     let b = backend::get(plugin.id).ok_or_else(|| Error::NoBackend(plugin.id.into()))?;
-    let items = items_for(sources, "");
-    let result = b.add(path, kind, &items, options, ctx);
+    let result = b.add(path, kind, items, options, ctx);
     if result.is_err() {
         let _ = std::fs::remove_file(path);
     }
