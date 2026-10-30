@@ -1087,7 +1087,7 @@ impl ArchiveWindow {
         } else {
             dialogs::confirm(self.parent().as_ref(), &tr!("Replace Entries?"),
                              &tr!("The archive already contains {names}. Replace them with the added files?", names = existing.join(", ")),
-                             &tr!("_Replace"), true, move |yes| if yes { go() });
+                             &tr!("Replace"), true, move |yes| if yes { go() });
         }
     }
 
@@ -1173,7 +1173,7 @@ impl ArchiveWindow {
             tr!("Delete {count} entries from the archive? This cannot be undone.", count = paths.len() as i64)
         };
         let weak = self.downgrade();
-        dialogs::confirm(self.parent().as_ref(), &tr!("Delete Entries"), &message, &tr!("_Delete"), true, move |yes| {
+        dialogs::confirm(self.parent().as_ref(), &tr!("Delete Entries"), &message, &tr!("Delete"), true, move |yes| {
             let (Some(w), true) = (weak.upgrade(), yes) else { return };
             let p = paths.clone();
             let work: Work<()> = Arc::new(move |ctx, _| ops::delete(&archive, &p, ctx));
@@ -1191,7 +1191,7 @@ impl ArchiveWindow {
         let entry = object.entry();
         let weak = self.downgrade();
         let current = entry.name().to_string();
-        dialogs::prompt(self.parent().as_ref(), &tr!("Rename"), &tr!("New name for {name}:", name = current.clone()), &current, &tr!("_Rename"),
+        dialogs::prompt(self.parent().as_ref(), &tr!("Rename"), &tr!("New name for {name}:", name = current.clone()), &current, &tr!("Rename"),
                         move |name| {
             let (Some(w), Some(name)) = (weak.upgrade(), name) else { return };
             if name == entry.name() {
@@ -1273,7 +1273,7 @@ impl ArchiveWindow {
         let Some(archive) = self.archive() else { return };
         let parent = self.current_folder();
         let weak = self.downgrade();
-        dialogs::prompt(self.parent().as_ref(), &tr!("New Folder"), &tr!("Name of the new folder:"), &tr!("New Folder"), &tr!("C_reate"), move |name| {
+        dialogs::prompt(self.parent().as_ref(), &tr!("New Folder"), &tr!("Name of the new folder:"), &tr!("New Folder"), &tr!("Create"), move |name| {
             let (Some(w), Some(name)) = (weak.upgrade(), name) else { return };
             let (p, n) = (parent.clone(), name.clone());
             let work: Work<()> = Arc::new(move |ctx, _| ops::create_folder(&archive, &p, &n, ctx));
@@ -1326,7 +1326,7 @@ impl ArchiveWindow {
         let page = archive_settings::page::build_page(Some(self.app.store.path.clone()));
         let scroll = gtk::ScrolledWindow::builder().child(&page.page).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never).build();
         body.append(&scroll);
-        let close = dialogs::button(&buttons, &tr!("_Close"), "settings-close", Some("suggested-action"));
+        let close = dialogs::button(&buttons, &tr!("Close"), "settings-close", Some("suggested-action"));
         let w = window.clone();
         close.connect_clicked(move |_| w.close());
         let keep = RefCell::new(Some(page));
@@ -1438,7 +1438,7 @@ impl ArchiveWindow {
             let name = ep.rsplit('/').next().unwrap_or(&ep).to_string();
             let weak = w.downgrade();
             dialogs::confirm(w.parent().as_ref(), &tr!("File Modified"),
-                             &tr!("The file {name} was modified. Do you want to update the archive?", name = name), &tr!("_Update"), false, move |yes| {
+                             &tr!("The file {name} was modified. Do you want to update the archive?", name = name), &tr!("Update"), false, move |yes| {
                 asking.set(false);
                 let (Some(w), true) = (weak.upgrade(), yes) else { return };
                 let Some(archive) = w.archive() else { return };

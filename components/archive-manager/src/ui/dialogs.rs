@@ -97,7 +97,7 @@ pub fn message(parent: Option<&gtk::Window>, title: &str, body_text: &str) -> gt
     let (window, body, buttons) = dialog(parent, title, 440);
     window.set_widget_name("message-dialog");
     text(&body, body_text);
-    let ok = button(&buttons, &tr!("_Close"), "message-close", Some("suggested-action"));
+    let ok = button(&buttons, &tr!("Close"), "message-close", Some("suggested-action"));
     let w = window.clone();
     ok.connect_clicked(move |_| w.close());
     window.set_default_widget(Some(&ok));
@@ -115,7 +115,7 @@ pub fn confirm(parent: Option<&gtk::Window>, title: &str, body_text: &str, accep
     window.set_widget_name("confirm-dialog");
     text(&body, body_text);
     let done = once(callback);
-    let cancel = button(&buttons, &tr!("_Cancel"), "confirm-cancel", None);
+    let cancel = button(&buttons, &tr!("Cancel"), "confirm-cancel", None);
     let ok = button(&buttons, accept, "confirm-accept", Some(if destructive { "destructive-action" } else { "suggested-action" }));
     let (d, w) = (done.clone(), window.clone());
     cancel.connect_clicked(move |_| {
@@ -147,7 +147,7 @@ pub fn prompt(parent: Option<&gtk::Window>, title: &str, label: &str, initial: &
     entry.set_widget_name("prompt-entry");
     body.append(&entry);
     let done = once(callback);
-    let cancel = button(&buttons, &tr!("_Cancel"), "prompt-cancel", None);
+    let cancel = button(&buttons, &tr!("Cancel"), "prompt-cancel", None);
     let ok = button(&buttons, accept, "prompt-accept", Some("suggested-action"));
     let update = {
         let ok = ok.clone();
@@ -196,8 +196,8 @@ pub fn password(parent: Option<&gtk::Window>, archive: &str, wrong: bool, callba
     entry.set_widget_name("password-entry");
     body.append(&entry);
     let done = once(callback);
-    let cancel = button(&buttons, &tr!("_Cancel"), "password-cancel", None);
-    let ok = button(&buttons, &tr!("_OK"), "password-accept", Some("suggested-action"));
+    let cancel = button(&buttons, &tr!("Cancel"), "password-cancel", None);
+    let ok = button(&buttons, &tr!("OK"), "password-accept", Some("suggested-action"));
     let (d, w) = (done.clone(), window.clone());
     cancel.connect_clicked(move |_| {
         d(None);
@@ -275,12 +275,12 @@ pub fn conflict(parent: Option<&gtk::Window>, conflict: &Conflict, callback: imp
         });
         b
     };
-    add(&tr!("_Cancel"), "conflict-cancel", None, Box::new(|_| Resolution::Cancel));
-    add(&tr!("S_kip All"), "conflict-skip-all", None, Box::new(|_| Resolution::SkipAll));
-    add(&tr!("_Skip"), "conflict-skip", None, Box::new(|_| Resolution::Skip));
-    let rename = add(&tr!("_Rename"), "conflict-rename", None, Box::new(|e| Resolution::Rename(e.text().to_string())));
-    add(&tr!("Overwrite _All"), "conflict-overwrite-all", Some("destructive-action"), Box::new(|_| Resolution::OverwriteAll));
-    let overwrite = add(&tr!("_Overwrite"), "conflict-overwrite", Some("destructive-action"), Box::new(|_| Resolution::Overwrite));
+    add(&tr!("Cancel"), "conflict-cancel", None, Box::new(|_| Resolution::Cancel));
+    add(&tr!("Skip All"), "conflict-skip-all", None, Box::new(|_| Resolution::SkipAll));
+    add(&tr!("Skip"), "conflict-skip", None, Box::new(|_| Resolution::Skip));
+    let rename = add(&tr!("Rename"), "conflict-rename", None, Box::new(|e| Resolution::Rename(e.text().to_string())));
+    add(&tr!("Overwrite All"), "conflict-overwrite-all", Some("destructive-action"), Box::new(|_| Resolution::OverwriteAll));
+    let overwrite = add(&tr!("Overwrite"), "conflict-overwrite", Some("destructive-action"), Box::new(|_| Resolution::Overwrite));
     let (r, original) = (rename.clone(), name.clone());
     let check = move |e: &gtk::Entry| {
         let t = e.text();
@@ -309,8 +309,8 @@ pub fn comment(parent: Option<&gtk::Window>, initial: &str, callback: impl FnOnc
     scroll.add_css_class("frame");
     body.append(&scroll);
     let done = once(callback);
-    let cancel = button(&buttons, &tr!("_Cancel"), "comment-cancel", None);
-    let ok = button(&buttons, &tr!("_Save"), "comment-save", Some("suggested-action"));
+    let cancel = button(&buttons, &tr!("Cancel"), "comment-cancel", None);
+    let ok = button(&buttons, &tr!("Save"), "comment-save", Some("suggested-action"));
     let (d, w) = (done.clone(), window.clone());
     cancel.connect_clicked(move |_| {
         d(None);

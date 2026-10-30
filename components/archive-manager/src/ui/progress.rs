@@ -37,7 +37,7 @@ impl ProgressWindow {
         bar.set_widget_name("progress-bar");
         let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         buttons.set_halign(gtk::Align::End);
-        let cancel = gtk::Button::with_mnemonic(&tr!("_Cancel"));
+        let cancel = gtk::Button::with_mnemonic(&tr!("Cancel"));
         cancel.set_widget_name("progress-cancel");
         buttons.append(&cancel);
         body.append(&heading);

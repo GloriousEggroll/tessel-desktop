@@ -187,8 +187,8 @@ pub fn create_dialog(parent: Option<&gtk::Window>, folder: &Path, name: &str, ki
     problem.add_css_class("error");
     problem.set_widget_name("create-problem");
     body.append(&problem);
-    let cancel = button(&buttons, &tr!("_Cancel"), "create-cancel", None);
-    let accept = button(&buttons, &tr!("C_reate"), "create-accept", Some("suggested-action"));
+    let cancel = button(&buttons, &tr!("Cancel"), "create-cancel", None);
+    let accept = button(&buttons, &tr!("Create"), "create-accept", Some("suggested-action"));
     window.set_default_widget(Some(&accept));
 
     let this = Rc::new(CreateDialog {
@@ -247,7 +247,7 @@ pub fn create_dialog(parent: Option<&gtk::Window>, folder: &Path, name: &str, ki
             let name = request.path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             super::dialogs::confirm(Some(&w.clone()), &tr!("File Already Exists"),
                                     &tr!("{name} already exists. Do you want to replace it?", name = name),
-                                    &tr!("_Replace"), true, move |yes| {
+                                    &tr!("Replace"), true, move |yes| {
                 if yes && std::fs::remove_file(&request.path).is_ok() {
                     d(Some(request));
                     w.close();
@@ -396,8 +396,8 @@ pub fn extract_dialog(parent: Option<&gtk::Window>, archive: &Archive, selection
     options.append(&open_destination);
     options.append(&close_after);
     labeled(&grid, 3, &tr!("Options:"), &options);
-    let cancel = button(&buttons, &tr!("_Cancel"), "extract-cancel", None);
-    let accept = button(&buttons, &tr!("E_xtract"), "extract-accept", Some("suggested-action"));
+    let cancel = button(&buttons, &tr!("Cancel"), "extract-cancel", None);
+    let accept = button(&buttons, &tr!("Extract"), "extract-accept", Some("suggested-action"));
     window.set_default_widget(Some(&accept));
     let this = Rc::new(ExtractDialog {
         window: window.clone(), destination: dest_entry, use_subfolder, subfolder, selected_only, all, preserve, open_destination, close_after,
@@ -504,7 +504,7 @@ pub fn properties_dialog(parent: Option<&gtk::Window>, archive: &Archive) -> Rc<
     let scroll = gtk::ScrolledWindow::builder().child(&grid).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never)
         .propagate_natural_height(true).max_content_height(560).build();
     body.append(&scroll);
-    let close = button(&buttons, &tr!("_Close"), "properties-close", Some("suggested-action"));
+    let close = button(&buttons, &tr!("Close"), "properties-close", Some("suggested-action"));
     let w = window.clone();
     close.connect_clicked(move |_| w.close());
     let this = Rc::new(PropertiesDialog { window: window.clone(), values });
