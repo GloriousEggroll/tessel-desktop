@@ -7,6 +7,7 @@
 pub mod bridge;
 pub mod displays;
 pub mod dock;
+pub mod icon_themes;
 pub mod layout;
 pub mod layout_presets;
 pub mod lock;

@@ -1,0 +1,182 @@
+{
+  "ar": {
+    "Choose the icon theme used by the desktop and applications.": "اختر سمة الأيقونات التي يستخدمها سطح المكتب والتطبيقات.",
+    "No icon themes are installed.": "لا توجد سمات أيقونات مثبّتة.",
+    "The icon theme could not be changed: {error}": "تعذّر تغيير سمة الأيقونات: {error}",
+    "The shared icon theme setting could not be changed.": "تعذّر تغيير إعداد سمة الأيقونات المشترك."
+  },
+  "cs": {
+    "Choose the icon theme used by the desktop and applications.": "Vyberte motiv ikon, který používá plocha a aplikace.",
+    "No icon themes are installed.": "Nejsou nainstalovány žádné motivy ikon.",
+    "The icon theme could not be changed: {error}": "Motiv ikon nelze změnit: {error}",
+    "The shared icon theme setting could not be changed.": "Sdílené nastavení motivu ikon nelze změnit."
+  },
+  "da": {
+    "Choose the icon theme used by the desktop and applications.": "Vælg det ikontema, som skrivebordet og programmerne bruger.",
+    "No icon themes are installed.": "Der er ikke installeret nogen ikontemaer.",
+    "The icon theme could not be changed: {error}": "Ikontemaet kunne ikke ændres: {error}",
+    "The shared icon theme setting could not be changed.": "Den fælles indstilling for ikontema kunne ikke ændres."
+  },
+  "de": {
+    "Choose the icon theme used by the desktop and applications.": "Wählen Sie das Symbolthema für den Desktop und die Anwendungen.",
+    "No icon themes are installed.": "Es sind keine Symbolthemen installiert.",
+    "The icon theme could not be changed: {error}": "Das Symbolthema konnte nicht geändert werden: {error}",
+    "The shared icon theme setting could not be changed.": "Die gemeinsame Symbolthema-Einstellung konnte nicht geändert werden."
+  },
+  "el": {
+    "Choose the icon theme used by the desktop and applications.": "Επιλέξτε το θέμα εικονιδίων που χρησιμοποιούν η επιφάνεια εργασίας και οι εφαρμογές.",
+    "No icon themes are installed.": "Δεν είναι εγκατεστημένα θέματα εικονιδίων.",
+    "The icon theme could not be changed: {error}": "Δεν ήταν δυνατή η αλλαγή του θέματος εικονιδίων: {error}",
+    "The shared icon theme setting could not be changed.": "Δεν ήταν δυνατή η αλλαγή της κοινόχρηστης ρύθμισης θέματος εικονιδίων."
+  },
+  "es": {
+    "Choose the icon theme used by the desktop and applications.": "Elige el tema de iconos que usan el escritorio y las aplicaciones.",
+    "No icon themes are installed.": "No hay temas de iconos instalados.",
+    "The icon theme could not be changed: {error}": "No se pudo cambiar el tema de iconos: {error}",
+    "The shared icon theme setting could not be changed.": "No se pudo cambiar el ajuste compartido del tema de iconos."
+  },
+  "fi": {
+    "Choose the icon theme used by the desktop and applications.": "Valitse kuvaketeema, jota työpöytä ja sovellukset käyttävät.",
+    "No icon themes are installed.": "Kuvaketeemoja ei ole asennettu.",
+    "The icon theme could not be changed: {error}": "Kuvaketeemaa ei voitu vaihtaa: {error}",
+    "The shared icon theme setting could not be changed.": "Jaettua kuvaketeeman asetusta ei voitu muuttaa."
+  },
+  "fr": {
+    "Choose the icon theme used by the desktop and applications.": "Choisissez le thème d'icônes utilisé par le bureau et les applications.",
+    "No icon themes are installed.": "Aucun thème d'icônes n'est installé.",
+    "The icon theme could not be changed: {error}": "Impossible de modifier le thème d'icônes : {error}",
+    "The shared icon theme setting could not be changed.": "Impossible de modifier le paramètre partagé de thème d'icônes."
+  },
+  "he": {
+    "Choose the icon theme used by the desktop and applications.": "בחרו את ערכת הסמלים שבה משתמשים שולחן העבודה והיישומים.",
+    "No icon themes are installed.": "לא מותקנות ערכות סמלים.",
+    "The icon theme could not be changed: {error}": "לא ניתן היה לשנות את ערכת הסמלים: {error}",
+    "The shared icon theme setting could not be changed.": "לא ניתן היה לשנות את הגדרת ערכת הסמלים המשותפת."
+  },
+  "hi": {
+    "Choose the icon theme used by the desktop and applications.": "डेस्कटॉप और ऐप्लिकेशन द्वारा उपयोग की जाने वाली आइकन थीम चुनें।",
+    "No icon themes are installed.": "कोई आइकन थीम इंस्टॉल नहीं है।",
+    "The icon theme could not be changed: {error}": "आइकन थीम बदली नहीं जा सकी: {error}",
+    "The shared icon theme setting could not be changed.": "साझा आइकन थीम सेटिंग बदली नहीं जा सकी।"
+  },
+  "hu": {
+    "Choose the icon theme used by the desktop and applications.": "Válassza ki az asztal és az alkalmazások által használt ikontémát.",
+    "No icon themes are installed.": "Nincs telepítve ikontéma.",
+    "The icon theme could not be changed: {error}": "Az ikontémát nem sikerült módosítani: {error}",
+    "The shared icon theme setting could not be changed.": "A közös ikontéma-beállítást nem sikerült módosítani."
+  },
+  "id": {
+    "Choose the icon theme used by the desktop and applications.": "Pilih tema ikon yang digunakan oleh desktop dan aplikasi.",
+    "No icon themes are installed.": "Tidak ada tema ikon yang terpasang.",
+    "The icon theme could not be changed: {error}": "Tema ikon tidak dapat diubah: {error}",
+    "The shared icon theme setting could not be changed.": "Pengaturan tema ikon bersama tidak dapat diubah."
+  },
+  "it": {
+    "Choose the icon theme used by the desktop and applications.": "Scegli il tema di icone usato dal desktop e dalle applicazioni.",
+    "No icon themes are installed.": "Nessun tema di icone installato.",
+    "The icon theme could not be changed: {error}": "Impossibile modificare il tema di icone: {error}",
+    "The shared icon theme setting could not be changed.": "Impossibile modificare l'impostazione condivisa del tema di icone."
+  },
+  "ja": {
+    "Choose the icon theme used by the desktop and applications.": "デスクトップとアプリケーションで使用するアイコンテーマを選択します。",
+    "No icon themes are installed.": "アイコンテーマがインストールされていません。",
+    "The icon theme could not be changed: {error}": "アイコンテーマを変更できませんでした: {error}",
+    "The shared icon theme setting could not be changed.": "共有アイコンテーマ設定を変更できませんでした。"
+  },
+  "ko": {
+    "Choose the icon theme used by the desktop and applications.": "데스크톱과 응용 프로그램에서 사용할 아이콘 테마를 선택합니다.",
+    "No icon themes are installed.": "설치된 아이콘 테마가 없습니다.",
+    "The icon theme could not be changed: {error}": "아이콘 테마를 변경할 수 없습니다: {error}",
+    "The shared icon theme setting could not be changed.": "공유 아이콘 테마 설정을 변경할 수 없습니다."
+  },
+  "nb": {
+    "Choose the icon theme used by the desktop and applications.": "Velg ikontemaet som skrivebordet og programmene bruker.",
+    "No icon themes are installed.": "Ingen ikontemaer er installert.",
+    "The icon theme could not be changed: {error}": "Ikontemaet kunne ikke endres: {error}",
+    "The shared icon theme setting could not be changed.": "Den felles innstillingen for ikontema kunne ikke endres."
+  },
+  "nl": {
+    "Choose the icon theme used by the desktop and applications.": "Kies het pictogramthema dat het bureaublad en de toepassingen gebruiken.",
+    "No icon themes are installed.": "Er zijn geen pictogramthema's geïnstalleerd.",
+    "The icon theme could not be changed: {error}": "Het pictogramthema kon niet worden gewijzigd: {error}",
+    "The shared icon theme setting could not be changed.": "De gedeelde instelling voor het pictogramthema kon niet worden gewijzigd."
+  },
+  "pl": {
+    "Choose the icon theme used by the desktop and applications.": "Wybierz motyw ikon używany przez pulpit i aplikacje.",
+    "No icon themes are installed.": "Nie zainstalowano żadnych motywów ikon.",
+    "The icon theme could not be changed: {error}": "Nie można zmienić motywu ikon: {error}",
+    "The shared icon theme setting could not be changed.": "Nie można zmienić wspólnego ustawienia motywu ikon."
+  },
+  "pt": {
+    "Choose the icon theme used by the desktop and applications.": "Escolha o tema de ícones utilizado pelo ambiente de trabalho e pelas aplicações.",
+    "No icon themes are installed.": "Não há temas de ícones instalados.",
+    "The icon theme could not be changed: {error}": "Não foi possível alterar o tema de ícones: {error}",
+    "The shared icon theme setting could not be changed.": "Não foi possível alterar a definição partilhada do tema de ícones."
+  },
+  "pt_BR": {
+    "Choose the icon theme used by the desktop and applications.": "Escolha o tema de ícones usado pela área de trabalho e pelos aplicativos.",
+    "No icon themes are installed.": "Não há temas de ícones instalados.",
+    "The icon theme could not be changed: {error}": "Não foi possível alterar o tema de ícones: {error}",
+    "The shared icon theme setting could not be changed.": "Não foi possível alterar a configuração compartilhada do tema de ícones."
+  },
+  "ro": {
+    "Choose the icon theme used by the desktop and applications.": "Alegeți tema de pictograme folosită de desktop și de aplicații.",
+    "No icon themes are installed.": "Nu este instalată nicio temă de pictograme.",
+    "The icon theme could not be changed: {error}": "Tema de pictograme nu a putut fi schimbată: {error}",
+    "The shared icon theme setting could not be changed.": "Setarea comună a temei de pictograme nu a putut fi schimbată."
+  },
+  "ru": {
+    "Choose the icon theme used by the desktop and applications.": "Выберите тему значков для рабочего стола и приложений.",
+    "No icon themes are installed.": "Темы значков не установлены.",
+    "The icon theme could not be changed: {error}": "Не удалось изменить тему значков: {error}",
+    "The shared icon theme setting could not be changed.": "Не удалось изменить общий параметр темы значков."
+  },
+  "sk": {
+    "Choose the icon theme used by the desktop and applications.": "Vyberte tému ikon, ktorú používa pracovná plocha a aplikácie.",
+    "No icon themes are installed.": "Nie sú nainštalované žiadne témy ikon.",
+    "The icon theme could not be changed: {error}": "Tému ikon sa nepodarilo zmeniť: {error}",
+    "The shared icon theme setting could not be changed.": "Spoločné nastavenie témy ikon sa nepodarilo zmeniť."
+  },
+  "sv": {
+    "Choose the icon theme used by the desktop and applications.": "Välj det ikontema som skrivbordet och programmen använder.",
+    "No icon themes are installed.": "Inga ikonteman är installerade.",
+    "The icon theme could not be changed: {error}": "Ikontemat kunde inte ändras: {error}",
+    "The shared icon theme setting could not be changed.": "Den gemensamma inställningen för ikontema kunde inte ändras."
+  },
+  "th": {
+    "Choose the icon theme used by the desktop and applications.": "เลือกชุดไอคอนที่เดสก์ท็อปและแอปพลิเคชันใช้",
+    "No icon themes are installed.": "ไม่มีชุดไอคอนที่ติดตั้งไว้",
+    "The icon theme could not be changed: {error}": "ไม่สามารถเปลี่ยนชุดไอคอนได้: {error}",
+    "The shared icon theme setting could not be changed.": "ไม่สามารถเปลี่ยนการตั้งค่าชุดไอคอนที่ใช้ร่วมกันได้"
+  },
+  "tr": {
+    "Choose the icon theme used by the desktop and applications.": "Masaüstü ve uygulamalar tarafından kullanılan simge temasını seçin.",
+    "No icon themes are installed.": "Yüklü simge teması yok.",
+    "The icon theme could not be changed: {error}": "Simge teması değiştirilemedi: {error}",
+    "The shared icon theme setting could not be changed.": "Paylaşılan simge teması ayarı değiştirilemedi."
+  },
+  "uk": {
+    "Choose the icon theme used by the desktop and applications.": "Виберіть тему піктограм для стільниці та застосунків.",
+    "No icon themes are installed.": "Теми піктограм не встановлено.",
+    "The icon theme could not be changed: {error}": "Не вдалося змінити тему піктограм: {error}",
+    "The shared icon theme setting could not be changed.": "Не вдалося змінити спільний параметр теми піктограм."
+  },
+  "vi": {
+    "Choose the icon theme used by the desktop and applications.": "Chọn chủ đề biểu tượng mà màn hình nền và các ứng dụng sử dụng.",
+    "No icon themes are installed.": "Chưa cài đặt chủ đề biểu tượng nào.",
+    "The icon theme could not be changed: {error}": "Không thể thay đổi chủ đề biểu tượng: {error}",
+    "The shared icon theme setting could not be changed.": "Không thể thay đổi cài đặt chủ đề biểu tượng dùng chung."
+  },
+  "zh_CN": {
+    "Choose the icon theme used by the desktop and applications.": "选择桌面和应用程序使用的图标主题。",
+    "No icon themes are installed.": "未安装任何图标主题。",
+    "The icon theme could not be changed: {error}": "无法更改图标主题：{error}",
+    "The shared icon theme setting could not be changed.": "无法更改共享的图标主题设置。"
+  },
+  "zh_TW": {
+    "Choose the icon theme used by the desktop and applications.": "選擇桌面與應用程式使用的圖示主題。",
+    "No icon themes are installed.": "未安裝任何圖示主題。",
+    "The icon theme could not be changed: {error}": "無法變更圖示主題：{error}",
+    "The shared icon theme setting could not be changed.": "無法變更共用的圖示主題設定。"
+  }
+}

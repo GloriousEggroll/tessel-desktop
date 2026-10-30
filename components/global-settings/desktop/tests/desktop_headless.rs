@@ -22,6 +22,7 @@ use gs_desktop::bridge::{self, BridgeOptions, DockSettingsBridge, PresetBridge};
 use gs_desktop::dock::{self, DockPage, DockPageOptions, TilingPart, WorkspacePart};
 use gs_desktop::layout::{LayoutOptions, LayoutSettings};
 use gs_desktop::layout_presets::{self as presets, Preset, PresetIcon, TilingBackend, WorkspaceBackend, WorkspaceState};
+use gs_desktop::icon_themes;
 use gs_desktop::theme::{self, ColorSettings, ThemeBridge, ThemeOptions, ThemeWallpaperPage, MODES};
 use gtk::prelude::*;
 use serde_json::{json, Map, Value};
@@ -222,6 +223,148 @@ impl ColorSettings for FakeColors {
     fn disconnect(&self, _id: u64) { self.handlers.borrow_mut().clear() }
 }
 
+struct FakeIcons {
+    value: RefCell<Option<String>>,
+    handlers: RefCell<Vec<Rc<dyn Fn()>>>,
+    writes: RefCell<Vec<String>>,
+    fail: Cell<bool>,
+}
+
+impl FakeIcons {
+    fn new(value: &str) -> Rc<Self> {
+        Rc::new(Self { value: RefCell::new(Some(value.into())), handlers: RefCell::default(), writes: RefCell::default(),
+                       fail: Cell::new(false) })
+    }
+    /// Another program changed the setting.
+    fn external(&self, value: &str) {
+        self.value.replace(Some(value.into()));
+        let handlers = self.handlers.borrow().clone();
+        for handler in handlers {
+            handler();
+        }
+    }
+}
+
+impl icon_themes::IconThemeSettings for FakeIcons {
+    fn current(&self) -> Option<String> { self.value.borrow().clone() }
+    fn set(&self, theme: &str) -> Result<(), String> {
+        self.writes.borrow_mut().push(theme.into());
+        if self.fail.get() {
+            return Err("read-only".into());
+        }
+        self.external(theme);
+        Ok(())
+    }
+    fn connect_changed(&self, handler: Rc<dyn Fn()>) -> u64 {
+        self.handlers.borrow_mut().push(handler);
+        self.handlers.borrow().len() as u64
+    }
+    fn disconnect(&self, _id: u64) { self.handlers.borrow_mut().clear() }
+}
+
+/// A fake XDG data dir: two real themes (read-only symlinks, so the
+/// screenshot shows real icons), a fake one with its own folder icon, and
+/// entries that must not be offered.
+fn fake_icon_dir(root: &Path) -> PathBuf {
+    let icons = root.join("share/icons");
+    std::fs::create_dir_all(&icons).unwrap();
+    for theme in ["Papirus-Dark", "Adwaita"] {
+        let real = Path::new("/usr/share/icons").join(theme);
+        if real.join("index.theme").is_file() {
+            std::os::unix::fs::symlink(&real, icons.join(theme)).unwrap();
+        } else {
+            write_theme(&icons, theme, theme);
+        }
+    }
+    write_theme(&icons, "test-icons", "Test Icons");
+    std::fs::write(icons.join("test-icons/places/folder.svg"),
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect width='32' height='24' y='4' rx='3' fill='#e0b030'/></svg>").unwrap();
+    std::fs::create_dir_all(icons.join("cursors-only")).unwrap();
+    std::fs::write(icons.join("cursors-only/index.theme"), "[Icon Theme]\nName=Cursors Only\n").unwrap();
+    write_theme(&icons, "hicolor", "Hicolor");
+    write_theme(&icons, "mirror", "Private Mirror");
+    std::fs::write(icons.join("mirror/.waydock-papirus.json"), "{}").unwrap();
+    icons
+}
+
+fn write_theme(icons: &Path, id: &str, name: &str) {
+    std::fs::create_dir_all(icons.join(id).join("places")).unwrap();
+    std::fs::write(icons.join(id).join("index.theme"),
+        format!("[Icon Theme]\nName={name}\nDirectories=places\n\n[places]\nSize=32\nType=Scalable\nMinSize=8\nMaxSize=512\n")).unwrap();
+}
+
+fn dropdown_names(dropdown: &gtk::DropDown) -> Vec<String> {
+    let model = dropdown.model().unwrap();
+    (0..model.n_items()).map(|i| model.item(i).and_downcast::<gtk::StringObject>().unwrap().string().to_string()).collect()
+}
+
+/// grim inside the private nested session only (main() checked the session).
+fn screenshot(name: &str) -> PathBuf {
+    let path = root().join(format!("{name}.png"));
+    let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
+    assert!(runtime != "/run/user/1000" && runtime.starts_with(root().to_str().unwrap()), "private session only");
+    let status = std::process::Command::new("/usr/bin/grim").arg(&path).status().expect("grim");
+    assert!(status.success(), "grim failed");
+    path
+}
+
+fn icon_tests(app: &gtk::Application) {
+    run("icons_dropdown_lists_installed_themes_and_saves_through_the_backend", || {
+        let (test_host, host) = host(app);
+        let dir = scratch("icons");
+        let icons = fake_icon_dir(&dir);
+        let backend = FakeIcons::new("breeze");
+        let page = theme::build_theme_page(&host, ThemeOptions {
+            bridge: Some(FakeBridge::new()), config_path: Some(dir.join("wallpapers.json")), color_settings: Some(None),
+            icon_settings: Some(backend.clone()), icon_dirs: Some(vec![icons.clone()]), ..Default::default()
+        }).unwrap();
+        show(&test_host, &page);
+        let c = page.controller::<ThemeWallpaperPage>().unwrap();
+        let chooser = c.icons.clone();
+        let ids: Vec<&str> = chooser.themes.iter().map(|t| t.id.as_str()).collect();
+        assert_eq!(ids, ["Adwaita", "Papirus-Dark", "test-icons"]);
+        assert_eq!(dropdown_names(&chooser.dropdown), ["Adwaita", "Papirus-Dark", "Test Icons"]);
+        // "breeze" is not installed: Papirus-Dark is shown, nothing is saved on open.
+        assert_eq!(chooser.selected_id().as_deref(), Some("Papirus-Dark"));
+        assert!(backend.writes.borrow().is_empty());
+        assert!(page.search_targets.borrow().contains_key("icon_theme"));
+        settle(0.3);
+        let shot = screenshot("icons-page");
+        println!("screenshot {}", shot.display());
+        chooser.dropdown.set_selected(2);
+        assert_eq!(*backend.writes.borrow(), ["test-icons"]);
+        let files = chooser.sample_files();
+        assert_eq!(files.len(), 3);
+        assert_eq!(files[0].as_deref(), Some(icons.join("test-icons/places/folder.svg").as_path()), "{files:?}");
+        // Another program switches the theme: the page follows without saving.
+        backend.external("Adwaita");
+        assert_eq!(chooser.selected_id().as_deref(), Some("Adwaita"));
+        assert_eq!(backend.writes.borrow().len(), 1);
+        // A failed save is reported and the saved theme stays selected.
+        backend.fail.set(true);
+        chooser.dropdown.set_selected(1);
+        assert_eq!(*backend.writes.borrow(), ["test-icons", "Papirus-Dark"]);
+        assert_eq!(chooser.selected_id().as_deref(), Some("Adwaita"));
+        assert!(chooser.status.get_visible());
+        assert!(chooser.status.text().contains("read-only"));
+        finish(&test_host, &page);
+        assert!(backend.handlers.borrow().is_empty());
+    });
+    run("icons_row_without_themes_is_disabled", || {
+        let (test_host, host) = host(app);
+        let dir = scratch("noicons");
+        let page = theme::build_theme_page(&host, ThemeOptions {
+            bridge: Some(FakeBridge::new()), config_path: Some(dir.join("wallpapers.json")), color_settings: Some(None),
+            icon_settings: Some(FakeIcons::new("Papirus-Dark")), icon_dirs: Some(vec![dir.join("none")]), ..Default::default()
+        }).unwrap();
+        show(&test_host, &page);
+        let c = page.controller::<ThemeWallpaperPage>().unwrap();
+        assert!(!c.icons.dropdown.is_sensitive());
+        assert_eq!(c.icons.status.text(), "No icon themes are installed.");
+        finish(&test_host, &page);
+    });
+}
+
 struct ThemeFx {
     host: Rc<TestHost>,
     page: SettingsPage,
@@ -249,6 +392,7 @@ fn theme_fx(app: &gtk::Application, bridge: Option<Rc<FakeBridge>>, request: Opt
     let page = theme::build_theme_page(&host, ThemeOptions {
         bridge: Some(bridge.clone()), request: Some(Arc::new(move |payload| request(payload, &seen))),
         config_path: Some(dir.join("wallpapers.json")), color_settings: Some(Some(colors.clone())),
+        icon_settings: Some(FakeIcons::new("Papirus-Dark")), icon_dirs: Some(vec![dir.join("icons")]),
     }).unwrap();
     show(&test_host, &page);
     let c = page.controller::<ThemeWallpaperPage>().unwrap();
@@ -1885,7 +2029,7 @@ fn main() {
     let app = gtk::Application::new(Some("org.waydock.GlobalSettings.DesktopTests"), gio::ApplicationFlags::NON_UNIQUE);
     app.register(gio::Cancellable::NONE).unwrap();
     let only = std::env::args().nth(1);
-    let groups: Vec<(&str, fn(&gtk::Application))> = vec![("theme", theme_tests), ("displays", display_tests), ("dock", dock_tests),
+    let groups: Vec<(&str, fn(&gtk::Application))> = vec![("theme", theme_tests), ("icons", icon_tests), ("displays", display_tests), ("dock", dock_tests),
         ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests), ("parity", parity_tests)];
     for (name, group) in groups {
         if only.as_deref().is_none_or(|o| o == name) {

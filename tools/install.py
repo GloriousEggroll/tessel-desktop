@@ -366,14 +366,16 @@ COMPONENTS = (
         base=".local/share",
         notes=("~/.local/bin/language-manager opens Global Settings and is not changed.", STATUS_GUARD)),
     Component(
-        "session-startup", "session-startup", "desktop-suite/session", ("desktop-suite-failed",),
+        "session-startup", "session-startup", "desktop-suite/session", ("desktop-suite-failed", "desktop-suite-icon-theme"),
         shims=(Shim("desktop_suite_failed.py", "desktop-suite-failed",
                     porter="components/session-startup/shim/desktop_suite_failed.py"),),
         keeps=("suite_i18n.py", "language_data.py", "suite_catalogs.py"),
         base=".local/share", optional=True,
         clobbered_by=("session-startup/configure_session.py",),
         notes=("Crash helper only. desktop-suite-failed@.service keeps running python3 desktop_suite_failed.py %i.",
-               "configure_session.py stays Python (installers import it) and is never touched.")),
+               "configure_session.py stays Python (installers import it) and is never touched.",
+               "desktop-suite-icon-theme falls back to Papirus-Dark at login when the configured icon theme is not "
+               "installed; packaging/defaults/etc/xdg/autostart/desktop-suite-icon-theme.desktop runs it.")),
     Component(
         "bluetooth-manager", "bluetooth-manager", "btmanager", ("btmanager",),
         shims=(Shim("btmanager.py", "btmanager",

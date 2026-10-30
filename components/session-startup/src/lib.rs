@@ -7,6 +7,7 @@ pub mod cli;
 pub mod difflib;
 pub mod failed;
 pub mod fsops;
+pub mod icon_theme;
 pub mod pystr;
 pub mod session;
 pub mod xdg;

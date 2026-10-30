@@ -154,6 +154,7 @@ pub static SETTINGS: &[Setting] = &[
     Setting { section: "behavior", key: "focus_outline", title: "Focused window outline", detail: "Draw an outline around the focused window.", keywords: "desktop behavior focus focused window outline border highlight active", labels: &["Focused window outline"], target: "focus_outline_switch", subpage: "" },
     Setting { section: "behavior", key: "authentication", title: "Authentication", detail: "View the status of the administrator password prompt.", keywords: "desktop authentication polkit password prompt administrator agent", labels: &["Authentication"], target: "authentication_status", subpage: "" },
     Setting { section: "theme", key: "style", title: "Style (light/dark)", detail: "Choose a light or dark appearance.", keywords: "dark light mode color colour scheme theme style appearance", labels: &["Style (light/dark)"], target: "", subpage: "" },
+    Setting { section: "theme", key: "icons", title: "Icons", detail: "Choose the icon theme used by the desktop and applications.", keywords: "theme icon icons icon theme papirus adwaita breeze folder symbols default", labels: &["Icons"], target: "icon_theme", subpage: "" },
     Setting { section: "layout", key: "previous", title: "Restore previous layout", detail: "Return to the layout used before the last change.", keywords: "layout preset restore previous undo revert", labels: &["Restore previous layout"], target: "previous", subpage: "" },
     Setting { section: "keepawake", key: "duration", title: "Keep awake duration", detail: "Choose how long the session stays awake.", keywords: "inhibit idle awake duration time minutes hours until", labels: &["Duration"], target: "", subpage: "" },
     Setting { section: "lock", key: "battery", title: "Show battery level", detail: "Show the battery level on the lock screen.", keywords: "lock screen battery level charge percent", labels: &["Show battery level"], target: "battery", subpage: "" },
@@ -320,6 +321,7 @@ mod tests {
             ("fahrenheit", "weather", "units"), ("wifi", "network", "wifi"),
             ("lock screen weather", "lock", "weather"), ("lock screen forecast", "lock", "forecast"),
             ("pause media", "lock", "pause_media"), ("lock screen media controls", "lock", "media"),
+            ("icon theme", "theme", "icons"), ("papirus", "theme", "icons"),
         ] {
             assert!(keys(&index, query).contains(&(section, key)), "{query}");
         }

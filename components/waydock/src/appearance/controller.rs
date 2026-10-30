@@ -6,7 +6,9 @@
 //! GTK (`gtk-application-prefer-dark-theme` or a theme name containing
 //! "dark"). It overrides only process-local GTK settings (never the user's
 //! desktop settings): the prefer-dark flag while the portal is explicit, and
-//! the icon theme (`Papirus-Dark`/`Papirus-Light`, else `Papirus`).
+//! the icon theme (`Papirus-Dark`/`Papirus-Light`, else `Papirus`). When the
+//! user chose an installed non-Papirus theme in Global Settings (gsettings
+//! `org.gnome.desktop.interface icon-theme`), the dock uses that one instead.
 //! `on_changed(controller)` runs initially and whenever `(is_dark,
 //! icon_theme_name)` changes. GTK objects and the portal are injectable.
 
@@ -41,6 +43,48 @@ pub trait IconThemeBackend {
     fn set_search_path(&self, paths: &[PathBuf]);
     fn connect_changed(&self, callback: Box<dyn Fn()>) -> u64;
     fn disconnect(&self, handler: u64);
+}
+
+/// The user's desktop icon theme choice (gsettings `icon-theme`), read
+/// separately because the dock overrides its own GTK setting.
+pub trait DesktopIconTheme {
+    fn get(&self) -> Option<String>;
+    fn connect_changed(&self, callback: Box<dyn Fn()>) -> u64;
+    fn disconnect(&self, handler: u64);
+}
+
+/// `org.gnome.desktop.interface icon-theme`.
+pub struct GioDesktopIconTheme {
+    settings: gio::Settings,
+    handlers: RefCell<HashMap<u64, glib::SignalHandlerId>>,
+    next: Cell<u64>,
+}
+
+impl GioDesktopIconTheme {
+    pub fn new() -> Option<Self> {
+        suite_core::icon_theme::interface_settings()
+            .map(|settings| Self { settings, handlers: RefCell::default(), next: Cell::new(0) })
+    }
+}
+
+impl DesktopIconTheme for GioDesktopIconTheme {
+    fn get(&self) -> Option<String> {
+        Some(self.settings.string(suite_core::icon_theme::GSETTINGS_KEY).to_string()).filter(|v| !v.is_empty())
+    }
+
+    fn connect_changed(&self, callback: Box<dyn Fn()>) -> u64 {
+        let id = self.next.get() + 1;
+        self.next.set(id);
+        let handler = self.settings.connect_changed(Some(suite_core::icon_theme::GSETTINGS_KEY), move |_, _| callback());
+        self.handlers.borrow_mut().insert(id, handler);
+        id
+    }
+
+    fn disconnect(&self, handler: u64) {
+        if let Some(handler) = self.handlers.borrow_mut().remove(&handler) {
+            self.settings.disconnect(handler);
+        }
+    }
 }
 
 /// `Gtk.Settings.get_default()`.
@@ -155,6 +199,8 @@ pub struct ControllerOptions {
     pub settings: Option<Rc<dyn SettingsBackend>>,
     pub icon_theme: Option<Rc<dyn IconThemeBackend>>,
     pub portal: PortalSource,
+    /// The user's icon theme choice (default: gsettings, unless `no_gtk_defaults`).
+    pub desktop_icon_theme: Option<Rc<dyn DesktopIconTheme>>,
     /// Use the injected objects even when they are `None` (no GTK lookups).
     pub no_gtk_defaults: bool,
 }
@@ -184,6 +230,8 @@ struct Inner {
     settings_signals: RefCell<Vec<u64>>,
     icon_theme: RefCell<Option<Rc<dyn IconThemeBackend>>>,
     icon_theme_signal: Cell<u64>,
+    desktop_icon_theme: RefCell<Option<Rc<dyn DesktopIconTheme>>>,
+    desktop_icon_signal: Cell<u64>,
     icon_overridden: Cell<bool>,
     proxy: RefCell<Option<gio::DBusProxy>>,
     proxy_signals: RefCell<Vec<glib::SignalHandlerId>>,
@@ -225,7 +273,8 @@ impl AppearanceController {
         Self(Rc::new(Inner {
             on_changed, options: RefCell::new(options), is_dark: Cell::new(false), icon_theme_name: RefCell::new(None),
             settings: RefCell::new(None), settings_signals: RefCell::default(), icon_theme: RefCell::new(None),
-            icon_theme_signal: Cell::new(0), icon_overridden: Cell::new(false), proxy: RefCell::new(None),
+            icon_theme_signal: Cell::new(0), desktop_icon_theme: RefCell::new(None), desktop_icon_signal: Cell::new(0),
+            icon_overridden: Cell::new(false), proxy: RefCell::new(None),
             proxy_signals: RefCell::default(), reader: RefCell::new(None), cancellable: gio::Cancellable::new(),
             portal_scheme: Cell::new(0), read_serial: Cell::new(0), prefer_overridden: Cell::new(false),
             syncing: Cell::new(false), started: Cell::new(false), closed: Cell::new(false), reported: RefCell::new(None),
@@ -262,15 +311,26 @@ impl AppearanceController {
             return;
         }
         inner.started.set(true);
-        let (settings, icon_theme, portal) = {
+        let (settings, icon_theme, desktop_icon_theme, portal) = {
             let mut options = inner.options.borrow_mut();
             let gtk = !options.no_gtk_defaults;
             let settings = options.settings.take().or_else(|| if gtk {
                 GtkSettings::default_settings().map(|s| Rc::new(s) as Rc<dyn SettingsBackend>) } else { None });
             let icon_theme = options.icon_theme.take().or_else(|| if gtk {
                 GtkIconTheme::for_default_display().map(|t| Rc::new(t) as Rc<dyn IconThemeBackend>) } else { None });
-            (settings, icon_theme, options.portal.clone())
+            let desktop = options.desktop_icon_theme.take().or_else(|| if gtk {
+                GioDesktopIconTheme::new().map(|d| Rc::new(d) as Rc<dyn DesktopIconTheme>) } else { None });
+            (settings, icon_theme, desktop, options.portal.clone())
         };
+        if let Some(desktop) = &desktop_icon_theme {
+            let weak = self.weak();
+            inner.desktop_icon_signal.set(desktop.connect_changed(Box::new(move || {
+                if let Some(inner) = weak.upgrade() {
+                    AppearanceController(inner).settings_changed();
+                }
+            })));
+        }
+        *inner.desktop_icon_theme.borrow_mut() = desktop_icon_theme;
         if let Some(settings) = &settings {
             for name in [THEME_NAME, PREFER_DARK, ICON_THEME] {
                 let weak = self.weak();
@@ -327,6 +387,11 @@ impl AppearanceController {
             }
         }
         inner.icon_theme_signal.set(0);
+        let desktop = inner.desktop_icon_theme.borrow_mut().take();
+        if let (Some(desktop), handler @ 1..) = (&desktop, inner.desktop_icon_signal.get()) {
+            desktop.disconnect(handler);
+        }
+        inner.desktop_icon_signal.set(0);
         let proxy = inner.proxy.borrow_mut().take();
         for handler in inner.proxy_signals.borrow_mut().drain(..) {
             if let Some(proxy) = &proxy {
@@ -353,10 +418,18 @@ impl AppearanceController {
         true
     }
 
+    /// The user's installed non-Papirus choice, else the Papirus variant
+    /// for `dark` (else `Papirus`), else `None` (no override).
     fn icon_theme_for(&self, dark: bool) -> Option<String> {
         let variant = if dark { "Papirus-Dark" } else { "Papirus-Light" };
         let theme = self.0.icon_theme.borrow().clone();
         let paths = theme.map(|t| t.search_path()).unwrap_or_default();
+        let desktop = self.0.desktop_icon_theme.borrow().clone();
+        if let Some(chosen) = desktop.and_then(|d| d.get()) {
+            if !suite_core::icon_theme::is_papirus_family(&chosen) && suite_core::icon_theme::is_installed(&paths, &chosen) {
+                return Some(chosen);
+            }
+        }
         if paths.iter().any(|p| p.join(variant).join("index.theme").is_file()) {
             return Some(variant.into());
         }
@@ -621,6 +694,36 @@ mod tests {
     }
 
     #[derive(Default)]
+    struct FakeDesktop {
+        value: RefCell<Option<String>>,
+        changed: RefCell<Option<Rc<dyn Fn()>>>,
+    }
+
+    impl FakeDesktop {
+        fn choose(&self, theme: Option<&str>) {
+            self.value.replace(theme.map(str::to_owned));
+            let callback = self.changed.borrow().clone();
+            if let Some(callback) = callback {
+                callback();
+            }
+        }
+    }
+
+    impl DesktopIconTheme for FakeDesktop {
+        fn get(&self) -> Option<String> {
+            self.value.borrow().clone()
+        }
+        fn connect_changed(&self, callback: Box<dyn Fn()>) -> u64 {
+            *self.changed.borrow_mut() = Some(Rc::from(callback));
+            7
+        }
+        fn disconnect(&self, handler: u64) {
+            assert_eq!(handler, 7);
+            *self.changed.borrow_mut() = None;
+        }
+    }
+
+    #[derive(Default)]
     struct FakeReader(RefCell<Vec<u64>>);
     impl PortalReader for FakeReader {
         fn read_all(&self, _: &AppearanceController, serial: u64) {
@@ -632,6 +735,7 @@ mod tests {
         icons: PathBuf,
         settings: Rc<FakeSettings>,
         theme: Rc<FakeIconTheme>,
+        desktop: Rc<FakeDesktop>,
         events: Rc<RefCell<Vec<(bool, Option<String>)>>>,
         controller: AppearanceController,
     }
@@ -649,11 +753,12 @@ mod tests {
                                                 on_set: RefCell::default() });
             let events = Rc::new(RefCell::new(Vec::new()));
             let recorder = events.clone();
+            let desktop = Rc::new(FakeDesktop::default());
             let controller = AppearanceController::new(
                 Some(Box::new(move |c: &AppearanceController| recorder.borrow_mut().push((c.is_dark(), c.icon_theme_name())))),
                 ControllerOptions { settings: Some(settings.clone()), icon_theme: Some(theme.clone()), portal: PortalSource::None,
-                                    no_gtk_defaults: true });
-            Self { icons, settings, theme, events, controller }
+                                    desktop_icon_theme: Some(desktop.clone()), no_gtk_defaults: true });
+            Self { icons, settings, theme, desktop, events, controller }
         }
 
         fn signal_scheme(&self, value: u32) {
@@ -675,6 +780,11 @@ mod tests {
             for theme in ["Papirus", "Papirus-Light", "Papirus-Dark"] {
                 let _ = std::fs::remove_file(self.icons.join(theme).join("index.theme"));
             }
+        }
+
+        fn install(&self, theme: &str) {
+            std::fs::create_dir_all(self.icons.join(theme)).unwrap();
+            std::fs::write(self.icons.join(theme).join("index.theme"), "[Icon Theme]\nName=x\nDirectories=48x48/apps\n").unwrap();
         }
 
         fn theme_changed(&self) {
@@ -865,6 +975,46 @@ mod tests {
         assert_eq!(f.controller.icon_theme_name().as_deref(), Some("Papirus-Light"));
         f.controller.settings_changed();
         assert_eq!(*f.events.borrow(), events);
+    }
+
+    #[test]
+    fn papirus_family_or_missing_choice_keeps_papirus_following_dark_mode() {
+        let f = Fixture::new("family");
+        f.desktop.choose(Some("Papirus-Dark"));
+        f.controller.start();
+        assert_eq!(f.last(), event(false, "Papirus-Light"));
+        f.desktop.choose(Some("Papirus"));
+        f.signal_scheme(1);
+        assert_eq!(f.last(), event(true, "Papirus-Dark"));
+        // A chosen theme that is not installed does not replace Papirus.
+        f.desktop.choose(Some("breeze"));
+        assert_eq!(f.last(), event(true, "Papirus-Dark"));
+        f.desktop.choose(None);
+        assert_eq!(f.last(), event(true, "Papirus-Dark"));
+    }
+
+    #[test]
+    fn non_papirus_choice_replaces_the_papirus_override_and_follows_changes() {
+        let f = Fixture::new("choice");
+        f.install("Adwaita");
+        f.install("Fluent");
+        f.desktop.choose(Some("Adwaita"));
+        f.controller.start();
+        assert_eq!(*f.events.borrow(), [event(false, "Adwaita")]);
+        assert_eq!(f.settings.string(ICON_THEME).as_deref(), Some("Adwaita"));
+        // Dark mode no longer switches Papirus variants.
+        f.signal_scheme(1);
+        assert_eq!(f.last(), event(true, "Adwaita"));
+        f.desktop.choose(Some("Fluent"));
+        assert_eq!(f.last(), event(true, "Fluent"));
+        assert_eq!(f.settings.string(ICON_THEME).as_deref(), Some("Fluent"));
+        // Back to Papirus: dark mode decides the variant again.
+        f.desktop.choose(Some("Papirus-Light"));
+        assert_eq!(f.last(), event(true, "Papirus-Dark"));
+        assert_eq!(f.settings.string(ICON_THEME).as_deref(), Some("Papirus-Dark"));
+        assert_eq!(f.settings.desktop.borrow()[ICON_THEME], Value::Str("Breeze".into()));
+        f.controller.close();
+        assert!(f.desktop.changed.borrow().is_none());
     }
 
     #[test]
