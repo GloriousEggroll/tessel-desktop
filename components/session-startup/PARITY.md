@@ -90,3 +90,8 @@ test_xdg_generator.py exercises `/usr/lib/systemd/user-generators/systemd-xdg-au
   `edit_rc`, `edit_menu`, `AUTOSTART_TEMPLATE`, `ENVIRONMENT_TEMPLATE`) and
   `shared/install_gtk4.py` (`runtime_files`) import it. The Rust library exposes the same
   functions for a future Rust installer.
+
+## Additions (no Python counterpart)
+| Item | | Test |
+|---|---|---|
+| `desktop-suite-icon-theme [--check]`: at login, when the configured icon theme (gsettings `org.gnome.desktop.interface icon-theme`, else `gtk-icon-theme-name` in `~/.config/gtk-4.0/settings.ini`) is not installed, set Papirus-Dark in gsettings and both GTK `settings.ini` files (other lines kept); an installed choice is never changed; nothing changes when Papirus-Dark is missing too. Run by `packaging/defaults/etc/xdg/autostart/desktop-suite-icon-theme.desktop`. | ✅ | `icon_theme::tests::*`, `suite_core::icon_theme::tests::*` |

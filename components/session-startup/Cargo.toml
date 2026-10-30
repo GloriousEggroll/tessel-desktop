@@ -21,6 +21,10 @@ path = "src/bin/configure-xdg-autostart.rs"
 name = "desktop-suite-failed"
 path = "src/bin/desktop-suite-failed.rs"
 
+[[bin]]
+name = "desktop-suite-icon-theme"
+path = "src/bin/desktop-suite-icon-theme.rs"
+
 [dependencies]
 suite-core.workspace = true
 glib.workspace = true
