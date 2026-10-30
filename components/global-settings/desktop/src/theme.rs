@@ -212,6 +212,10 @@ pub struct ThemeOptions {
     pub config_path: Option<PathBuf>,
     /// `color_settings=False` (default) → [`interface_settings`]; `Some(None)` = unavailable.
     pub color_settings: Option<Option<Rc<dyn ColorSettings>>>,
+    /// Icon theme storage (default: gsettings + GTK settings.ini).
+    pub icon_settings: Option<Rc<dyn crate::icon_themes::IconThemeSettings>>,
+    /// Icon theme search directories (default: the XDG icon paths).
+    pub icon_dirs: Option<Vec<PathBuf>>,
 }
 
 pub struct ThemeWallpaperPage {
@@ -225,6 +229,7 @@ pub struct ThemeWallpaperPage {
     pub scheme_buttons: IndexMap<String, gtk::ToggleButton>,
     pub scheme_card: gtk::Box,
     scheme_handler: Cell<u64>,
+    pub icons: Rc<crate::icon_themes::IconThemeChooser>,
     pub r#match: gtk::Switch,
     pub dock_transparency: gtk::Scale,
     pub dock_transparency_enabled: gtk::Switch,
@@ -316,6 +321,13 @@ impl ThemeWallpaperPage {
             scheme_card.append(&label(&tr!("The shared color scheme setting is unavailable on this system."), Some("subtitle")));
         }
 
+        // Icons.
+        let icon_settings = options.icon_settings
+            .unwrap_or_else(|| Rc::new(crate::icon_themes::SystemIconThemeSettings::from_session()));
+        let icons = crate::icon_themes::IconThemeChooser::new(icon_settings,
+            options.icon_dirs.unwrap_or_else(suite_core::icon_theme::search_dirs));
+        content.append(&icons.card);
+
         // Match wallpaper colors.
         let match_card = card(8);
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
@@ -364,7 +376,7 @@ impl ThemeWallpaperPage {
         let page = Rc::new(Self {
             host: host.clone(), widget, content: content.clone(),
             request: options.request.unwrap_or_else(|| Arc::new(wallpaper_request)), config_path,
-            bridge: RefCell::new(None), color_settings, scheme_buttons, scheme_card, scheme_handler: Cell::new(0),
+            bridge: RefCell::new(None), color_settings, scheme_buttons, scheme_card, scheme_handler: Cell::new(0), icons,
             r#match: match_switch, dock_transparency, dock_transparency_enabled, apps_transparency,
             apps_transparency_enabled, toggles, strengths, status, cards: cards.clone(), discard_button: discard_button.clone(),
             apply_button: apply_button.clone(), rows: RefCell::new(IndexMap::new()), style_provider,
@@ -407,6 +419,7 @@ impl ThemeWallpaperPage {
                     Ok(bridge) => Rc::new(bridge),
                     Err(error) => {
                         gtk::style_context_remove_provider_for_display(&display, &page.style_provider);
+                        page.icons.close();
                         return Err(error);
                     }
                 }
@@ -1037,6 +1050,7 @@ impl ThemeWallpaperPage {
                 settings.disconnect(id);
             }
         }
+        self.icons.close();
         gtk::style_context_remove_provider_for_display(&crate::util::host_display(&self.host), &self.style_provider);
         for cancellable in self.dialogs.take() {
             cancellable.cancel();
@@ -1048,6 +1062,7 @@ impl ThemeWallpaperPage {
     /// Search spotlight targets under the attribute names settings_search.py uses.
     pub fn register_targets(&self, page: &SettingsPage) {
         page.add_target("match", &self.r#match);
+        page.add_target("icon_theme", &self.icons.dropdown);
         page.add_target("dock_transparency", &self.dock_transparency);
         page.add_target("apps_transparency", &self.apps_transparency);
         for field in ["frosted", "apps_frosted", "apps_rounded_corners"] {

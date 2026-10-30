@@ -97,8 +97,8 @@ pub fn is_installed(dirs: &[PathBuf], id: &str) -> bool {
 }
 
 /// The themes a user can choose: one per id (earlier search dirs win), no
-/// cursor-only or hidden themes, no `hicolor`/`default`, no private dock
-/// mirrors; sorted by name.
+/// cursor-only or `Hidden=true` themes (except Adwaita), no
+/// `hicolor`/`default`, no private dock mirrors; sorted by name.
 pub fn discover(dirs: &[PathBuf]) -> Vec<IconThemeInfo> {
     let mut themes: Vec<IconThemeInfo> = Vec::new();
     for root in dirs {
@@ -111,7 +111,9 @@ pub fn discover(dirs: &[PathBuf]) -> Vec<IconThemeInfo> {
                 continue;
             }
             let Ok(text) = std::fs::read_to_string(path.join("index.theme")) else { continue };
-            if parse_index(&text).2 {
+            // Hidden= marks fallback themes; Adwaita (GTK's default) sets it
+            // too but is a real choice.
+            if parse_index(&text).2 && id != "Adwaita" {
                 continue;
             }
             if let Some(theme) = theme_at(&path) {
@@ -321,6 +323,11 @@ mod tests {
         assert!(!is_installed(&dirs, "breeze_cursors"));
         assert!(!is_installed(&dirs, ""));
         assert!(!is_installed(&dirs, "../usr/icons/Adwaita"));
+        // Adwaita marks itself Hidden=true but stays a choice; other hidden themes do not.
+        let other = dir.join("other");
+        theme(&other, "Adwaita", "[Icon Theme]\nName=Adwaita\nHidden=true\nDirectories=a\n");
+        theme(&other, "AdwaitaLegacy", "[Icon Theme]\nName=AdwaitaLegacy\nHidden=true\nDirectories=a\n");
+        assert_eq!(discover(&[other]).iter().map(|t| t.id.as_str()).collect::<Vec<_>>(), ["Adwaita"]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

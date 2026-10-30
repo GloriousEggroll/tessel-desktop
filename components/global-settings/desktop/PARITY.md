@@ -7,7 +7,7 @@ into `components/global-settings/desktop/layouts/` and embedded with `include_by
 
 Tests: unit = `cargo test -p gs-desktop` (23, src/tests.rs + module tests); headless =
 `AGENT=gs-desktop OUTPUTS=2 components/global-settings/tests/headless.sh target/debug/deps/desktop_headless-*`
-(55; optional first argument runs one group: theme displays dock online layout lock build extra parity).
+(57; optional first argument runs one group: theme icons displays dock online layout lock build extra parity).
 Byte parity drives `tests/parity_driver.py` (Python pages) inside the same private session with a fake HOME and
 compares the written files (bytes + mode).
 
@@ -33,6 +33,7 @@ compares the written files (bytes + mode).
 | Item | Done | Test |
 |---|---|---|
 | Style buttons ↔ `org.gnome.desktop.interface color-scheme` (Automatic/Light/Dark), external change sync, unavailable schema text | yes | `style_selector_writes_shared_color_scheme`, `interface_settings_drive_the_style_selector` |
+| (addition) Icons: dropdown of installed icon themes (`suite_core::icon_theme::discover`: index.theme with `Directories=`, no cursor-only/hidden themes except Adwaita, no `hicolor`/`default`/dock mirrors; `Name=` shown), samples (folder, text file, settings) from the selected theme, Papirus-Dark when the configured theme is missing; a choice writes gsettings `icon-theme` and `gtk-icon-theme-name` in `~/.config/gtk-{3,4}.0/settings.ini` (injectable `IconThemeSettings`); external changes followed; search target `icon_theme` | yes | group `icons`: `icons_dropdown_lists_installed_themes_and_saves_through_the_backend`, `icons_row_without_themes_is_disabled`; `icon_themes::tests` |
 | Match wallpaper, dock/app transparency (+enabled), Blur, Blur strength, rounded corners, window buttons left, colored buttons, shadows — APPEARANCE_FIELDS only | yes | 13 theme tests (`transparency_*`, `frost*`, `application_corners_*`, `failed_*`, `appearance_reloads_*`, `palette_reloads_*`, `closing_flushes_*`) |
 | 250 ms debounce, flush on deactivate/close, async save, revert on failure | yes | `transparency_drag_is_debounced_and_flushed_on_navigation`, `frost_strength_drag_*` |
 | Per-display wallpaper rows from `wallpapers.json`; `WallpaperChooser` (wayshell) with cancellable | yes | `wallpaper_has_per_monitor_controls_without_saving_on_open` |
