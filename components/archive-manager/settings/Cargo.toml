@@ -1,0 +1,17 @@
+[package]
+name = "archive-settings"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Archive Manager preferences (archive-manager.json), plugin table and the settings page shared with Global Settings."
+
+[lib]
+name = "archive_settings"
+path = "src/lib.rs"
+
+[dependencies]
+suite-core.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
