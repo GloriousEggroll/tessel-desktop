@@ -123,6 +123,64 @@ fn test_copy_cannot_enter_itself_through_directory_or_symlink() {
 }
 
 #[test]
+fn test_copy_into_own_folder_asks_for_a_new_name() {
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let folder = f.source.join("folder");
+        std::fs::create_dir(&folder).unwrap();
+        write(&folder.join("inner"), "inner");
+        std::fs::create_dir(f.source.join("folder (copy)")).unwrap();
+        let alias = f.root.join("alias");
+        symlink(&f.source, &alias).unwrap();
+        // Pasted next to itself, directly and through a symlinked folder.
+        for (destination, chosen) in [(&f.source, "chosen"), (&alias, "via alias")] {
+            let seen: Rc<RefCell<Vec<(bool, bool, Vec<&'static str>, Option<String>)>>> = Rc::default();
+            let record = seen.clone();
+            let callbacks = Callbacks::new().on_conflict(move |conflict, resolve| {
+                record.borrow_mut().push((conflict.same_item, conflict.can_merge, conflict.choices.clone(),
+                                          conflict.suggested_name.clone()));
+                resolve("rename", Some(chosen));
+            });
+            let result = run(ctx, &f.operations, "copy", &[&folder], Some(destination), callbacks);
+            assert_success(&result);
+            assert_eq!(seen.borrow()[0], (true, false, vec!["skip", "rename", "cancel"],
+                                          Some("folder (copy 2)".to_string())));
+            assert_eq!(read(&f.source.join(chosen).join("inner")), "inner");
+            assert_eq!(read(&folder.join("inner")), "inner");
+        }
+        // Keeping the same name asks again; the automatic name needs no input.
+        let asked = Rc::new(Cell::new(0));
+        let count = asked.clone();
+        let callbacks = Callbacks::new().on_conflict(move |_, resolve| {
+            count.set(count.get() + 1);
+            resolve("rename", if count.get() == 1 { Some("folder") } else { None });
+        });
+        let result = run(ctx, &f.operations, "copy", &[&folder], Some(&f.source), callbacks);
+        assert_success(&result);
+        assert_eq!(asked.get(), 2);
+        assert_eq!(read(&f.source.join("folder (copy 2)").join("inner")), "inner");
+        // Replace and merge are refused; with no handler the copy is skipped.
+        for choice in ["replace", "merge"] {
+            let result = run(ctx, &f.operations, "copy", &[&folder], Some(&f.source), resolving(choice));
+            assert_eq!(result.failures[0].message, "Invalid conflict decision.");
+        }
+        let result = run(ctx, &f.operations, "copy", &[&folder], Some(&f.source), Callbacks::new());
+        assert_success(&result);
+        assert_eq!(result.skipped.len(), 1);
+        // A plain file pasted next to itself works the same way.
+        let item = f.source.join("note.txt");
+        write(&item, "note");
+        let result = run(ctx, &f.operations, "copy", &[&item], Some(&f.source), resolving("rename"));
+        assert_success(&result);
+        assert_eq!(read(&f.source.join("note (copy).txt")), "note");
+        // Moving an item onto itself still fails without touching it.
+        let result = run(ctx, &f.operations, "move", &[&folder], Some(&f.source), resolving("rename"));
+        assert_eq!(result.failures[0].message, "A folder cannot be copied or moved into itself.");
+        assert_eq!(read(&folder.join("inner")), "inner");
+    });
+}
+
+#[test]
 fn test_default_conflict_skips_without_overwrite() {
     let f = Fixture::new();
     in_context(|ctx| {

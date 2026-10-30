@@ -244,6 +244,10 @@ pub struct Progress {
 }
 
 /// A destination that already exists. `choices` are the accepted answers.
+///
+/// `same_item` marks a copy pasted where its source already is (the source
+/// is the destination): only skip, rename and cancel apply, and
+/// `suggested_name` is a free name for the copy.
 #[derive(Clone, Debug)]
 pub struct Conflict {
     pub source: gio::File,
@@ -251,6 +255,8 @@ pub struct Conflict {
     pub is_directory: bool,
     pub can_merge: bool,
     pub choices: Vec<&'static str>,
+    pub same_item: bool,
+    pub suggested_name: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -641,7 +647,8 @@ impl Worker {
         }
     }
 
-    fn ask(&mut self, source: &gio::File, destination: &gio::File) -> Result<(String, Option<String>)> {
+    fn ask(&mut self, source: &gio::File, destination: &gio::File, same_item: bool)
+           -> Result<(String, Option<String>)> {
         if !self.has_conflict {
             return Ok(("skip".into(), None));
         }
@@ -652,13 +659,22 @@ impl Worker {
         let cancellable = self.cancellable();
         let src_dir = source.query_file_type(FLAGS, Some(&cancellable)) == gio::FileType::Directory;
         let dst_dir = destination.query_file_type(FLAGS, Some(&cancellable)) == gio::FileType::Directory;
-        let choices = if src_dir && dst_dir {
+        // Replacing or merging an item with itself would destroy or duplicate it.
+        let choices = if same_item {
+            vec!["skip", "rename", "cancel"]
+        } else if src_dir && dst_dir {
             vec!["skip", "replace", "rename", "merge", "cancel"]
         } else {
             vec!["skip", "replace", "rename", "cancel"]
         };
+        let suggested_name = match (same_item, destination.parent(), destination.basename()) {
+            (true, Some(parent), Some(name)) => self.unique(&parent, name.as_os_str().as_bytes(), "copy")?
+                .basename().map(|name| name.to_string_lossy().into_owned()),
+            _ => None,
+        };
         let conflict = Conflict { source: source.clone(), destination: destination.clone(), is_directory: src_dir,
-                                  can_merge: src_dir && dst_dir, choices: choices.clone() };
+                                  can_merge: !same_item && src_dir && dst_dir, choices: choices.clone(), same_item,
+                                  suggested_name };
         if self.sender.try_send(Event::Conflict(conflict, self.job.resolver())).is_err() {
             (self.job.resolver())("cancel", None);
         }
@@ -700,9 +716,14 @@ impl Worker {
         }
     }
 
-    fn guard(&self, source: &gio::File, destination: &gio::File) -> Result<()> {
+    /// Refuse a destination inside the source. `Ok(true)` means the
+    /// destination is the source itself (pasted into its own folder).
+    fn guard(&self, source: &gio::File, destination: &gio::File) -> Result<bool> {
         let message = || Error::value(tr!("A folder cannot be copied or moved into itself."));
-        if source.equal(destination) || destination.has_prefix(source) {
+        if source.equal(destination) {
+            return Ok(true);
+        }
+        if destination.has_prefix(source) {
             return Err(message());
         }
         // GIO URI prefix checks do not resolve symlinks in the destination's
@@ -714,12 +735,15 @@ impl Worker {
                 let src_real = pyos::realpath(&src_path);
                 let dst_real = pyos::realpath(&pyos::dirname(&dst_path)).join(pyos::basename(&dst_path));
                 let dst_real = PathBuf::from(OsString::from_vec(pyos::normpath(dst_real.as_os_str().as_bytes())));
-                if dst_real == src_real || (src_path.is_dir() && pyos::commonpath(&src_real, &dst_real) == src_real) {
+                if dst_real == src_real {
+                    return Ok(true);
+                }
+                if src_path.is_dir() && pyos::commonpath(&src_real, &dst_real) == src_real {
                     return Err(message());
                 }
             }
         }
-        Ok(())
+        Ok(false)
     }
 
     fn temporary(&self, destination: &gio::File, purpose: &str) -> Result<gio::File> {
@@ -798,11 +822,14 @@ impl Worker {
 
     fn transfer(&mut self, source: &gio::File, destination: &gio::File, moving: bool, link: bool) -> Result<bool> {
         self.check()?;
-        self.guard(source, destination)?;
+        let same_item = self.guard(source, destination)?;
+        if same_item && moving {
+            return Err(Error::value(tr!("A folder cannot be copied or moved into itself.")));
+        }
         let cancellable = self.cancellable();
         let mut backup = None;
-        if exists(destination, Some(&cancellable))? {
-            let (decision, new_name) = self.ask(source, destination)?;
+        if same_item || exists(destination, Some(&cancellable))? {
+            let (decision, new_name) = self.ask(source, destination, same_item)?;
             match decision.as_str() {
                 "skip" => {
                     self.result.skipped.push(uri(source));

@@ -544,6 +544,32 @@ fn find_window(f: &Fixture, title: &str) -> Option<gtk::Window> {
     f.app.app.windows().into_iter().find(|w| w.title().as_deref() == Some(title))
 }
 
+fn test_paste_folder_into_its_own_folder_asks_for_a_name(f: &mut Fixture) -> Outcome {
+    f.select("Documents")?;
+    f.window.action("copy");
+    f.window.action("paste");
+    wait!(|| find_window(f, "Paste Copy").is_some());
+    let dialog = find_window(f, "Paste Copy").unwrap();
+    let entry = tile::descendants(dialog.upcast_ref()).into_iter().find_map(|w| w.downcast::<gtk::Entry>().ok()).unwrap();
+    ensure_eq!(entry.text().as_str(), "Documents (copy)");
+    if let Some(shot) = std::env::var_os("WAYFILES_UI_SHOT").filter(|s| !s.is_empty()) {
+        settle(0.3);
+        let _ = std::process::Command::new("grim").arg(shot).status();
+    }
+    entry.set_text("Documents backup");
+    entry.emit_activate();
+    wait!(|| f.job_idle() && f.source.join("Documents backup/nested.txt").exists());
+    ensure_eq!(std::fs::read_to_string(f.source.join("Documents/nested.txt")).unwrap(), "deep needle\n");
+    // Dismissing the prompt pastes nothing.
+    f.window.action("paste");
+    wait!(|| find_window(f, "Paste Copy").is_some());
+    find_window(f, "Paste Copy").unwrap().close();
+    wait!(|| f.job_idle());
+    settle(0.05);
+    ensure!(!f.source.join("Documents (copy)").exists());
+    Ok(())
+}
+
 fn test_new_folder_dialog_accept_and_cancel(f: &mut Fixture) -> Outcome {
     f.window.action("new-folder");
     wait!(|| find_window(f, "New Folder").is_some());
@@ -1169,6 +1195,7 @@ fn checks() -> Vec<(&'static str, Check)> {
         ("test_closing_window_keeps_jobs_running_and_notifies_when_done", test_closing_window_keeps_jobs_running_and_notifies_when_done),
         ("test_closing_window_can_cancel_its_jobs", test_closing_window_can_cancel_its_jobs),
         ("test_ctrl_q_asks_once_about_running_jobs_then_closes", test_ctrl_q_asks_once_about_running_jobs_then_closes),
+        ("test_paste_folder_into_its_own_folder_asks_for_a_name", test_paste_folder_into_its_own_folder_asks_for_a_name),
         ("test_new_folder_dialog_accept_and_cancel", test_new_folder_dialog_accept_and_cancel),
         ("test_statusbar_and_single_click_preferences_apply_to_existing_views", test_statusbar_and_single_click_preferences_apply_to_existing_views),
         ("test_details_tree_expansion_selection_and_copy_nested_item", test_details_tree_expansion_selection_and_copy_nested_item),

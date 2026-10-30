@@ -1762,6 +1762,9 @@ fn progress_update(app: &FilesApplication, entry: &Rc<JobEntry>, progress: &Prog
 
 fn conflict_dialog(app: &FilesApplication, entry: &Rc<JobEntry>, conflict: &Conflict, resolve: Resolve) {
     let parent = entry.window().or_else(|| app.jobs.windows().into_iter().next());
+    if conflict.same_item {
+        return same_item_dialog(app, parent.as_ref(), conflict, resolve);
+    }
     #[allow(deprecated)]
     let dialog = gtk::Dialog::builder().title(tr!("File Already Exists")).modal(parent.is_some()).application(&app.app).build();
     #[allow(deprecated)]
@@ -1790,6 +1793,19 @@ fn conflict_dialog(app: &FilesApplication, entry: &Rc<JobEntry>, conflict: &Conf
         });
         dialog.present();
     }
+}
+
+/// A copy pasted into the folder it came from cannot keep its name: ask for one.
+/// Dismissing the prompt skips this item; the rest of the paste continues.
+fn same_item_dialog(app: &FilesApplication, parent: Option<&gtk::Window>, conflict: &Conflict, resolve: Resolve) {
+    let name = conflict.destination.basename().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let fallback = app.jobs.windows().into_iter().next();
+    let message = tr!("“{name}” already exists in this folder. Enter a name for the copy:", name = name.as_str());
+    dialogs::prompt_text(parent.or(fallback.as_ref()), &tr!("Paste Copy"), &message, conflict.suggested_name.as_deref(),
+        move |answer| match answer {
+            Some(name) if !name.is_empty() => resolve("rename", Some(&name)),
+            _ => resolve("skip", None),
+        });
 }
 
 fn job_summary(result: &OperationResult) -> Option<String> {
