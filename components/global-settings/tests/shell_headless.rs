@@ -419,8 +419,8 @@ fn audio_result_reveals_nested_audio_page() {
 /// session) must give the same ordered (section, key) lists.
 /// Search entries added after the port (no Python counterpart).
 const RUST_ONLY: &[(&str, &str)] = &[("theme", "icons")];
-/// Sections the Python suite does not have at all (Archive Manager replaces KDE's Ark).
-const RUST_ONLY_SECTIONS: &[&str] = &["archive"];
+/// Sections the Python suite does not have at all (Archive Manager replaces KDE's Ark; Clipboard, Klipper).
+const RUST_ONLY_SECTIONS: &[&str] = &["archive", "clipboard"];
 
 fn search_ranking_matches_python() {
     let Ok(btmanager) = std::env::var("BTMANAGER") else { panic!("BTMANAGER unset") };

@@ -15,7 +15,7 @@ use gio::prelude::*;
 use suite_core::tr;
 
 /// Units are named by their component, as on the dock and in Global Settings.
-pub const COMPONENTS: [(&str, &str); 11] = [
+pub const COMPONENTS: [(&str, &str); 12] = [
     ("waydock.service", "Dock"),
     ("wayshell.service", "Desktop shell"),
     ("netman.service", "Network"),
@@ -27,6 +27,7 @@ pub const COMPONENTS: [(&str, &str); 11] = [
     ("keep-awake.service", "Keep Awake"),
     ("on-screen-keyboard.service", "On-screen keyboard"),
     ("audio-manager-loopbacks.service", "Audio loopbacks"),
+    ("clipboard-manager.service", "Clipboard"),
 ];
 /// Keep the offer while the notification may still be listed; then exit quietly.
 pub const WAIT_MS: u64 = 30 * 60 * 1000;

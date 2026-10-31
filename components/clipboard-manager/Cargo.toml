@@ -1,0 +1,27 @@
+[package]
+name = "clipboard-manager"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "wayclip: keeps the clipboard (and optionally the middle-click selection) after the application that copied it closes."
+
+[lib]
+name = "clipboard_manager"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wayclip"
+path = "src/main.rs"
+
+[dependencies]
+clipboard-settings = { path = "settings", default-features = false }
+suite-core.workspace = true
+libc.workspace = true
+wayland-client = "0.31"
+wayland-backend = { version = "0.3", features = ["client_system"] }
+wayland-protocols = { version = "0.32", features = ["client", "staging"] }
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+
+[[test]]
+name = "headless"
+harness = false

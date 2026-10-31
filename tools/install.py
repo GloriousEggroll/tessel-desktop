@@ -639,6 +639,16 @@ COMPONENTS = (
                  + " --system --rollback --only login-manager  (or copy start-greeter back from the backup printed "
                  "above: /var/backups/desktop-suite/rust-swap-*/usr/local/lib/waylogin/start-greeter), then "
                  "`sudo systemctl restart waylogin.service` from that TTY to get the Python greeter back.")),
+    # ---- fresh user entries (no Python twin) ----------------------------------------------------
+    Component(
+        "clipboard-manager", "clipboard-manager", "clipboard-manager", ("wayclip",), shims=(), fresh=True,
+        uses_locale=False, files=((f"{UNITS}/clipboard-manager.service",
+                                   "components/clipboard-manager/clipboard-manager.service", 0o644),),
+        notes=("A fresh install (there is no Python twin): wayclip and ~/.config/systemd/user/clipboard-manager.service "
+               "(WantedBy=graphical-session.target) are created; --rollback --only clipboard-manager removes them.",
+               "Nothing is enabled or started: run `systemctl --user enable --now clipboard-manager.service` once.",
+               "Settings: ~/.config/desktop-suite/clipboard.json (Global Settings > Clipboard).",
+               "Verify: wayclip --check; copy text, close the application, paste.")),
     # ---- explicit user entries (never part of a plain --apply) -----------------------------------
     Component(
         "archive-manager-mime", "archive-manager", "", (), shims=(), base=".config", fresh=True, uses_locale=False,

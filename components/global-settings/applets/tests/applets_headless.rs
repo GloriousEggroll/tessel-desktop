@@ -335,6 +335,7 @@ pub fn factories(fakes: &Rc<Fakes>, scratch: &Path) -> Factories {
     });
     f.capture_path = Some(scratch.join("capture/config.json"));
     f.archive_path = Some(scratch.join("archive/archive-manager.json"));
+    f.clipboard_path = Some(scratch.join("clipboard/clipboard.json"));
     f
 }
 
@@ -760,6 +761,30 @@ fn test_archive_page_edits_the_archive_manager_settings_file(fx: &Fx) {
     page.close();
 }
 
+fn test_clipboard_page_edits_the_clipboard_settings_file(fx: &Fx) {
+    let page = fx.page("clipboard");
+    let controls = controller::<gs_applets::ClipboardPage>(&page).controls.clone();
+    let path = fx.factories.clipboard_path.clone().unwrap();
+    for key in ["keep_clipboard", "keep_primary", "skip_secrets", "max_mb"] {
+        check!(page.search_targets.borrow().contains_key(key), "clipboard target {key}");
+    }
+    check!(controls.page.margin_top() == 24);
+    check!(controls.switches["keep_clipboard"].is_active() && !controls.switches["keep_primary"].is_active());
+    controls.switches["keep_primary"].set_active(true);
+    controls.max_size.set_value(8.0);
+    let saved: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    check!(saved["keep_primary"] == serde_json::json!(true));
+    check!(saved["max_mb"] == serde_json::json!(8));
+    controls.switches["keep_clipboard"].set_active(false);
+    controls.switches["keep_primary"].set_active(false);
+    check!(!controls.max_size.is_sensitive() && !controls.switches["skip_secrets"].is_sensitive());
+    // Another writer changes the file: the page follows.
+    clipboard_settings::Store::new(Some(path.clone())).update(|s| s.keep_clipboard = true).unwrap();
+    check!(wait(|| controls.switches["keep_clipboard"].is_active()), "page did not reload");
+    check!(controls.max_size.is_sensitive());
+    page.close();
+}
+
 /// Every `target=` of these sections in settings_search.py resolves to a widget.
 fn test_search_targets_match_settings_search(fx: &Fx) {
     let source = std::env::var("BTMANAGER").map(PathBuf::from).unwrap_or_default().join("global-settings/settings_search.py");
@@ -832,7 +857,7 @@ fn test_multiple_embedded_applets_and_language_share_one_lifecycle(fx: &Fx) {
 
 fn test_unknown_section_is_an_error(fx: &Fx) {
     check!(build_page_with("displays", &fx.dyn_host, &fx.factories).is_err());
-    check!(SECTIONS.len() == 12);
+    check!(SECTIONS.len() == 13);
 }
 
 // --------------------------------------------------------------------- main
@@ -857,6 +882,7 @@ const TESTS: &[Test] = &[
     ("weather_and_capture_register_search_targets", test_weather_and_capture_register_search_targets),
     ("search_targets_match_settings_search", test_search_targets_match_settings_search),
     ("archive_page_edits_the_archive_manager_settings_file", test_archive_page_edits_the_archive_manager_settings_file),
+    ("clipboard_page_edits_the_clipboard_settings_file", test_clipboard_page_edits_the_clipboard_settings_file),
     ("multiple_embedded_applets_and_language_share_one_lifecycle",
      test_multiple_embedded_applets_and_language_share_one_lifecycle),
     ("unknown_section_is_an_error", test_unknown_section_is_an_error),

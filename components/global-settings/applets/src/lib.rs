@@ -1,6 +1,6 @@
 //! Global Settings pages that host the desktop applets' own controls
 //! (applet_pages.py, weather_page.py, language_page.py, capture_page.py), plus the
-//! Rust-only Archive Manager page.
+//! Rust-only Archive Manager and Clipboard pages.
 //!
 //! Each page owns only its display subscriptions: persistent power policy,
 //! idle inhibition, notifications and Bluetooth stay in their resident
@@ -20,6 +20,7 @@ mod audio;
 mod battery;
 mod bluetooth;
 mod capture;
+mod clipboard;
 mod datetime;
 mod keepawake;
 mod language;
@@ -36,6 +37,7 @@ pub use audio::AudioPage;
 pub use battery::BatteryPage;
 pub use bluetooth::BluetoothPage;
 pub use capture::CapturePage;
+pub use clipboard::ClipboardPage;
 pub use datetime::DatePage;
 pub use keepawake::KeepAwakePage;
 pub use language::LanguagePage;
@@ -47,7 +49,7 @@ pub use weather::WeatherPage;
 /// Sections built here, in the order of `applet_pages.BUILDERS` followed by
 /// the stand-alone page modules.
 pub const SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                                 "datetime", "weather", "language", "capture", "archive"];
+                                 "datetime", "weather", "language", "capture", "archive", "clipboard"];
 
 /// `applet_pages.BUILDERS` keys (the sections `applet_pages.build_page` accepts).
 pub const APPLET_SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "datetime", "keepawake",
@@ -89,6 +91,8 @@ pub struct Factories {
     pub capture_path: Option<PathBuf>,
     /// The Archive Manager settings file (default `~/.config/desktop-suite/archive-manager.json`).
     pub archive_path: Option<PathBuf>,
+    /// The clipboard settings file (default `~/.config/desktop-suite/clipboard.json`).
+    pub clipboard_path: Option<PathBuf>,
 }
 
 /// Build one page lazily with the real services.
@@ -111,6 +115,7 @@ pub fn build_page_with(section: &str, host: &Host, factories: &Factories) -> Res
         "language" => language::build(host, factories),
         "capture" => capture::build(host, factories),
         "archive" => archive::build(host, factories),
+        "clipboard" => clipboard::build(host, factories),
         other => Err(format!("Unknown settings section: {other}")),
     }
 }
@@ -128,7 +133,7 @@ mod tests {
     #[test]
     fn sections_cover_every_builder_once() {
         assert_eq!(SECTIONS, &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                               "datetime", "weather", "language", "capture", "archive"]);
+                               "datetime", "weather", "language", "capture", "archive", "clipboard"]);
         let mut unique = SECTIONS.to_vec();
         unique.sort();
         unique.dedup();
