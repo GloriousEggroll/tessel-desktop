@@ -27,7 +27,7 @@ SCRATCH = Path(os.environ.get("TMPDIR") or f"/run/user/{os.getuid()}/cbt/rust-in
 DSA_PROBE = 'grep -q -E -e "[\\"\']$2[\\"\']" "$1"'   # supports() in desktop-suite-action
 USER = [c for c in install.COMPONENTS if c.scope == "user" and not c.explicit]
 EXPLICIT = [c for c in install.COMPONENTS if c.explicit]
-SYSTEM = [c for c in install.COMPONENTS if c.scope == "system"]
+SYSTEM = [c for c in install.COMPONENTS if c.scope == "system" and not c.explicit]
 SYSTEM_SKIP = ("var/lib/desktop-suite", "var/backups")
 # Runs install.py as if euid were 0 (only ever together with --root <private prefix>; see run_system).
 FAKE_ROOT_EUID = ("import os, runpy, sys; os.geteuid = lambda: 0; sys.argv = sys.argv[1:]; "
@@ -915,6 +915,39 @@ class InstallerTest(unittest.TestCase):
         self.run_system(root, "--rollback")
         self.assertEqual(tree(root, skip=("var",)), before)
         self.assertEqual(json.loads((root / install.SYSTEM_STATE).read_text())["components"], {})
+
+    def test_keyring_adds_pam_lines_and_rolls_back_exactly(self):
+        sources = [install.REPO / source for _, source, _ in next(c for c in install.COMPONENTS if c.key == "keyring").files]
+        if not all(p.exists() for p in sources):
+            self.skipTest("cargo build --release -p waykeyring-ui -p pam-waykeyring first")
+        root = self.populate_system()
+        waylogin = ("#%PAM-1.0\nauth required pam_succeed_if.so user != root quiet\nauth include waylogin-auth\n"
+                    "account include system-auth\nsession include system-auth\n"
+                    "-session optional pam_gnome_keyring.so auto_start\n")
+        passwd = ("#%PAM-1.0\npassword   substack\tsystem-auth\n-password   optional\tpam_gnome_keyring.so use_authtok\n"
+                  "password   substack\tpostlogin\n")
+        (root / "etc/pam.d/waylogin").write_text(waylogin)
+        (root / "etc/pam.d/passwd").write_text(passwd)
+        before = tree(root, skip=("var",))
+        self.assertNotIn("keyring", self.run_system(root, "--check", euid0=False).stdout.split("Not shown")[0]
+                         .replace("rust-installer", ""), "explicit: not part of a plain --system run")
+        result = self.run_system(root, "--apply", "--only", "keyring", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(tree(root, skip=("var",)), before)
+        self.run_system(root, "--apply", "--only", "keyring", "--i-am-at-the-keyboard")
+        self.assertEqual((root / "etc/pam.d/waylogin").read_text(),
+                         "#%PAM-1.0\nauth required pam_succeed_if.so user != root quiet\nauth substack waylogin-auth\n"
+                         "-auth optional pam_waykeyring.so\naccount include system-auth\nsession include system-auth\n"
+                         "-session optional pam_waykeyring.so\n-session optional pam_gnome_keyring.so auto_start\n")
+        self.assertIn("-password   optional\tpam_waykeyring.so\npassword   substack\tpostlogin",
+                      (root / "etc/pam.d/passwd").read_text())
+        module = root / "usr/lib64/security/pam_waykeyring.so"
+        self.assertEqual(module.read_bytes(), sources[1].read_bytes())
+        self.assertTrue((root / install.SYSTEM_LIB / "keyring/waykeyring").exists())
+        self.assertIn("nothing to change",
+                      self.run_system(root, "--apply", "--only", "keyring", "--i-am-at-the-keyboard").stdout)
+        self.run_system(root, "--rollback", "--only", "keyring")
+        self.assertEqual(tree(root, skip=("var",)), before)
 
     def test_archive_manager_is_a_fresh_install_and_rolls_back_to_nothing(self):
         root = self.populate_system()

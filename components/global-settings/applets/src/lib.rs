@@ -1,6 +1,6 @@
 //! Global Settings pages that host the desktop applets' own controls
 //! (applet_pages.py, weather_page.py, language_page.py, capture_page.py), plus the
-//! Rust-only Archive Manager and Clipboard pages.
+//! Rust-only Archive Manager, Clipboard and Passwords pages.
 //!
 //! Each page owns only its display subscriptions: persistent power policy,
 //! idle inhibition, notifications and Bluetooth stay in their resident
@@ -26,6 +26,7 @@ mod keepawake;
 mod language;
 mod network;
 mod notifications;
+mod passwords;
 mod power;
 mod weather;
 
@@ -43,13 +44,14 @@ pub use keepawake::KeepAwakePage;
 pub use language::LanguagePage;
 pub use network::{NetworkPage, FACADE_ID as NETWORK_FACADE_ID};
 pub use notifications::NotificationsPage;
+pub use passwords::PasswordsPage;
 pub use power::PowerPage;
 pub use weather::WeatherPage;
 
 /// Sections built here, in the order of `applet_pages.BUILDERS` followed by
 /// the stand-alone page modules.
 pub const SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                                 "datetime", "weather", "language", "capture", "archive", "clipboard"];
+                                 "datetime", "weather", "language", "capture", "archive", "clipboard", "passwords"];
 
 /// `applet_pages.BUILDERS` keys (the sections `applet_pages.build_page` accepts).
 pub const APPLET_SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "datetime", "keepawake",
@@ -116,6 +118,7 @@ pub fn build_page_with(section: &str, host: &Host, factories: &Factories) -> Res
         "capture" => capture::build(host, factories),
         "archive" => archive::build(host, factories),
         "clipboard" => clipboard::build(host, factories),
+        "passwords" => passwords::build(host, factories),
         other => Err(format!("Unknown settings section: {other}")),
     }
 }
@@ -133,7 +136,7 @@ mod tests {
     #[test]
     fn sections_cover_every_builder_once() {
         assert_eq!(SECTIONS, &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                               "datetime", "weather", "language", "capture", "archive", "clipboard"]);
+                               "datetime", "weather", "language", "capture", "archive", "clipboard", "passwords"]);
         let mut unique = SECTIONS.to_vec();
         unique.sort();
         unique.dedup();

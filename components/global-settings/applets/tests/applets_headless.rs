@@ -785,6 +785,76 @@ fn test_clipboard_page_edits_the_clipboard_settings_file(fx: &Fx) {
     page.close();
 }
 
+fn test_passwords_page_lists_copies_and_deletes_waykeyring_entries(fx: &Fx) {
+    let page_without = fx.page("passwords");
+    let controls = controller::<gs_applets::PasswordsPage>(&page_without).controls.clone();
+    check!(controls.status_title.label().contains("Another"), "no waykeyring yet: {}", controls.status_title.label());
+    page_without.close();
+    // A real waykeyring on this private bus (scratch keyring, no kernel keyring, fake prompt).
+    let bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../target/debug/waykeyring");
+    check!(bin.exists(), "build it first: cargo build -p waykeyring ({})", bin.display());
+    let dir = fx.factories.clipboard_path.clone().unwrap().parent().unwrap().parent().unwrap().join("keyring");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let prompt = dir.join("prompt.sh");
+    std::fs::write(&prompt, "#!/bin/sh\necho pw\n").unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&prompt, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let mut login = std::process::Command::new(&bin).args(["--login", "--no-kernel", "--dir"]).arg(dir.join("k"))
+        .stdin(std::process::Stdio::piped()).spawn().unwrap();
+    use std::io::Write;
+    login.stdin.take().unwrap().write_all(b"pw").unwrap();
+    check!(login.wait().unwrap().success());
+    let mut daemon = std::process::Command::new(&bin).arg("--dir").arg(dir.join("k")).arg("--gnome-dir").arg(dir.join("g"))
+        .arg("--prompt").arg(&prompt).args(["--no-kernel", "--no-chkpwd"]).spawn().unwrap();
+    let store = |label: &str, attrs: &[&str], secret: &str| {
+        let mut c = std::process::Command::new("secret-tool").arg("store").arg(format!("--label={label}")).args(attrs)
+            .stdin(std::process::Stdio::piped()).spawn().unwrap();
+        c.stdin.take().unwrap().write_all(secret.as_bytes()).unwrap();
+        c.wait().unwrap().success()
+    };
+    check!(wait(|| store("GitHub", &["server", "github.com", "user", "me"], "token")), "secret-tool store");
+    check!(store("Slack Safe Storage", &["application", "Slack"], "s2"));
+    let page = fx.page("passwords");
+    let controls = controller::<gs_applets::PasswordsPage>(&page).controls.clone();
+    for key in ["saved", "status"] {
+        check!(page.search_targets.borrow().contains_key(key), "passwords target {key}");
+    }
+    check!(controls.status_title.label() == "Protected by your login password", "{}", controls.status_title.label());
+    let rows = |c: &waykeyring_ui::page::PasswordsPage| {
+        let mut n = 0;
+        let mut child = c.list.first_child();
+        while let Some(w) = child {
+            n += 1;
+            child = w.next_sibling();
+        }
+        n
+    };
+    check!(rows(&controls) == 2, "rows {}", rows(&controls));
+    let github = controls.list.first_child().unwrap();
+    check!(github.widget_name().contains("/collection/login/"));
+    controls.search.set_text("slack");
+    check!(wait(|| rows(&controls) == 1));
+    controls.search.set_text("nothing-like-this");
+    check!(wait(|| rows(&controls) == 0 && controls.empty.is_visible()));
+    controls.search.set_text("");
+    check!(wait(|| rows(&controls) == 2));
+    let client = controls.client.clone().unwrap();
+    check!(client.secret(github.widget_name().as_str()).as_deref() == Some(&b"token"[..]));
+    controls.delete(github.widget_name().as_str());
+    check!(wait(|| rows(&controls) == 1), "delete");
+    // Another client adds an entry: the page follows waykeyring's Changed signal.
+    check!(store("Git", &["protocol", "https", "host", "gitlab.com"], "t3"));
+    check!(wait(|| rows(&controls) == 2), "page did not follow Changed");
+    controls.lock.emit_clicked();
+    check!(wait(|| controls.status_title.label() == "Locked" && controls.unlock.is_visible()));
+    controls.unlock.emit_clicked();
+    check!(wait(|| controls.status_title.label() == "Protected by your login password"), "unlock via prompt");
+    page.close();
+    let _ = daemon.kill();
+    let _ = daemon.wait();
+}
+
 /// Every `target=` of these sections in settings_search.py resolves to a widget.
 fn test_search_targets_match_settings_search(fx: &Fx) {
     let source = std::env::var("BTMANAGER").map(PathBuf::from).unwrap_or_default().join("global-settings/settings_search.py");
@@ -857,7 +927,7 @@ fn test_multiple_embedded_applets_and_language_share_one_lifecycle(fx: &Fx) {
 
 fn test_unknown_section_is_an_error(fx: &Fx) {
     check!(build_page_with("displays", &fx.dyn_host, &fx.factories).is_err());
-    check!(SECTIONS.len() == 13);
+    check!(SECTIONS.len() == 14);
 }
 
 // --------------------------------------------------------------------- main
@@ -883,6 +953,8 @@ const TESTS: &[Test] = &[
     ("search_targets_match_settings_search", test_search_targets_match_settings_search),
     ("archive_page_edits_the_archive_manager_settings_file", test_archive_page_edits_the_archive_manager_settings_file),
     ("clipboard_page_edits_the_clipboard_settings_file", test_clipboard_page_edits_the_clipboard_settings_file),
+    ("passwords_page_lists_copies_and_deletes_waykeyring_entries",
+     test_passwords_page_lists_copies_and_deletes_waykeyring_entries),
     ("multiple_embedded_applets_and_language_share_one_lifecycle",
      test_multiple_embedded_applets_and_language_share_one_lifecycle),
     ("unknown_section_is_an_error", test_unknown_section_is_an_error),

@@ -2,7 +2,7 @@
 resolver = "2"
 # "c[or][am]*/*" = crates/* + components/*; a literal "components/*" glob makes
 # cargo fail while components/ is still empty.
-members = ["c[or][am]*/*"]
+members = ["c[or][am]*/*", "components/waykeyring/pam", "components/waykeyring/ui"]
 
 [workspace.package]
 edition = "2021"

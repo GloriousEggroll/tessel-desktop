@@ -1,0 +1,14 @@
+[package]
+name = "pam-waykeyring"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "pam_waykeyring.so: unlocks waykeyring with the login password (auth + session) and re-wraps it on password change."
+
+[lib]
+name = "pam_waykeyring"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+libc.workspace = true

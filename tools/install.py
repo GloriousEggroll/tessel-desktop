@@ -198,6 +198,7 @@ class Component:
     fresh: bool = False                   # no Python original: launcher/files are created, --rollback removes them
     files: tuple = ()                     # (path relative to the base, repo source, mode) installed verbatim
     mime_defaults: tuple = ()             # MimeDefaults: only these keys of [Default Applications] change
+    extra_packages: tuple = ()            # more cargo packages built for `files` (waykeyring-ui, pam-waykeyring)
     uses_locale: bool = True              # user entries: needs the shared catalogs in ~/.local/share/desktop-suite
     explicit: bool = False                # only with --only <key> (never part of "every component")
 
@@ -616,6 +617,31 @@ COMPONENTS = (
                "Default handler for archives: user-scope entry archive-manager-mime (only with --only).",
                "Verify: wayarchive --check, then open an archive and drag an entry into Files.")),
     Component(
+        "keyring", "waykeyring", "keyring", ("waykeyring",), shims=(),
+        files=(("usr/local/lib/desktop-suite/keyring/waykeyring-prompt", "target/release/waykeyring-prompt", 0o755),
+               ("usr/lib64/security/pam_waykeyring.so", "target/release/libpam_waykeyring.so", 0o755)),
+        edits=(TextEdit("etc/pam.d/waylogin", "auth include waylogin-auth\n",
+                        "auth substack waylogin-auth\n-auth optional pam_waykeyring.so\n"),
+               TextEdit("etc/pam.d/waylogin", "session include system-auth\n",
+                        "session include system-auth\n-session optional pam_waykeyring.so\n"),
+               TextEdit("etc/pam.d/passwd", "-password   optional\tpam_gnome_keyring.so use_authtok\n",
+                        "-password   optional\tpam_gnome_keyring.so use_authtok\n-password   optional\tpam_waykeyring.so\n")),
+        extra_packages=("waykeyring-ui", "pam-waykeyring"),
+        base=SYSTEM_LIB, scope="system", locale_dir="locale", fresh=True, requires_confirmation=True, explicit=True,
+        notes=("waykeyring, the suite's own Secret Service (org.freedesktop.secrets): /usr/local/lib/desktop-suite/keyring/"
+               "{waykeyring,waykeyring-prompt}, /usr/lib64/security/pam_waykeyring.so, and three PAM lines: Waylogin's auth "
+               "stack runs waylogin-auth as a substack followed by `-auth optional pam_waykeyring.so` (keeps the password "
+               "for the session), `-session optional pam_waykeyring.so` (runs `waykeyring --login` as the user), and "
+               "passwd's `-password optional pam_waykeyring.so` (re-wraps the keyring when the password changes).",
+               "Every pam_waykeyring entry point returns PAM_IGNORE: it never decides a login.",
+               "Then the user entry keyring-session (D-Bus activation + waykeyring.service) and a new login.",
+               "Runs only when named: --system --apply --only keyring --i-am-at-the-keyboard.",
+               "login-manager/install_login.py rewrites /etc/pam.d/waylogin (drops the lines); re-run this entry after it."),
+        warning=("keyring: this edits /etc/pam.d/waylogin (Waylogin's login stack). Only optional lines are added and "
+                 "`auth include waylogin-auth` becomes `auth substack waylogin-auth`; still, if graphical login fails "
+                 "afterwards, switch to a TTY (Ctrl+Alt+F3), log in there and run: sudo /usr/bin/python3 "
+                 + str(Path(__file__).resolve()) + " --system --rollback --only keyring")),
+    Component(
         "login-manager", "login-manager", "waylogin", ("login-ui", "session-transition", "login-settings-helper"),
         shims=(),
         edits=(TextEdit("usr/local/lib/waylogin/start-greeter",
@@ -649,6 +675,15 @@ COMPONENTS = (
                "Nothing is enabled or started: run `systemctl --user enable --now clipboard-manager.service` once.",
                "Settings: ~/.config/desktop-suite/clipboard.json (Global Settings > Clipboard).",
                "Verify: wayclip --check; copy text, close the application, paste.")),
+    Component(
+        "keyring-session", "waykeyring", "", (), shims=(), fresh=True, uses_locale=False, base=".config", explicit=True,
+        files=((".local/share/dbus-1/services/org.freedesktop.secrets.service",
+                "components/waykeyring/data/org.freedesktop.secrets.service", 0o644),
+               (f"{UNITS}/waykeyring.service", "components/waykeyring/data/waykeyring.service", 0o644)),
+        notes=("Makes waykeyring the session's Secret Service: ~/.local/share/dbus-1/services/org.freedesktop.secrets.service "
+               "(takes precedence over gnome-keyring's /usr/share file) activates waykeyring.service. Install the system "
+               "entry keyring first. A Secret Service that is already running (gnome-keyring) keeps the name until you "
+               "sign out; waykeyring takes over at the next login and imports GNOME's unencrypted keyrings.",)),
     # ---- explicit user entries (never part of a plain --apply) -----------------------------------
     Component(
         "archive-manager-mime", "archive-manager", "", (), shims=(), base=".config", fresh=True, uses_locale=False,
@@ -1264,6 +1299,8 @@ def plan_component(component, home, sources, locale_source=None):
                              for key, raw in originals.items())
             changes.append(Change(component.key, rc, "rcxml", new.encode(), stat.S_IMODE(rc.stat().st_mode),
                                   note, commands=originals))
+    # Several edits of one file are applied in order and become one change.
+    edited = {}
     for edit in component.edits:
         path = home / edit.path
         old, new = edit_strings(home, edit)
@@ -1273,14 +1310,19 @@ def plan_component(component, home, sources, locale_source=None):
         if not path.is_file():
             problems.append(f"{edit.path} is not installed; install the Python component first")
             continue
-        text = path.read_text()
-        if new in text and old not in text:
-            continue                                # already swapped
+        original, text, notes, replacements = edited.get(path, (path.read_text(), None, [], []))
+        text = original if text is None else text
+        if new in text:                             # already swapped (`new` may contain `old`: added lines)
+            edited[path] = (original, text, notes, replacements)
+            continue
         if text.count(old) != 1:
             problems.append(f"{edit.path} does not contain exactly one `{old}`; not edited (changed by hand?)")
             continue
-        changes.append(Change(component.key, path, "edit", text.replace(old, new).encode(),
-                              stat.S_IMODE(path.stat().st_mode), f"{old} -> {new}", replacements=[[old, new]]))
+        edited[path] = (original, text.replace(old, new), notes + [f"{old} -> {new}"], replacements + [[old, new]])
+    for path, (original, text, notes, replacements) in edited.items():
+        if text != original:
+            changes.append(Change(component.key, path, "edit", text.encode(), stat.S_IMODE(path.stat().st_mode),
+                                  "\n".join(notes), replacements=replacements))
     if component.locale_dir:
         catalogs = sorted(locale_source.glob("*.json")) if locale_source and locale_source.is_dir() else []
         if not catalogs:
@@ -1383,7 +1425,7 @@ def missing_parents(path, home):
 # ---- apply / rollback ---------------------------------------------------------------------------
 
 def build(components):
-    packages = sorted({component.package for component in components})
+    packages = sorted({package for component in components for package in (component.package, *component.extra_packages)})
     for package in packages:
         print(f"cargo build --release -p {package}")
         subprocess.run(["cargo", "build", "--release", "-p", package], cwd=REPO, check=True)
