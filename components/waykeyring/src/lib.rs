@@ -12,7 +12,9 @@
 pub mod crypto;
 pub mod dh;
 pub mod gnome_import;
+pub mod imports;
 pub mod kernel;
+pub mod kwallet_import;
 pub mod login;
 pub mod service;
 pub mod store;

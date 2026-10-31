@@ -25,7 +25,8 @@ pub fn read_stdin() -> Zeroizing<Vec<u8>> {
 }
 
 /// `kernel`: also hand the master key to the kernel keyring (off in tests).
-pub fn login(dir: PathBuf, password: &[u8], kernel: bool) -> Result<Outcome, String> {
+/// KDE wallets with the same password are decrypted for the daemon to import.
+pub fn login(dir: PathBuf, kwallet_dir: &std::path::Path, password: &[u8], kernel: bool) -> Result<Outcome, String> {
     if password.is_empty() {
         return Err("no password (passwordless or fingerprint login); the keyring stays locked".into());
     }
@@ -39,6 +40,7 @@ pub fn login(dir: PathBuf, password: &[u8], kernel: bool) -> Result<Outcome, Str
         keyring.set_up(password)?;
         (Outcome::Created, keyring.master().cloned().ok_or("set up without a key")?)
     };
+    crate::imports::kwallets_at_login(&keyring.dir, kwallet_dir, password, &master);
     if kernel {
         crate::kernel::store(&master)?;
     }
@@ -66,13 +68,21 @@ mod tests {
     fn login_creates_then_unlocks_then_password_changes() {
         let dir = std::env::temp_dir().join(format!("waykeyring-login-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        assert!(login(dir.clone(), b"", false).is_err());
-        assert_eq!(login(dir.clone(), b"pw", false).unwrap(), Outcome::Created);
-        assert_eq!(login(dir.clone(), b"pw", false).unwrap(), Outcome::Unlocked);
-        assert_eq!(login(dir.clone(), b"nope", false).unwrap(), Outcome::WrongPassword);
+        let kw = dir.join("kwalletd");
+        std::fs::create_dir_all(&kw).unwrap();
+        std::fs::write(kw.join("kdewallet.kwl"), crate::kwallet_import::tests::make_wallet(b"pw", &[1; 56], false)).unwrap();
+        std::fs::write(kw.join("kdewallet.salt"), [1u8; 56]).unwrap();
+        std::fs::write(kw.join("other.kwl"), crate::kwallet_import::tests::make_wallet(b"different", &[1; 56], false)).unwrap();
+        std::fs::write(kw.join("other.salt"), [1u8; 56]).unwrap();
+        assert!(login(dir.clone(), &kw, b"", false).is_err());
+        assert_eq!(login(dir.clone(), &kw, b"pw", false).unwrap(), Outcome::Created);
+        assert!(crate::imports::has_pending(&dir, "kwallet:kdewallet.kwl"), "same-password wallet decrypted at login");
+        assert!(!crate::imports::has_pending(&dir, "kwallet:other.kwl"));
+        assert_eq!(login(dir.clone(), &kw, b"pw", false).unwrap(), Outcome::Unlocked);
+        assert_eq!(login(dir.clone(), &kw, b"nope", false).unwrap(), Outcome::WrongPassword);
         assert_eq!(change_password(dir.clone(), b"bad\0new").unwrap(), Outcome::WrongPassword);
         assert_eq!(change_password(dir.clone(), b"pw\0new").unwrap(), Outcome::Changed);
-        assert_eq!(login(dir.clone(), b"new", false).unwrap(), Outcome::Unlocked);
+        assert_eq!(login(dir.clone(), &kw, b"new", false).unwrap(), Outcome::Unlocked);
         let _ = std::fs::remove_dir_all(dir);
     }
 }

@@ -805,7 +805,14 @@ fn test_passwords_page_lists_copies_and_deletes_waykeyring_entries(fx: &Fx) {
     use std::io::Write;
     login.stdin.take().unwrap().write_all(b"pw").unwrap();
     check!(login.wait().unwrap().success());
+    let kwallets = dir.join("kwalletd");
+    std::fs::create_dir_all(&kwallets).unwrap();
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../waykeyring/tests/fixtures/kwalletd");
+    for name in ["old.kwl", "old.salt"] {
+        std::fs::copy(fixtures.join(name), kwallets.join(name)).unwrap();
+    }
     let mut daemon = std::process::Command::new(&bin).arg("--dir").arg(dir.join("k")).arg("--gnome-dir").arg(dir.join("g"))
+        .arg("--kwallet-dir").arg(&kwallets)
         .arg("--prompt").arg(&prompt).args(["--no-kernel", "--no-chkpwd"]).spawn().unwrap();
     let store = |label: &str, attrs: &[&str], secret: &str| {
         let mut c = std::process::Command::new("secret-tool").arg("store").arg(format!("--label={label}")).args(attrs)
@@ -817,7 +824,7 @@ fn test_passwords_page_lists_copies_and_deletes_waykeyring_entries(fx: &Fx) {
     check!(store("Slack Safe Storage", &["application", "Slack"], "s2"));
     let page = fx.page("passwords");
     let controls = controller::<gs_applets::PasswordsPage>(&page).controls.clone();
-    for key in ["saved", "status"] {
+    for key in ["saved", "status", "import"] {
         check!(page.search_targets.borrow().contains_key(key), "passwords target {key}");
     }
     check!(controls.status_title.label() == "Protected by your login password", "{}", controls.status_title.label());
@@ -846,6 +853,40 @@ fn test_passwords_page_lists_copies_and_deletes_waykeyring_entries(fx: &Fx) {
     // Another client adds an entry: the page follows waykeyring's Changed signal.
     check!(store("Git", &["protocol", "https", "host", "gitlab.com"], "t3"));
     check!(wait(|| rows(&controls) == 2), "page did not follow Changed");
+    // Import: the pending KDE wallet has a row; its password dialog retries in place.
+    let wallet_row = controls.import_card.first_child().unwrap();
+    check!(wallet_row.widget_name().starts_with("kwallet:"), "{}", wallet_row.widget_name());
+    let dialog = controls.ask_wallet_password(&controls.import_file, &kwallets.join("old.kwl").to_string_lossy());
+    let descendants = |root: &gtk::Widget| {
+        let mut all = Vec::new();
+        let mut stack = vec![root.clone()];
+        while let Some(w) = stack.pop() {
+            let mut c = w.first_child();
+            while let Some(x) = c {
+                stack.push(x.clone());
+                c = x.next_sibling();
+            }
+            all.push(w);
+        }
+        all
+    };
+    let widgets = descendants(dialog.upcast_ref());
+    let entry = widgets.iter().find_map(|w| w.clone().downcast::<gtk::Entry>().ok()).unwrap();
+    let error = widgets.iter().filter_map(|w| w.clone().downcast::<gtk::Label>().ok()).find(|l| l.has_css_class("error")).unwrap();
+    entry.set_text("wrong");
+    entry.emit_activate();
+    check!(wait(|| error.is_visible()), "wrong password shown");
+    check!(dialog.is_visible() && error.label() == "That wallet password is not correct.");
+    entry.set_text("kpw");
+    entry.emit_activate();
+    check!(wait(|| !dialog.is_visible()), "dialog closes after import");
+    check!(wait(|| controls.import_status.label() == "Imported 3 entries."), "{}", controls.import_status.label());
+    check!(wait(|| !controls.import_card.first_child().unwrap().widget_name().starts_with("kwallet:")), "row gone");
+    check!(wait(|| rows(&controls) == 5), "imported rows {}", rows(&controls));
+    let gnome = dir.join("plain.keyring");
+    std::fs::write(&gnome, "[keyring]\ndisplay-name=x\n\n[1]\nitem-type=0\ndisplay-name=Mail\nsecret=m\n").unwrap();
+    controls.import_path(&controls.import_file, &gnome.to_string_lossy());
+    check!(wait(|| controls.import_status.label() == "Imported 1 entries."), "{}", controls.import_status.label());
     controls.lock.emit_clicked();
     check!(wait(|| controls.status_title.label() == "Locked" && controls.unlock.is_visible()));
     controls.unlock.emit_clicked();

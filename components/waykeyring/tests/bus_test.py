@@ -7,7 +7,9 @@ import json, os, subprocess, sys, time
 from pathlib import Path
 
 BIN, ROOT = sys.argv[1], Path(sys.argv[2])
-DIR, GNOME = ROOT / "keyring", ROOT / "gnome"
+DIR, GNOME, KWALLET = ROOT / "keyring", ROOT / "gnome", ROOT / "kwalletd"
+import shutil
+shutil.copytree(Path(__file__).parent / "fixtures/kwalletd", KWALLET)
 PROMPT = ROOT / "prompt.sh"
 failures = []
 
@@ -36,7 +38,7 @@ def calls():
 
 
 def start():
-    p = subprocess.Popen([BIN, "--dir", str(DIR), "--gnome-dir", str(GNOME), "--prompt", str(PROMPT),
+    p = subprocess.Popen([BIN, "--dir", str(DIR), "--gnome-dir", str(GNOME), "--kwallet-dir", str(KWALLET), "--prompt", str(PROMPT),
                           "--no-kernel", "--no-chkpwd"])
     for _ in range(50):
         r = subprocess.run(["busctl", "--user", "status", "org.freedesktop.secrets"], capture_output=True)
@@ -66,8 +68,10 @@ GNOME.mkdir(parents=True)
 (GNOME / "login.keyring").write_bytes(b"GnomeKeyring\n\r\x00\nencrypted")
 
 # The first login creates the keyring.
-r = subprocess.run([BIN, "--login", "--no-kernel", "--dir", str(DIR)], input=b"pw")
+r = subprocess.run([BIN, "--login", "--no-kernel", "--dir", str(DIR), "--kwallet-dir", str(KWALLET)], input=b"pw")
 check("--login creates the keyring", r.returncode == 0 and (DIR / "master.json").exists())
+check("--login decrypts the same-password KDE wallet for import", sorted(p.name for p in (DIR / "pending").iterdir())
+      == ["kwallet_kdewallet.kwl.json"])
 r = subprocess.run([BIN, "--login", "--no-kernel", "--dir", str(DIR)], input=b"wrong")
 check("--login with a wrong password fails", r.returncode == 1)
 
@@ -80,6 +84,42 @@ code, out, _ = tool("lookup", "service", "github")
 check("lookup returns the secret", code == 0 and out == "token-123", out)
 code, out, _ = tool("lookup", "server", "192.168.0.39")
 check("GNOME plain-text keyring imported on unlock", out == "old secret", out)
+code, out, _ = tool("lookup", "service", "kde-github", "user", "kde-me")
+check("KDE wallet imported on unlock with its Secret Service attributes", out == "tøken", out)
+code, out, _ = tool("lookup", "app_id", "org.kde.Imported", "xdg:schema", "org.freedesktop.impl.portal.Secret")
+check("KDE wallet portal key kept for its Flatpak app", code == 0, out)
+check("pending import consumed", not list((DIR / "pending").iterdir()))
+
+def control(method, *args):
+    import gi
+    gi.require_version("Gio", "2.0")
+    from gi.repository import Gio, GLib
+    conn = Gio.bus_get_sync(Gio.BusType.SESSION)
+    try:
+        sig = {"ImportKWallet": "(say)", "ImportGnomeKeyring": "(s)"}[method]
+        r = conn.call_sync("org.freedesktop.secrets", "/org/waydock/Keyring", "org.waydock.Keyring", method,
+                           GLib.Variant(sig, args), None, Gio.DBusCallFlags.NONE, 20000, None)
+        return r.unpack()
+    except GLib.Error as e:
+        return Gio.DBusError.get_remote_error(e)
+
+status = json.loads(subprocess.run([BIN, "--status"], capture_output=True, text=True).stdout)
+check("status lists the KDE wallet that still needs its password", status["kwallets"] == [str(KWALLET / "old.kwl")],
+      str(status))
+check("wrong KDE wallet password", control("ImportKWallet", str(KWALLET / "old.kwl"), b"nope")
+      == "org.waydock.Keyring.Error.WrongPassword")
+r = control("ImportKWallet", str(KWALLET / "old.kwl"), b"kpw")
+# old.kwl has no _attributes.json: its github entry gets kwallet-folder/key attributes (new);
+# the map entry and the portal key match what kdewallet already imported.
+check("KDE wallet with its own password: same entries are skipped", r == (1, 2), str(r))
+status = json.loads(subprocess.run([BIN, "--status"], capture_output=True, text=True).stdout)
+check("no KDE wallets left to import", status["kwallets"] == [], str(status))
+other = ROOT / "elsewhere.keyring"
+other.write_text("[keyring]\ndisplay-name=x\n\n[1]\nitem-type=0\ndisplay-name=Mail\nsecret=m\n\n"
+                 "[1:attribute0]\nname=server\ntype=string\nvalue=mail.example\n")
+check("GNOME keyring file imported on request", control("ImportGnomeKeyring", str(other)) == (1, 0))
+check("encrypted GNOME keyring refused", control("ImportGnomeKeyring", str(GNOME / "login.keyring"))
+      == "org.waydock.Keyring.Error.Failed")
 code, out, err = tool("search", "--all", "service", "github")
 check("search shows label and attributes", "label = GitHub" in out and "attribute.user = me" in err, out + err)
 code, out, _ = tool("store", "--label=GitHub 2", "service", "github", "user", "me", stdin="token-456")
@@ -113,7 +153,7 @@ check("new collections work", any(c.get_label() == "Work" for c in secretstorage
 
 # Control interface.
 status = json.loads(subprocess.run([BIN, "--status"], capture_output=True, text=True).stdout)
-check("status", status["set_up"] and status["unlocked"] and status["imported"] == 1
+check("status", status["set_up"] and status["unlocked"] and status["imported"] == 6
       and len(status["legacy_files"]) == 2, str(status))
 
 # Portal backend: the same key for the same app every time.

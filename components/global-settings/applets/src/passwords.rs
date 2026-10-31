@@ -29,6 +29,7 @@ pub(crate) fn build(_host: &Host, _factories: &Factories) -> Result<SettingsPage
     let page = SettingsPage::new(scroll);
     page.add_target("saved", &controls.search);
     page.add_target("status", &controls.status_title);
+    page.add_target("import", &controls.import_file);
     let closing = controls.clone();
     page.set_close(move || closing.close());
     page.set_controller(Rc::new(PasswordsPage { controls }));

@@ -5,12 +5,12 @@
 //!   waykeyring --change-password   PAM helper: "old NUL new" on stdin
 //!   waykeyring --status            print the running daemon's status as JSON
 //!
-//! Test/dev options: --dir DIR, --gnome-dir DIR, --prompt PROGRAM, --no-kernel, --no-chkpwd.
+//! Test/dev options: --dir DIR, --gnome-dir DIR, --kwallet-dir DIR, --prompt PROGRAM, --no-kernel, --no-chkpwd.
 use std::path::PathBuf;
 use waykeyring::login::{self, Outcome};
 use waykeyring::service::{self, Config};
 
-const USAGE: &str = "Usage: waykeyring [--login | --change-password | --status] [--dir DIR] [--gnome-dir DIR] \
+const USAGE: &str = "Usage: waykeyring [--login | --change-password | --status] [--dir DIR] [--gnome-dir DIR] [--kwallet-dir DIR] \
 [--prompt PROGRAM] [--no-kernel] [--no-chkpwd]";
 
 fn status() -> i32 {
@@ -59,6 +59,7 @@ fn main() {
             "--status" => mode = "status",
             "--dir" => config.dir = value("--dir"),
             "--gnome-dir" => config.gnome_dir = value("--gnome-dir"),
+            "--kwallet-dir" => config.kwallet_dir = value("--kwallet-dir"),
             "--prompt" => config.prompt = value("--prompt"),
             "--no-kernel" => config.kernel = false,
             "--no-chkpwd" => config.chkpwd = None,
@@ -73,7 +74,7 @@ fn main() {
         }
     }
     let code = match mode {
-        "login" => match login::login(config.dir, &login::read_stdin(), config.kernel) {
+        "login" => match login::login(config.dir, &config.kwallet_dir, &login::read_stdin(), config.kernel) {
             Ok(Outcome::WrongPassword) => {
                 eprintln!("waykeyring: the login password does not open the keyring (changed elsewhere?); \
                            it will ask once when a secret is needed");

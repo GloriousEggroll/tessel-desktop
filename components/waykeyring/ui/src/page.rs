@@ -25,7 +25,12 @@ pub struct Status {
     pub items: u32,
     pub imported: u32,
     pub legacy_files: Vec<String>,
+    /// KDE wallets not imported yet.
+    pub kwallets: Vec<String>,
 }
+
+/// Outcome of an import: (added, already saved), or the D-Bus error name and message.
+pub type ImportResult = Result<(u32, u32), (String, String)>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Entry {
@@ -89,6 +94,7 @@ impl Client {
             set_up: flag("set_up"), unlocked: flag("unlocked"), unlocked_by_login: flag("unlocked_by_login"),
             items: number("items"), imported: number("imported"),
             legacy_files: map.get("legacy_files").and_then(|v| v.get::<Vec<String>>()).unwrap_or_default(),
+            kwallets: map.get("kwallets").and_then(|v| v.get::<Vec<String>>()).unwrap_or_default(),
         })
     }
 
@@ -142,6 +148,27 @@ impl Client {
         });
     }
 
+    fn import(&self, method: &str, args: glib::Variant, done: impl FnOnce(ImportResult) + 'static) {
+        self.conn.call(Some(NAME), CONTROL_PATH, CONTROL, method, Some(&args), None, gio::DBusCallFlags::NONE,
+                       5 * 60 * 1000, None::<&gio::Cancellable>, move |reply| {
+            done(match reply {
+                Ok(v) => Ok(v.get::<(u32, u32)>().unwrap_or((0, 0))),
+                Err(e) => Err((gio::DBusError::remote_error(&e).map(|s| s.to_string()).unwrap_or_default(),
+                               e.message().to_owned())),
+            });
+        });
+    }
+
+    /// Import a KDE wallet (`.kwl`) with its password.
+    pub fn import_kwallet(&self, path: &str, password: &[u8], done: impl FnOnce(ImportResult) + 'static) {
+        self.import("ImportKWallet", (path, password.to_vec()).to_variant(), done);
+    }
+
+    /// Import an unencrypted GNOME keyring file.
+    pub fn import_gnome(&self, path: &str, done: impl FnOnce(ImportResult) + 'static) {
+        self.import("ImportGnomeKeyring", (path,).to_variant(), done);
+    }
+
     pub fn remove_legacy_files(&self) -> Vec<String> {
         self.call(CONTROL_PATH, CONTROL, "RemoveLegacyFiles", None).ok()
             .and_then(|v| v.child_value(0).get::<Vec<String>>()).unwrap_or_default()
@@ -168,6 +195,18 @@ pub fn status_text(status: &Result<Status, String>) -> (String, String) {
     }
 }
 
+/// The message shown after an import (pure, tested).
+pub fn import_message(result: &ImportResult) -> String {
+    match result {
+        Ok((0, 0)) => tr!("There was nothing to import."),
+        Ok((added, 0)) => tr!("Imported {n} entries.", n = *added),
+        Ok((added, skipped)) => tr!("Imported {n} entries; {m} were already saved.", n = *added, m = *skipped),
+        Err((name, _)) if name.ends_with("WrongPassword") => tr!("That wallet password is not correct."),
+        Err((name, _)) if name.ends_with("Locked") => tr!("Unlock your saved passwords first."),
+        Err((_, message)) => tr!("Could not import: {error}", error = message.as_str()),
+    }
+}
+
 pub struct PasswordsPage {
     pub page: gtk::Box,
     pub status_title: gtk::Label,
@@ -176,6 +215,9 @@ pub struct PasswordsPage {
     pub unlock: gtk::Button,
     pub legacy_row: gtk::Box,
     pub legacy_remove: gtk::Button,
+    pub import_card: gtk::Box,
+    pub import_file: gtk::Button,
+    pub import_status: gtk::Label,
     pub search: gtk::SearchEntry,
     pub list: gtk::Box,
     pub empty: gtk::Label,
@@ -229,6 +271,7 @@ impl PasswordsPage {
         self.lock.set_visible(ours.is_some_and(|s| s.unlocked));
         self.unlock.set_visible(ours.is_some_and(|s| s.set_up && !s.unlocked));
         self.legacy_row.set_visible(ours.is_some_and(|s| !s.legacy_files.is_empty() && s.imported > 0));
+        self.fill_imports(ours.map(|s| s.kwallets.clone()).unwrap_or_default(), ours.is_some());
         let entries = match (&self.client, ours) {
             (Some(client), Some(_)) => client.entries(),
             _ => Vec::new(),
@@ -272,6 +315,133 @@ impl PasswordsPage {
             }
             self.list.append(&r);
         }
+    }
+
+    /// One row per KDE wallet still to import, above the "from a file" row.
+    fn fill_imports(self: &Rc<Self>, kwallets: Vec<String>, available: bool) {
+        let mut child = self.import_card.first_child();
+        while let Some(widget) = child {
+            child = widget.next_sibling();
+            if widget.widget_name().starts_with("kwallet:") {
+                self.import_card.remove(&widget);
+            }
+        }
+        self.import_file.set_sensitive(available);
+        for path in kwallets.iter().rev() {
+            let name = std::path::Path::new(path).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+            let (r, _, _) = row(&tr!("KDE Wallet “{name}”", name = name.as_str()),
+                                &tr!("Copy its entries into your saved passwords. It asks for the wallet's password."));
+            r.set_widget_name(&format!("kwallet:{path}"));
+            let button = gtk::Button::with_label(&tr!("Import…"));
+            button.set_valign(gtk::Align::Center);
+            let (weak, path) = (Rc::downgrade(self), path.clone());
+            button.connect_clicked(move |b| if let Some(t) = weak.upgrade() { t.ask_wallet_password(b, &path); });
+            r.append(&button);
+            self.import_card.prepend(&r);
+        }
+    }
+
+    fn show_import_result(self: &Rc<Self>, result: &ImportResult) {
+        self.import_status.set_label(&import_message(result));
+        self.import_status.set_visible(true);
+        self.refresh();
+    }
+
+    /// Small dialog: the wallet's password, retried in place when wrong.
+    pub fn ask_wallet_password(self: &Rc<Self>, anchor: &impl IsA<gtk::Widget>, path: &str) -> gtk::Window {
+        let name = std::path::Path::new(path).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+        let title = tr!("Import KDE Wallet");
+        let window = gtk::Window::builder().title(&title).modal(true).resizable(false).default_width(420).build();
+        if let Some(parent) = anchor.root().and_downcast::<gtk::Window>() {
+            window.set_transient_for(Some(&parent));
+        }
+        let body = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(12)
+            .margin_top(18).margin_bottom(18).margin_start(18).margin_end(18).build();
+        body.append(&gtk::Label::builder().label(tr!("Enter the password of the KDE wallet “{name}”. It is often your old login password.",
+                                                     name = name.as_str())).xalign(0.0).wrap(true).max_width_chars(44).build());
+        let entry = gtk::Entry::with_buffer(&gtk::PasswordEntryBuffer::new());
+        entry.set_visibility(false);
+        entry.set_input_purpose(gtk::InputPurpose::Password);
+        let label = tr!("Wallet password");
+        entry.set_placeholder_text(Some(&label));
+        entry.update_property(&[gtk::accessible::Property::Label(&label)]);
+        body.append(&entry);
+        let status = gtk::Label::builder().xalign(0.0).wrap(true).visible(false).build();
+        status.add_css_class("error");
+        body.append(&status);
+        let buttons = gtk::Box::builder().spacing(8).halign(gtk::Align::End).build();
+        let cancel = gtk::Button::with_label(&tr!("Cancel"));
+        let import = gtk::Button::with_label(&tr!("Import"));
+        import.add_css_class("suggested-action");
+        buttons.append(&cancel);
+        buttons.append(&import);
+        body.append(&buttons);
+        window.set_child(Some(&body));
+        let w = window.clone();
+        cancel.connect_clicked(move |_| w.close());
+        let submit = {
+            let (weak, path, window, entry, status, import) =
+                (Rc::downgrade(self), path.to_owned(), window.clone(), entry.clone(), status.clone(), import.clone());
+            Rc::new(move || {
+                let Some(this) = weak.upgrade() else { return };
+                let Some(client) = this.client.clone() else { return };
+                import.set_sensitive(false);
+                let password = entry.text().to_string();
+                let (weak, window, entry, status, import) =
+                    (Rc::downgrade(&this), window.clone(), entry.clone(), status.clone(), import.clone());
+                client.import_kwallet(&path, password.as_bytes(), move |result| {
+                    import.set_sensitive(true);
+                    if matches!(&result, Err((name, _)) if name.ends_with("WrongPassword")) {
+                        status.set_label(&import_message(&result));
+                        status.set_visible(true);
+                        entry.set_text("");
+                        entry.grab_focus();
+                        return;
+                    }
+                    entry.set_text("");
+                    window.close();
+                    if let Some(this) = weak.upgrade() {
+                        this.show_import_result(&result);
+                    }
+                });
+            })
+        };
+        let s = submit.clone();
+        entry.connect_activate(move |_| s());
+        import.connect_clicked(move |_| submit());
+        window.present();
+        entry.grab_focus();
+        window
+    }
+
+    /// Import a chosen file: KDE wallets ask for their password, GNOME keyrings import directly.
+    pub fn import_path(self: &Rc<Self>, anchor: &impl IsA<gtk::Widget>, path: &str) {
+        if path.ends_with(".kwl") {
+            self.ask_wallet_password(anchor, path);
+        } else if let Some(client) = self.client.clone() {
+            let weak = Rc::downgrade(self);
+            client.import_gnome(path, move |result| if let Some(t) = weak.upgrade() { t.show_import_result(&result) });
+        }
+    }
+
+    fn choose_file(self: &Rc<Self>, button: &gtk::Button) {
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some(&tr!("KDE wallets and GNOME keyrings")));
+        filter.add_pattern("*.kwl");
+        filter.add_pattern("*.keyring");
+        let filters = gio::ListStore::new::<gtk::FileFilter>();
+        filters.append(&filter);
+        let start = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default().join(".local/share");
+        let dialog = gtk::FileDialog::builder().title(tr!("Import Saved Passwords")).modal(true).filters(&filters)
+            .initial_folder(&gio::File::for_path(start)).build();
+        let window = button.root().and_downcast::<gtk::Window>();
+        let (weak, anchor) = (Rc::downgrade(self), button.clone());
+        dialog.open(window.as_ref(), None::<&gio::Cancellable>, move |file| {
+            let (Some(this), Ok(file)) = (weak.upgrade(), file) else { return };
+            if let Some(path) = file.path() {
+                this.import_path(&anchor, &path.to_string_lossy());
+            }
+        });
     }
 
     /// Copy marked as a password: clipboard managers (wayclip) do not keep it.
@@ -337,6 +507,20 @@ pub fn build_page(client: Option<Client>) -> Rc<PasswordsPage> {
     legacy_row.append(&legacy_remove);
     status_card.append(&legacy_row);
 
+    let import_heading = gtk::Label::builder().label(tr!("Import")).xalign(0.0).margin_top(6).build();
+    import_heading.add_css_class("gs-section-title");
+    page.append(&import_heading);
+    let import_card = card(&page);
+    let (file_row, _, _) = row(&tr!("Import from a file"),
+                               &tr!("A KDE wallet (.kwl) or an unencrypted GNOME keyring (.keyring)."));
+    let import_file = gtk::Button::with_label(&tr!("Choose File…"));
+    import_file.set_valign(gtk::Align::Center);
+    file_row.append(&import_file);
+    import_card.append(&file_row);
+    let import_status = gtk::Label::builder().xalign(0.0).wrap(true).visible(false).build();
+    import_status.add_css_class("dim-label");
+    page.append(&import_status);
+
     let heading = gtk::Label::builder().label(tr!("Saved passwords")).xalign(0.0).margin_top(6).build();
     heading.add_css_class("gs-section-title");
     page.append(&heading);
@@ -349,9 +533,12 @@ pub fn build_page(client: Option<Client>) -> Rc<PasswordsPage> {
     page.append(&empty);
 
     let this = Rc::new(PasswordsPage {
-        page, status_title, status_detail, lock, unlock, legacy_row, legacy_remove, search, list, empty, client,
+        page, status_title, status_detail, lock, unlock, legacy_row, legacy_remove, import_card, import_file, import_status,
+        search, list, empty, client,
         entries: RefCell::new(Vec::new()), watch: RefCell::new(None),
     });
+    let weak = Rc::downgrade(&this);
+    this.import_file.connect_clicked(move |b| if let Some(t) = weak.upgrade() { t.choose_file(b) });
     let weak = Rc::downgrade(&this);
     this.search.connect_search_changed(move |_| if let Some(t) = weak.upgrade() { t.fill() });
     let weak = Rc::downgrade(&this);
@@ -399,6 +586,15 @@ mod tests {
         assert_eq!(entry("x", &[("xdg:schema", "org.gnome.keyring.Note")]).description(), "org.gnome.keyring.Note");
         let e = entry("GitHub token", &[("server", "github.com")]);
         assert!(e.matches("") && e.matches("github") && e.matches("TOKEN") && !e.matches("gitlab"));
+    }
+
+    #[test]
+    fn import_messages() {
+        assert_eq!(import_message(&Ok((3, 0))), "Imported 3 entries.");
+        assert_eq!(import_message(&Ok((1, 2))), "Imported 1 entries; 2 were already saved.");
+        assert_eq!(import_message(&Err(("org.waydock.Keyring.Error.WrongPassword".into(), "x".into()))),
+                   "That wallet password is not correct.");
+        assert!(import_message(&Err(("org.waydock.Keyring.Error.Failed".into(), "bad".into()))).contains("bad"));
     }
 
     #[test]

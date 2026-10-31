@@ -679,10 +679,12 @@ COMPONENTS = (
         "keyring-session", "waykeyring", "", (), shims=(), fresh=True, uses_locale=False, base=".config", explicit=True,
         files=((".local/share/dbus-1/services/org.freedesktop.secrets.service",
                 "components/waykeyring/data/org.freedesktop.secrets.service", 0o644),
-               (f"{UNITS}/waykeyring.service", "components/waykeyring/data/waykeyring.service", 0o644)),
+               (f"{UNITS}/waykeyring.service", "components/waykeyring/data/waykeyring.service", 0o644),
+               (f"{APPS}/org.waydock.Passwords.desktop", "components/waykeyring/data/org.waydock.Passwords.desktop", 0o644)),
         notes=("Makes waykeyring the session's Secret Service: ~/.local/share/dbus-1/services/org.freedesktop.secrets.service "
                "(takes precedence over gnome-keyring's /usr/share file) activates waykeyring.service. Install the system "
-               "entry keyring first. A Secret Service that is already running (gnome-keyring) keeps the name until you "
+               "entry keyring first. Also adds the Passwords launcher (Global Settings > Passwords) to the app menu. "
+               "A Secret Service that is already running (gnome-keyring) keeps the name until you "
                "sign out; waykeyring takes over at the next login and imports GNOME's unencrypted keyrings.",)),
     # ---- explicit user entries (never part of a plain --apply) -----------------------------------
     Component(

@@ -6,7 +6,7 @@
 //! master key from the kernel keyring (stored there by the login), else asks
 //! once with the prompt program (`waykeyring-prompt`).
 
-use crate::gnome_import;
+use crate::{gnome_import, imports, kwallet_import};
 use crate::store::{now, Keyring, LOGIN};
 use crate::{dh, kernel, CONTROL_INTERFACE, CONTROL_PATH};
 use gio::prelude::*;
@@ -30,7 +30,6 @@ const PORTAL_SCHEMA: &str = "org.freedesktop.impl.portal.Secret";
 const LABEL_PROP: &str = "org.freedesktop.Secret.Item.Label";
 const ATTRIBUTES_PROP: &str = "org.freedesktop.Secret.Item.Attributes";
 const COLLECTION_LABEL_PROP: &str = "org.freedesktop.Secret.Collection.Label";
-const IMPORTED_FILE: &str = "imported.json";
 const MAX_TRIES: u32 = 3;
 
 const XML: &str = r#"<node>
@@ -95,6 +94,10 @@ const XML: &str = r#"<node>
   <method name="Unlock"><arg name="unlocked" type="b" direction="out"/></method>
   <method name="Lock"/>
   <method name="RemoveLegacyFiles"><arg name="removed" type="as" direction="out"/></method>
+  <method name="ImportKWallet"><arg name="path" type="s" direction="in"/><arg name="password" type="ay" direction="in"/>
+    <arg name="added" type="u" direction="out"/><arg name="skipped" type="u" direction="out"/></method>
+  <method name="ImportGnomeKeyring"><arg name="path" type="s" direction="in"/>
+    <arg name="added" type="u" direction="out"/><arg name="skipped" type="u" direction="out"/></method>
   <signal name="Changed"/>
 </interface>
 </node>"#;
@@ -105,6 +108,8 @@ pub struct Config {
     pub dir: PathBuf,
     /// GNOME keyrings to import once (`~/.local/share/keyrings`).
     pub gnome_dir: PathBuf,
+    /// KDE wallets to import (`~/.local/share/kwalletd`).
+    pub kwallet_dir: PathBuf,
     /// The GTK password prompt (`waykeyring-prompt` next to the binary).
     pub prompt: PathBuf,
     /// Take the master key from the kernel keyring (off in tests).
@@ -119,6 +124,7 @@ impl Config {
         Config {
             dir: crate::store::default_dir(),
             gnome_dir: gnome_import::gnome_dir(),
+            kwallet_dir: kwallet_import::kwallet_dir(),
             prompt: exe.parent().map(|d| d.join("waykeyring-prompt")).unwrap_or_else(|| "waykeyring-prompt".into()),
             kernel: true,
             chkpwd,
@@ -384,6 +390,7 @@ impl Daemon {
 
     fn after_unlock(self: &Rc<Self>) {
         self.import_gnome();
+        self.import_pending();
         self.sync_objects();
         self.notify_locked_changed();
     }
@@ -493,53 +500,73 @@ impl Daemon {
     // ---- GNOME import ----------------------------------------------------------------------
 
     fn imported(&self) -> serde_json::Value {
-        std::fs::read(self.config.dir.join(IMPORTED_FILE)).ok()
-            .and_then(|d| serde_json::from_slice(&d).ok()).unwrap_or_else(|| serde_json::json!({}))
+        imports::record(&self.config.dir)
+    }
+
+    /// Add items to the login collection and save; (added, skipped).
+    fn add_to_login(self: &Rc<Self>, items: Vec<gnome_import::Imported>) -> Result<(u32, u32), String> {
+        let counts = {
+            let mut keyring = self.keyring.borrow_mut();
+            let login = keyring.collection_mut(LOGIN).filter(|c| !c.locked()).ok_or("the keyring is locked")?;
+            let counts = imports::add_items(login, items);
+            keyring.save(LOGIN)?;
+            counts
+        };
+        self.sync_objects();
+        self.properties_changed(&collection_path(LOGIN), COLLECTION_IFACE, &["Items", "Modified"]);
+        self.changed();
+        Ok(counts)
     }
 
     /// Copy every item of unencrypted GNOME keyrings into the login collection, once per file.
     fn import_gnome(self: &Rc<Self>) {
-        let mut record = self.imported();
-        let done: Vec<String> = record.get("gnome").and_then(|g| g.as_object())
-            .map(|o| o.keys().cloned().collect()).unwrap_or_default();
-        let files: Vec<PathBuf> = gnome_import::plaintext_files(&self.config.gnome_dir).into_iter()
-            .filter(|p| gnome_import::is_keyring_file(p))
-            .filter(|p| !done.iter().any(|d| p.file_name().is_some_and(|n| n.to_string_lossy() == *d))).collect();
-        if files.is_empty() {
-            return;
+        let record = self.imported();
+        for file in gnome_import::plaintext_files(&self.config.gnome_dir) {
+            let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            if !gnome_import::is_keyring_file(&file) || imports::is_marked(&record, "gnome", &name) {
+                continue;
+            }
+            let _ = self.import_gnome_file(&file);
         }
-        let mut keyring = self.keyring.borrow_mut();
-        if !keyring.unlocked() || keyring.collection(LOGIN).is_none() {
-            return;
+    }
+
+    fn import_gnome_file(self: &Rc<Self>, file: &std::path::Path) -> Result<(u32, u32), String> {
+        if !gnome_import::is_plaintext(file) {
+            return Err("encrypted GNOME keyrings cannot be imported".into());
         }
-        let mut changed = false;
-        for file in files {
-            let Ok(text) = std::fs::read_to_string(&file) else { continue };
-            let text = Zeroizing::new(text);
-            let items = gnome_import::parse(&text);
-            let login = keyring.collection_mut(LOGIN).unwrap();
-            let mut count = 0;
-            for item in items {
-                let duplicate = login.items().unwrap_or(&[]).iter()
-                    .any(|i| i.attributes == item.attributes && i.secret == item.secret);
-                if !duplicate && login.store(&item.label, item.attributes, item.secret, "text/plain", false).is_some() {
-                    count += 1;
+        let text = Zeroizing::new(std::fs::read_to_string(file).map_err(|e| e.to_string())?);
+        let counts = self.add_to_login(gnome_import::parse(&text))?;
+        let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        imports::mark(&self.config.dir, "gnome", &name, counts.0)?;
+        Ok(counts)
+    }
+
+    /// KDE wallets the login helper decrypted with the login password.
+    fn import_pending(self: &Rc<Self>) {
+        let Some(master) = self.keyring.borrow().master().cloned() else { return };
+        for (name, items) in imports::take_pending(&self.config.dir, &master) {
+            if let Ok((added, _)) = self.add_to_login(items) {
+                if let Some((kind, file)) = name.split_once(':') {
+                    let _ = imports::mark(&self.config.dir, kind, file, added);
                 }
             }
-            if keyring.save(LOGIN).is_err() {
-                return;
-            }
-            changed = true;
-            let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            if !record.get("gnome").is_some_and(|g| g.is_object()) {
-                record["gnome"] = serde_json::json!({});
-            }
-            record["gnome"][name] = serde_json::json!({"items": count, "at": now()});
         }
-        drop(keyring);
-        if changed {
-            let _ = crate::store::write_private(&self.config.dir.join(IMPORTED_FILE), record.to_string().as_bytes());
-        }
+    }
+
+    fn import_kwallet_file(self: &Rc<Self>, file: &std::path::Path, password: &[u8]) -> Result<(u32, u32), String> {
+        let items = kwallet_import::import_file(file, password).map_err(|e| e.to_string())?;
+        let counts = self.add_to_login(items)?;
+        let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        imports::mark(&self.config.dir, "kwallet", &name, counts.0)?;
+        Ok(counts)
+    }
+
+    /// KDE wallets in KWallet's directory not imported yet.
+    fn kwallets_pending(&self) -> Vec<String> {
+        let record = self.imported();
+        kwallet_import::wallets(&self.config.kwallet_dir).into_iter()
+            .filter(|p| !p.file_name().is_some_and(|n| imports::is_marked(&record, "kwallet", &n.to_string_lossy())))
+            .map(|p| p.display().to_string()).collect()
     }
 
     /// Unencrypted GNOME keyring files (and temporary copies) still on disk.
@@ -605,7 +632,7 @@ impl Daemon {
             }
             PROMPT_IFACE => self.prompt_call(object, method, invocation),
             PORTAL_IFACE => self.portal_call(&params, invocation),
-            CONTROL_INTERFACE => self.control_call(method, invocation),
+            CONTROL_INTERFACE => self.control_call(method, &params, invocation),
             _ => error(invocation, "org.freedesktop.DBus.Error.UnknownInterface", "Unknown interface"),
         }
     }
@@ -978,8 +1005,30 @@ impl Daemon {
         }));
     }
 
-    fn control_call(self: &Rc<Self>, method: &str, invocation: gio::DBusMethodInvocation) {
+    fn control_call(self: &Rc<Self>, method: &str, params: &Variant, invocation: gio::DBusMethodInvocation) {
         match method {
+            "ImportKWallet" | "ImportGnomeKeyring" => {
+                let file = PathBuf::from(params.child_value(0).get::<String>().unwrap_or_default());
+                let password = Zeroizing::new(if method == "ImportKWallet" {
+                    params.child_value(1).get::<Vec<u8>>().unwrap_or_default()
+                } else {
+                    Vec::new()
+                });
+                let kwallet = method == "ImportKWallet";
+                self.ensure_unlocked(Box::new(move |daemon, unlocked| {
+                    if !unlocked {
+                        return error(invocation, "org.waydock.Keyring.Error.Locked", "The keyring is locked");
+                    }
+                    let result = if kwallet { daemon.import_kwallet_file(&file, &password) }
+                                 else { daemon.import_gnome_file(&file) };
+                    match result {
+                        Ok((added, skipped)) => invocation.return_value(Some(&(added, skipped).to_variant())),
+                        Err(e) if e == kwallet_import::Error::WrongPassword.to_string() =>
+                            error(invocation, "org.waydock.Keyring.Error.WrongPassword", &e),
+                        Err(e) => error(invocation, "org.waydock.Keyring.Error.Failed", &e),
+                    }
+                }));
+            }
             "Status" => invocation.return_value(Some(&(self.status(),).to_variant())),
             "Unlock" => self.ensure_unlocked(Box::new(move |_, unlocked| {
                 invocation.return_value(Some(&(unlocked,).to_variant()));
@@ -1000,9 +1049,7 @@ impl Daemon {
     pub fn status(&self) -> HashMap<String, Variant> {
         let keyring = self.keyring.borrow();
         let items: u32 = keyring.collections.iter().filter(|c| c.persistent).map(|c| c.item_ids().len() as u32).sum();
-        let imported: u32 = self.imported().get("gnome").and_then(|g| g.as_object())
-            .map(|o| o.values().filter_map(|v| v.get("items").and_then(|n| n.as_u64())).sum::<u64>() as u32)
-            .unwrap_or(0);
+        let imported = imports::total(&self.imported());
         let legacy: Vec<String> = self.legacy_files().iter().map(|p| p.display().to_string()).collect();
         HashMap::from([
             ("set_up".to_owned(), keyring.is_set_up().to_variant()),
@@ -1011,6 +1058,7 @@ impl Daemon {
             ("items".to_owned(), items.to_variant()),
             ("imported".to_owned(), imported.to_variant()),
             ("legacy_files".to_owned(), legacy.to_variant()),
+            ("kwallets".to_owned(), self.kwallets_pending().to_variant()),
         ])
     }
 
