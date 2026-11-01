@@ -51,13 +51,14 @@ pub struct BackgroundRequest {
     pub border_sides: Vec<String>,
     pub border_color: Option<String>,
     pub shine: bool,
+    pub shadow: bool,
 }
 
 impl Default for BackgroundRequest {
     fn default() -> Self {
         Self { transparency: 5, wallpaper: None, rounded_corners: true, inner_rounded_corners: None, frosted: false,
                frost_strength: 50, scope: None, background_color: None, border_sides: Vec::new(), border_color: None,
-               shine: false }
+               shine: false, shadow: false }
     }
 }
 
@@ -79,6 +80,7 @@ pub fn background_css(is_dark: bool, request: &BackgroundRequest) -> Result<Stri
         transparency, wallpaper: request.wallpaper, rounded_corners: request.rounded_corners,
         inner_rounded_corners: request.inner_rounded_corners, frosted: request.frosted, frost_strength,
         scope: request.scope.as_deref(), background_color, border_sides: &sides, border_color, shine: request.shine,
+        shadow: request.shadow,
     })
 }
 
@@ -111,6 +113,7 @@ pub struct DockCssRequest {
     pub border_sides: Vec<String>,
     pub border_color: Option<String>,
     pub shine: bool,
+    pub shadow: bool,
     pub apps_transparency: i64,
     pub apps_frosted: bool,
     pub apps_frost_strength: i64,
@@ -132,7 +135,7 @@ pub fn dock_css(request: &DockCssRequest) -> Result<DockCss, String> {
         inner_rounded_corners: Some(request.requested_rounding), frosted: request.frosted,
         frost_strength: request.frost_strength, scope: Some(request.scope.clone()),
         background_color: request.background_color.clone(), border_sides: request.border_sides.clone(),
-        border_color: request.border_color.clone(), shine: request.shine,
+        border_color: request.border_color.clone(), shine: request.shine, shadow: request.shadow,
     })?;
     // Application menus inherit the surface that opened them; other app popups
     // keep the independently configured application appearance.
@@ -172,7 +175,7 @@ mod tests {
         let css = dock_css(&DockCssRequest {
             is_dark: true, transparency: 30, wallpaper: Some([40, 60, 80]), rounded_corners: false, requested_rounding: true,
             frosted: false, frost_strength: 50, scope: "waydock-clone-1".into(), background_color: None,
-            border_sides: vec![], border_color: None, shine: false, apps_transparency: 23, apps_frosted: true,
+            border_sides: vec![], border_color: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
             apps_frost_strength: 50, apps_rounded_corners: false }).unwrap();
         assert!(css.panel.contains(".waydock-clone-1.waydock-panel {"));
         assert!(css.panel.contains("border-radius: 0px;"));

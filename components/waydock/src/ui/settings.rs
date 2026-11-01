@@ -599,7 +599,7 @@ impl SettingsWindow {
         b.row(&tr!("App dock position"), &app_dock_edge, None);
         app_dock_controls.insert("app_dock_edge".into(), AppDockControl::Combo(app_dock_edge.clone()));
         let mut app_dock_expand_label = None;
-        let toggles: [(&str, &str, bool); 8] = [
+        let toggles: [(&str, &str, bool); 9] = [
             ("expand", "Expand to full height", config.app_dock_expand),
             ("float_mode", "Float mode", config.app_dock_float_mode),
             ("rounded_corners", "Rounded corners", config.app_dock_rounded_corners),
@@ -608,6 +608,7 @@ impl SettingsWindow {
             ("match_wallpaper", "Match wallpaper colors", config.app_dock_match_wallpaper),
             ("auto_hide", "Auto-hide", config.app_dock_auto_hide),
             ("shine", "Top highlight", config.app_dock_shine),
+            ("shadow", "Drop shadow", config.app_dock_shadow),
         ];
         for (key, title, active) in toggles {
             let control = switch(active);
@@ -1215,6 +1216,7 @@ impl Inner {
                 ("app_dock_match_wallpaper", _) => config.app_dock_match_wallpaper = control.active(),
                 ("app_dock_auto_hide", _) => config.app_dock_auto_hide = control.active(),
                 ("app_dock_shine", _) => config.app_dock_shine = control.active(),
+                ("app_dock_shadow", _) => config.app_dock_shadow = control.active(),
                 ("app_dock_icon_size", _) => config.app_dock_icon_size = number(),
                 ("app_dock_gap", _) => config.app_dock_gap = number(),
                 ("app_dock_transparency", _) => config.app_dock_transparency = number(),

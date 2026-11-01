@@ -92,6 +92,7 @@ fn dock_clone_css_matches_python() {
             border_sides: kw.get("border_sides").and_then(Value::as_array).map(|a| a.iter().map(|s| s.as_str().unwrap().to_owned()).collect()).unwrap_or_default(),
             border_color: kw.get("border_color").and_then(Value::as_str).map(str::to_owned),
             shine: kw.get("shine").and_then(Value::as_bool).unwrap_or(false),
+            shadow: false,
         };
         assert_eq!(style::background_css(case["dark"].as_bool().unwrap(), &request).unwrap(), expected.as_str().unwrap(), "{case}");
     }

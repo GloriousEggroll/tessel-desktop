@@ -1149,7 +1149,8 @@ fn parity(app: &Rc<FakeApp>, mode: &str) -> R {
     }
     window.apply();
     settle(0.1);
-    let rust = app.bytes();
+    // Settings added after the Python dock are the only difference.
+    let rust = String::from_utf8(app.bytes()).unwrap().replace("  \"app_dock_shadow\": false,\n", "").into_bytes();
     let directory = tmp().join("parity").join(mode);
     let _ = std::fs::remove_dir_all(&directory);
     std::fs::create_dir_all(&directory).unwrap();

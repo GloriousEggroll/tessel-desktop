@@ -36,6 +36,7 @@
     "app_dock_match_wallpaper": true,
     "app_dock_rounded_corners": true,
     "app_dock_shine": true,
+    "app_dock_shadow": true,
     "app_dock_transparency": 35,
     "app_dock_transparency_enabled": true,
     "application_display": "icons",

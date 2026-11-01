@@ -60,6 +60,19 @@ pub type Zones = Vec<Vec<String>>;
 
 fn now() -> f64 { glib::monotonic_time() as f64 / 1_000_000.0 }
 
+const SIDES: [Edge; 4] = [Edge::Top, Edge::Bottom, Edge::Left, Edge::Right];
+
+fn side_index(side: Edge) -> usize { SIDES.iter().position(|s| *s == side).unwrap_or(0) }
+
+fn opposite(side: Edge) -> Edge {
+    match side {
+        Edge::Top => Edge::Bottom,
+        Edge::Bottom => Edge::Top,
+        Edge::Left => Edge::Right,
+        _ => Edge::Left,
+    }
+}
+
 pub fn edge_of(name: &str) -> Edge {
     match name {
         "top" => Edge::Top,
@@ -147,6 +160,11 @@ pub struct DockSurface {
     core: RefCell<gtk::Box>,
     magnify: bool,
     headroom: i32,
+    /// Transparent room around the panel for its drop shadow (0: none).
+    shadow_room: i32,
+    /// Where the panel itself sits from each screen edge (top, bottom, left,
+    /// right); the window's layer margins are these minus its shadow room.
+    panel_margins: Cell<[i32; 4]>,
     input_bounds: Cell<Option<(i32, i32, i32, i32)>>,
     blur: suite_gtk::blur::BlurBinding,
     last_geometry: Cell<Option<(i32, i32)>>,
@@ -231,6 +249,7 @@ impl DockSurface {
         let item_icon_size = if config.application_display == "title" { config.icon_size.min(22) } else { config.icon_size } as f64;
         let magnify = !bar_mode && config.magnification && config.hover_scale > 1.0;
         let headroom = if magnify { (item_icon_size * (config.hover_scale - 1.0)) as i32 + 4 } else { 0 };
+        let shadow_room = if app_dock && !bar_mode && config.app_dock_shadow { suite_gtk::palette::SHADOW_ROOM } else { 0 };
         let core = panel.clone().downcast::<gtk::Box>().unwrap_or_else(|_| gtk::Box::new(orientation, 3));
         let dock = Rc::new_cyclic(|this: &Weak<DockSurface>| {
             let popup_class = format!("waydock-palette-{:x}", this.as_ptr() as usize);
@@ -250,7 +269,8 @@ impl DockSurface {
                 application_expander: RefCell::new(None), arranged: RefCell::new(None),
                 title_window_id: RefCell::new(None), layout_timer: RefCell::new(None), styles: style::Styles::default(),
                 popup_class, sensor: sensor.clone(), sensor_catcher: catcher.clone(), window: window.clone(), reservation,
-                panel: panel.clone(), core: RefCell::new(core), magnify, headroom, input_bounds: Cell::new(None),
+                panel: panel.clone(), core: RefCell::new(core), magnify, headroom, shadow_room,
+                panel_margins: Cell::new([0; 4]), input_bounds: Cell::new(None),
                 blur: suite_gtk::blur::attach(&window, Some("waydock-panel"), true, false), last_geometry: Cell::new(None),
                 timer: RefCell::new(None), awake_until: Cell::new(0.0), geometry_signals: RefCell::default(),
                 widgets: OnceCell::new(), drop_target: RefCell::new(None),
@@ -293,6 +313,9 @@ impl DockSurface {
             self.panel.add_controller(pointer);
         } else {
             self.window.set_child(Some(&self.panel));
+        }
+        for side in SIDES {
+            self.set_panel_margin(side, self.window.margin(side));
         }
         let (weak, weak2) = (self.this.clone(), self.this.clone());
         super::host::motion(&self.window,
@@ -344,6 +367,50 @@ impl DockSurface {
     pub fn core(&self) -> gtk::Box { self.core.borrow().clone() }
     pub fn is_destroyed(&self) -> bool { self.destroyed.get() }
     pub fn headroom(&self) -> i32 { self.headroom }
+    pub fn shadow_room(&self) -> i32 { self.shadow_room }
+
+    fn panel_margin(&self, side: Edge) -> i32 { self.panel_margins.get()[side_index(side)] }
+
+    /// The transparent room kept on `side` of the panel for its shadow: all of
+    /// it where the window is free (less the headroom already there), and no
+    /// more than the gap where the window is anchored to a screen edge.
+    fn shadow_inset(&self, side: Edge) -> i32 {
+        if self.shadow_room == 0 {
+            0
+        } else if self.window.is_anchor(side) {
+            self.shadow_room.min(self.panel_margin(side).max(0))
+        } else if side == opposite(self.edge) {
+            (self.shadow_room - self.headroom).max(0)
+        } else {
+            self.shadow_room
+        }
+    }
+
+    /// Place the panel `margin` px from `side`, moving the window out by the
+    /// shadow room on that side so the panel itself does not move.
+    fn set_panel_margin(&self, side: Edge, margin: i32) {
+        let mut margins = self.panel_margins.get();
+        margins[side_index(side)] = margin;
+        self.panel_margins.set(margins);
+        // Margins on free sides are ignored; keep them as given.
+        let inset = if self.window.is_anchor(side) { self.shadow_inset(side) } else { 0 };
+        self.window.set_margin(side, margin - inset);
+        if self.shadow_room == 0 {
+            return;
+        }
+        if let Some(content) = self.window.child() {
+            content.set_margin_top(self.shadow_inset(Edge::Top));
+            content.set_margin_bottom(self.shadow_inset(Edge::Bottom));
+            content.set_margin_start(self.shadow_inset(Edge::Left));
+            content.set_margin_end(self.shadow_inset(Edge::Right));
+        }
+    }
+
+    /// The window's (horizontal, vertical) shadow room in total.
+    fn shadow_insets(&self) -> (i32, i32) {
+        (self.shadow_inset(Edge::Left) + self.shadow_inset(Edge::Right),
+         self.shadow_inset(Edge::Top) + self.shadow_inset(Edge::Bottom))
+    }
     pub fn magnify(&self) -> bool { self.magnify }
     pub fn hover_layer(&self) -> &'static str { self.hover.borrow().layer() }
     pub fn hover_active(&self) -> bool { self.hover.borrow().active() }
@@ -415,11 +482,12 @@ impl DockSurface {
             let height = self.monitor.geometry().height();
             top + self.edge_gap().max((height - top - self.dock_dimensions().1).div_euclid(2))
         };
-        let changed = self.window.margin(Edge::Top) != margin;
+        let changed = self.panel_margin(Edge::Top) != margin;
         for window in [&self.window, &self.sensor] {
             window.set_anchor(Edge::Top, true);
-            window.set_margin(Edge::Top, margin);
         }
+        self.sensor.set_margin(Edge::Top, margin);
+        self.set_panel_margin(Edge::Top, margin);
         if changed {
             self.queue_panel_layout();
             self.reposition_popups();
@@ -465,14 +533,13 @@ impl DockSurface {
             return;
         }
         let gap = self.edge_gap();
-        self.window.set_margin(self.edge, gap);
+        self.set_panel_margin(self.edge, gap);
         // The reveal sensor always reaches the screen edge; only its side
         // alignment follows the floating dock's inset.
-        for side in [Edge::Top, Edge::Bottom, Edge::Left, Edge::Right] {
+        for side in SIDES {
             if side != self.edge && self.window.is_anchor(side) {
-                for window in [&self.window, &self.sensor] {
-                    window.set_margin(side, gap);
-                }
+                self.sensor.set_margin(side, gap);
+                self.set_panel_margin(side, gap);
             }
         }
         self.resize_sensor();
@@ -485,7 +552,7 @@ impl DockSurface {
         let (width, height) = self.dock_dimensions();
         let position = |extent: i32, size: i32, start: Edge, end: Edge| {
             let (first, last) = (self.window.is_anchor(start), self.window.is_anchor(end));
-            let (low, high) = (self.window.margin(start), self.window.margin(end));
+            let (low, high) = (self.panel_margin(start), self.panel_margin(end));
             if first && last {
                 low + (extent - low - high - size).div_euclid(2)
             } else if first {
@@ -615,7 +682,8 @@ impl DockSurface {
 
     /// `dock_dimensions()`: the panel's (width, height) without headroom.
     pub fn dock_dimensions(&self) -> (i32, i32) {
-        let (width, height) = (self.window.width(), self.window.height());
+        let (pad_x, pad_y) = self.shadow_insets();
+        let (width, height) = (self.window.width() - pad_x, self.window.height() - pad_y);
         let room = self.headroom;
         let size = if self.horizontal { (width, height - room) } else { (width - room, height) };
         if size.0 > 0 && size.1 > 0 {
@@ -788,7 +856,7 @@ impl PopupHost for DockSurface {
             }
         }
         let anchor = widget.and_then(|widget| {
-            super::host::translate(&widget, &self.window, 0.0, 0.0).map(|point| {
+            super::host::translate(&widget, &self.panel, 0.0, 0.0).map(|point| {
                 // Python's get_allocated_width/height: the margin box.
                 #[allow(deprecated)]
                 let extent = if self.horizontal { widget.allocated_width() } else { widget.allocated_height() };
@@ -871,7 +939,7 @@ impl MenuHost for DockSurface {
         let (_width, height) = self.dock_dimensions();
         MenuMetrics {
             monitor_width: geometry.width(), monitor_height: geometry.height(), reserved, horizontal: self.horizontal,
-            dock_height: height, edge_gap: self.edge_gap(), headroom: self.headroom, dock_window_width: self.window.width(),
+            dock_height: height, edge_gap: self.edge_gap(), headroom: self.headroom, dock_window_width: self.window.width() - self.shadow_insets().0,
         }
     }
     fn enter_all(&self, zone: &str) {

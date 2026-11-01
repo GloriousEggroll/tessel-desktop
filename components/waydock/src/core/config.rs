@@ -96,6 +96,7 @@ pub struct DockConfig {
     pub app_dock_background_color: String,
     pub app_dock_auto_hide: bool,
     pub app_dock_shine: bool,
+    pub app_dock_shadow: bool,
     /// `{}` (automatic expanded/compact defaults) or all three positions.
     pub app_dock_group_layout: Layout,
     pub application_display: String,
@@ -150,7 +151,7 @@ const FIELD_NAMES: &[&str] = &[
     "pins", "mode", "separate_app_dock", "app_dock_edge", "app_dock_expand", "app_dock_icon_size", "app_dock_gap",
     "app_dock_float_mode", "app_dock_rounded_corners", "app_dock_transparency", "app_dock_transparency_enabled",
     "app_dock_frosted", "app_dock_frost_strength", "app_dock_match_wallpaper", "app_dock_background_color",
-    "app_dock_auto_hide", "app_dock_shine", "app_dock_group_layout", "application_display", "always_show_tray",
+    "app_dock_auto_hide", "app_dock_shine", "app_dock_shadow", "app_dock_group_layout", "application_display", "always_show_tray",
     "always_visible_apps", "group_layouts", "edge", "alignment", "monitor", "monitor_overrides", "icon_size", "gap",
     "hover_scale", "magnification", "compact_bar", "transparency", "transparency_enabled", "frosted", "frost_strength",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
@@ -189,6 +190,7 @@ impl Default for DockConfig {
             app_dock_background_color: "#38373a".into(),
             app_dock_auto_hide: false,
             app_dock_shine: false,
+            app_dock_shadow: false,
             app_dock_group_layout: Layout::new(),
             application_display: "icons".into(),
             always_show_tray: Vec::new(),
@@ -385,6 +387,7 @@ impl DockConfig {
         put("app_dock_background_color", Value::from(self.app_dock_background_color.clone()));
         put("app_dock_auto_hide", Value::from(self.app_dock_auto_hide));
         put("app_dock_shine", Value::from(self.app_dock_shine));
+        put("app_dock_shadow", Value::from(self.app_dock_shadow));
         put("app_dock_group_layout", group_layout::layout_value(&self.app_dock_group_layout));
         put("application_display", Value::from(self.application_display.clone()));
         put("always_show_tray", Value::from(self.always_show_tray.clone()));
@@ -528,7 +531,7 @@ impl DockConfig {
         for name in [
             "separate_app_dock", "app_dock_expand", "app_dock_float_mode", "app_dock_rounded_corners",
             "app_dock_transparency_enabled", "app_dock_frosted", "app_dock_match_wallpaper", "app_dock_auto_hide",
-            "app_dock_shine",
+            "app_dock_shine", "app_dock_shadow",
         ] {
             if !c[name].is_boolean() {
                 return Err(format!("Invalid separate app dock setting: {name}."));
@@ -693,6 +696,7 @@ impl DockConfig {
             app_dock_background_color: text(&c["app_dock_background_color"]),
             app_dock_auto_hide: flag("app_dock_auto_hide"),
             app_dock_shine: flag("app_dock_shine"),
+            app_dock_shadow: flag("app_dock_shadow"),
             app_dock_group_layout,
             application_display,
             always_show_tray: dedupe(string_list(&c["always_show_tray"])),

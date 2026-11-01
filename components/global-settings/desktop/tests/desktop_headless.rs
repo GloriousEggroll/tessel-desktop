@@ -1769,10 +1769,20 @@ fn fake_home(name: &str) -> PathBuf {
     home
 }
 
+/// Dock settings added after the Python pages, dropped before byte comparison.
+const RUST_ONLY_SETTINGS: &[&str] = &["app_dock_shadow"];
+
+fn without_rust_only_settings(bytes: Vec<u8>) -> Vec<u8> {
+    let Ok(text) = String::from_utf8(bytes.clone()) else { return bytes };
+    text.split_inclusive('\n')
+        .filter(|line| !RUST_ONLY_SETTINGS.iter().any(|key| line.trim_start().starts_with(&format!("\"{key}\": "))))
+        .collect::<String>().into_bytes()
+}
+
 fn same_files(python: &Path, rust: &Path, files: &[&str]) {
     for file in files {
         let a = std::fs::read(python.join(file)).unwrap_or_else(|e| panic!("python {file}: {e}"));
-        let b = std::fs::read(rust.join(file)).unwrap_or_else(|e| panic!("rust {file}: {e}"));
+        let b = without_rust_only_settings(std::fs::read(rust.join(file)).unwrap_or_else(|e| panic!("rust {file}: {e}")));
         assert!(a == b, "{file} differs:\n--- python\n{}\n--- rust\n{}", String::from_utf8_lossy(&a), String::from_utf8_lossy(&b));
         use std::os::unix::fs::PermissionsExt;
         let (ma, mb) = (std::fs::metadata(python.join(file)).unwrap().permissions().mode() & 0o777,
@@ -2009,6 +2019,9 @@ fn parity_tests(app: &gtk::Application) {
         let (presets_list, problems) = presets::load_presets();
         assert!(problems.is_empty());
         let rust: Vec<String> = presets_list.iter().map(|p| {
+            let mut p = p.clone();
+            p.dock.retain(|key, _| !RUST_ONLY_SETTINGS.contains(&key.as_str()));
+            let p = &p;
             let lines = presets::describe_changes(p, &DockConfig::default(), Some(2), Some(false), None, &presets::identity).unwrap();
             format!("{}|{}|{}", p.key, p.name, lines.join(";"))
         }).collect();

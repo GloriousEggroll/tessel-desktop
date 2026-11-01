@@ -171,14 +171,23 @@ pub struct PanelStyle<'a> {
     pub border_sides: &'a [&'a str],
     pub border_color: Option<Rgb>,
     pub shine: bool,
+    /// A soft drop shadow outside the panel (the surface must leave room for it).
+    pub shadow: bool,
 }
 
 impl Default for PanelStyle<'_> {
     fn default() -> Self {
         Self { transparency: 5, wallpaper: None, rounded_corners: true, inner_rounded_corners: None, frosted: false,
-               frost_strength: 50, scope: None, background_color: None, border_sides: &[], border_color: None, shine: false }
+               frost_strength: 50, scope: None, background_color: None, border_sides: &[], border_color: None, shine: false,
+               shadow: false }
     }
 }
+
+/// Drop-shadow offset (down) and blur radius; [`SHADOW_ROOM`] holds both.
+pub const SHADOW_OFFSET: i32 = 4;
+pub const SHADOW_BLUR: i32 = 16;
+/// Transparent room a surface leaves around a shadowed panel.
+pub const SHADOW_ROOM: i32 = SHADOW_BLUR + SHADOW_OFFSET;
 
 /// Style one dock panel and its accents, keeping icons and text fully opaque.
 pub fn background_css(is_dark: bool, style: &PanelStyle) -> Result<String, String> {
@@ -198,6 +207,9 @@ pub fn background_css(is_dark: bool, style: &PanelStyle) -> Result<String, Strin
     if style.shine {
         // A soft 1px highlight along the top edge, like a macOS dock.
         parts.insert(0, "inset 0 1px 0 0 rgba(255, 255, 255, 0.16)".into());
+    }
+    if style.shadow {
+        parts.insert(0, format!("0 {SHADOW_OFFSET}px {SHADOW_BLUR}px 0 rgba(0, 0, 0, 0.55)"));
     }
     let border = if parts.is_empty() { "none".to_owned() } else { parts.join(", ") };
     let base = palette.background;

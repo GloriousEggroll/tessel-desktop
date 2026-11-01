@@ -155,7 +155,7 @@ impl DockSurface {
             frost_strength: m.frost_strength.unwrap_or(50), scope: self.popup_class.clone(),
             background_color: m.background_color.clone().flatten(),
             border_sides: if self.bar_mode { m.border_sides.clone().unwrap_or_default() } else { Vec::new() },
-            border_color: m.border_color.clone().flatten(), shine: self.is_app_dock && self.config.app_dock_shine,
+            border_color: m.border_color.clone().flatten(), shine: self.is_app_dock && self.config.app_dock_shine, shadow: self.shadow_room() > 0,
             apps_transparency: m.apps_transparency.unwrap_or(0), apps_frosted: m.apps_frosted.unwrap_or(false),
             apps_frost_strength: m.apps_frost_strength.unwrap_or(50), apps_rounded_corners: m.apps_rounded_corners.unwrap_or(true),
         });

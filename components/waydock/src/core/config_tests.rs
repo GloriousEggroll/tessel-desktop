@@ -653,7 +653,7 @@ fn field_names_follow_dataclass_order() {
     let value = DockConfig::default().to_value();
     let keys: Vec<&str> = value.as_object().unwrap().keys().map(String::as_str).collect();
     assert_eq!(keys, field_names());
-    assert_eq!(field_names().len(), 60);
+    assert_eq!(field_names().len(), 61);
 }
 
 // ---- Python byte parity --------------------------------------------------
@@ -696,7 +696,9 @@ for index, value in enumerate(inputs):
         let mut store = ConfigStore::new(dir.join(&format!("rust/{index}/config.json")));
         store.save(&DockConfig::from_value(value).unwrap()).unwrap();
         let actual = std::fs::read_to_string(&store.path).unwrap();
-        assert_eq!(actual, expected, "input {index}");
+        // Settings added after the Python dock are the only difference.
+        let parity = actual.replace("  \"app_dock_shadow\": false,\n", "");
+        assert_eq!(parity, expected, "input {index}");
         assert!(actual.ends_with("}\n"));
     }
 }

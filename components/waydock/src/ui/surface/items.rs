@@ -377,7 +377,7 @@ impl DockSurface {
     }
 
     pub(super) fn sync_input_region(&self) {
-        if !self.magnify || !self.panel.is_mapped() {
+        if (!self.magnify && self.shadow_room == 0) || !self.panel.is_mapped() {
             return;
         }
         let Some(surface) = self.window.surface() else { return };
