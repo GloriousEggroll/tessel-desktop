@@ -24,6 +24,10 @@ use wayland_protocols_wlr::data_control::v1::client::{
 
 /// A selection that has not delivered all of its formats by then is kept with what arrived.
 const CAPTURE_TIMEOUT: Duration = Duration::from_secs(5);
+/// How long a cleared selection waits before the kept copy is offered again.
+/// Browsers clear the clipboard and set the new copy in one burst; offering
+/// the old copy at once would replace the new one (Ctrl+C had to be pressed twice).
+const RESTORE_DELAY: Duration = Duration::from_millis(150);
 /// A paste whose reader stops reading is dropped after this.
 const WRITE_TIMEOUT: Duration = Duration::from_secs(30);
 const READ_CHUNK: usize = 64 * 1024;
@@ -164,8 +168,9 @@ struct Slot {
     /// Bumped by every foreign selection: reads of older ones are dropped.
     generation: u64,
     capture: Option<(Capture, Instant)>,
-    /// The owner went away before the capture finished.
-    restore_when_done: bool,
+    /// When the selection was cleared: the kept copy is offered again once
+    /// [`RESTORE_DELAY`] passed, the capture finished and nothing newer arrived.
+    cleared: Option<Instant>,
     kept: Option<Rc<Contents>>,
     owned: Option<Source>,
 }
@@ -256,15 +261,10 @@ impl State {
         Ok(())
     }
 
-    fn selection(&mut self, kind: Kind, offer: Option<Offer>, qh: &QueueHandle<State>) {
+    fn selection(&mut self, kind: Kind, offer: Option<Offer>) {
         let Some(offer) = offer else {
             self.log(|| format!("{kind:?} cleared"));
-            let slot = &mut self.slots[kind as usize];
-            if slot.capture.is_some() {
-                slot.restore_when_done = true;
-            } else {
-                self.restore(kind, qh);
-            }
+            self.slots[kind as usize].cleared = Some(Instant::now());
             return;
         };
         let offered = self.offers.remove(&offer.id()).unwrap_or_default();
@@ -277,7 +277,7 @@ impl State {
         let slot = &mut self.slots[kind as usize];
         slot.generation += 1;
         slot.capture = None;
-        slot.restore_when_done = false;
+        slot.cleared = None;
         slot.kept = None;
         let generation = slot.generation;
         self.reads.retain(|r| r.kind != kind);
@@ -354,10 +354,13 @@ impl State {
             }
             let slot = &mut self.slots[kind as usize];
             slot.kept = capture.into_contents(self.settings.skip_secrets).map(Rc::new);
-            let restore = std::mem::take(&mut slot.restore_when_done);
             let size: usize = slot.kept.iter().flat_map(|c| c.formats.iter()).map(|(_, d)| d.len()).sum();
             self.log(|| format!("{kind:?} kept {size} bytes"));
-            if restore {
+        }
+        for kind in KINDS {
+            let slot = &mut self.slots[kind as usize];
+            if slot.capture.is_none() && slot.cleared.is_some_and(|at| at.elapsed() >= RESTORE_DELAY) {
+                slot.cleared = None;
                 self.restore(kind, qh);
             }
         }
@@ -448,7 +451,7 @@ impl State {
                 let slot = &mut self.slots[kind as usize];
                 slot.kept = None;
                 slot.capture = None;
-                slot.restore_when_done = false;
+                slot.cleared = None;
                 self.reads.retain(|r| r.kind != kind);
             }
         }
@@ -457,6 +460,12 @@ impl State {
 
     fn busy(&self) -> bool {
         !self.reads.is_empty() || !self.writes.is_empty() || self.slots.iter().any(|s| s.capture.is_some())
+    }
+
+    /// Milliseconds until the next delayed restore is due.
+    fn restore_due_in(&self) -> Option<i32> {
+        self.slots.iter().filter_map(|s| s.cleared)
+            .map(|at| RESTORE_DELAY.saturating_sub(at.elapsed()).as_millis() as i32 + 1).min()
     }
 }
 
@@ -505,6 +514,7 @@ pub fn run(store: Store, verbose: bool) -> Result<(), String> {
         fds.extend(state.reads.iter().map(|r| libc::pollfd { fd: r.file.as_raw_fd(), events: libc::POLLIN, revents: 0 }));
         fds.extend(state.writes.iter().map(|w| libc::pollfd { fd: w.file.as_raw_fd(), events: libc::POLLOUT, revents: 0 }));
         let timeout = if state.busy() { 250 } else { 2000 };
+        let timeout = state.restore_due_in().map_or(timeout, |due| due.min(timeout));
         // SAFETY: fds is a valid, initialised pollfd array of the given length.
         let ready = unsafe { libc::poll(fds.as_mut_ptr(), fds.len() as libc::nfds_t, timeout) };
         if ready < 0 {
@@ -560,13 +570,13 @@ impl Dispatch<wlr_manager::ZwlrDataControlManagerV1, ()> for State {
 
 impl Dispatch<ext_device::ExtDataControlDeviceV1, ()> for State {
     fn event(state: &mut Self, _: &ext_device::ExtDataControlDeviceV1, event: ext_device::Event, _: &(),
-             _: &Connection, qh: &QueueHandle<Self>) {
+             _: &Connection, _: &QueueHandle<Self>) {
         match event {
             ext_device::Event::DataOffer { id } => {
                 state.offers.insert(id.id(), Vec::new());
             }
-            ext_device::Event::Selection { id } => state.selection(Kind::Clipboard, id.map(Offer::Ext), qh),
-            ext_device::Event::PrimarySelection { id } => state.selection(Kind::Primary, id.map(Offer::Ext), qh),
+            ext_device::Event::Selection { id } => state.selection(Kind::Clipboard, id.map(Offer::Ext)),
+            ext_device::Event::PrimarySelection { id } => state.selection(Kind::Primary, id.map(Offer::Ext)),
             ext_device::Event::Finished => state.finished = true,
             _ => {}
         }
@@ -579,13 +589,13 @@ impl Dispatch<ext_device::ExtDataControlDeviceV1, ()> for State {
 
 impl Dispatch<wlr_device::ZwlrDataControlDeviceV1, ()> for State {
     fn event(state: &mut Self, _: &wlr_device::ZwlrDataControlDeviceV1, event: wlr_device::Event, _: &(),
-             _: &Connection, qh: &QueueHandle<Self>) {
+             _: &Connection, _: &QueueHandle<Self>) {
         match event {
             wlr_device::Event::DataOffer { id } => {
                 state.offers.insert(id.id(), Vec::new());
             }
-            wlr_device::Event::Selection { id } => state.selection(Kind::Clipboard, id.map(Offer::Wlr), qh),
-            wlr_device::Event::PrimarySelection { id } => state.selection(Kind::Primary, id.map(Offer::Wlr), qh),
+            wlr_device::Event::Selection { id } => state.selection(Kind::Clipboard, id.map(Offer::Wlr)),
+            wlr_device::Event::PrimarySelection { id } => state.selection(Kind::Primary, id.map(Offer::Wlr)),
             wlr_device::Event::Finished => state.finished = true,
             _ => {}
         }

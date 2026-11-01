@@ -1,5 +1,7 @@
 //! Real-protocol checks inside a private nested labwc (tests/run_headless.sh):
 //! wl-copy owns a selection, is killed, and the copy must still paste.
+//! `headless replace <text>` is the test's own client that clears the
+//! clipboard and sets a new one in the same burst, as browsers do.
 //! Usage (inside the nested session): headless <wayclip binary> <scratch dir>
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -64,8 +66,103 @@ fn copy_close_paste(session: &Session, args: &[&str], data: &[u8]) -> Option<Vec
     wait_paste(args, Some(data))
 }
 
+mod replace {
+    //! A data-control client: clear the clipboard, then set `text` right away.
+    use std::io::Write;
+    use wayland_client::protocol::{wl_registry, wl_seat};
+    use wayland_client::{Connection, Dispatch, QueueHandle};
+    use wayland_protocols::ext::data_control::v1::client::{
+        ext_data_control_device_v1 as device, ext_data_control_manager_v1 as manager,
+        ext_data_control_offer_v1 as offer, ext_data_control_source_v1 as source,
+    };
+
+    #[derive(Default)]
+    struct State {
+        seat: Option<wl_seat::WlSeat>,
+        manager: Option<manager::ExtDataControlManagerV1>,
+        text: Vec<u8>,
+        cancelled: bool,
+    }
+
+    impl Dispatch<wl_registry::WlRegistry, ()> for State {
+        fn event(state: &mut Self, registry: &wl_registry::WlRegistry, event: wl_registry::Event, _: &(),
+                 _: &Connection, qh: &QueueHandle<Self>) {
+            if let wl_registry::Event::Global { name, interface, .. } = event {
+                match interface.as_str() {
+                    "wl_seat" => state.seat = Some(registry.bind(name, 1, qh, ())),
+                    "ext_data_control_manager_v1" => state.manager = Some(registry.bind(name, 1, qh, ())),
+                    _ => {}
+                }
+            }
+        }
+    }
+    impl Dispatch<wl_seat::WlSeat, ()> for State {
+        fn event(_: &mut Self, _: &wl_seat::WlSeat, _: wl_seat::Event, _: &(), _: &Connection, _: &QueueHandle<Self>) {}
+    }
+    impl Dispatch<manager::ExtDataControlManagerV1, ()> for State {
+        fn event(_: &mut Self, _: &manager::ExtDataControlManagerV1, _: manager::Event, _: &(), _: &Connection,
+                 _: &QueueHandle<Self>) {}
+    }
+    impl Dispatch<device::ExtDataControlDeviceV1, ()> for State {
+        fn event(_: &mut Self, _: &device::ExtDataControlDeviceV1, _: device::Event, _: &(), _: &Connection,
+                 _: &QueueHandle<Self>) {}
+        wayland_client::event_created_child!(State, device::ExtDataControlDeviceV1, [
+            device::EVT_DATA_OFFER_OPCODE => (offer::ExtDataControlOfferV1, ()),
+        ]);
+    }
+    impl Dispatch<offer::ExtDataControlOfferV1, ()> for State {
+        fn event(_: &mut Self, _: &offer::ExtDataControlOfferV1, _: offer::Event, _: &(), _: &Connection,
+                 _: &QueueHandle<Self>) {}
+    }
+    impl Dispatch<source::ExtDataControlSourceV1, ()> for State {
+        fn event(state: &mut Self, _: &source::ExtDataControlSourceV1, event: source::Event, _: &(), _: &Connection,
+                 _: &QueueHandle<Self>) {
+            match event {
+                source::Event::Send { fd, .. } => {
+                    let _ = std::fs::File::from(fd).write_all(&state.text);
+                }
+                source::Event::Cancelled => state.cancelled = true,
+                _ => {}
+            }
+        }
+    }
+
+    /// Serve until replaced (or 20 s).
+    pub fn run(text: &str) {
+        let conn = Connection::connect_to_env().unwrap();
+        let mut queue = conn.new_event_queue();
+        let qh = queue.handle();
+        let mut state = State { text: text.as_bytes().to_vec(), ..Default::default() };
+        conn.display().get_registry(&qh, ());
+        queue.roundtrip(&mut state).unwrap();
+        let (Some(seat), Some(manager)) = (state.seat.clone(), state.manager.clone()) else { panic!("no data control") };
+        let device = manager.get_data_device(&seat, &qh, ());
+        let source = manager.create_data_source(&qh, ());
+        for mime in ["text/plain;charset=utf-8", "text/plain", "UTF8_STRING"] {
+            source.offer(mime.into());
+        }
+        device.set_selection(None);
+        device.set_selection(Some(&source));
+        conn.flush().unwrap();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+        while !state.cancelled && std::time::Instant::now() < deadline {
+            queue.roundtrip(&mut state).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+    }
+}
+
+/// Clear and set in one burst from the test's own client; returns it running.
+fn clear_then_copy(text: &str) -> Child {
+    Command::new(std::env::current_exe().unwrap()).args(["replace", text]).spawn().unwrap()
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("replace") {
+        replace::run(&args[2]);
+        return;
+    }
     let (binary, scratch) = (PathBuf::from(&args[1]), PathBuf::from(&args[2]));
     std::fs::create_dir_all(&scratch).unwrap();
     let settings = scratch.join("clipboard.json");
@@ -100,6 +197,22 @@ fn main() {
         live.as_deref() == Some(b"prim") && paste(&["--primary"]).is_none()
     });
     check("the clipboard is still the image afterwards", paste(&["--type", "image/png"]).as_deref() == Some(&image[..]));
+    check("clearing then copying at once keeps the new copy", {
+        // wayclip owns the kept image now; a browser-style copy must win on the first try.
+        let owner = clear_then_copy("fresh");
+        sleep(Duration::from_millis(800));
+        let got = paste(&[]);
+        close(owner);
+        got.as_deref() == Some(b"fresh")
+    });
+    check("a cleared clipboard still gets the kept copy back", {
+        let owner = copy(&[], b"keep me");
+        let live = wait_paste(&[], Some(b"keep me"));
+        sleep(Duration::from_millis(300));
+        let clear = Command::new("wl-copy").arg("--clear").status().map(|s| s.success()).unwrap_or(false);
+        close(owner);
+        clear && live.as_deref() == Some(b"keep me") && wait_paste(&[], Some(b"keep me")).as_deref() == Some(b"keep me")
+    });
 
     write_settings(&settings, r#"{"keep_primary": true, "max_mb": 1}"#);
     check("primary selection kept when enabled",
