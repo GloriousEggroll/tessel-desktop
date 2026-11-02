@@ -113,6 +113,9 @@ class SystemInstall(unittest.TestCase):
         apps.mkdir(parents=True)
         (apps / "org.waydock.Files.desktop").write_text("old")
         (apps / "firefox.desktop").write_text("keep")
+        login = self.root / "etc/waylogin"
+        login.mkdir(parents=True)
+        (login / "appearance.json").write_text('{\n  "picture": "x",\n  "default_session": "labwc"\n}\n')
         self.args = ["--system", "--root", str(self.root), "--target-dir", str(self.target)]
 
     def test_keyring_pam_session_and_old_files(self):
@@ -125,12 +128,15 @@ class SystemInstall(unittest.TestCase):
         self.assertIn("Name=Tessel", (self.root / "usr/local/share/wayland-sessions/tessel.desktop").read_text())
         self.assertFalse((self.root / "usr/share/applications/org.waydock.Files.desktop").exists())
         self.assertTrue((self.root / "usr/share/applications/firefox.desktop").exists())
+        self.assertEqual((self.root / "etc/waylogin/appearance.json").read_text(),
+                         '{\n  "picture": "x",\n  "default_session": "tessel"\n}\n')
         self.assertIn("0 files to change.", run(self.args))
 
         run(["--system", "--root", str(self.root), "--rollback"])
         self.assertEqual((self.root / "etc/pam.d/waylogin").read_text(), self.waylogin)
         self.assertEqual((self.root / "usr/share/applications/org.waydock.Files.desktop").read_text(), "old")
         self.assertFalse((self.root / "usr/lib64/security/pam_tessel_keyring.so").exists())
+        self.assertIn('"labwc"', (self.root / "etc/waylogin/appearance.json").read_text())
 
     def test_pam_lines_are_added_once(self):
         fresh = "auth include waylogin-auth\nsession include system-auth\n"

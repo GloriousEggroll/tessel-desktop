@@ -236,6 +236,14 @@ def system_plan(root, parts, target_dir):
         plan.write(root / "usr/local/share/wayland-sessions/tessel.desktop", entry.read_bytes())
         plan.write(root / "usr/local/share/icons/hicolor/scalable/apps/tessel.svg",
                    (REPO / "branding/tessel-logo.svg").read_bytes())
+        # The login screen preselects Tessel where it preselected plain labwc (the same session).
+        for appearance in (root / "etc/waylogin/appearance.json", root / "etc/tessel/login/appearance.json"):
+            if appearance.is_file():
+                data = json.loads(appearance.read_text())
+                if data.get("default_session") == "labwc":
+                    data["default_session"] = "tessel"
+                    plan.write(appearance, (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode(),
+                               appearance.stat().st_mode & 0o7777)
     if "retire-old" in parts:
         for pattern in OLD_SYSTEM_DESKTOP:
             directory = root / Path(pattern).parent
