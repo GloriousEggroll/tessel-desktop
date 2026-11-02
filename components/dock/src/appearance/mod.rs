@@ -5,7 +5,7 @@
 //!
 //! Public API the application calls (every path / command / bus is injectable;
 //! `None`/`Default` options mean the real locations and services):
-//! - [`palette_state::PaletteState`] — `new(None)` (= `~/.cache/tessel-dock/palette.json`),
+//! - [`palette_state::PaletteState`] — `new(None)` (= `~/.cache/tessel/dock/palette.json`),
 //!   `publish(is_dark, transparency, &monitors, &AppOptions) -> bool`, `error`.
 //!   Entries come from [`palette_state::monitor_entry`].
 //! - [`gtk_color_scheme::GtkColorScheme`] — `new(None)` (= `$XDG_CONFIG_HOME`),

@@ -16,8 +16,8 @@ pub const PROMPT_LANGUAGES: [&str; 30] = ["ar", "cs", "da", "de", "el", "es", "f
 /// `~/.local/bin/tessel-prompt`: the path labwc's rc.xml names (and the
 /// delimiter seed). It must stay the same so rc.xml is not rewritten.
 pub const LAUNCHER: &str = ".local/bin/tessel-prompt";
-/// Suggested install location of the Rust binary (relative to home).
-pub const DEFAULT_BINARY: &str = ".local/share/tessel-shell/tessel-prompt";
+/// Suggested install location of the binary (relative to home).
+pub const DEFAULT_BINARY: &str = ".local/lib/tessel/tessel-prompt";
 pub const DESKTOP_ENTRY: &str = ".local/share/applications/org.tessel.Prompt.desktop";
 
 /// `str(pathlib.PurePosixPath(path))`.
@@ -237,13 +237,7 @@ pub fn prompt_desktop_entry_from(directory: &Path) -> String {
     })
 }
 
-/// The Python launcher (`#!/bin/sh exec /usr/bin/python3 …/wayshell_prompt.py "$@"`).
-pub fn python_launcher_script(home: &Path) -> String {
-    let script = py_path_str(&home.join(".local/share/tessel-shell/wayshell_prompt.py"));
-    format!("#!/bin/sh\nexec /usr/bin/python3 {} \"$@\"\n", shell_quote(&script))
-}
-
-/// The Rust launcher: same path (`~/.local/bin/tessel-prompt`), execs `binary`.
+/// The launcher (`~/.local/bin/tessel-prompt`): execs `binary`.
 pub fn launcher_script(binary: &Path) -> String {
     format!("#!/bin/sh\nexec {} \"$@\"\n", shell_quote(&py_path_str(binary)))
 }

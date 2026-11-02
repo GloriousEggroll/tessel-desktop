@@ -7,11 +7,10 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
 
-use serde_json::Value;
 
 use super::app_catalog::*;
 use super::spawn::{error, FakeSpawner, GioSpawner};
-use super::testutil::{python, TempDir, PYTHON_SOURCES};
+use super::testutil::TempDir;
 
 fn info(id: &str, name: &str) -> AppInfoData {
     AppInfoData::fake(id, name)
@@ -336,7 +335,7 @@ fn each_application_gets_a_unique_unit() {
 
 fn fake_launcher(spawner: &FakeSpawner) -> Launcher {
     let mut launcher = Launcher::new(Rc::new(spawner.clone()));
-    launcher.helper = s(&["/usr/bin/python3", "/runtime/app_catalog.py"]);
+    launcher.helper = s(&["/runtime/tessel-dock-launch"]);
     launcher.base_environment = Box::new(|| vec![("HOME".into(), "/home/example".into()), ("INVOCATION_ID".into(), "shell".into())]);
     launcher
 }
@@ -612,7 +611,7 @@ fn fake_systemd_run_receives_unit_env_names_and_values_via_environment() {
     for fail in [false, true] {
         let mut launcher = Launcher::new(Rc::new(GioSpawner));
         launcher.systemd_run = Some(script.to_string_lossy().into_owned());
-        launcher.helper = s(&["/usr/bin/python3", "/runtime/app_catalog.py"]);
+        launcher.helper = s(&["/runtime/tessel-dock-launch"]);
         let environment = vec![
             ("PATH".to_string(), "/usr/bin:/bin".to_string()),
             ("CUSTOM".to_string(), "$(do-not-run) a=b".to_string()),
@@ -634,7 +633,7 @@ fn fake_systemd_run_receives_unit_env_names_and_values_via_environment() {
         let argv: Vec<String> = std::fs::read_to_string(format!("{}.argv", record.display())).unwrap().lines().map(String::from).collect();
         assert_eq!(argv[..9], s(&["--user", "--collect", "--quiet", "--service-type=forking", "--property=GuessMainPID=no", "--property=ExitType=cgroup", "--property=TimeoutStartSec=90s", "--slice=app.slice", "--expand-environment=no"]));
         assert!(argv[9].starts_with("--unit=app-tessel-dock-") && argv[9].ends_with(".service"));
-        assert_eq!(argv[10..], s(&["--setenv=CUSTOM", "--setenv=FAIL", "--setenv=PATH", "--", "/usr/bin/python3", "/runtime/app_catalog.py", "--launch-desktop", "app.desktop"]));
+        assert_eq!(argv[10..], s(&["--setenv=CUSTOM", "--setenv=FAIL", "--setenv=PATH", "--", "/runtime/tessel-dock-launch", "--launch-desktop", "app.desktop"]));
         let env = std::fs::read_to_string(format!("{}.env", record.display())).unwrap();
         assert!(env.lines().any(|l| l == "CUSTOM=$(do-not-run) a=b"));
         assert!(!env.contains("INVOCATION_ID"));
@@ -643,59 +642,3 @@ fn fake_systemd_run_receives_unit_env_names_and_values_via_environment() {
 
 // ---- Python parity ----
 
-#[test]
-fn launch_argv_and_environment_match_python() {
-    let dir = TempDir::new();
-    let code = r#"
-import json, os
-from unittest.mock import patch
-import app_catalog as module
-from app_catalog import Gio
-recorded = {}
-class Process:
-    def communicate_utf8_async(self, *args): pass
-class Launcher:
-    def set_environ(self, environment):
-        recorded["env"] = environment
-    def spawnv(self, command):
-        recorded["command"] = command
-        return Process()
-results = {"environ": dict(os.environ), "helper": [__import__("sys").executable, str(__import__("pathlib").Path(module.__file__).resolve())]}
-with patch.object(Gio.SubprocessLauncher, "new", return_value=Launcher()):
-    module._launch_separately("--launch-desktop", "app with space.desktop", None, None)
-    results["separately"] = dict(recorded)
-    module.launch_process(["/usr/bin/ptyxis", "--x"], cwd="/tmp/dir with space")
-    results["process"] = dict(recorded)
-results["fixed"] = module.launch_command(["/h", "$x"], {"B": "1", "A": "2", "9X": "3", "a-b": "4"}, "app-tessel-dock-fixed.service")
-print(json.dumps(results))
-"#;
-    let extra = [("INVOCATION_ID", "dock"), ("NOTIFY_SOCKET", "/n"), ("CUSTOM", "$(no) a=b"), ("LANG", "C.UTF-8"), ("WAYDOCK_LAUNCH_STARTUP_ID", "old")];
-    let Some(output) = python(dir.path(), code, &extra) else { return };
-    let results: Value = serde_json::from_str(&output).unwrap();
-    let environ: Vec<(String, String)> =
-        results["environ"].as_object().unwrap().iter().map(|(k, v)| (k.clone(), v.as_str().unwrap().to_owned())).collect();
-    let helper: Vec<String> = serde_json::from_value(results["helper"].clone()).unwrap();
-    assert!(helper[1].starts_with(PYTHON_SOURCES));
-    let normalize = |command: &[String]| -> Vec<String> {
-        command.iter().map(|a| if a.starts_with("--unit=app-tessel-dock-") { "--unit=<uuid>".to_owned() } else { a.clone() }).collect()
-    };
-    let python_list = |value: &Value| -> Vec<String> { serde_json::from_value(value.clone()).unwrap() };
-
-    let spawner = FakeSpawner::new();
-    let mut launcher = Launcher::new(Rc::new(spawner.clone()));
-    launcher.helper = helper;
-    let base = environ.clone();
-    launcher.base_environment = Box::new(move || base.clone());
-    launcher.launch_separately("--launch-desktop", "app with space.desktop", None, None, None).unwrap();
-    assert_eq!(normalize(&spawner.last_argv()), normalize(&python_list(&results["separately"]["command"])));
-    let env: Vec<String> = spawner.last_environment().unwrap().iter().map(|(k, v)| format!("{k}={v}")).collect();
-    assert_eq!(env, python_list(&results["separately"]["env"]));
-
-    launcher.launch_process(&s(&["/usr/bin/ptyxis", "--x"]), None, Some("/tmp/dir with space"), None).unwrap();
-    assert_eq!(normalize(&spawner.last_argv()), normalize(&python_list(&results["process"]["command"])));
-    let env: Vec<String> = spawner.last_environment().unwrap().iter().map(|(k, v)| format!("{k}={v}")).collect();
-    assert_eq!(env, python_list(&results["process"]["env"]));
-
-    let fixed = launch_command(&s(&["/h", "$x"]), ["B", "A", "9X", "a-b"], Some("app-tessel-dock-fixed.service"), "forking", None);
-    assert_eq!(fixed, python_list(&results["fixed"]));
-}

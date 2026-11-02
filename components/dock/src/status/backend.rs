@@ -3,7 +3,7 @@
 //!
 //! Public API (UI agent):
 //! - `StatusBackend::new(on_changed, on_error, StatusOptions)`; `StatusOptions::default()`
-//!   is the real session (`~/.config/waybar/scripts`, `ProcessJob`, `GlibScheduler`,
+//!   is the real session (`tessel_core::paths::program`, `ProcessJob`, `GlibScheduler`,
 //!   `Services::real()`); `.start()`, `.close()`.
 //! - `.status() -> Map<name, indicator>` / `.get(name)`; indicator objects are
 //!   Python's dicts: `{"text","tooltip","classes":[..],"class":[..],"visible"}` (+ `"state"`
@@ -17,10 +17,11 @@
 //! some status value really changed.
 
 use super::process::{DoneHandler, JobFactory, JobOptions, LineHandler, ProcessJob, StatusJob};
+pub use crate::core::panel_actions::ProgramLookup;
+use crate::core::panel_actions::{default_program, installed};
 use serde_json::{json, Map, Value};
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
 use tessel_core::i18n::{translate, translate_with};
 use tessel_core::pyfmt::Arg;
@@ -37,15 +38,14 @@ pub const ICONS: [(&str, &str); 16] = [
     ("notifications", "\u{f0f3}"), ("screen_record", "\u{f03d}"), ("keyboard", "\u{f11c}"), ("tiling", "▦"),
 ];
 
+/// Status name → the Tessel program that streams it as JSON lines.
 pub const STREAMS: [(&str, &str); 9] = [
-    ("power", "tessel-power/power_status.py"), ("battery", "tessel-battery/battery_status.py"),
-    ("brightness", "tessel-brightness/brightness_status.py"), ("network", "tessel-network/network_status.py"),
-    ("capslock", "capslock.py"), ("notifications", "tessel-notifications/notification_status.py"),
-    ("weather", "tessel-weather/weather_status.py"), ("keyboard", "tessel-keyboard/osk_status.py"),
-    ("tiling", "tessel-tiling/tiling_status.py"),
+    ("power", "tessel-power-status"), ("battery", "tessel-battery-status"),
+    ("brightness", "tessel-brightness-status"), ("network", "tessel-network-status"),
+    ("capslock", "tessel-capslock-status"), ("notifications", "tessel-notifications-status"),
+    ("weather", "tessel-weather-status"), ("keyboard", "tessel-keyboard-status"),
+    ("tiling", "tessel-tiling-status"),
 ];
-
-pub const WAYCAPTURE: &str = "/usr/local/bin/tessel-capture";
 
 pub fn icon(name: &str) -> &'static str {
     ICONS.iter().find(|(key, _)| *key == name).map(|(_, icon)| *icon).unwrap_or("")
@@ -316,13 +316,14 @@ impl Services {
                     as Rc<dyn MediaSource>
             }),
             bluetooth: Rc::new(SystemBluetooth::default()),
-            tessel_capture_exists: Rc::new(|| Path::new(WAYCAPTURE).is_file()),
+            tessel_capture_exists: Rc::new(|| installed(&tessel_core::paths::program("tessel-capture"))),
         }
     }
 }
 
 pub struct StatusOptions {
-    pub scripts: PathBuf,
+    /// Finds the status stream and keep-awake programs.
+    pub program: ProgramLookup,
     pub job_factory: JobFactory,
     pub scheduler: Rc<dyn Scheduler>,
     pub services: Services,
@@ -332,7 +333,7 @@ pub struct StatusOptions {
 impl Default for StatusOptions {
     fn default() -> Self {
         Self {
-            scripts: tessel_core::paths::config_home().join("waybar/scripts"),
+            program: default_program(),
             job_factory: ProcessJob::factory(),
             scheduler: Rc::new(GlibScheduler::default()),
             services: Services::real(),
@@ -348,7 +349,7 @@ struct Inner {
     on_error: Box<dyn Fn(&str)>,
     on_show_desktop: RefCell<Option<Rc<dyn Fn() -> bool>>>,
     show_desktop: Cell<bool>,
-    scripts: PathBuf,
+    program: ProgramLookup,
     job_factory: JobFactory,
     scheduler: Rc<dyn Scheduler>,
     services: Services,
@@ -384,7 +385,7 @@ impl StatusBackend {
         Self(Rc::new(Inner {
             on_changed: Box::new(on_changed), on_error: on_error.unwrap_or_else(|| Box::new(|_| {})),
             on_show_desktop: RefCell::new(options.on_show_desktop), show_desktop: Cell::new(false),
-            scripts: options.scripts, job_factory: options.job_factory, scheduler: options.scheduler,
+            program: options.program, job_factory: options.job_factory, scheduler: options.scheduler,
             services: options.services, status: RefCell::new(status), jobs: RefCell::default(), job_serial: Cell::new(0),
             sources: RefCell::default(), errors: RefCell::default(), started: Cell::new(false), closed: Cell::new(false),
             audio_steps: Cell::new(0), bus_pending: Cell::new(false), capture_status: RefCell::new(None),
@@ -518,7 +519,7 @@ impl StatusBackend {
             if key == "bluetooth" {
                 self.refresh_bluetooth();
             } else if let Some(path) = stream(key) {
-                let mut command = vec!["/usr/bin/python3".to_owned(), "-u".to_owned(), self.0.scripts.join(path).to_string_lossy().into_owned()];
+                let mut command = vec![(self.0.program)(path).to_string_lossy().into_owned()];
                 if key == "weather" {
                     command.push("--watch".into());
                 }
@@ -694,8 +695,8 @@ impl StatusBackend {
             }
         }
         if name == "idle_inhibitor" {
-            let script = self.0.scripts.join("tessel-keep-awake/keep_awake.py").to_string_lossy().into_owned();
-            return self.run_action(name, vec!["/usr/bin/python3".into(), script, "--toggle".into()], name);
+            let program = (self.0.program)("tessel-keep-awake").to_string_lossy().into_owned();
+            return self.run_action(name, vec![program, "--toggle".into()], name);
         }
         if name == "showdesktop" && !self.0.closed.get() {
             if let Some(callback) = self.0.on_show_desktop.borrow().clone() {

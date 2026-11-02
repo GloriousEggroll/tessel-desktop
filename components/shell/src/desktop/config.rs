@@ -1,5 +1,5 @@
-//! `~/.config/tessel-shell/wallpapers.json` (CONFIG_FILE, always under `$HOME`,
-//! like Python's `expanduser`) and `$XDG_CONFIG_HOME/tessel-shell/desktop_view_order.json`
+//! `~/.config/tessel/shell/wallpapers.json` (CONFIG_FILE) and
+//! `~/.config/tessel/shell/desktop_view_order.json`
 //! (ORDER_CONFIG). Byte format matches Python's `json.dump`: indent=2 for the
 //! wallpapers file, default separators (`", "`, `": "`) for positions.
 
@@ -14,11 +14,11 @@ pub const VIEW_PREFS: &str = "_view_prefs";
 pub const INDENT2: JsonStyle = JsonStyle { indent: Some(2), ..JsonStyle::DEFAULT };
 
 pub fn config_file() -> PathBuf {
-    tessel_core::paths::home().join(".config/tessel-shell/wallpapers.json")
+    tessel_core::paths::component_config_dir("shell").join("wallpapers.json")
 }
 
 pub fn order_config() -> PathBuf {
-    tessel_core::paths::config_home().join("tessel-shell/desktop_view_order.json")
+    tessel_core::paths::component_config_dir("shell").join("desktop_view_order.json")
 }
 
 pub fn desktop_dir() -> PathBuf {

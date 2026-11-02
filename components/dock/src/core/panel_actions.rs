@@ -1,10 +1,10 @@
-//! Explicit dock panel actions, launched independently of Tessel Dock's lifetime
+//! Explicit dock panel actions, launched independently of the dock's lifetime
 //! (port of panel_actions.py; contract §7 "Clicks").
 //!
 //! API: [`APPLICATIONS`], [`application_command`] (exact argv per applet and
 //! edge), [`PanelActions`] (`open`, `capture`, `logout`,
 //! `open_global_settings`, `open_system_monitor`) with an injectable
-//! [`Spawner`], file check, home directory and environment lookup. Failure
+//! [`Spawner`], program lookup, file check and environment lookup. Failure
 //! texts are Python's (English; the dock's error dialog shows them as is).
 
 use std::path::{Path, PathBuf};
@@ -12,25 +12,23 @@ use std::rc::Rc;
 
 use super::spawn::{GioSpawner, Spawner};
 
-/// `sys.executable` of the Python dock service.
-pub const PYTHON: &str = "/usr/bin/python3";
-
-pub const APPLICATIONS: &[(&str, (&str, &str))] = &[
-    ("media", ("tessel-media", "media_manager.py")),
-    ("session", ("tessel-session", "session_manager.py")),
-    ("notifications", ("tessel-notifications", "notification_manager.py")),
-    ("idle_inhibitor", ("tessel-keep-awake", "keep_awake.py")),
-    ("power", ("tessel-power", "power_manager.py")),
-    ("brightness", ("tessel-brightness", "brightness_manager.py")),
-    ("battery", ("tessel-battery", "battery_manager.py")),
-    ("network", ("tessel-network", "network_manager.py")),
-    ("discovery", ("tessel-network-discovery", "discovery_manager.py")),
-    ("bluetooth", ("tessel-bluetooth", "tessel-bluetooth.py")),
-    ("tiling", ("tessel-tiling", "tiling_manager.py")),
-    ("keyboard", ("tessel-keyboard", "osk_manager.py")),
-    ("audio", ("tessel-audio", "audio_manager.py")),
-    ("calendar", ("tessel-calendar", "calendar_manager.py")),
-    ("weather", ("tessel-weather", "weather_manager.py")),
+/// Panel applet → the Tessel program it opens.
+pub const APPLICATIONS: &[(&str, &str)] = &[
+    ("media", "tessel-media"),
+    ("session", "tessel-session"),
+    ("notifications", "tessel-notifications"),
+    ("idle_inhibitor", "tessel-keep-awake"),
+    ("power", "tessel-power"),
+    ("brightness", "tessel-brightness"),
+    ("battery", "tessel-battery"),
+    ("network", "tessel-network"),
+    ("discovery", "tessel-network-discovery"),
+    ("bluetooth", "tessel-bluetooth"),
+    ("tiling", "tessel-tiling"),
+    ("keyboard", "tessel-keyboard"),
+    ("audio", "tessel-audio"),
+    ("calendar", "tessel-calendar"),
+    ("weather", "tessel-weather"),
 ];
 
 /// Session variables forwarded by name to the detached popup service.
@@ -39,31 +37,39 @@ pub const FORWARDED_ENVIRONMENT: &[&str] = &[
     "XDG_SESSION_TYPE", "LABWC_PID",
 ];
 
-pub const WAYCAPTURE: &str = "/usr/local/bin/tessel-capture";
-pub const SYSTEM_MONITOR: &str = "/usr/local/bin/tessel-system-monitor";
+/// Finds a Tessel program (`tessel_core::paths::program`; injectable for tests).
+pub type ProgramLookup = Rc<dyn Fn(&str) -> PathBuf>;
 
-fn scripts_root() -> PathBuf {
-    tessel_core::paths::home().join(".config/waybar/scripts")
+/// The real lookup.
+pub fn default_program() -> ProgramLookup {
+    Rc::new(tessel_core::paths::program)
 }
 
-/// `application_command(name, settings, edge, offset, root)` with
-/// `python` = `sys.executable`. `Err` is Python's `ValueError` text.
+/// `path` can be run: an existing file, or a bare name found on `PATH`
+/// (what `tessel_core::paths::program` falls back to).
+pub fn installed(path: &Path) -> bool {
+    if path.is_relative() && path.components().count() == 1 {
+        return glib::find_program_in_path(path).is_some();
+    }
+    path.is_file()
+}
+
+/// `application_command(name, settings, edge, offset)` with the applet's
+/// program found by `program`. `Err` is Python's `ValueError` text.
 pub fn application_command(
     name: &str,
     settings: bool,
     edge: &str,
     offset: i64,
-    root: Option<&Path>,
-    python: &str,
+    program: &dyn Fn(&str) -> PathBuf,
 ) -> Result<Vec<String>, String> {
-    let Some((_, (folder, script))) = APPLICATIONS.iter().find(|(n, _)| *n == name) else {
+    let Some((_, binary)) = APPLICATIONS.iter().find(|(n, _)| *n == name) else {
         return Err("Unknown panel application".into());
     };
     if !["top", "bottom", "left", "right"].contains(&edge) || offset < 0 {
         return Err("Invalid popup placement".into());
     }
-    let root = root.map(Path::to_path_buf).unwrap_or_else(scripts_root);
-    let mut command = vec![python.to_owned(), root.join(folder).join(script).to_string_lossy().into_owned()];
+    let mut command = vec![program(binary).to_string_lossy().into_owned()];
     let popup = |command: &mut Vec<String>| {
         command.extend(["--popup", "--popup-edge", edge, "--popup-offset"].map(String::from));
         command.push(offset.to_string());
@@ -100,15 +106,11 @@ pub fn capture_arguments(action: &str) -> Option<&'static [&'static str]> {
 pub struct PanelActions {
     failed: Rc<dyn Fn(String)>,
     pub spawner: Rc<dyn Spawner>,
-    /// `sys.executable` for the applet scripts.
-    pub python: String,
-    /// `Path.home()`; scripts live under `<home>/.config/waybar/scripts`.
-    pub home: PathBuf,
+    /// Finds the applets, Screen Recorder, Settings and System Monitor.
+    pub program: ProgramLookup,
     /// `systemd-run` (resolved through `PATH`, like Python).
     pub systemd_run: String,
-    pub tessel_capture: PathBuf,
-    pub system_monitor: PathBuf,
-    /// `Path.is_file` (injectable for tests).
+    /// [`installed`] (injectable for tests).
     pub is_file: Box<dyn Fn(&Path) -> bool>,
     /// `key in os.environ` (injectable for tests).
     pub has_env: Box<dyn Fn(&str) -> bool>,
@@ -123,12 +125,9 @@ impl PanelActions {
         Self {
             failed: Rc::new(failed),
             spawner,
-            python: PYTHON.into(),
-            home: tessel_core::paths::home(),
+            program: default_program(),
             systemd_run: "systemd-run".into(),
-            tessel_capture: WAYCAPTURE.into(),
-            system_monitor: SYSTEM_MONITOR.into(),
-            is_file: Box::new(|path| path.is_file()),
+            is_file: Box::new(installed),
             has_env: Box::new(|key| std::env::var_os(key).is_some()),
         }
     }
@@ -142,9 +141,8 @@ impl PanelActions {
         if name == "screen_record" {
             return self.capture("settings");
         }
-        let root = self.home.join(".config/waybar/scripts");
-        let command = application_command(name, settings, edge, offset, Some(&root), &self.python)?;
-        if !(self.is_file)(Path::new(&command[1])) {
+        let command = application_command(name, settings, edge, offset, &*self.program)?;
+        if !(self.is_file)(Path::new(&command[0])) {
             self.fail(format!("The {name} app is not installed."));
             return Ok(false);
         }
@@ -155,11 +153,12 @@ impl PanelActions {
         let Some(arguments) = capture_arguments(action) else {
             return Err("Unknown capture action".into());
         };
-        if !(self.is_file)(&self.tessel_capture) {
+        let program = (self.program)("tessel-capture");
+        if !(self.is_file)(&program) {
             self.fail("Screen Recorder is not installed.");
             return Ok(false);
         }
-        let mut command = vec![self.tessel_capture.to_string_lossy().into_owned()];
+        let mut command = vec![program.to_string_lossy().into_owned()];
         command.extend(arguments.iter().map(|a| a.to_string()));
         Ok(self.run_independent(command))
     }
@@ -190,20 +189,21 @@ impl PanelActions {
     }
 
     pub fn open_global_settings(&self) -> bool {
-        let command = self.home.join(".local/bin/tessel-settings");
+        let command = (self.program)("tessel-settings");
         if !(self.is_file)(&command) {
-            self.fail("Global Settings is not installed.");
+            self.fail("Settings is not installed.");
             return false;
         }
         self.run_independent(vec![command.to_string_lossy().into_owned()])
     }
 
     pub fn open_system_monitor(&self) -> bool {
-        if !(self.is_file)(&self.system_monitor) {
+        let command = (self.program)("tessel-system-monitor");
+        if !(self.is_file)(&command) {
             self.fail("System Monitor is not installed.");
             return false;
         }
-        self.run_independent(vec![self.system_monitor.to_string_lossy().into_owned()])
+        self.run_independent(vec![command.to_string_lossy().into_owned()])
     }
 
     fn run(&self, argv: Vec<String>) -> bool {
@@ -237,21 +237,25 @@ mod tests {
     use std::cell::RefCell;
 
     const EXPECTED_APPS: &[(&str, &str)] = &[
-        ("media", "tessel-media/media_manager.py"),
-        ("session", "tessel-session/session_manager.py"),
-        ("notifications", "tessel-notifications/notification_manager.py"),
-        ("power", "tessel-power/power_manager.py"),
-        ("brightness", "tessel-brightness/brightness_manager.py"),
-        ("battery", "tessel-battery/battery_manager.py"),
-        ("network", "tessel-network/network_manager.py"),
-        ("bluetooth", "tessel-bluetooth/tessel-bluetooth.py"),
-        ("audio", "tessel-audio/audio_manager.py"),
-        ("calendar", "tessel-calendar/calendar_manager.py"),
-        ("weather", "tessel-weather/weather_manager.py"),
+        ("media", "tessel-media"),
+        ("session", "tessel-session"),
+        ("notifications", "tessel-notifications"),
+        ("power", "tessel-power"),
+        ("brightness", "tessel-brightness"),
+        ("battery", "tessel-battery"),
+        ("network", "tessel-network"),
+        ("bluetooth", "tessel-bluetooth"),
+        ("audio", "tessel-audio"),
+        ("calendar", "tessel-calendar"),
+        ("weather", "tessel-weather"),
     ];
 
+    fn fixture(root: &str) -> impl Fn(&str) -> PathBuf + '_ {
+        move |name| Path::new(root).join(name)
+    }
+
     fn cmd(name: &str, settings: bool, edge: &str, offset: i64, root: &str) -> Vec<String> {
-        application_command(name, settings, edge, offset, Some(Path::new(root)), PYTHON).unwrap()
+        application_command(name, settings, edge, offset, &fixture(root)).unwrap()
     }
 
     fn v(items: &[&str]) -> Vec<String> {
@@ -260,55 +264,64 @@ mod tests {
 
     #[test]
     fn discovery_clicks_open_the_device_popup() {
-        let entry = [PYTHON, "/fixture/tessel-network-discovery/discovery_manager.py"];
-        assert_eq!(cmd("discovery", false, "left", 50, "/fixture"), v(&[entry[0], entry[1], "--popup", "--popup-edge", "left", "--popup-offset", "50"]));
-        assert_eq!(cmd("discovery", true, "top", 42, "/fixture"), v(&[entry[0], entry[1], "--popup", "--popup-edge", "top", "--popup-offset", "42"]));
+        let entry = "/fixture/tessel-network-discovery";
+        assert_eq!(cmd("discovery", false, "left", 50, "/fixture"), v(&[entry, "--popup", "--popup-edge", "left", "--popup-offset", "50"]));
+        assert_eq!(cmd("discovery", true, "top", 42, "/fixture"), v(&[entry, "--popup", "--popup-edge", "top", "--popup-offset", "42"]));
     }
 
     #[test]
-    fn all_popups_use_fixed_installed_entrypoints_and_four_dock_edges() {
-        let root = "/a path with spaces/$literal/scripts";
-        for (name, relative) in EXPECTED_APPS {
+    fn all_popups_use_tessel_programs_and_four_dock_edges() {
+        let root = "/a path with spaces/$literal/bin";
+        for (name, binary) in EXPECTED_APPS {
             for edge in ["top", "bottom", "left", "right"] {
-                let path = format!("{root}/{relative}");
-                assert_eq!(cmd(name, false, edge, 123, root), v(&[PYTHON, &path, "--popup", "--popup-edge", edge, "--popup-offset", "123"]));
+                let path = format!("{root}/{binary}");
+                assert_eq!(cmd(name, false, edge, 123, root), v(&[&path, "--popup", "--popup-edge", edge, "--popup-offset", "123"]));
             }
         }
     }
 
     #[test]
     fn settings_select_settings_mode_except_single_popup_apps() {
-        for (name, relative) in EXPECTED_APPS {
-            let path = format!("/fixture/{relative}");
+        for (name, binary) in EXPECTED_APPS {
+            let path = format!("/fixture/{binary}");
             let command = cmd(name, true, "bottom", 76, "/fixture");
             if ["bluetooth", "session", "media"].contains(name) {
-                assert_eq!(command, v(&[PYTHON, &path, "--popup", "--popup-edge", "bottom", "--popup-offset", "76"]));
+                assert_eq!(command, v(&[&path, "--popup", "--popup-edge", "bottom", "--popup-offset", "76"]));
             } else {
-                assert_eq!(command, v(&[PYTHON, &path, "--settings"]));
+                assert_eq!(command, v(&[&path, "--settings"]));
             }
         }
         // idle_inhibitor right click also gets the popup again.
-        assert_eq!(cmd("idle_inhibitor", true, "top", 9, "/f")[2..], v(&["--popup", "--popup-edge", "top", "--popup-offset", "9"]));
+        assert_eq!(cmd("idle_inhibitor", true, "top", 9, "/f"), v(&["/f/tessel-keep-awake", "--popup", "--popup-edge", "top", "--popup-offset", "9"]));
     }
 
     #[test]
     fn tiling_and_keyboard() {
-        let tiling = "/fixture/tessel-tiling/tiling_manager.py";
-        assert_eq!(cmd("tiling", false, "bottom", 76, "/fixture"), v(&[PYTHON, tiling, "--toggle"]));
-        assert_eq!(cmd("tiling", true, "top", 40, "/fixture"), v(&[PYTHON, tiling, "--settings", "--popup-edge", "top", "--popup-offset", "40"]));
-        let osk = "/fixture/tessel-keyboard/osk_manager.py";
-        assert_eq!(cmd("keyboard", false, "bottom", 76, "/fixture"), v(&[PYTHON, osk, "--toggle"]));
-        assert_eq!(cmd("keyboard", true, "bottom", 76, "/fixture"), v(&[PYTHON, osk, "--settings"]));
+        let tiling = "/fixture/tessel-tiling";
+        assert_eq!(cmd("tiling", false, "bottom", 76, "/fixture"), v(&[tiling, "--toggle"]));
+        assert_eq!(cmd("tiling", true, "top", 40, "/fixture"), v(&[tiling, "--settings", "--popup-edge", "top", "--popup-offset", "40"]));
+        let osk = "/fixture/tessel-keyboard";
+        assert_eq!(cmd("keyboard", false, "bottom", 76, "/fixture"), v(&[osk, "--toggle"]));
+        assert_eq!(cmd("keyboard", true, "bottom", 76, "/fixture"), v(&[osk, "--settings"]));
     }
 
     #[test]
     fn unknown_app_and_invalid_placement_never_form_commands() {
+        let program = fixture("/f");
         for name in ["../helper", "network;exit", "", "unknown"] {
-            assert_eq!(application_command(name, false, "bottom", 76, None, PYTHON).unwrap_err(), "Unknown panel application");
+            assert_eq!(application_command(name, false, "bottom", 76, &program).unwrap_err(), "Unknown panel application");
         }
-        assert_eq!(application_command("audio", false, "bottom;exit", 76, None, PYTHON).unwrap_err(), "Invalid popup placement");
-        assert!(application_command("audio", false, "bottom", -1, None, PYTHON).is_err());
-        assert_eq!(application_command("audio", false, "bottom", 0, None, PYTHON).unwrap().last().unwrap(), "0");
+        assert_eq!(application_command("audio", false, "bottom;exit", 76, &program).unwrap_err(), "Invalid popup placement");
+        assert!(application_command("audio", false, "bottom", -1, &program).is_err());
+        assert_eq!(application_command("audio", false, "bottom", 0, &program).unwrap().last().unwrap(), "0");
+    }
+
+    #[test]
+    fn installed_checks_files_and_bare_names_on_path() {
+        assert!(installed(Path::new("sh")));
+        assert!(!installed(Path::new("tessel-no-such-program-for-tests")));
+        assert!(!installed(Path::new("/nonexistent/tessel-power")));
+        assert!(installed(Path::new("/bin/sh")));
     }
 
     struct Harness {
@@ -317,12 +330,14 @@ mod tests {
         errors: Rc<RefCell<Vec<String>>>,
     }
 
+    const BIN: &str = "/a path/$literal/bin";
+
     fn harness(env: &'static [&'static str], files: bool) -> Harness {
         let errors = Rc::new(RefCell::new(Vec::new()));
         let sink = errors.clone();
         let spawner = FakeSpawner::new();
         let mut actions = PanelActions::with_spawner(move |e| sink.borrow_mut().push(e), Rc::new(spawner.clone()));
-        actions.home = PathBuf::from("/a path/$literal");
+        actions.program = Rc::new(|name| Path::new(BIN).join(name));
         actions.is_file = Box::new(move |_| files);
         actions.has_env = Box::new(move |key| env.contains(&key));
         Harness { actions, spawner, errors }
@@ -342,7 +357,7 @@ mod tests {
             let command = h.spawner.last_argv();
             assert_eq!(command[0], "systemd-run");
             let sep = command.iter().position(|a| a == "--").unwrap();
-            let mut expected = vec![WAYCAPTURE.to_string()];
+            let mut expected = vec![format!("{BIN}/tessel-capture")];
             expected.extend(args);
             assert_eq!(command[sep + 1..], expected);
         }
@@ -367,7 +382,7 @@ mod tests {
         let sep = command.iter().position(|a| a == "--").unwrap();
         assert_eq!(
             command[sep + 1..],
-            v(&[PYTHON, "/a path/$literal/.config/waybar/scripts/tessel-calendar/calendar_manager.py", "--popup", "--popup-edge", "left", "--popup-offset", "91"])
+            v(&["/a path/$literal/bin/tessel-calendar", "--popup", "--popup-edge", "left", "--popup-offset", "91"])
         );
         assert_eq!(
             command[..sep],
@@ -404,16 +419,16 @@ mod tests {
         assert!(h.actions.open_global_settings());
         let prefix = v(&["systemd-run", "--user", "--quiet", "--collect", "--service-type=exec", "--slice=app.slice", "--expand-environment=no", "--setenv=WAYLAND_DISPLAY", "--"]);
         let mut expected = prefix.clone();
-        expected.push("/a path/$literal/.local/bin/tessel-settings".into());
+        expected.push(format!("{BIN}/tessel-settings"));
         assert_eq!(h.spawner.last_argv(), expected);
         assert!(h.actions.open_system_monitor());
         let mut expected = prefix;
-        expected.push(SYSTEM_MONITOR.into());
+        expected.push(format!("{BIN}/tessel-system-monitor"));
         assert_eq!(h.spawner.last_argv(), expected);
         let missing = harness(&[], false);
         assert!(!missing.actions.open_global_settings());
         assert!(!missing.actions.open_system_monitor());
-        assert_eq!(*missing.errors.borrow(), v(&["Global Settings is not installed.", "System Monitor is not installed."]));
+        assert_eq!(*missing.errors.borrow(), v(&["Settings is not installed.", "System Monitor is not installed."]));
         assert_eq!(missing.spawner.count(), 0);
     }
 
@@ -464,7 +479,8 @@ mod tests {
         let sink = errors.clone();
         let mut actions = PanelActions::new(move |e| sink.borrow_mut().push(e));
         actions.systemd_run = script.to_string_lossy().into_owned();
-        actions.home = dir.path().to_path_buf();
+        let bin = dir.path().join("bin");
+        actions.program = Rc::new(move |name| bin.join(name));
         actions.is_file = Box::new(|_| true);
         actions.has_env = Box::new(|_| false);
         let context = glib::MainContext::new();
@@ -476,10 +492,10 @@ mod tests {
             .unwrap();
         assert_eq!(*errors.borrow(), v(&["denied"]));
         let argv: Vec<String> = std::fs::read_to_string(&record).unwrap().lines().map(String::from).collect();
-        let script_path = format!("{}/.config/waybar/scripts/tessel-weather/weather_manager.py", dir.path().display());
+        let program = format!("{}/bin/tessel-weather", dir.path().display());
         assert_eq!(
             argv,
-            v(&["--user", "--quiet", "--collect", "--service-type=exec", "--slice=app.slice", "--expand-environment=no", "--", PYTHON, &script_path, "--popup", "--popup-edge", "right", "--popup-offset", "64"])
+            v(&["--user", "--quiet", "--collect", "--service-type=exec", "--slice=app.slice", "--expand-environment=no", "--", &program, "--popup", "--popup-edge", "right", "--popup-offset", "64"])
         );
     }
 }

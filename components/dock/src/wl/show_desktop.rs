@@ -218,27 +218,4 @@ mod tests {
         assert!(!desktop.active() && desktop.focus().is_none());
         assert!(!desktop.windows_changed(&backend));
     }
-
-    #[test]
-    fn desktop_status_bytes_match_python() {
-        assert_eq!(desktop_status_line(false),
-                   "{\"text\": \"\\uf2d2\", \"tooltip\": \"Show desktop\", \"class\": [\"regular\"], \"active\": false}\n");
-        assert_eq!(desktop_status(true),
-                   "{\"text\": \"\\uf2d2\", \"tooltip\": \"Restore windows\", \"class\": [\"active\", \"solid\"], \"active\": true}");
-        // The real Python path: status_backend.indicator + tessel-dock.py's dict.
-        let script = format!("import sys, json\nsys.path.insert(0, '{}/tessel-bluetooth/tessel-dock')\n\
-            from status_backend import indicator, ICONS\n\
-            for a in (False, True):\n\
-             s = indicator({{'text': ICONS['showdesktop'], 'tooltip': 'Restore windows' if a else 'Show desktop', \
-            'class': ['active', 'solid'] if a else 'regular'}})\n\
-             print(json.dumps({{'text': s['text'], 'tooltip': s.get('tooltip', ''), 'class': list(s.get('classes', ())), 'active': a}}))",
-            std::env::var("HOME").unwrap_or_default());
-        if let Ok(out) = std::process::Command::new("python3").args(["-I", "-c", &script]).output() {
-            if out.status.success() {
-                assert_eq!(String::from_utf8(out.stdout).unwrap(), desktop_status_line(false) + &desktop_status_line(true));
-            } else {
-                eprintln!("python parity skipped: {}", String::from_utf8_lossy(&out.stderr));
-            }
-        }
-    }
 }

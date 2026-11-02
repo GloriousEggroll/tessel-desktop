@@ -123,7 +123,7 @@ const RETRY_START_MS: u32 = 1000;
 const RETRY_MAX_MS: u32 = 15000;
 const LINE_LIMIT: usize = 1024 * 1024;
 
-const MSG_NOT_STARTED: &str = "Tessel Dock's workspace helper could not start. Build or reinstall it.";
+const MSG_NOT_STARTED: &str = "The dock's workspace helper could not start. Build or reinstall it.";
 const MSG_TIMEOUT: &str = "The compositor did not provide workspace information.";
 const MSG_ENDED: &str = "The compositor's workspace connection ended.";
 const MSG_INVALID: &str = "The workspace helper returned invalid workspace information.";

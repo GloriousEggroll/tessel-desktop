@@ -14,59 +14,59 @@ pub const WALLPAPER_STYLE_CSS: &str = r#"
 @define-color wallpaper_surface mix(@theme_base_color, @theme_bg_color, 0.18);
 @define-color wallpaper_muted alpha(@theme_fg_color, 0.62);
 @define-color wallpaper_line alpha(@theme_fg_color, 0.10);
-window.tessel_shell-wallpaper-settings { background-color: @theme_bg_color; color: @theme_fg_color; }
-.tessel_shell-wallpaper-settings headerbar {
+window.tessel-shell-wallpaper-settings { background-color: @theme_bg_color; color: @theme_fg_color; }
+.tessel-shell-wallpaper-settings headerbar {
     background-image: none; background-color: @theme_bg_color;
     border: none; box-shadow: none; min-height: 28px; padding: 8px 14px;
 }
-.tessel_shell-wallpaper-settings .wallpaper-title { font-size: 18pt; font-weight: 700; }
-.tessel_shell-wallpaper-settings .wallpaper-subtitle { color: @wallpaper_muted; font-size: 10pt; }
-.tessel_shell-wallpaper-settings .wallpaper-tile {
+.tessel-shell-wallpaper-settings .wallpaper-title { font-size: 18pt; font-weight: 700; }
+.tessel-shell-wallpaper-settings .wallpaper-subtitle { color: @wallpaper_muted; font-size: 10pt; }
+.tessel-shell-wallpaper-settings .wallpaper-tile {
     min-width: 50px; min-height: 50px; border-radius: 12px;
     color: @theme_selected_bg_color; background-color: alpha(@theme_selected_bg_color, 0.10);
 }
-.tessel_shell-wallpaper-settings .wallpaper-card {
+.tessel-shell-wallpaper-settings .wallpaper-card {
     background-color: @wallpaper_surface; border: 1px solid @wallpaper_line;
     border-radius: 8px; padding: 16px;
 }
-.tessel_shell-wallpaper-settings .wallpaper-section-title { font-size: 11pt; font-weight: 600; }
-.tessel_shell-wallpaper-settings .wallpaper-detail { color: @wallpaper_muted; font-size: 9pt; }
-.tessel_shell-wallpaper-settings .wallpaper-display-icon { color: @theme_selected_bg_color; }
-.tessel_shell-wallpaper-settings .wallpaper-body button {
+.tessel-shell-wallpaper-settings .wallpaper-section-title { font-size: 11pt; font-weight: 600; }
+.tessel-shell-wallpaper-settings .wallpaper-detail { color: @wallpaper_muted; font-size: 9pt; }
+.tessel-shell-wallpaper-settings .wallpaper-display-icon { color: @theme_selected_bg_color; }
+.tessel-shell-wallpaper-settings .wallpaper-body button {
     background-image: none; background-color: @wallpaper_surface;
     color: @theme_fg_color; border: 1px solid @wallpaper_line;
     border-radius: 8px; box-shadow: none; text-shadow: none;
     min-height: 28px; padding: 4px 12px;
 }
-.tessel_shell-wallpaper-settings button:hover {
+.tessel-shell-wallpaper-settings button:hover {
     background-color: mix(@wallpaper_surface, @theme_fg_color, 0.06);
 }
-.tessel_shell-wallpaper-settings button.suggested-action {
+.tessel-shell-wallpaper-settings button.suggested-action {
     background-color: @theme_selected_bg_color;
     color: @theme_selected_fg_color; border-color: transparent;
 }
-.tessel_shell-wallpaper-settings button.suggested-action:hover {
+.tessel-shell-wallpaper-settings button.suggested-action:hover {
     background-color: shade(@theme_selected_bg_color, 1.10);
 }
-.tessel_shell-wallpaper-settings button:focus-visible {
+.tessel-shell-wallpaper-settings button:focus-visible {
     outline: 2px solid alpha(@theme_selected_bg_color, 0.65); outline-offset: -2px;
 }
-.tessel_shell-wallpaper-settings button:disabled { opacity: 0.45; }
-.tessel_shell-wallpaper-settings dropdown popover contents {
+.tessel-shell-wallpaper-settings button:disabled { opacity: 0.45; }
+.tessel-shell-wallpaper-settings dropdown popover contents {
     background-color: @theme_bg_color; color: @theme_fg_color;
     border: 1px solid @wallpaper_line; border-radius: 12px; padding: 6px;
 }
-.tessel_shell-wallpaper-settings dropdown listview { background: transparent; }
-.tessel_shell-wallpaper-settings dropdown row { border-radius: 8px; padding: 5px 8px; }
-.tessel_shell-wallpaper-settings dropdown row:selected {
+.tessel-shell-wallpaper-settings dropdown listview { background: transparent; }
+.tessel-shell-wallpaper-settings dropdown row { border-radius: 8px; padding: 5px 8px; }
+.tessel-shell-wallpaper-settings dropdown row:selected {
     background-color: alpha(@theme_selected_bg_color, 0.18); color: @theme_fg_color;
 }
-.tessel_shell-wallpaper-settings separator { background-color: @wallpaper_line; min-height: 1px; }
+.tessel-shell-wallpaper-settings separator { background-color: @wallpaper_line; min-height: 1px; }
 /* The desktop's older, display-wide provider hides scrollbars at USER priority. */
-.tessel_shell-wallpaper-settings scrolledwindow scrollbar {
+.tessel-shell-wallpaper-settings scrolledwindow scrollbar {
     min-width: 8px; min-height: 8px; opacity: 1; background: transparent;
 }
-.tessel_shell-wallpaper-settings scrolledwindow scrollbar slider {
+.tessel-shell-wallpaper-settings scrolledwindow scrollbar slider {
     min-width: 6px; min-height: 32px; border-radius: 6px;
     background-color: alpha(@theme_fg_color, 0.25);
 }

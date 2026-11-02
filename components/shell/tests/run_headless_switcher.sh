@@ -3,8 +3,6 @@
 # (tests/switcher_ui.rs) in a private nested headless labwc with two outputs
 # (tools/headless.md): own XDG_RUNTIME_DIR, own D-Bus, private XDG dirs and HOME.
 #   run_headless_switcher.sh [test …]
-#   DAEMON=python  runs the integration test against ~/tessel-bluetooth/tessel-shell/tessel-shell
-#                  with wayshell_cli.py (measurement / cross-check).
 set -eu
 AGENT=${AGENT:-tessel-shell}
 R=/run/user/1000/cbt/rust-$AGENT/h
@@ -21,12 +19,7 @@ for line in sys.stdin:
     m=json.loads(line)
     if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="switcher_ui" and m.get("executable"): print(m["executable"])')
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-shell
-if [ "${DAEMON:-rust}" = python ]; then
-  DAEMONCMD="/usr/bin/python3 $PY/tessel-shell"; KEYCLI="/usr/bin/python3 $PY/wayshell_cli.py"
-else
-  DAEMONCMD="$REL/tessel-shell"; KEYCLI="$REL/tessel-shell-cli"
-fi
+DAEMONCMD="$REL/tessel-shell"; KEYCLI="$REL/tessel-shell-cli"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac

@@ -9,21 +9,18 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-/// `[<dir of this program>/../tessel-dock/tessel-dock-toplevel, ~/.local/share/tessel-dock/tessel-dock-toplevel]`
-/// (Python: `Path(__file__).parent.parent / 'tessel-dock/tessel-dock-toplevel'`).
+/// The `tessel-dock-toplevel` program (`tessel_core::paths::program`), or the
+/// path in `WAYSHELL_CAPTURE_TOPLEVEL_HELPER` (tests: an explicit helper
+/// replaces the search).
 pub fn helper_candidates() -> Vec<PathBuf> {
-    let mut candidates = Vec::new();
     if let Some(override_path) = std::env::var_os("WAYSHELL_CAPTURE_TOPLEVEL_HELPER") {
-        // Rust-only, for tests: an explicit helper replaces the search.
         return vec![PathBuf::from(override_path)];
     }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent().and_then(|p| p.parent()) {
-            candidates.push(parent.join("tessel-dock/tessel-dock-toplevel"));
-        }
+    let program = tessel_core::paths::program("tessel-dock-toplevel");
+    if program.is_absolute() {
+        return vec![program];
     }
-    candidates.push(tessel_core::paths::home().join(".local/share/tessel-dock/tessel-dock-toplevel"));
-    candidates
+    glib::find_program_in_path(&program).into_iter().collect()
 }
 
 pub fn helper() -> Option<PathBuf> {

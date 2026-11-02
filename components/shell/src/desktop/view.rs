@@ -555,8 +555,8 @@ impl DesktopView {
 
     pub fn launch_configure_displays(&self) {
         let environment = launch::labwc_launch_environment();
-        let local = tessel_core::paths::home().join(".local/bin/tessel-displays");
-        let exe = if tessel_core::shell::is_executable(&local) { Some(local) } else { launch::which_in("tessel-displays", environment.get("PATH").map(String::as_str)) };
+        let program = tessel_core::paths::program("tessel-displays");
+        let exe = if program.is_absolute() { Some(program) } else { launch::which_in("tessel-displays", environment.get("PATH").map(String::as_str)) };
         let Some(exe) = exe else {
             notify(&tr!("Could not open display settings"), &tr!("The display settings app is not installed."));
             return;

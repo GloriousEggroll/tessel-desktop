@@ -44,7 +44,7 @@ pub mod tray_prefs;
 #[cfg(test)]
 mod config_tests;
 #[cfg(test)]
-mod testutil;
+pub(crate) mod testutil;
 #[cfg(test)]
 mod model_tests;
 #[cfg(test)]

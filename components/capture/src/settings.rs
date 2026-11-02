@@ -16,7 +16,7 @@ pub fn default(key: &str) -> bool {
 }
 
 pub fn config_path() -> PathBuf {
-    crate::compat::config_root().join("desktop-capture/config.json")
+    tessel_core::paths::component_config_dir("capture").join("config.json")
 }
 
 fn resolve(path: Option<&Path>) -> PathBuf {

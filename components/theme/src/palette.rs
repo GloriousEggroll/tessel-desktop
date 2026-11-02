@@ -6,11 +6,9 @@ use serde_json::{Map, Value};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-/// `$XDG_CACHE_HOME/tessel-dock/palette.json` (`~/.cache` when unset or empty).
+/// The dock's `~/.cache/tessel/dock/palette.json`.
 pub fn palette_path() -> PathBuf {
-    let cache = std::env::var_os("XDG_CACHE_HOME").filter(|value| !value.is_empty()).map(PathBuf::from)
-        .unwrap_or_else(|| tessel_core::paths::home().join(".cache"));
-    cache.join("tessel-dock").join("palette.json")
+    tessel_core::paths::component_cache_dir("dock").join("palette.json")
 }
 
 /// One validated `monitors[]` entry.

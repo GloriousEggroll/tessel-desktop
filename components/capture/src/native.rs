@@ -72,17 +72,19 @@ struct Api {
 }
 
 pub const LIBRARY: &str = "libcapture-pipewire.so";
-pub const INSTALL_DIR: &str = "/usr/local/lib/tessel/tessel-capture";
 
-/// Where the library is looked up: next to the executable, then the Python install dir.
+/// Where the library is looked up: next to the executable, then the Tessel
+/// program directories (`tessel_core::paths::program_dirs`).
 pub fn library_candidates() -> Vec<PathBuf> {
     let mut result = Vec::new();
     if let Some(directory) = std::env::current_exe().ok().and_then(|p| p.parent().map(PathBuf::from)) {
         result.push(directory.join(LIBRARY));
     }
-    let installed = PathBuf::from(INSTALL_DIR).join(LIBRARY);
-    if !result.contains(&installed) {
-        result.push(installed);
+    for directory in tessel_core::paths::program_dirs() {
+        let installed = directory.join(LIBRARY);
+        if !result.contains(&installed) {
+            result.push(installed);
+        }
     }
     result
 }

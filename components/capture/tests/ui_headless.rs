@@ -724,7 +724,7 @@ fn test_shortcuts_apply_in_private_config_reloads_labwc(c: &Context) -> Result<(
     ensure!(window.0.w.status.text() == "Keyboard shortcuts updated.", "{}", window.0.w.status.text());
     ensure!(entries[0].1.text() == "Ctrl+Alt+r", "{}", entries[0].1.text());
     let text = std::fs::read_to_string(&rc).unwrap();
-    ensure!(text.contains("<keybind key=\"C-A-r\"><action name=\"Execute\"><command>/usr/local/bin/tessel-capture --toggle-recording</command>"), "{text}");
+    ensure!(text.contains(&format!("<keybind key=\"C-A-r\"><action name=\"Execute\"><command>{}</command>", tessel_capture::shortcuts::command("record"))), "{text}");
     let log = std::fs::read_to_string(c.fakes.scratch.join("calls.log")).unwrap_or_default();
     ensure!(log.lines().any(|l| l == "labwc --reconfigure"), "{log}");
     let help = tessel_capture::ui::shortcut_help();
@@ -734,7 +734,7 @@ fn test_shortcuts_apply_in_private_config_reloads_labwc(c: &Context) -> Result<(
     ensure!(window.0.w.status.has_css_class("error") && window.0.w.status.text() == "Each capture action needs a different shortcut.", "{}",
             window.0.w.status.text());
     ensure!(std::fs::read_to_string(&rc).unwrap() == text, "a rejected apply changed rc.xml");
-    let _ = std::fs::remove_file(root.join("desktop-capture/shortcuts.json"));
+    let _ = std::fs::remove_file(root.join("tessel/capture/shortcuts.json"));
     Ok(())
 }
 

@@ -46,15 +46,15 @@ pub fn custom_limits(available: i32, requests: [i32; 3]) -> [i32; 3] {
     [side_limit, center_limit, side_limit]
 }
 
-/// The menu icon file (`icons/tessel-dock-app-menu-symbolic.svg` of the runtime
-/// directory; an embedded copy is extracted to `$XDG_RUNTIME_DIR/tessel-dock`).
+/// The menu icon file (`~/.local/share/tessel/dock/icons/tessel-dock-app-menu-symbolic.svg`;
+/// else an embedded copy is extracted to `$XDG_RUNTIME_DIR/tessel/dock`).
 pub fn menu_icon_path() -> std::path::PathBuf {
     const NAME: &str = "tessel-dock-app-menu-symbolic.svg";
-    let installed = tessel_core::paths::data_home().join("tessel-dock/icons").join(NAME);
+    let installed = tessel_core::paths::suite_data_dir().join("dock/icons").join(NAME);
     if installed.is_file() {
         return installed;
     }
-    let extracted = glib::user_runtime_dir().join("tessel-dock").join(NAME);
+    let extracted = tessel_core::paths::runtime_dir().join("tessel/dock").join(NAME);
     let data: &[u8] = include_bytes!("../../app/tessel-dock-app-menu-symbolic.svg");
     if std::fs::read(&extracted).ok().as_deref() != Some(data) {
         let _ = std::fs::create_dir_all(extracted.parent().expect("parent"));

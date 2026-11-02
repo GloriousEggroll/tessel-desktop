@@ -609,7 +609,7 @@ fn ranked_search_launches_with_gdk_context(monitor: &gdk::Monitor) -> Result<(),
     ]);
     let spawner = Rc::new(FakeSpawner::new());
     let mut launcher = Launcher::new(spawner.clone());
-    launcher.helper = vec!["/usr/bin/python3".into(), "/fixture/app_catalog.py".into()];
+    launcher.helper = vec!["/fixture/tessel-dock-launch".into()];
     *fake.launcher.borrow_mut() = Some((launcher, spawner.clone()));
     let w = open(&fake)?;
     let mut order = Vec::new();

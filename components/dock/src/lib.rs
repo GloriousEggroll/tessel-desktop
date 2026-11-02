@@ -1,13 +1,12 @@
-//! Tessel Dock: the suite's dock/panel (Rust port of ~/tessel-bluetooth/tessel-dock; the
-//! external contract is contracts/tessel-dock.md). The binary replaces only the
-//! `tessel-dock.service` process; the Python modules other components import
-//! stay installed.
+//! The Tessel dock/panel (`tessel-dock`; the external contract is
+//! contracts/tessel-dock.md), plus its `tessel-dock-launch` helper and the
+//! `tessel-capslock-status` stream.
 //!
 //! Module ownership during the port (one owner per directory):
 //! - `core`       — W-a pure model: DockConfig/ConfigStore, group layouts,
 //!                  dock model + hover, tray preferences, panel actions,
 //!                  app catalog + launch argv, focused title, trash, monitors.
-//! - `dbus`       — W-c owned D-Bus: org.tessel.Settings, SNI watcher/host,
+//! - `dbus`       — W-c owned D-Bus: org.tessel.Dock.Settings, SNI watcher/host,
 //!                  dbusmenu → GMenu, sd_notify readiness.
 //! - `status`     — W-c indicator sources (streams, wpctl, BlueZ, tessel-keep-awake,
 //!                  discovery, capture, media).

@@ -13,9 +13,9 @@ use std::path::{Path, PathBuf};
 use tessel_core::pyfmt::{json_dumps, JsonStyle};
 use tessel_gtk::palette::{Palette, Rgb};
 
-/// `palette_path()`: `$XDG_CACHE_HOME/tessel-dock/palette.json` (else `~/.cache`).
+/// `palette_path()`: `~/.cache/tessel/dock/palette.json`.
 pub fn palette_path() -> PathBuf {
-    tessel_core::paths::cache_home().join("tessel-dock").join("palette.json")
+    tessel_core::paths::component_cache_dir("dock").join("palette.json")
 }
 
 /// Application appearance keywords of `publish` (Python defaults).

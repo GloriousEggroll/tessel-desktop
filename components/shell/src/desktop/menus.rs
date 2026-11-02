@@ -16,9 +16,9 @@ fn action(group: &gio::SimpleActionGroup, view: &Rc<DesktopView>, name: &str, f:
     action
 }
 
-/// True when `tessel-displays` is on PATH (`shutil.which`).
+/// True when `tessel-displays` is installed (`tessel_core::paths::program`) or on PATH.
 pub fn has_display_settings() -> bool {
-    tessel_core::shell::which("tessel-displays").is_some()
+    tessel_core::paths::program("tessel-displays").is_absolute() || tessel_core::shell::which("tessel-displays").is_some()
 }
 
 /// The background menu model: four sections (Configure Displays only when

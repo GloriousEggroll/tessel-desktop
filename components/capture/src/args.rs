@@ -204,7 +204,7 @@ mod tests {
         assert_eq!(options.capture.as_deref(), Some("area"));
         assert_eq!(options.audio_preset.as_deref(), Some("desktop-mic"));
         let usage = usage("tessel-capture");
-        assert_eq!(usage, "usage: tessel-capture [-h] [--record] [--screenshot] [--stop] [--start-recording]\n                  [--toggle-recording]\n                  [--audio-preset {none,desktop,desktop-mic}]\n                  [--capture {workspace,screen,window,area}] [--lock-shot]\n                  [--check]\n");
+        assert_eq!(usage, "usage: tessel-capture [-h] [--record] [--screenshot] [--stop]\n                      [--start-recording] [--toggle-recording]\n                      [--audio-preset {none,desktop,desktop-mic}]\n                      [--capture {workspace,screen,window,area}] [--lock-shot]\n                      [--check]\n");
         assert_eq!(parse("tessel-capture", &args(&["--capture", "x"])), Outcome::Error(format!(
             "{usage}tessel-capture: error: argument --capture: invalid choice: 'x' (choose from 'workspace', 'screen', 'window', 'area')\n")));
         assert_eq!(parse("tessel-capture", &args(&["--st"])), Outcome::Error(format!(
