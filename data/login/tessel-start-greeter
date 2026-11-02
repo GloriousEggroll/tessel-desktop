@@ -1,0 +1,21 @@
+#!/bin/sh
+# The Tessel login screen (greetd's greeter command, /etc/tessel/login/greetd.toml).
+# No user desktop autostart, portals, terminal shortcuts, or X11 fallback.
+unset DISPLAY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS
+export GDK_BACKEND=wayland
+export GTK_USE_PORTAL=0
+export GIO_USE_VFS=local
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=TesselLogin
+export XDG_CONFIG_HOME=/etc/tessel/login
+export XDG_CONFIG_DIRS=/etc/tessel/login
+# Accessibility stays enabled: dbus-run-session gives the greeter its own
+# session bus, where org.a11y.Bus (at-spi-bus-launcher) is D-Bus activated on
+# demand for GTK and the greeter's screen reader. Without at-spi2-core, silence
+# GTK's warnings about the missing accessibility bus.
+if [ ! -x /usr/libexec/at-spi-bus-launcher ] && [ ! -x /usr/lib/at-spi-bus-launcher ]; then
+    export GTK_A11Y=none
+fi
+umask 077
+exec /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/tessel/login/labwc \
+    --session /usr/local/lib/tessel/tessel-login

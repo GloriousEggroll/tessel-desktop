@@ -379,11 +379,11 @@ fn cli_matches_argparse() {
     assert!(args(&["--quit"]).unwrap().quit);
     assert_eq!(args(&["--help"]).unwrap_err(), cli::Exit { code: 0, stdout: cli::HELP.into(), stderr: String::new() });
     assert_eq!(args(&["--bogus"]).unwrap_err().stderr,
-               "usage: calculator [-h] [--scientific] [--check] [expression]\ncalculator: error: unrecognized arguments: --bogus\n");
+               "usage: tessel-calculator [-h] [--scientific] [--check] [expression]\ntessel-calculator: error: unrecognized arguments: --bogus\n");
     assert_eq!(args(&["a", "b"]).unwrap_err().stderr,
-               "usage: calculator [-h] [--scientific] [--check] [expression]\ncalculator: error: unrecognized arguments: b\n");
+               "usage: tessel-calculator [-h] [--scientific] [--check] [expression]\ntessel-calculator: error: unrecognized arguments: b\n");
     assert_eq!(args(&["--check=1"]).unwrap_err().stderr.lines().nth(1).unwrap(),
-               "calculator: error: argument --check: ignored explicit argument '1'");
+               "tessel-calculator: error: argument --check: ignored explicit argument '1'");
 }
 
 #[test]

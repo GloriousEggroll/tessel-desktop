@@ -195,23 +195,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "calculator"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "num-bigint",
- "num-integer",
- "num-traits",
- "regex",
- "serde_json",
- "tessel-core",
- "tessel-gtk",
-]
-
-[[package]]
 name = "cbc"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2381,6 +2364,23 @@ dependencies = [
  "tessel-core",
  "tessel-gtk",
  "yaml-rust2",
+]
+
+[[package]]
+name = "tessel-calculator"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
 ]
 
 [[package]]

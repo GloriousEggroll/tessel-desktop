@@ -138,6 +138,43 @@ class SystemInstall(unittest.TestCase):
         self.assertFalse((self.root / "usr/lib64/security/pam_tessel_keyring.so").exists())
         self.assertIn('"labwc"', (self.root / "etc/waylogin/appearance.json").read_text())
 
+    def test_lock_pam_services_are_copied_once(self):
+        pam = self.root / "etc/pam.d"
+        (pam / "waylock").write_text("auth include waylogin-auth\n")
+        (pam / "tessel-lock-password").write_text("mine\n")
+        run(self.args + ["--apply", "--only", "lock-pam"])
+        self.assertEqual((pam / "tessel-lock").read_text(), "auth include waylogin-auth\n")
+        self.assertEqual((pam / "tessel-lock-password").read_text(), "mine\n")
+        self.assertFalse((pam / "tessel-lock-fingerprint").exists())
+
+    def test_login_screen_is_only_installed_when_named(self):
+        login = self.root / "etc/waylogin"
+        (login / "labwc").mkdir()
+        (login / "labwc/rc.xml").write_text("<labwc_config/>\n")
+        (login / "greetd.toml").write_text('[general]\nservice = "waylogin"\nruntime = 1\nrunfile = "/run/waylogin.run"\n'
+                                           '[default_session]\ncommand = "/usr/local/lib/waylogin/start-greeter"\n')
+        unit = self.root / "etc/systemd/system/waylogin.service"
+        unit.parent.mkdir(parents=True)
+        unit.write_text("[Unit]\nDescription=Waylogin Python Wayland Login Manager\n[Service]\n"
+                        "ExecStart=/usr/bin/greetd --config /etc/waylogin/greetd.toml\n")
+        fake_build(self.tmp / "t2", list(install.LOGIN_PROGRAMS) + ["tessel-keyring", "tessel-keyring-prompt"], self.tmp / "log")
+        args = ["--system", "--root", str(self.root), "--target-dir", str(self.tmp / "t2")]
+        run(args + ["--apply"])
+        self.assertFalse((self.root / "etc/tessel/login").exists(), "not part of the default system install")
+        run(args + ["--apply", "--only", "login"])
+        new = self.root / "etc/tessel/login"
+        self.assertIn('"default_session": "tessel"', (new / "appearance.json").read_text())
+        self.assertEqual((new / "labwc/rc.xml").read_text(), "<labwc_config/>\n")
+        greetd = (new / "greetd.toml").read_text()
+        self.assertIn('command = "/usr/local/lib/tessel/tessel-start-greeter"', greetd)
+        self.assertIn('service = "waylogin"', greetd)
+        self.assertIn("--config /etc/tessel/login/greetd.toml", unit.read_text())
+        for name in install.LOGIN_PROGRAMS + ("tessel-start-greeter", "tessel-start-session"):
+            self.assertTrue(os.access(self.root / "usr/local/lib/tessel" / name, os.X_OK), name)
+        run(["--system", "--root", str(self.root), "--rollback"])
+        self.assertIn("--config /etc/waylogin/greetd.toml", unit.read_text())
+        self.assertFalse((new / "greetd.toml").exists())
+
     def test_pam_lines_are_added_once(self):
         fresh = "auth include waylogin-auth\nsession include system-auth\n"
         once = install.pam_text(fresh, install.PAM_EDITS["etc/pam.d/waylogin"])

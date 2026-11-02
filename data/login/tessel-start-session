@@ -1,0 +1,10 @@
+#!/bin/sh
+# Executed by greetd as the authenticated user, after PAM creates the runtime
+# directory. Desktop shortcuts and systemd user services must share one bus.
+unset DBUS_SESSION_BUS_ADDRESS DBUS_SESSION_BUS_PID DBUS_SESSION_BUS_WINDOWID
+if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "$XDG_RUNTIME_DIR/bus" ]; then
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+    exec "$@"
+fi
+# Support desktops on systems without a systemd user bus as well.
+exec /usr/bin/dbus-run-session -- "$@"

@@ -175,18 +175,26 @@ unsafe extern "C" fn conversation(count: c_int, messages: *mut *const PamMessage
     PAM_CONV_ERR
 }
 
+fn pam_service_exists(service: &CStr) -> bool {
+    let name = service.to_string_lossy();
+    ["/etc/pam.d", "/usr/lib/pam.d"].iter().any(|dir| std::path::Path::new(dir).join(&*name).is_file())
+}
+
 fn run() -> i32 {
     // C's argc includes argv[0]: argc == 1 selects the default policy, argc == 2
     // the exact options, anything else exits 1 without output. (argc == 0 is
     // rejected like C; Linux >= 5.18 turns an empty argv into argc == 1, "".)
     let argv: Vec<std::ffi::OsString> = std::env::args_os().collect();
     let Some((_, arguments)) = argv.split_first() else { return 1 };
-    let service: &CStr = match arguments {
-        [] => c"tessel-lock",
-        [one] if one.as_encoded_bytes() == b"--password-only" => c"tessel-lock-password",
-        [one] if one.as_encoded_bytes() == b"--fingerprint" => c"tessel-lock-fingerprint",
+    let (service, legacy): (&CStr, &CStr) = match arguments {
+        [] => (c"tessel-lock", c"waylock"),
+        [one] if one.as_encoded_bytes() == b"--password-only" => (c"tessel-lock-password", c"waylock-password"),
+        [one] if one.as_encoded_bytes() == b"--fingerprint" => (c"tessel-lock-fingerprint", c"waylock-fingerprint"),
         _ => return 1,
     };
+    // Until the Tessel PAM services are installed (install.py --system), the
+    // desktop-suite ones still unlock; PAM would otherwise fall back to "other" (deny).
+    let service = if pam_service_exists(service) || !pam_service_exists(legacy) { service } else { legacy };
     // SAFETY: plain syscalls.
     unsafe {
         let core = libc::rlimit { rlim_cur: 0, rlim_max: 0 };

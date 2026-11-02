@@ -275,7 +275,7 @@ fn second_process_reuses_existing_window() {
     let window = app.window().unwrap();
     settle(0.15);
     let run = |argument: &str| {
-        let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_calculator")).arg(argument)
+        let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_tessel-calculator")).arg(argument)
             .stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped()).spawn().unwrap();
         let deadline = Instant::now() + Duration::from_secs(5);
         let mut status = None;

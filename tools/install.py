@@ -35,7 +35,14 @@ SKIP_PACKAGES = {"home-assistant-screen"}          # Kasumi: its own device and 
 APP_DIRS = ("data/applications",)                  # plus components/*/data/*.desktop
 
 USER_PARTS = ("programs", "locale", "icons", "units", "applications", "dbus", "session", "retire-old")
-SYSTEM_PARTS = ("keyring", "session-entry", "retire-old")
+SYSTEM_PARTS = ("keyring", "lock-pam", "session-entry", "retire-old")
+EXPLICIT_SYSTEM_PARTS = ("login",)    # only with --only login (the login screen; takes effect at the next boot)
+# Native helpers built by build.rs into the build output (not [[bin]] targets).
+HELPERS = ("tessel-keyboard-input",)
+# The lock screen's PAM services: (desktop-suite name, Tessel name).
+LOCK_PAM = (("waylock", "tessel-lock"), ("waylock-password", "tessel-lock-password"),
+            ("waylock-fingerprint", "tessel-lock-fingerprint"))
+LOGIN_PROGRAMS = ("tessel-login", "tessel-session-transition", "tessel-login-helper", "tessel-keyboard-input")
 
 # Desktop files of the desktop suite (before Tessel); their Tessel versions replace them.
 OLD_USER_DESKTOP = ("org.waydock.", "org.waybar.", "org.wayshell.", "waydock.desktop", "way-displays-gui.desktop",
@@ -113,9 +120,14 @@ def build(target_dir):
 
 
 def built_files(target_dir, names):
-    """The built release binaries plus the cdylibs (PAM module)."""
+    """The built release binaries, and native helpers from the newest build-script output."""
     release = Path(target_dir) / "release"
     found = {name: release / name for name in names if (release / name).is_file()}
+    for name in set(names) - set(found):
+        if name in HELPERS:
+            candidates = sorted(release.glob(f"build/*/out/{name}"), key=lambda p: p.stat().st_mtime)
+            if candidates:
+                found[name] = candidates[-1]
     missing = sorted(set(names) - set(found))
     return found, missing
 
@@ -150,7 +162,7 @@ def user_plan(home, parts, binaries, target_dir):
     libdir = home / ".local/lib/tessel"
     bindir = home / ".local/bin"
     if "programs" in parts:
-        found, missing = built_files(target_dir, binaries)
+        found, missing = built_files(target_dir, list(binaries) + list(HELPERS))
         if missing:
             plan.notes.append("Not built (run without --no-build): " + ", ".join(missing))
         for name, path in sorted(found.items()):
@@ -231,6 +243,46 @@ def system_plan(root, parts, target_dir):
                     plan.write(path, new.encode(), path.stat().st_mode & 0o7777)
         plan.notes.append("PAM changed: if a login ever fails, switch to a text console (Ctrl+Alt+F3) and run "
                           "sudo /usr/bin/python3 -I " + str(REPO / "tools/install.py") + " --system --rollback")
+    if "lock-pam" in parts:
+        pam = root / "etc/pam.d"
+        for old, new in LOCK_PAM:
+            if (pam / old).is_file() and not (pam / new).exists():
+                plan.write(pam / new, (pam / old).read_bytes(), (pam / old).stat().st_mode & 0o7777)
+    if "login" in parts:
+        found, missing = built_files(target_dir, LOGIN_PROGRAMS)
+        if missing:
+            raise SystemExit("Build first, as your user: cargo build --release --workspace (missing: "
+                             + ", ".join(sorted(missing)) + ")")
+        for name, path in found.items():
+            plan.write(libdir / name, path.read_bytes(), 0o755)
+        for script in sorted((REPO / "data/login").iterdir()):
+            plan.write(libdir / script.name, script.read_bytes(), 0o755)
+        old, new = root / "etc/waylogin", root / "etc/tessel/login"
+        if (old / "appearance.json").is_file() and not (new / "appearance.json").exists():
+            data = json.loads((old / "appearance.json").read_text())
+            if data.get("default_session") == "labwc":
+                data["default_session"] = "tessel"
+            plan.write(new / "appearance.json", (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode(), 0o644)
+        for name in ("labwc/rc.xml", "labwc/autostart"):
+            if (old / name).is_file() and not (new / name).exists():
+                plan.write(new / name, (old / name).read_bytes(), (old / name).stat().st_mode & 0o7777)
+        if (old / "greetd.toml").is_file():
+            text = (old / "greetd.toml").read_text()
+            text = text.replace("/usr/local/lib/waylogin/start-greeter", "/usr/local/lib/tessel/tessel-start-greeter")
+            text = text.replace('runfile = "/run/waylogin.run"', 'runfile = "/run/tessel-login.run"')
+            plan.write(new / "greetd.toml", text.encode(), 0o644)
+        unit = root / "etc/systemd/system/waylogin.service"
+        if unit.is_file():
+            text = unit.read_text()
+            new_text = text.replace("--config /etc/waylogin/greetd.toml", "--config /etc/tessel/login/greetd.toml")
+            new_text = new_text.replace("Description=Waylogin Python Wayland Login Manager", "Description=Tessel login screen")
+            if new_text != text:
+                plan.write(unit, new_text.encode(), unit.stat().st_mode & 0o7777)
+                if root == Path("/"):
+                    plan.commands.append((["systemctl", "daemon-reload"], dict(os.environ)))
+        plan.notes.append("The login screen switches at the next boot (the running one is not restarted). If it "
+                          "ever fails to appear, press Ctrl+Alt+F3, log in, and run: sudo /usr/bin/python3 -I "
+                          + str(REPO / "tools/install.py") + " --system --rollback")
     if "session-entry" in parts:
         entry = REPO / "data/wayland-sessions/tessel.desktop"
         plan.write(root / "usr/local/share/wayland-sessions/tessel.desktop", entry.read_bytes())
@@ -351,8 +403,8 @@ def main(argv=None):
     mode.add_argument("--apply", action="store_true", help="install")
     mode.add_argument("--rollback", action="store_true", help="undo the newest --apply")
     parser.add_argument("--system", action="store_true", help="root-owned parts (run through pkexec)")
-    parser.add_argument("--only", help="comma-separated parts (user: %s; system: %s)" % (
-        ",".join(USER_PARTS), ",".join(SYSTEM_PARTS)))
+    parser.add_argument("--only", help="comma-separated parts (user: %s; system: %s; system, only when named: %s)" % (
+        ",".join(USER_PARTS), ",".join(SYSTEM_PARTS), ",".join(EXPLICIT_SYSTEM_PARTS)))
     parser.add_argument("--no-build", action="store_true", help="use the existing release build")
     parser.add_argument("--target-dir", help="cargo target directory (default: <repo>/target)")
     parser.add_argument("--home", help=argparse.SUPPRESS)   # tests
@@ -361,7 +413,7 @@ def main(argv=None):
     target_dir = Path(args.target_dir) if args.target_dir else REPO / "target"
     known = SYSTEM_PARTS if args.system else USER_PARTS
     parts = tuple(p for p in args.only.split(",") if p) if args.only else known
-    unknown = [p for p in parts if p not in known]
+    unknown = [p for p in parts if p not in known + (EXPLICIT_SYSTEM_PARTS if args.system else ())]
     if unknown:
         parser.error(f"unknown part(s) {', '.join(unknown)}; choose from {', '.join(known)}")
 

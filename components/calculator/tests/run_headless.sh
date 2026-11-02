@@ -10,7 +10,7 @@ printf '<labwc_config/>\n' > "$R/cfg/rc.xml"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p calculator --test ui_headless --no-run --message-format=json 2>/dev/null \
+BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-calculator --test ui_headless --no-run --message-format=json 2>/dev/null \
       | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable) | .executable')
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
