@@ -372,7 +372,7 @@ impl ThemeWallpaperPage {
         let apply_button = gtk::Button::with_label(&tr!("Apply wallpaper"));
         apply_button.add_css_class("suggested-action");
 
-        let config_path = options.config_path.unwrap_or_else(|| tessel_core::paths::config_home().join("tessel-shell/wallpapers.json"));
+        let config_path = options.config_path.unwrap_or_else(|| tessel_core::paths::component_config_dir("shell").join("wallpapers.json"));
         let page = Rc::new(Self {
             host: host.clone(), widget, content: content.clone(),
             request: options.request.unwrap_or_else(|| Arc::new(wallpaper_request)), config_path,

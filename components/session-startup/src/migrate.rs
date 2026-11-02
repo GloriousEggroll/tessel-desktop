@@ -58,6 +58,7 @@ const PATHS: &[(Base, &str, &str)] = &[
     (Base::Config, "audio-manager", "tessel/audio"),
     (Base::Config, "weather-manager", "tessel/weather"),
     (Base::Config, "desktop-capture", "tessel/capture"),
+    (Base::Config, "night-light", "tessel/night-light"),
     (Base::Config, "waybar/network-notifications.json", "tessel/network/notifications.json"),
     (Base::State, "desktop-suite", "tessel"),
     (Base::State, "waydock", "tessel/dock"),

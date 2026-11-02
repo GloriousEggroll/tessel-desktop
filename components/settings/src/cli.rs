@@ -2,7 +2,7 @@
 //! prefixes), byte-identical usage, help and error texts.
 use crate::window::{alias, section_keys};
 
-pub const PROG: &str = "global_settings.py";
+pub const PROG: &str = "tessel-settings";
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Arguments {

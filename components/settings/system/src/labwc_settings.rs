@@ -547,7 +547,7 @@ pub(crate) mod tests {
     <default/>
     <repeatRate>30</repeatRate>
     <keybind key="W-d"><action name="ToggleShowDesktop"/></keybind>
-    <keybind key="W-l"><action name="Execute"><command>/home/u/.local/bin/tessel_shell-lock</command></action></keybind>
+    <keybind key="W-l"><action name="Execute"><command>/home/u/.local/bin/tessel-shell-lock</command></action></keybind>
     <keybind key="A-F4"/>
     <!-- Tessel Tiling keyboard begin -->
     <keybind key="W-t"><action name="Tiling" command="float"/></keybind>

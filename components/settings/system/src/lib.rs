@@ -27,7 +27,7 @@ pub mod mouse_polling_ui;
 pub mod input_page;
 mod testutil;
 
-pub const SECTIONS: &[&str] = &["input", "keyboard", "shortcuts", "accessibility", "defaultapps", "nightlight", "users", "about"];
+pub const SECTIONS: &[&str] = &["input", "keyboard", "shortcuts", "accessibility", "defaultapps", "nightlight", "users"];
 
 /// `<module>.build_page(section, host_window)` for every system section.
 /// Each page also has a `build_page_with(…)` taking the test injections the
@@ -41,7 +41,6 @@ pub fn build_page(section: &str, host: &Host) -> Result<SettingsPage, String> {
         "defaultapps" => default_apps_page::build_page_with(None),
         "nightlight" => night_light_page::build_page_with(None, None, None, None),
         "users" => users_page::build_page_with(None, None),
-        "about" => about_page::build_page_with(None, None),
         other => return Err(other.to_owned()),
     })
 }

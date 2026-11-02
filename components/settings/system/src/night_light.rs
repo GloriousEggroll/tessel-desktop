@@ -1,4 +1,4 @@
-//! night_light.py: night light settings and the tessel-night-light.service runner
+//! Night light settings and the `tessel-night-light` runner (tessel-night-light.service)
 //! (wlsunset), restricted to SDR outputs: gamma tables would distort HDR output.
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -16,23 +16,8 @@ pub const MAX_TEMPERATURE: i64 = 6000;
 pub const DAY_TEMPERATURE: i64 = 6500;
 static TIME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^([01]?\d|2[0-3]):([0-5]\d)$").unwrap());
 
-/// `tessel-settings/tessel-night-light.service`, installed to `~/.config/systemd/user/`.
-pub const SERVICE: &str = "[Unit]
-Description=Night light (warmer screen colors with wlsunset)
-Documentation=man:wlsunset(1)
-PartOf=graphical-session.target
-After=graphical-session.target
-
-[Service]
-Type=exec
-EnvironmentFile=-%h/.config/labwc/environment
-ExecStart=/usr/bin/python3 %h/.local/share/tessel_settings/night_light.py --run
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=graphical-session.target
-";
+/// `data/units/tessel-night-light.service`, installed to `~/.config/systemd/user/`.
+pub const SERVICE: &str = include_str!("../../../../data/units/tessel-night-light.service");
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NightLightConfig {
@@ -109,10 +94,9 @@ impl Default for NightLightStore {
 
 impl NightLightStore {
     pub fn new(path: Option<&Path>, weather: Option<&Path>) -> NightLightStore {
-        let home = crate::labwc_settings::config_home();
         NightLightStore {
-            path: path.map(Path::to_path_buf).unwrap_or_else(|| home.join("night-light/config.json")),
-            weather: weather.map(Path::to_path_buf).unwrap_or_else(|| home.join("tessel-weather/config.json")),
+            path: path.map(Path::to_path_buf).unwrap_or_else(|| tessel_core::paths::component_config_dir("night-light").join("config.json")),
+            weather: weather.map(Path::to_path_buf).unwrap_or_else(|| tessel_core::paths::component_config_dir("weather").join("config.json")),
         }
     }
 
@@ -280,6 +264,28 @@ pub fn run_plan(store: &NightLightStore, outputs: Option<Vec<String>>, rc: &str,
     Ok(argv)
 }
 
+/// `tessel-night-light`: exec wlsunset for today's settings, or exit with the plan's status.
+pub fn run_main() -> i32 {
+    let which = |name: &str| std::env::var_os("PATH").is_some_and(|path| std::env::split_paths(&path).any(|dir| {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::metadata(dir.join(name)).is_ok_and(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
+    }));
+    match run_plan(&NightLightStore::new(None, None), enabled_outputs(), &rc_text(), &which) {
+        Ok(argv) => {
+            use std::os::unix::process::CommandExt;
+            let error = std::process::Command::new(&argv[0]).args(&argv[1..]).exec();
+            eprintln!("{}: {error}", argv[0]);
+            1
+        }
+        Err((status, messages)) => {
+            for message in messages {
+                eprintln!("{message}");
+            }
+            status
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -326,12 +332,8 @@ mod tests {
 
     #[test]
     fn unit_file_runs_the_installed_runner() {
-        assert!(SERVICE.contains("ExecStart=/usr/bin/python3 %h/.local/share/tessel-settings/night_light.py --run"));
+        assert!(SERVICE.contains("ExecStart=%h/.local/lib/tessel/tessel-night-light\n"));
         assert!(SERVICE.contains("PartOf=graphical-session.target"));
-        let python = std::path::Path::new(env!("HOME")).join("tessel-bluetooth/tessel-settings/tessel-night-light.service");
-        if let Ok(text) = std::fs::read_to_string(python) {
-            assert_eq!(text, SERVICE);
-        }
     }
 
     #[test]

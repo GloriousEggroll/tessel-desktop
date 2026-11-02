@@ -23,8 +23,6 @@ use serde_json::{json, Map, Value};
 
 #[path = "support/fake_nm.rs"]
 mod fake_nm;
-#[path = "support/parity.rs"]
-mod parity;
 
 // ------------------------------------------------------------------ helpers
 
@@ -815,7 +813,7 @@ fn test_passwords_page_lists_copies_and_deletes_tessel_keyring_entries(fx: &Fx) 
     check!(login.wait().unwrap().success());
     let kwallets = dir.join("kwalletd");
     std::fs::create_dir_all(&kwallets).unwrap();
-    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tessel-keyring/tests/fixtures/kwalletd");
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../keyring/tests/fixtures/kwalletd");
     for name in ["old.kwl", "old.salt"] {
         std::fs::copy(fixtures.join(name), kwallets.join(name)).unwrap();
     }
@@ -1020,38 +1018,28 @@ fn test_system_info_page_reads_the_fake_root_and_copies_plain_text(fx: &Fx) {
     check!(controls.status.has_css_class("error") && controls.status.label() == "Could not open System Monitor: not found");
 }
 
-/// Every `target=` of these sections in settings_search.py resolves to a widget.
+
+/// (section, key, target) of the `Setting { … }` rows in the shell's search table.
+fn search_rows(text: &str) -> Vec<(String, String, String)> {
+    let field = |line: &str, name: &str| line.split(&format!("{name}: \"")).nth(1).and_then(|rest| rest.split('"').next()).map(str::to_owned);
+    text.lines().filter(|line| line.trim_start().starts_with("Setting {")).filter_map(|line| {
+        let section = field(line, "section")?;
+        let key = field(line, "key")?;
+        gs_applets::SECTIONS.contains(&section.as_str()).then(|| (section, key, field(line, "target").unwrap_or_default()))
+    }).filter(|row| !row.1.is_empty()).collect()
+}
+
+/// Every `target:` of these sections in the search table resolves to a widget.
 fn test_search_targets_match_settings_search(fx: &Fx) {
-    let source = std::env::var("BTMANAGER").map(PathBuf::from).unwrap_or_default().join("tessel-settings/settings_search.py");
-    let text = std::fs::read_to_string(&source).expect("settings_search.py");
-    let pattern = regex_lite(&text);
-    check!(!pattern.is_empty());
+    let rows = search_rows(include_str!("../../src/search.rs"));
+    check!(!rows.is_empty());
     let mut built: BTreeMap<String, Rc<SettingsPage>> = BTreeMap::new();
-    for (section, key, target) in pattern {
+    for (section, key, target) in rows {
         let page = built.entry(section.clone()).or_insert_with(|| fx.build(&section)).clone();
         let targets = page.search_targets.borrow();
         let found = targets.contains_key(&key) || (!target.is_empty() && targets.contains_key(&target));
         check!(found || target.is_empty(), "{section}.{key} target {target:?} not registered");
     }
-}
-
-/// (section, key, target) of the Setting(...) rows for this crate's sections.
-fn regex_lite(text: &str) -> Vec<(String, String, String)> {
-    let mut out = Vec::new();
-    for line in text.lines() {
-        let line = line.trim();
-        let Some(rest) = line.strip_prefix("Setting(") else { continue };
-        let fields: Vec<String> = rest.split(',').take(2)
-            .map(|f| f.trim().trim_matches(|c| c == '"' || c == '\'').to_owned()).collect();
-        if fields.len() < 2 || !SECTIONS.contains(&fields[0].as_str()) {
-            continue;
-        }
-        let target = line.find("target=").map(|i| {
-            line[i + 8..].chars().take_while(|c| *c != '"' && *c != '\'').collect::<String>()
-        }).unwrap_or_default();
-        out.push((fields[0].clone(), fields[1].clone(), target));
-    }
-    out
 }
 
 /// test_global_ui: every page shares one lifecycle; network has one header
@@ -1135,11 +1123,6 @@ fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     assert!(!runtime.is_empty() && runtime != "/run/user/1000", "refusing to run on the live session");
     let args: Vec<String> = std::env::args().collect();
-    if let Some(index) = args.iter().position(|a| a == "--rust-driver") {
-        gtk::init().expect("headless display");
-        tessel_core::i18n::initialize();
-        std::process::exit(parity::rust_driver(&args[index + 1]));
-    }
     let address = std::env::var("DBUS_SESSION_BUS_ADDRESS").expect("private bus");
     assert_eq!(std::env::var("DBUS_SYSTEM_BUS_ADDRESS").ok().as_deref(), Some(address.as_str()), "system bus must be private");
     gtk::init().expect("headless display");
@@ -1169,11 +1152,6 @@ fn main() {
                 failed.push(name.to_string());
             }
         }
-    }
-    if filter.is_empty() || filter.iter().any(|f| f == "parity") {
-        let (p, f) = parity::run_all(&root);
-        passed += p;
-        failed.extend(f);
     }
     println!("applets_headless: {passed} passed, {} failed {:?}", failed.len(), failed);
     std::process::exit(if failed.is_empty() { 0 } else { 1 });

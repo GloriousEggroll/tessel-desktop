@@ -397,7 +397,7 @@ mod tests {
         assert_eq!(&RESTART_COMMAND[..4], ["systemctl", "--user", "--no-block", "try-restart"]);
         let mut services: Vec<&str> = RESTART_COMMAND[4..].to_vec();
         services.sort();
-        assert_eq!(services, ["tessel-notifications.service", "tessel-dock.service", "tessel-shell.service"]);
+        assert_eq!(services, ["tessel-dock.service", "tessel-notifications.service", "tessel-shell.service"]);
         assert_eq!(&RESTART_COMMAND[4..], SHELL_SERVICES);
     }
 

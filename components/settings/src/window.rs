@@ -37,7 +37,6 @@ pub const SECTIONS: &[Section] = &[
     ("defaultapps", "Default Apps", "applications-system-symbolic", "default_apps_page"),
     ("nightlight", "Night Light", "weather-clear-night-symbolic", "night_light_page"),
     ("users", "Users", "avatar-default-symbolic", "users_page"),
-    ("about", "About", "help-about-symbolic", "about_page"),
     ("capture", "Screenshots", "camera-photo-symbolic", "capture_page"),
     ("archive", "Archive Manager", "package-x-generic-symbolic", "archive_page"),
     ("clipboard", "Clipboard", "edit-paste-symbolic", "clipboard_page"),
@@ -49,7 +48,12 @@ pub fn section_keys() -> Vec<&'static str> { SECTIONS.iter().map(|s| s.0).collec
 
 /// `SECTION_ALIASES`.
 pub fn alias(section: &str) -> &str {
-    if section == "brightness" { "displays" } else { section }
+    match section {
+        "brightness" => "displays",
+        // The About page became System Information.
+        "about" => "systeminfo",
+        _ => section,
+    }
 }
 
 /// A symbolic-only icon for a section (sidebar, page header, search).

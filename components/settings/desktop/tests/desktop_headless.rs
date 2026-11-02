@@ -1,7 +1,7 @@
 //! GTK checks of the desktop pages: ports of test_desktop_pages.py,
 //! test_dock_pages.py, test_layout_presets.LayoutPageTests plus Lock/Login,
-//! and fake-HOME byte-parity runs against the Python pages
-//! (tests/parity_driver.py). Runs only inside the private headless labwc:
+//! and fake-HOME runs of the pages.
+//! Runs only inside the private headless labwc:
 //!
 //!   AGENT=gs-desktop OUTPUTS=2 components/settings/tests/headless.sh <this binary>
 //!
@@ -892,9 +892,10 @@ fn display_tests(app: &gtk::Application) {
         assert_eq!(gs_desktop::displays::hdr_outputs(&status), ["DP-1"]);
         let (host, page, c, _client) = display_page(app);
         assert!(!c.calibrate.borrow().as_ref().unwrap().is_visible());
-        let launcher = PathBuf::from(std::env::var("HOME").unwrap()).join(".local/bin/tessel-hdr-calibration");
+        let launcher = PathBuf::from(std::env::var("HOME").unwrap()).join(".local/lib/tessel/tessel-hdr-calibration");
         std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
         std::fs::write(&launcher, "#!/bin/sh\nexit 0\n").unwrap();
+        std::fs::set_permissions(&launcher, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
         let launched: Rc<RefCell<Vec<Vec<String>>>> = Rc::default();
         let record = launched.clone();
         c.hdr.replace(vec!["DP-1".into()]);
@@ -985,11 +986,6 @@ fn tiling_backend(rc: &Path, dir: &Path) -> tessel_tiling::config::TilingConfig 
         Some(Arc::new(|_| Ok(serde_json::Map::new()))), Some(Arc::new(|| Ok(()))), None)
 }
 
-/// TilingConfig(rc, ~/.local/state, ~/.config) as the Python driver builds it.
-fn home_tiling(home: &Path) -> tessel_tiling::config::TilingConfig {
-    tessel_tiling::config::TilingConfig::new(Some(home.join(".config/labwc/rc.xml")), Some(home.join(".local/state")),
-        Some(home.join(".config")), Some(Arc::new(|_| Ok(serde_json::Map::new()))), Some(Arc::new(|| Ok(()))), None)
-}
 
 fn rgba(text: &str) -> gtk::gdk::RGBA { gtk::gdk::RGBA::parse(text).unwrap() }
 
@@ -1652,7 +1648,7 @@ fn lock_tests(app: &gtk::Application) {
         assert_eq!(c.status.text(), "Login screen settings saved.");
         assert_eq!(std::fs::read_to_string(&request).unwrap(),
             "{\"expected\": {\"picture\": \"/usr/share/wallpapers/nobara-winds1.webp\", \"placement\": \"fill\", \"background_color\": \"#161820\", \"blur_strength\": 50, \"transparency\": 5, \"idle_seconds\": 30, \"clock_24h\": false, \"default_session\": \"labwc\"}, \"appearance\": {\"picture\": \"/usr/share/wallpapers/x.png\", \"placement\": \"fill\", \"background_color\": \"#161820\", \"blur_strength\": 70, \"transparency\": 5, \"idle_seconds\": 30, \"clock_24h\": true, \"default_session\": \"other\"}}");
-        assert_eq!(std::fs::read_to_string(dir.join("args")).unwrap().trim(), "/usr/bin/python3 -I /usr/local/lib/tessel-login/login_settings_helper.py");
+        assert_eq!(std::fs::read_to_string(dir.join("args")).unwrap().trim(), "/usr/local/lib/tessel/tessel-login-helper");
         c.color.set_text("nope");
         c.apply.emit_clicked();
         assert_eq!(c.status.text(), "Invalid background color");
@@ -1687,9 +1683,8 @@ fn extra_tests(app: &gtk::Application) {
         assert!(!settings.weather_options.is_visible());
         settings.preview.emit_clicked();
         assert!(wait(|| std::fs::read_to_string(&log).is_ok_and(|t| !t.is_empty())));
-        let home = std::env::var("HOME").unwrap();
         assert_eq!(std::fs::read_to_string(&log).unwrap().trim(),
-                   format!("--user --collect --quiet --property=Type=exec /usr/bin/python3 {home}/.local/share/tessel-lock/lock_screen.py --preview"));
+                   "--user --collect --quiet --property=Type=exec tessel-lock --preview");
         settings.close();
         test_host.window.destroy();
     });
@@ -1744,290 +1739,15 @@ fn build_page_tests(app: &gtk::Application) {
     });
 }
 
-// ------------------------------------------------------------------- parity
+// -------------------------------------------------------------------- helpers
 
-fn python_driver(scenario: &str, home: &Path, extra: &[(&str, String)]) -> Result<String, String> {
-    let driver = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/parity_driver.py");
-    let tessel_bluetooth = std::env::var("BTMANAGER").unwrap();
-    let mut command = std::process::Command::new("/usr/bin/python3");
-    command.arg(&driver).arg(scenario).env("HOME", home).env("XDG_CONFIG_HOME", home.join(".config"))
-        .env("XDG_STATE_HOME", home.join(".local/state")).env("XDG_CACHE_HOME", home.join(".cache"))
-        .env("XDG_DATA_HOME", home.join(".local/share")).env("BTMANAGER", tessel_bluetooth).env("PYTHONDONTWRITEBYTECODE", "1");
-    for (key, value) in extra {
-        command.env(key, value);
-    }
-    let output = command.output().map_err(|e| e.to_string())?;
-    let text = String::from_utf8_lossy(&output.stdout).into_owned() + &String::from_utf8_lossy(&output.stderr);
-    if output.status.success() { Ok(text) } else { Err(text) }
-}
 
-fn fake_home(name: &str) -> PathBuf {
-    let home = scratch(name);
-    for dir in [".config", ".local/state", ".cache", ".local/share"] {
-        std::fs::create_dir_all(home.join(dir)).unwrap();
-    }
-    home
-}
 
-/// Dock settings added after the Python pages, dropped before byte comparison.
-const RUST_ONLY_SETTINGS: &[&str] = &["app_dock_shadow"];
 
-fn without_rust_only_settings(bytes: Vec<u8>) -> Vec<u8> {
-    let Ok(text) = String::from_utf8(bytes.clone()) else { return bytes };
-    text.split_inclusive('\n')
-        .filter(|line| !RUST_ONLY_SETTINGS.iter().any(|key| line.trim_start().starts_with(&format!("\"{key}\": "))))
-        .collect::<String>().into_bytes()
-}
 
-fn same_files(python: &Path, rust: &Path, files: &[&str]) {
-    for file in files {
-        let a = std::fs::read(python.join(file)).unwrap_or_else(|e| panic!("python {file}: {e}"));
-        let b = without_rust_only_settings(std::fs::read(rust.join(file)).unwrap_or_else(|e| panic!("rust {file}: {e}")));
-        assert!(a == b, "{file} differs:\n--- python\n{}\n--- rust\n{}", String::from_utf8_lossy(&a), String::from_utf8_lossy(&b));
-        use std::os::unix::fs::PermissionsExt;
-        let (ma, mb) = (std::fs::metadata(python.join(file)).unwrap().permissions().mode() & 0o777,
-                        std::fs::metadata(rust.join(file)).unwrap().permissions().mode() & 0o777);
-        assert_eq!(ma, mb, "{file} mode");
-    }
-}
 
-fn with_home<T>(home: &Path, f: impl FnOnce() -> T) -> T {
-    let saved: Vec<(&str, Option<std::ffi::OsString>)> = ["HOME", "XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME"]
-        .into_iter().map(|k| (k, std::env::var_os(k))).collect();
-    std::env::set_var("HOME", home);
-    std::env::set_var("XDG_CONFIG_HOME", home.join(".config"));
-    std::env::set_var("XDG_STATE_HOME", home.join(".local/state"));
-    std::env::set_var("XDG_CACHE_HOME", home.join(".cache"));
-    std::env::set_var("XDG_DATA_HOME", home.join(".local/share"));
-    let result = f();
-    for (key, value) in saved {
-        match value {
-            Some(value) => std::env::set_var(key, value),
-            None => std::env::remove_var(key),
-        }
-    }
-    result
-}
 
-fn seed_dock(home: &Path) {
-    let path = home.join(".config/tessel-dock/config.json");
-    ConfigStore::new(&path).save(&config_with(json!({"pins": ["org.example.App.desktop"],
-        "hot_corners": {"offline-output": ["bottom_left"]}, "background_color": "#203040"}))).unwrap();
-}
 
-fn parity_tests(app: &gtk::Application) {
-    run("parity_dock_page_writes_identical_tessel_dock_config", || {
-        let (py, rs) = (fake_home("py-dock"), fake_home("rs-dock"));
-        seed_dock(&py);
-        seed_dock(&rs);
-        python_driver("dock", &py, &[]).unwrap();
-        with_home(&rs, || {
-            let options = DockPageOptions { bridge_factory: Some(Rc::new(|application, fields| DockSettingsBridge::new(application,
-                BridgeOptions { fields, running: Some(Arc::new(|| false)), ..Default::default() }, None))), ..Default::default() };
-            let page = dock::create_page(Some(app.clone()), "dock", options).unwrap();
-            let w = page.controller::<DockPage>().unwrap().controller().unwrap();
-            let c = w.controls();
-            c.transparency.set_value(44.0);
-            c.frosted.set_active(true);
-            c.auto_hide.set_active(true);
-            c.size.set_value(52.0);
-            c.mode.set_active_id(Some("bar"));
-            c.default_app_switches["network"].set_active(true);
-            c.layout_controls.move_group("clock", "end");
-            w.add_tray_choice("id:Nextcloud");
-            w.apply();
-            page.close();
-        });
-        same_files(&py, &rs, &[".config/tessel-dock/config.json"]);
-    });
-    run("parity_theme_page_writes_identical_tessel_dock_config_and_tessel_shell_requests", || {
-        let (py, rs) = (fake_home("py-theme"), fake_home("rs-theme"));
-        seed_dock(&py);
-        seed_dock(&rs);
-        let monitors = connectors();
-        python_driver("theme", &py, &[("MONITOR", monitors[0].clone())]).unwrap();
-        let requests: Arc<Mutex<Vec<String>>> = Arc::default();
-        let seen = requests.clone();
-        let list = monitors.clone();
-        with_home(&rs, || {
-            let (test_host, host) = host(app);
-            let bridge = DockSettingsBridge::new(Some(app.clone()), BridgeOptions { fields: bridge::appearance_fields(), read: false,
-                running: Some(Arc::new(|| false)), ..Default::default() }, None).unwrap();
-            let page = ThemeWallpaperPage::new(&host, ThemeOptions { bridge: Some(Rc::new(bridge)), color_settings: Some(None),
-                request: Some(Arc::new(move |payload| {
-                    seen.lock().unwrap().push(tessel_core::pyfmt::json_dumps(payload, &tessel_core::pyfmt::JsonStyle::DEFAULT));
-                    Ok(json!({"ok": true, "monitors": list}))
-                })), ..Default::default() }).unwrap();
-            test_host.window.set_child(Some(&page.widget));
-            page.r#match.set_active(true);
-            assert!(wait(|| ConfigStore::new(rs.join(".config/tessel-dock/config.json")).load(None, None).match_wallpaper));
-            page.dock_transparency.set_value(61.0);
-            page.toggle("window_shadows").set_active(false);
-            page.deactivate();
-            assert!(wait(|| !ConfigStore::new(rs.join(".config/tessel-dock/config.json")).load(None, None).window_shadows));
-            settle(0.3);
-            let row = page.rows.borrow()[&monitors[0]].clone();
-            row.mode.set_selected(5);
-            row.color.set_rgba(&rgba("#336699"));
-            page.apply(None);
-            assert!(wait(|| !page.busy.get()));
-            page.close();
-            test_host.window.destroy();
-        });
-        same_files(&py, &rs, &[".config/tessel-dock/config.json"]);
-        let python_requests = std::fs::read_to_string(py.join("requests.log")).unwrap();
-        let rust_requests: String = requests.lock().unwrap().iter().map(|r| r.clone() + "\n").collect();
-        assert_eq!(python_requests, rust_requests);
-    });
-    run("parity_behavior_page_writes_identical_rc_xml_and_dock_config", || {
-        let (py, rs) = (fake_home("py-behavior"), fake_home("rs-behavior"));
-        for home in [&py, &rs] {
-            seed_dock(home);
-            std::fs::create_dir_all(home.join(".config/labwc")).unwrap();
-            std::fs::write(home.join(".config/labwc/rc.xml"), "<?xml version=\"1.0\"?>\n<labwc_config>\n  <core gap=\"4\"/>\n  <desktops number=\"4\"/>\n</labwc_config>\n").unwrap();
-        }
-        let output = connectors()[0].clone();
-        python_driver("behavior", &py, &[("MONITOR", output.clone())]).unwrap();
-        with_home(&rs, || {
-            let rc = rs.join(".config/labwc/rc.xml");
-            let backups = rs.join(".local/state/backups");
-            let workspace: dock::WorkspaceFactory = Rc::new(move || {
-                let backend = gs_system::workspace_config::WorkspaceConfig::at(&rc, &backups, Arc::new(|| Ok(())));
-                Ok(gs_system::workspace_settings::WorkspaceControls::new(Some(Rc::new(backend))) as Rc<dyn WorkspacePart>)
-            });
-            let home = rs.clone();
-            let tiling: dock::TilingFactory = Rc::new(move || Rc::new(tessel_tiling::ui::settings::GaplessControls::new(
-                Arc::new(home_tiling(&home)), tessel_tiling::ui::settings::Runner::Inline)) as Rc<dyn TilingPart>);
-            let options = DockPageOptions {
-                bridge_factory: Some(Rc::new(|application, fields| DockSettingsBridge::new(application,
-                    BridgeOptions { fields, running: Some(Arc::new(|| false)), ..Default::default() }, None))),
-                workspace_factory: Some(workspace), tiling_factory: Some(tiling),
-                authentication_factory: Some(Rc::new(|| dock::AuthenticationStatus::new(Some(vec!["true".into()])))),
-            };
-            let page = dock::create_page(Some(app.clone()), "desktop", options).unwrap();
-            let dock_page = page.controller::<DockPage>().unwrap();
-            let w = dock_page.controller().unwrap();
-            let c = w.controls();
-            c.menu_hotkey_fullscreen.set_active(true);
-            c.hot_corner_delay.set_value(300.0);
-            c.hot_corner_switches[&output]["top_left"].set_active(true);
-            dock_page.extra_controls().unwrap().count.set_value(6.0);
-            w.apply();
-            page.close();
-        });
-        same_files(&py, &rs, &[".config/tessel-dock/config.json", ".config/labwc/rc.xml"]);
-    });
-    run("parity_layout_apply_writes_identical_files", || {
-        let (py, rs) = (fake_home("py-layout"), fake_home("rs-layout"));
-        for home in [&py, &rs] {
-            seed_dock(home);
-            std::fs::create_dir_all(home.join(".config/labwc")).unwrap();
-            std::fs::write(home.join(".config/labwc/rc.xml"), "<?xml version=\"1.0\"?>\n<labwc_config>\n  <core gap=\"4\"/>\n  <desktops number=\"4\"/>\n</labwc_config>\n").unwrap();
-        }
-        python_driver("layout", &py, &[]).unwrap();
-        with_home(&rs, || {
-            let rc = rs.join(".config/labwc/rc.xml");
-            let core = DockSettingsBridge::new(Some(app.clone()), BridgeOptions { fields: bridge::settings_fields(), read: false,
-                running: Some(Arc::new(|| false)), ..Default::default() }, None).unwrap().core();
-            let workspaces = gs_system::workspace_config::WorkspaceConfig::at(&rc, rs.join(".local/state/backups"), Arc::new(|| Ok(())));
-            gs_base::style::set_chooser(Some(Rc::new(|_m, _d, _b, callback, _default, _cancel| callback(Some(1)))));
-            let page = LayoutSettings::new(Some(app.clone()), LayoutOptions {
-                bridge: Some(core), workspace_backend: Some(Some(Arc::new(workspaces))),
-                tiling_backend: Some(Some(Arc::new(home_tiling(&rs)))),
-                clock_store: Some(Some(Arc::new(Mutex::new(tessel_core::clock::ClockPreferencesStore::default())))),
-                ..Default::default() }).unwrap();
-            let window = gtk::Window::builder().child(&page.widget).build();
-            window.present();
-            assert!(wait(|| page.current.borrow().is_some()));
-            page.flow.select_child(&page.card("mac").unwrap().child);
-            page.apply();
-            assert!(wait(|| !page.busy.get() && page.status.text().contains("Mac")), "{}", page.status.text());
-            settle(0.2);
-            page.close();
-            window.destroy();
-        });
-        same_files(&py, &rs, &[".config/tessel-dock/config.json", ".config/labwc/rc.xml",
-                               ".local/state/tessel-settings/previous-layout.json", ".config/tessel-tiling/config.json"]);
-        if py.join(".config/tessel/clock.json").exists() || rs.join(".config/tessel/clock.json").exists() {
-            same_files(&py, &rs, &[".config/tessel/clock.json"]);
-        }
-    });
-    run("parity_lock_page_writes_identical_lock_config", || {
-        let (py, rs) = (fake_home("py-lock"), fake_home("rs-lock"));
-        let slide = scratch("slides").join("c.png");
-        std::fs::write(&slide, b"x").unwrap();
-        let slide = slide.to_string_lossy().into_owned();
-        python_driver("lock", &py, &[("SLIDE", slide.clone())]).unwrap();
-        with_home(&rs, || {
-            let (test_host, host) = host(app);
-            let settings = gs_desktop::lock::LockSettings::new(&host, gs_desktop::lock::LockOptions {
-                power_factory: Some(Rc::new(|changed| Rc::new(FakePower { ready: Cell::new(false), state: RefCell::default(),
-                    calls: RefCell::default(), changed, closed: Cell::new(false) }) as Rc<dyn gs_desktop::lock::power::LockPower>)),
-                assistant_detector: Some(Rc::new(|| true)), preview: Some(Rc::new(|| Ok(()))),
-                weather_location: None, store_path: None }).unwrap();
-            settings.mode.set_selected(2);
-            settings.slides.borrow_mut().extend(["/tmp/b.png".to_owned(), "/tmp/a.jpg".to_owned(), slide.clone()]);
-            settings.sync_pictures();
-            settings.interval.set_value(90.0);
-            settings.follow.set_active(false);
-            settings.transparency.set_value(33.0);
-            settings.name.set_text("Ümlaut “quoted”");
-            settings.show_forecast.set_active(true);
-            settings.notification_names.set_active(true);
-            settings.apply(false);
-            assert_eq!(settings.status.text(), "Lock screen settings saved.");
-            settings.close();
-            test_host.window.destroy();
-        });
-        same_files(&py, &rs, &[".config/tessel/tessel-lock.json"]);
-    });
-    run("parity_login_page_sends_identical_helper_request", || {
-        let (py, rs) = (fake_home("py-login"), fake_home("rs-login"));
-        let sessions = scratch("sessions");
-        std::fs::write(sessions.join("labwc.desktop"), "[Desktop Entry]\nName=labwc\nExec=sh\n").unwrap();
-        std::fs::write(sessions.join("gnome.desktop"), "[Desktop Entry]\nName=GNOME\nExec=true\nDesktopNames=GNOME;\n").unwrap();
-        for home in [&py, &rs] {
-            let fake = home.join("bin/pkexec");
-            std::fs::create_dir_all(fake.parent().unwrap()).unwrap();
-            std::fs::write(&fake, format!("#!/bin/sh\necho \"$*\" > '{}/args'\ncat > '{}/request.json'\n", home.display(), home.display())).unwrap();
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
-        }
-        let path = format!("{}:{}", py.join("bin").display(), std::env::var("PATH").unwrap());
-        python_driver("login", &py, &[("PATH", path), ("SESSIONS", sessions.to_string_lossy().into_owned())]).unwrap();
-        let (test_host, host) = host(app);
-        let mut helper: Vec<String> = gs_desktop::login::HELPER_COMMAND.iter().map(|s| s.to_string()).collect();
-        helper[0] = rs.join("bin/pkexec").to_string_lossy().into_owned();
-        let settings = gs_desktop::login::LoginSettings::new(&host, gs_desktop::login::LoginOptions {
-            config_path: Some(rs.join("none.json")), session_roots: Some(vec![sessions.clone()]), helper_command: Some(helper) }).unwrap();
-        settings.picture.set_text("/usr/share/wallpapers/ä.png");
-        settings.placement.set_selected(2);
-        settings.color.set_text("#AbCdEf");
-        settings.scales[1].1.set_value(12.5);
-        settings.idle.set_value(65.0);
-        settings.session.set_selected(0);
-        settings.save();
-        assert!(wait(|| !settings.busy.get()));
-        test_host.window.destroy();
-        same_files(&py, &rs, &["request.json", "args"]);
-    });
-    run("parity_previous_layout_and_presets_match_python", || {
-        let (py, rs) = (fake_home("py-presets"), fake_home("rs-presets"));
-        seed_dock(&py);
-        seed_dock(&rs);
-        let out = python_driver("presets", &py, &[]).unwrap();
-        let (presets_list, problems) = presets::load_presets();
-        assert!(problems.is_empty());
-        let rust: Vec<String> = presets_list.iter().map(|p| {
-            let mut p = p.clone();
-            p.dock.retain(|key, _| !RUST_ONLY_SETTINGS.contains(&key.as_str()));
-            let p = &p;
-            let lines = presets::describe_changes(p, &DockConfig::default(), Some(2), Some(false), None, &presets::identity).unwrap();
-            format!("{}|{}|{}", p.key, p.name, lines.join(";"))
-        }).collect();
-        assert_eq!(out.trim(), rust.join("\n"));
-    });
-}
 
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
@@ -2043,7 +1763,7 @@ fn main() {
     app.register(gio::Cancellable::NONE).unwrap();
     let only = std::env::args().nth(1);
     let groups: Vec<(&str, fn(&gtk::Application))> = vec![("theme", theme_tests), ("icons", icon_tests), ("displays", display_tests), ("dock", dock_tests),
-        ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests), ("parity", parity_tests)];
+        ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests)];
     for (name, group) in groups {
         if only.as_deref().is_none_or(|o| o == name) {
             group(&app);

@@ -13,6 +13,11 @@ path = "src/lib.rs"
 name = "tessel-settings"
 path = "src/main.rs"
 
+[[bin]]
+name = "tessel-night-light"
+path = "src/bin/tessel-night-light.rs"
+required-features = ["pages"]
+
 [features]
 default = ["pages"]
 # The real pages; `--no-default-features` builds the shell alone (tests with fake pages).

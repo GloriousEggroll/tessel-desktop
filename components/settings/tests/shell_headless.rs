@@ -423,27 +423,6 @@ const RUST_ONLY: &[(&str, &str)] = &[("theme", "icons")];
 /// System Information, KDE's About this System).
 const RUST_ONLY_SECTIONS: &[&str] = &["archive", "clipboard", "passwords", "systeminfo"];
 
-fn search_ranking_matches_python() {
-    let Ok(tessel_bluetooth) = std::env::var("BTMANAGER") else { panic!("BTMANAGER unset") };
-    let queries = ["volume", "display", "lock", "wifi", "Wi-Fi", "24 hour", "dark", "  maximum   Charge ", "é", "ü ber",
-                   "blur", "keyboard layout", "a", "screen", "power sleep", "notifications", "dock", "time", "x", "über",
-                   "panel", "transparency", "mouse speed", "theme", "zzz", "temperature", "night", "users password"];
-    let driver = format!("import sys, json\nsys.path.insert(0, {:?})\nfrom settings_search import SearchIndex, normalize\nimport ast\nsrc=open({:?}).read()\ntree=ast.parse(src)\nsections=next(ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign) and any(getattr(t,'id',None)=='SECTIONS' for t in n.targets))\nindex=SearchIndex(sections)\nq=json.loads(sys.argv[1])\nprint(json.dumps({{'results': [[[i.section, i.key] for i in index.search(x)] for x in q], 'norm': [normalize(x) for x in q]}}))\n",
-        format!("{tessel_bluetooth}/tessel-settings"), format!("{tessel_bluetooth}/tessel-settings/global_ui.py"));
-    let out = std::process::Command::new("python3").args(["-I", "-B", "-c", &driver, &serde_json::to_string(&queries).unwrap()])
-        .output().unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
-    let value: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    let index = SearchIndex::new(SECTIONS, &|t: &str| t.to_owned());
-    for (i, query) in queries.iter().enumerate() {
-        // Settings the Python suite does not have are left out of the comparison.
-        let rust: Vec<serde_json::Value> = index.search(query).iter()
-            .filter(|s| !RUST_ONLY.contains(&(s.section, s.key)) && !RUST_ONLY_SECTIONS.contains(&s.section))
-            .map(|s| serde_json::json!([s.section, s.key])).collect();
-        assert_eq!(serde_json::Value::Array(rust), value["results"][i], "query {query:?}");
-        assert_eq!(tessel_settings::search::normalize(query), value["norm"][i].as_str().unwrap(), "{query:?}");
-    }
-}
 
 /// SingletonTests: a second launch is forwarded to this primary (private bus)
 /// and routes its --section into the existing window; --quit is refused
@@ -565,7 +544,6 @@ fn main() {
         ("async_page_errors_use_the_shared_error_state", async_page_errors_use_the_shared_error_state),
         ("search_preserves_busy_page_close_guard", search_preserves_busy_page_close_guard),
         ("audio_result_reveals_nested_audio_page", audio_result_reveals_nested_audio_page),
-        ("search_ranking_matches_python", search_ranking_matches_python),
         ("repeated_launch_focuses_and_routes_section_in_existing_window", repeated_launch_focuses_and_routes_section_in_existing_window),
         #[cfg(feature = "pages")]
         ("every_real_section_builds_in_one_window", every_real_section_builds_in_one_window),

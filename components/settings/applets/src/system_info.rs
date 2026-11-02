@@ -35,6 +35,19 @@ fn default_launch(command: &[String]) -> Result<(), String> {
 }
 
 pub const MONITOR_COMMAND: &[&str] = &["tessel-system-monitor"];
+/// Only the shell's own services restart; applications run in their own systemd
+/// units (started by the dock and shell), so they keep running.
+pub const RESTART_COMMAND: &[&str] = &["systemctl", "--user", "--no-block", "try-restart",
+                                       "tessel-dock.service", "tessel-shell.service", "tessel-notifications.service"];
+
+/// `runner(argv, done)`: spawn and report (success, output); tests pass a fake.
+pub type Runner = Rc<dyn Fn(Vec<String>, Box<dyn FnOnce(bool, String)>)>;
+
+fn default_runner() -> Runner {
+    Rc::new(|argv, done| {
+        gs_base::widgets::spawn(&argv, Some(done), None);
+    })
+}
 
 /// Everything `gather` reads, before translation and formatting.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -351,7 +364,7 @@ pub fn plain_text(info: &SystemInfo, gtk: &str) -> String {
 /// The Tessel logo: the data file when installed (or in the source tree),
 /// else the `tessel` icon, else a computer.
 pub fn logo_files() -> Vec<PathBuf> {
-    vec![tessel_core::paths::data_home().join("tessel-settings/tessel-logo.svg"),
+    vec![tessel_core::paths::data_home().join("icons/hicolor/scalable/apps/tessel.svg"),
          PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../data/tessel-logo.svg"))]
 }
 
@@ -380,7 +393,11 @@ pub struct SystemInfoPage {
     pub copy: gtk::Button,
     pub monitor: gtk::Button,
     pub status: gtk::Label,
+    pub shell_group: gtk::Box,
+    pub restart: gtk::Button,
+    pub restart_status: gtk::Label,
     launch: Launch,
+    runner: Runner,
 }
 
 fn value_label(text: &str) -> gtk::Label {
@@ -394,7 +411,7 @@ fn value_label(text: &str) -> gtk::Label {
 }
 
 impl SystemInfoPage {
-    pub fn new(root: PathBuf, launch: Option<Launch>) -> Rc<SystemInfoPage> {
+    pub fn new(root: PathBuf, launch: Option<Launch>, runner: Option<Runner>) -> Rc<SystemInfoPage> {
         let page = Page::new("system-info-page", &tr!("System Information"), &tr!("Information about this computer and its software."),
                              Some("computer-symbolic"));
         let hero = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(4).halign(gtk::Align::Center)
@@ -424,8 +441,19 @@ impl SystemInfoPage {
         page.content.append(&actions);
         let status = label("", Some("detail"));
         page.content.append(&status);
+        let shell_group = page.group(Some(&tr!("Desktop shell")),
+            Some(&tr!("Restart the dock, the desktop shell and notifications if they stop responding. Open applications keep running.")), None);
+        let restart = gtk::Button::builder().label(tr!("Restart Desktop Shell…")).halign(gtk::Align::Start).build();
+        restart.add_css_class("pill");
+        shell_group.append(&restart);
+        let restart_status = label("", Some("detail"));
+        shell_group.append(&restart_status);
         let this = Rc::new(SystemInfoPage { page, info: Default::default(), logo, device_name, device_card, software, hardware,
-                                            copy, monitor, status, launch: launch.unwrap_or_else(|| Rc::new(default_launch)) });
+                                            copy, monitor, status, shell_group, restart, restart_status,
+                                            launch: launch.unwrap_or_else(|| Rc::new(default_launch)),
+                                            runner: runner.unwrap_or_else(default_runner) });
+        let weak = Rc::downgrade(&this);
+        this.restart.connect_clicked(move |_| if let Some(this) = weak.upgrade() { this.confirm_restart() });
         let weak = Rc::downgrade(&this);
         this.copy.connect_clicked(move |_| if let Some(this) = weak.upgrade() { this.copy_text() });
         let weak = Rc::downgrade(&this);
@@ -481,6 +509,41 @@ impl SystemInfoPage {
         status_text(&self.status, &tr!("Copied to the clipboard."), None);
     }
 
+    pub fn confirm_restart(self: &Rc<Self>) {
+        let dialog = gtk::AlertDialog::builder().message(tr!("Restart the desktop shell?"))
+            .detail(tr!("The dock, panel and notifications will briefly disappear. Open applications and unsaved work are not affected."))
+            .buttons([tr!("Cancel"), tr!("Restart")]).cancel_button(0).default_button(0).build();
+        let weak = Rc::downgrade(self);
+        let parent = self.page.widget.root().and_downcast::<gtk::Window>();
+        dialog.choose(parent.as_ref(), gio::Cancellable::NONE, move |choice| {
+            if choice == Ok(1) {
+                if let Some(this) = weak.upgrade() {
+                    this.restart_shell();
+                }
+            }
+        });
+    }
+
+    pub fn restart_shell(self: &Rc<Self>) {
+        self.restart.set_sensitive(false);
+        status_text(&self.restart_status, &tr!("Restarting the desktop shell…"), None);
+        let weak = Rc::downgrade(self);
+        (self.runner)(RESTART_COMMAND.iter().map(|s| s.to_string()).collect(), Box::new(move |okay, output| {
+            let Some(this) = weak.upgrade() else { return };
+            if this.page.closed() {
+                return;
+            }
+            this.restart.set_sensitive(true);
+            if okay {
+                status_text(&this.restart_status, &tr!("The desktop shell was restarted."), None);
+            } else {
+                let detail = output.trim();
+                let detail = if detail.is_empty() { tr!("Unknown error") } else { detail.to_owned() };
+                status_text(&this.restart_status, &tr!("The desktop shell could not be restarted: {value1}", value1 = detail), Some("error"));
+            }
+        }));
+    }
+
     pub fn open_monitor(&self) {
         let command: Vec<String> = MONITOR_COMMAND.iter().map(|s| s.to_string()).collect();
         match (self.launch)(&command) {
@@ -492,12 +555,13 @@ impl SystemInfoPage {
 
 pub(crate) fn build(_host: &Host, factories: &Factories) -> Result<SettingsPage, String> {
     let root = factories.system_root.clone().unwrap_or_else(|| PathBuf::from("/"));
-    let controller = SystemInfoPage::new(root, factories.system_launch.clone());
+    let controller = SystemInfoPage::new(root, factories.system_launch.clone(), factories.system_runner.clone());
     let weak = Rc::downgrade(&controller);
     let page = SettingsPage::new(controller.page.widget.clone()).with_close(move || if let Some(c) = weak.upgrade() { c.page.close() });
     page.add_target("device_name", &controller.device_card);
     page.add_target("software", &controller.software);
     page.add_target("hardware", &controller.hardware);
+    page.add_target("restart", &controller.restart);
     page.add_target("copy", &controller.copy);
     page.add_target("monitor", &controller.monitor);
     page.set_controller(controller);

@@ -20,11 +20,11 @@ pub type Detector = Rc<dyn Fn() -> bool>;
 pub type Preview = Rc<dyn Fn() -> Result<(), String>>;
 pub type WeatherLocation = Rc<dyn Fn() -> Option<String>>;
 
-/// `systemd-run --user --collect --quiet --property=Type=exec python3 …/lock_screen.py --preview`.
+/// `systemd-run --user --collect --quiet --property=Type=exec tessel-lock --preview`.
 pub fn preview_command() -> Vec<String> {
-    let script = tessel_core::paths::home().join(".local/share/tessel-lock/lock_screen.py");
-    ["systemd-run", "--user", "--collect", "--quiet", "--property=Type=exec", "/usr/bin/python3"].iter()
-        .map(|s| s.to_string()).chain([script.to_string_lossy().into_owned(), "--preview".into()]).collect()
+    let program = tessel_core::paths::program("tessel-lock");
+    ["systemd-run", "--user", "--collect", "--quiet", "--property=Type=exec"].iter()
+        .map(|s| s.to_string()).chain([program.to_string_lossy().into_owned(), "--preview".into()]).collect()
 }
 
 fn start_preview_process() -> Result<(), String> {

@@ -320,7 +320,7 @@ pub fn apply_preset(preset: &Preset, bridge: &dyn PresetBridge, workspace_backen
 
 /// `$XDG_STATE_HOME/tessel-settings/previous-layout.json`.
 pub fn previous_path() -> PathBuf {
-    tessel_core::paths::state_home().join("tessel-settings").join("previous-layout.json")
+    tessel_core::paths::component_state_dir("settings").join("previous-layout.json")
 }
 
 /// The exact bytes `save_previous` writes (`json.dump(indent=2, sort_keys=True)` + newline).

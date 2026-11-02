@@ -27,7 +27,3 @@ name = "ui_headless"
 path = "tests/ui_headless.rs"
 harness = false
 
-[[test]]
-name = "python_parity"
-path = "tests/python_parity.rs"
-harness = false

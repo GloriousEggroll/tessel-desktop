@@ -102,6 +102,8 @@ pub struct Factories {
     pub system_root: Option<PathBuf>,
     /// How System Information starts System Monitor (default a gio subprocess).
     pub system_launch: Option<system_info::Launch>,
+    /// Restart Desktop Shell runner (tests pass a fake).
+    pub system_runner: Option<system_info::Runner>,
 }
 
 /// Build one page lazily with the real services.

@@ -40,7 +40,7 @@ const RC: &str = r#"<?xml version="1.0"?>
     <default/>
     <repeatRate>30</repeatRate>
     <keybind key="W-d"><action name="ToggleShowDesktop"/></keybind>
-    <keybind key="W-l"><action name="Execute"><command>/home/u/.local/bin/tessel_shell-lock</command></action></keybind>
+    <keybind key="W-l"><action name="Execute"><command>/home/u/.local/bin/tessel-shell-lock</command></action></keybind>
     <keybind key="A-F4"/>
     <!-- Tessel Tiling keyboard begin -->
     <keybind key="W-t"><action name="Tiling" command="float"/></keybind>
@@ -877,7 +877,7 @@ fn every_section_builds_with_search_targets(app: &gtk::Application) -> Result<()
         check!(input.search_targets.borrow().contains_key(key), "input: missing {key}");
     }
     input.close();
-    check!(gs_system::SECTIONS == ["input", "keyboard", "shortcuts", "accessibility", "defaultapps", "nightlight", "users", "about"]);
+    check!(gs_system::SECTIONS == ["input", "keyboard", "shortcuts", "accessibility", "defaultapps", "nightlight", "users"]);
     Ok(())
 }
 

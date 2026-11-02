@@ -25,18 +25,13 @@ pub fn hdr_outputs(status: &Status) -> Vec<String> {
     names
 }
 
-/// `~/.local/bin/tessel-hdr-calibration [--output X]`, else the source tree's
-/// `hdr_calibration.py` through Python (as Python did), else `None`.
+/// The installed `tessel-hdr-calibration [--output X]`, else `None`.
 pub fn hdr_calibration_command(connector: Option<&str>) -> Option<Vec<String>> {
-    let launcher = tessel_core::paths::home().join(".local/bin/tessel-hdr-calibration");
-    let source = tessel_core::paths::home().join(".local/share/tessel-hdr-calibration/hdr_calibration.py");
-    let mut command = if launcher.is_file() {
-        vec![launcher.to_string_lossy().into_owned()]
-    } else if source.is_file() {
-        vec!["/usr/bin/python3".to_owned(), source.to_string_lossy().into_owned()]
-    } else {
+    let program = tessel_core::paths::program("tessel-hdr-calibration");
+    if !program.is_absolute() {
         return None;
-    };
+    }
+    let mut command = vec![program.to_string_lossy().into_owned()];
     if let Some(connector) = connector.filter(|c| !c.is_empty()) {
         command.extend(["--output".to_owned(), connector.to_owned()]);
     }

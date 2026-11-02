@@ -34,6 +34,7 @@ Part names are the component directory names (`components/<part>`): `dock`, `she
 | `~/.config/audio-manager/` | `~/.config/tessel/audio/` |
 | `~/.config/weather-manager/` | `~/.config/tessel/weather/` |
 | `~/.config/desktop-capture/` | `~/.config/tessel/capture/` |
+| `~/.config/night-light/` | `~/.config/tessel/night-light/` |
 | `~/.config/waybar/network-notifications.json` | `~/.config/tessel/network/notifications.json` |
 | `~/.local/state/desktop-suite/` | `~/.local/state/tessel/` |
 | `~/.local/state/{waydock,wayshell,waytile,global-settings,notification-manager,keep-awake,hdr-calibration,text-editor,waydock-calculator}/` | `~/.local/state/tessel/{dock,shell,tiling,settings,notifications,keep-awake,hdr-calibration,text-editor,calculator}/` |

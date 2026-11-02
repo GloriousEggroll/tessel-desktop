@@ -1,6 +1,6 @@
 //! Login Screen (login_page.py): appearance of the system Wayland login
 //! screen, saved through the privileged helper
-//! `pkexec /usr/bin/python3 -I /usr/local/lib/tessel-login/login_settings_helper.py`
+//! `pkexec /usr/local/lib/tessel/tessel-login-helper`
 //! (JSON request on stdin). The helper argv is injectable; tests only ever
 //! run it against a fake `pkexec`.
 /// Moved to the shared `tessel-locking` crate (wave 5).
@@ -20,7 +20,7 @@ use tessel_core::tr;
 
 use model::{Appearance, Session, PLACEMENTS};
 
-pub const HELPER_COMMAND: [&str; 4] = ["pkexec", "/usr/bin/python3", "-I", "/usr/local/lib/tessel-login/login_settings_helper.py"];
+pub const HELPER_COMMAND: [&str; 2] = ["pkexec", "/usr/local/lib/tessel/tessel-login-helper"];
 
 /// Python keyword seams: appearance file, session roots, helper argv.
 #[derive(Default, Clone)]

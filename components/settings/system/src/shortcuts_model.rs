@@ -481,7 +481,7 @@ pub(crate) mod tests {
 
     #[test]
     fn suite_keybinding_block_is_described_and_editable() {
-        let block = br#"<labwc_config><keyboard><default/><!-- Tessel keybindings begin: x --><keybind key="W-slash"><action name="Execute" command="~/.local/bin/tessel_action shortcuts"/></keybind><keybind key="C-A-Right"><action name="GoToDesktop" to="right"/></keybind><keybind key="W-S-2"><action name="SendToDesktop" to="2"/></keybind><!-- Tessel keybindings end --></keyboard></labwc_config>"#;
+        let block = br#"<labwc_config><keyboard><default/><!-- Tessel keybindings begin: x --><keybind key="W-slash"><action name="Execute" command="~/.local/bin/tessel-action shortcuts"/></keybind><keybind key="C-A-Right"><action name="GoToDesktop" to="right"/></keybind><keybind key="W-S-2"><action name="SendToDesktop" to="2"/></keybind><!-- Tessel keybindings end --></keyboard></labwc_config>"#;
         let items = run(block);
         assert_eq!((items["W-slash"].description.as_str(), items["W-slash"].group.as_str(), items["W-slash"].editable()),
                    ("Show keyboard shortcuts", "System", true));
