@@ -257,6 +257,9 @@ pub fn migrate(home: &Home) -> io::Result<Report> {
     }
     for file in [home.config.join("labwc/rc.xml"), home.config.join("labwc/menu.xml"), home.config.join("labwc/environment"),
                  home.config.join("mimeapps.list"), home.config.join("autostart/desktop-suite-icon-theme.desktop"),
+                 // the screen-share portal's chooser (capture picker)
+                 home.config.join("xdg-desktop-portal-wlr/labwc"), home.config.join("xdg-desktop-portal-wlr/wlroots"),
+                 home.config.join("xdg-desktop-portal-wlr/config"),
                  home.data.join("applications/mimeapps.list")] {
         if file.is_file() {
             rewrite_file(&file, &mut report)?;
@@ -336,6 +339,7 @@ mod tests {
 <keybind key="Print"><action name="Execute"><command>/usr/local/bin/waycapture --capture screen</command></action></keybind>
 <keybind key="A-Tab"><action name="Execute" command="~/.local/share/wayshell/wayshell-cli switch-window"/></keybind>"#);
         write(&root.join(".config/mimeapps.list"), "[Default Applications]\ninode/directory=org.waydock.Files.desktop;\n");
+        write(&root.join(".config/xdg-desktop-portal-wlr/labwc"), "chooser_cmd=exec /home/u/.local/bin/wayshell-capture-picker\n");
         write(&root.join(".config/systemd/user/graphical-session.target.wants/clipboard-manager.service"), "");
         // A new file that already exists wins over the old one.
         write(&root.join(".config/tessel/language.json"), "new");
@@ -354,6 +358,7 @@ mod tests {
         assert!(rc.contains("/usr/local/bin/tessel-capture --capture screen"), "{rc}");
         assert!(rc.contains("~/.local/bin/tessel-shell-cli switch-window"), "{rc}");
         assert_eq!(read(".config/mimeapps.list"), "[Default Applications]\ninode/directory=org.tessel.Files.desktop;\n");
+        assert_eq!(read(".config/xdg-desktop-portal-wlr/labwc"), "chooser_cmd=exec /home/u/.local/bin/tessel-capture-picker\n");
         assert_eq!(report.units, vec![("clipboard-manager.service".to_owned(), "tessel-clipboard.service".to_owned())]);
         // Old files stay.
         assert!(root.join(".config/waydock/config.json").exists());
