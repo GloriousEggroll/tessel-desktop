@@ -151,19 +151,23 @@ pub fn is_rtl() -> bool {
 
 /// Where `<code>.json` catalogs are read from.
 ///
-/// 1. `$DESKTOP_SUITE_LOCALE_DIR` (Rust-only override for tests/dev runs),
-/// 2. `<executable dir>/locale` if it exists (Python: `<module dir>/locale`),
-/// 3. `$XDG_DATA_HOME/tessel/locale` (`~/.local/share/tessel/locale`).
+/// 1. `$TESSEL_LOCALE_DIR` (or the older `$DESKTOP_SUITE_LOCALE_DIR`; tests and dev runs),
+/// 2. `<executable dir>/locale` if it exists,
+/// 3. `$XDG_DATA_HOME/tessel/locale` (`~/.local/share/tessel/locale`) when it has catalogs,
+/// 4. the system copy (`/usr/local/share/tessel/locale`, then `/usr/share/tessel/locale`).
 pub fn catalog_directory() -> PathBuf {
-    if let Some(directory) = env::var_os("DESKTOP_SUITE_LOCALE_DIR").filter(|value| !value.is_empty()) {
-        return directory.into();
+    for variable in ["TESSEL_LOCALE_DIR", "DESKTOP_SUITE_LOCALE_DIR"] {
+        if let Some(directory) = env::var_os(variable).filter(|value| !value.is_empty()) {
+            return directory.into();
+        }
     }
     let local = env::current_exe().ok().and_then(|exe| exe.canonicalize().ok())
         .and_then(|exe| exe.parent().map(|parent| parent.join("locale")));
-    match local {
-        Some(local) if local.is_dir() => local,
-        _ => crate::paths::suite_data_dir().join("locale"),
-    }
+    let candidates = [crate::paths::suite_data_dir().join("locale"), PathBuf::from("/usr/local/share/tessel/locale"),
+                      PathBuf::from("/usr/share/tessel/locale")];
+    local.into_iter().chain(candidates.iter().cloned())
+        .find(|directory| directory.join("en.json").is_file() || directory.join("de.json").is_file())
+        .unwrap_or_else(|| candidates[0].clone())
 }
 
 /// Load (and cache) one catalog; string → string entries only, `{}` on any error.
@@ -394,8 +398,7 @@ mod tests {
 
     #[test]
     fn shipped_catalogs_load_translate_and_retain_placeholders() {
-        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../tessel-bluetooth/shared/locale");
-        let root = if root.is_dir() { root } else { crate::paths::home().join("tessel-bluetooth/shared/locale") };
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../i18n/locale");
         if !root.is_dir() {
             eprintln!("skipping: no source catalogs at {}", root.display());
             return;
