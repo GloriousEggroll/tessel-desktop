@@ -795,8 +795,20 @@ fn lookup<'a>(values: &'a [(String, String)], name: &str) -> Option<&'a str> {
 }
 
 /// (generic environment, text to append to the local env file). Effective values are unchanged.
+/// Environment block markers written before Tessel: (old, new).
+pub const LEGACY_ENVIRONMENT_MARKERS: [(&str, &str); 4] = [
+    ("# way-displays-gui primary output environment begin", "# tessel-displays primary output environment begin"),
+    ("# way-displays-gui primary output environment end", "# tessel-displays primary output environment end"),
+    ("# Desktop suite language — managed by Language Settings", "# Tessel language — managed by Language Settings"),
+    ("# End desktop suite language", "# End Tessel language"),
+];
+
 pub fn split_environment(current: &str, local: &str) -> (String, String) {
-    let lines = splitlines(current, true);
+    let mut current = current.to_owned();
+    for (old, new) in LEGACY_ENVIRONMENT_MARKERS {
+        current = current.replace(old, new);
+    }
+    let lines = splitlines(&current, true);
     let (mut blocks, mut outside) = (Vec::<String>::new(), Vec::<&str>::new());
     let mut index = 0;
     while index < lines.len() {

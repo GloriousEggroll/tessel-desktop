@@ -94,7 +94,7 @@ pub struct Factories {
     pub language: Option<Box<dyn Fn() -> Arc<dyn tessel_language::ui::WizardBackend>>>,
     /// `capture_page.build_page(section, host, path)`.
     pub capture_path: Option<PathBuf>,
-    /// The Archive Manager settings file (default `~/.config/tessel/tessel-archive.json`).
+    /// The Archive Manager settings file (default `~/.config/tessel/archive-manager.json`).
     pub archive_path: Option<PathBuf>,
     /// The clipboard settings file (default `~/.config/tessel/clipboard.json`).
     pub clipboard_path: Option<PathBuf>,

@@ -1,6 +1,6 @@
 //! Archive Manager settings (Ark's Configure dialog: General, Extraction,
 //! Plugins, Previews), embedded from the tessel-archive settings crate.
-//! Both edit `~/.config/tessel/tessel-archive.json`; a running
+//! Both edit `~/.config/tessel/archive-manager.json`; a running
 //! Archive Manager follows every change.
 use std::path::PathBuf;
 use std::rc::Rc;

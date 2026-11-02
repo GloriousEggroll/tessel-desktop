@@ -334,7 +334,7 @@ pub fn factories(fakes: &Rc<Fakes>, scratch: &Path) -> Factories {
         ..Default::default()
     });
     f.capture_path = Some(scratch.join("capture/config.json"));
-    f.archive_path = Some(scratch.join("archive/tessel-archive.json"));
+    f.archive_path = Some(scratch.join("archive/archive-manager.json"));
     f.clipboard_path = Some(scratch.join("clipboard/clipboard.json"));
     f.system_root = Some(scratch.join("system-root"));
     let launched = fakes.launched.clone();

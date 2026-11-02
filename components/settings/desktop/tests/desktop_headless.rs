@@ -1568,7 +1568,7 @@ fn lock_tests(app: &gtk::Application) {
         let count = previews.clone();
         let (test_host, host) = host(app);
         let page = gs_desktop::lock::build_lock_page(&host, gs_desktop::lock::LockOptions {
-            store_path: Some(dir.join("tessel-lock.json")),
+            store_path: Some(dir.join("lock-screen.json")),
             power_factory: Some(Rc::new(move |changed| {
                 let power = Rc::new(FakePower { ready: Cell::new(true), state: RefCell::new(json!({"settings": {"lock_after": 300, "dim_after": 120}}).as_object().unwrap().clone()),
                                                 calls: RefCell::default(), changed, closed: Cell::new(false) });
@@ -1591,7 +1591,7 @@ fn lock_tests(app: &gtk::Application) {
         assert!(c.choose.is_visible());
         c.save.emit_clicked();
         assert_eq!(c.status.text(), "Choose a picture first.");
-        assert!(!dir.join("tessel-lock.json").exists());
+        assert!(!dir.join("lock-screen.json").exists());
         c.mode.set_selected(3);
         assert!(!c.placement.is_sensitive());
         c.color.set_text("#123456");
@@ -1603,7 +1603,7 @@ fn lock_tests(app: &gtk::Application) {
         let power = power_slot.borrow().clone().unwrap();
         assert_eq!(power.calls.borrow()[0]["lock_after"], json!(600));
         assert_eq!(power.calls.borrow()[0]["dim_after"], json!(120));
-        let saved: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("tessel-lock.json")).unwrap()).unwrap();
+        let saved: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("lock-screen.json")).unwrap()).unwrap();
         assert_eq!((saved["wallpaper_mode"].clone(), saved["background_color"].clone(), saved["blur"].clone()),
                    (json!("color"), json!("#123456"), json!(false)));
         c.color.set_text("bad");

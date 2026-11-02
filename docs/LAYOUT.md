@@ -36,12 +36,13 @@ Part names are the component directory names (`components/<part>`): `dock`, `she
 | `~/.config/desktop-capture/` | `~/.config/tessel/capture/` |
 | `~/.config/night-light/` | `~/.config/tessel/night-light/` |
 | `~/.config/btmanager/` | `~/.config/tessel/bluetooth/` |
+| `~/.config/picture-viewer/` | `~/.config/tessel/pictures/` |
 | `~/.config/environment.d/90-desktop-suite-language.conf` | `~/.config/environment.d/90-tessel-language.conf` (markers renamed) |
 | `~/.config/waybar/network-notifications.json` | `~/.config/tessel/network/notifications.json` |
 | `~/.local/state/desktop-suite/` | `~/.local/state/tessel/` |
 | `~/.local/state/{waydock,wayshell,waytile,global-settings,notification-manager,keep-awake,hdr-calibration,text-editor,waydock-calculator}/` | `~/.local/state/tessel/{dock,shell,tiling,settings,notifications,keep-awake,hdr-calibration,text-editor,calculator}/` |
 | `~/.cache/desktop-suite/`, `~/.cache/waydock/`, `~/.cache/weather-manager/` | `~/.cache/tessel/`, `~/.cache/tessel/dock/`, `~/.cache/tessel/weather/` |
-| `~/.local/share/desktop-suite/{keyring,session}` | `~/.local/share/tessel/{keyring,session}` |
+| `~/.local/share/desktop-suite/{keyring,session,file-metadata.json}` | `~/.local/share/tessel/{keyring,session,file-metadata.json}` (the keyring also copies itself on first open) |
 | `~/.local/share/waydock/icons` | `~/.local/share/tessel/dock/icons` |
 
 Text inside migrated files, `~/.config/labwc/rc.xml` and `~/.config/mimeapps.list` gets the
