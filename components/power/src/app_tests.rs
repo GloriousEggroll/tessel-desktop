@@ -87,6 +87,12 @@ impl Drop for Fx {
     }
 }
 
+fn executable(path: &std::path::Path) {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::write(path, "#!/bin/sh\n").unwrap();
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+}
+
 fn fixture(name: &str) -> Fx {
     let base = std::env::var_os("TMPDIR").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
     let root = base.join(format!("power-app-{}-{name}/test suite", std::process::id()));
@@ -100,7 +106,7 @@ fn fixture(name: &str) -> Fx {
     let services = Services {
         runner: runner.clone(), scheduler: scheduler.clone(), monotonic: Box::new(move || c.get()),
         saver: Box::new(move |v: &Value| -> Result<(), ConfigError> { s.borrow_mut().push(v.clone()); Ok(()) }),
-        scripts_root: root.clone(), python: "/usr/bin/python3".into(),
+        program: { let root = root.clone(); Box::new(move |name: &str| root.join(name)) },
     };
     let app = App::new(services);
     let backend = FakeSystem::ready();
@@ -362,8 +368,7 @@ fn failed_lock_cancels_lid_sleep_but_not_critical_battery_action() {
 #[test]
 fn power_button_shows_menu_or_runs_action_with_debounce() {
     let f = fixture("button");
-    std::fs::create_dir_all(f.root.join("tessel-session")).unwrap();
-    std::fs::write(f.root.join("tessel-session/session_manager.py"), "").unwrap();
+    executable(&f.root.join("tessel-session"));
     f.app.power_button();
     f.clock.set(101.0);
     f.app.power_button();
@@ -371,7 +376,7 @@ fn power_button_shows_menu_or_runs_action_with_debounce() {
     let menu = f.runner.argv()[0].clone();
     assert_eq!(menu[..7], ["/usr/bin/systemd-run", "--user", "--collect", "--quiet", "--service-type=exec", "--slice=app.slice",
                            "--expand-environment=no"]);
-    assert_eq!(menu[menu.len() - 3..], ["/usr/bin/python3".to_owned(), f.root.join("tessel-session/session_manager.py").to_string_lossy().into_owned(),
+    assert_eq!(menu[menu.len() - 3..], ["--".to_owned(), f.root.join("tessel-session").to_string_lossy().into_owned(),
                                         "--popup".to_owned()]);
     f.clock.set(101.6);
     let mut settings = defaults();
@@ -396,8 +401,8 @@ fn missing_power_menu_reports_error() {
 #[test]
 fn bluetooth_shortcut_launches_independently_without_shell_parsing() {
     let f = fixture("bluetooth");
-    let script = f.root.join("tessel-bluetooth.py");
-    std::fs::write(&script, "").unwrap();
+    let script = f.root.join("tessel-bluetooth");
+    executable(&script);
     assert!(f.app.bluetooth_available());
     assert!(f.app.open_bluetooth());
     let command = f.runner.argv()[0].clone();

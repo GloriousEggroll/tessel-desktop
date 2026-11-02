@@ -1,4 +1,4 @@
-//! Rust port of ~/tessel-bluetooth/tessel-calendar (see contracts/tessel-calendar.md).
+//! Tessel calendar (see contracts/tessel-calendar.md).
 
 pub mod civil;
 pub mod events;

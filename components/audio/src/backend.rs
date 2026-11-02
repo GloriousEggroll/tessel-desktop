@@ -1393,12 +1393,12 @@ pub(crate) mod tests {
         std::fs::remove_dir_all(dir).unwrap();
     }
 
-    /// The recorded real pw-dump stream gives exactly the Python models.
+    /// The recorded real pw-dump stream gives exactly the recorded reference models.
     #[test]
-    fn recorded_pw_dump_stream_matches_python_reference() {
+    fn recorded_pw_dump_stream_matches_reference() {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
         let stream = std::fs::read(dir.join("monitor.json")).unwrap();
-        let reference: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("python_reference.json")).unwrap()).unwrap();
+        let reference: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("reference.json")).unwrap()).unwrap();
         let (batches, rest) = split_batches(stream);
         assert!(rest.is_empty());
         let mut graph = Graph::new();
@@ -1429,7 +1429,7 @@ pub(crate) mod tests {
             c.backend.feed(chunk).unwrap();
         }
         assert!(c.backend.0.monitor_buffer.borrow().is_empty());
-        let reference: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("python_reference.json")).unwrap()).unwrap();
+        let reference: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("reference.json")).unwrap()).unwrap();
         let expected = reference["monitor"].as_array().unwrap().last().unwrap()["model"].clone();
         crate::testing::assert_model(&parse_snapshot(c.backend.0.graph.borrow().values()), &expected);
         assert!(c.backend.ready());

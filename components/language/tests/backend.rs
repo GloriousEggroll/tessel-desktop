@@ -167,20 +167,8 @@ fn files(dir: &Path) -> Vec<(PathBuf, Vec<u8>)> {
 }
 
 #[test]
-fn catalog_exactly_matches_previous_bluetooth_names() {
+fn catalog_has_every_language() {
     assert_eq!(LANGUAGES.len(), 31);
-    let source = Path::new("/home/tcrider/tessel-bluetooth/translations.py");
-    if !source.exists() {
-        return;
-    }
-    let script = "import ast,json,sys\ntree=ast.parse(open(sys.argv[1]).read())\n\
-        old=next(ast.literal_eval(i.value) for i in tree.body if isinstance(i, ast.Assign) and any(getattr(t,'id',None)=='LANG_NAMES' for t in i.targets))\n\
-        print(json.dumps(old))";
-    let output = std::process::Command::new("python3").args(["-I", "-c", script]).arg(source).output().unwrap();
-    let old: serde_json::Map<String, serde_json::Value> = serde_json::from_slice(&output.stdout).unwrap();
-    let ours: serde_json::Map<String, serde_json::Value> =
-        LANGUAGES.iter().map(|l| (l.code.to_owned(), serde_json::Value::from(l.name))).collect();
-    assert_eq!(ours, old);
 }
 
 #[test]
@@ -678,55 +666,4 @@ fn helpers_match_python() {
     assert_eq!(normalized_locale(" en_US.UTF-8 "), "en_us.utf8");
     assert!(equivalent_locales(&["LANG=en_US.UTF-8"], &["LANG=en_US.utf8", "LC_TIME=en_US.UTF-8"]));
     assert_eq!(decode_utf8(b"ab\xff").unwrap_err(), "'utf-8' codec can't decode byte 0xff in position 2: invalid start byte");
-}
-
-/// Same fixtures, same fake services: the Python and Rust backends must write
-/// byte-identical files and send identical requests.
-#[test]
-fn python_parity_on_fixtures() {
-    let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/parity/run_python.py");
-    if !Path::new("/home/tcrider/tessel-bluetooth/tessel-language/language_backend.py").exists() {
-        return;
-    }
-    let fixtures: &[(&str, &[(&str, &str)], &[(&str, &str)])] = &[
-        ("fr", &[], &[]),
-        ("pt_BR", &[(".config/labwc/environment", "# cursor\nXCURSOR_SIZE=42\nLC_TIME=ja_JP.UTF-8\nexport LANG=de_DE.utf8\nLC_ALL=C"),
-                    (".config/plasma-localerc", "[Formats]\nLANG=en_US.utf8\n\n[Translations]\nLANGUAGE=de\n[Other]\nA=1\n"),
-                    (".i18n", "SYSFONT=latarcyrheb\r\nLANG=\"en_US.UTF-8\"\n"),
-                    (".config/tessel/language.json", "{\"other\": {\"x\": [1, 2.5e10, null]}, \"language\": \"de\"}")],
-         &[("LANG", "en_US.UTF-8"), ("LC_MONETARY", "de_DE.UTF-8")]),
-        ("ja", &[(".config/environment.d/90-tessel-language.conf",
-                  "# Tessel language — managed by Language Settings\nLANG=x\n# End Tessel language\n")],
-         &[("LC_ALL", "fr_FR.UTF-8")]),
-        ("de", &[(".config/plasma-localerc", "[Formats]\nLANG=de_DE.UTF-8")], &[]),
-        ("ar", &[(".config/labwc/environment", "# Tessel language — managed by Language Settings\nOTHER=1\n")], &[]),
-    ];
-    for (code, files_in, environment) in fixtures {
-        let python_home = scratch();
-        let rust_home = scratch();
-        for home in [&python_home, &rust_home] {
-            for (name, text) in *files_in {
-                let path = home.join(name);
-                fs::create_dir_all(path.parent().unwrap()).unwrap();
-                fs::write(&path, text).unwrap();
-            }
-        }
-        let env_json = serde_json::Value::Object(environment.iter().map(|(k, v)| (k.to_string(), serde_json::Value::from(*v))).collect());
-        let output = std::process::Command::new("python3").args(["-I", "-B"]).arg(&script).arg(&python_home)
-            .arg(code).arg(env_json.to_string()).output().unwrap();
-        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-        let python: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-
-        let services = Fake::new();
-        let mut backend = LanguageBackend::new(Some(rust_home.clone()), None, Some(services.clone() as Arc<dyn Services>));
-        backend.locale_provider = Box::new(|| Ok(LANGUAGES.iter().map(|l| l.locale.replace("UTF-8", "utf8")).collect()));
-        backend.environment = environment.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
-        let result = backend.apply(code, None);
-        let calls: Vec<serde_json::Value> = services.calls().into_iter().map(|(k, v)| serde_json::json!([k, v])).collect();
-        let rust = serde_json::json!({"ok": result.ok, "error": result.error, "warnings": result.warnings,
-            "rolled_back": result.rolled_back, "partial": result.partial, "calls": calls, "locale": services.locale()});
-        assert_eq!(rust, python, "fixture {code}");
-        let strip = |home: &Path| files(home).into_iter().map(|(p, b)| (p.strip_prefix(home).unwrap().to_path_buf(), b)).collect::<Vec<_>>();
-        assert_eq!(strip(&rust_home), strip(&python_home), "fixture {code}");
-    }
 }

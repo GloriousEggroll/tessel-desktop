@@ -499,7 +499,7 @@ impl LanguageBackend {
             (None, None) => tessel_core::paths::config_home(),
         };
         let home = home.unwrap_or_else(tessel_core::paths::home);
-        let preference_path = config.join("tessel").join("language.json");
+        let preference_path = config.join(tessel_core::paths::SUITE).join("language.json");
         let cell = OnceLock::new();
         if let Some(services) = services {
             let _ = cell.set(services);

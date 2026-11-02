@@ -504,9 +504,9 @@ fn single_instance_with_real_binary() {
     };
     let session = gtk::gio::bus_get_sync(gtk::gio::BusType::Session, None::<&gtk::gio::Cancellable>).unwrap();
     let owned = |name: &str| tessel_core::single_instance::name_has_owner(&session, name);
-    assert!(!owned("org.tessel-bluetooth.Bluetooth"));
+    assert!(!owned("org.tessel.Bluetooth"));
     let mut primary = std::process::Command::new(&bin).args(["--popup", "--popup-edge", "bottom", "--popup-offset", "76"]).spawn().unwrap();
-    assert!(wait_until(|| owned("org.tessel-bluetooth.Bluetooth"), 10.0), "primary registered");
+    assert!(wait_until(|| owned("org.tessel.Bluetooth"), 10.0), "primary registered");
     let started = Instant::now();
     let second = std::process::Command::new(&bin).args(["--popup", "--popup-edge", "left", "--popup-offset", "98"]).status().unwrap();
     assert!(second.success());
@@ -519,7 +519,7 @@ fn single_instance_with_real_binary() {
     assert!(again.success());
     unsafe { libc::kill(primary.id() as i32, libc::SIGTERM) };
     let _ = primary.wait();
-    assert!(wait_until(|| !owned("org.tessel-bluetooth.Bluetooth"), 5.0));
+    assert!(wait_until(|| !owned("org.tessel.Bluetooth"), 5.0));
     println!("ok single_instance_with_real_binary");
 }
 

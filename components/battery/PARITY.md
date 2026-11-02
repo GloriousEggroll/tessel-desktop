@@ -2,8 +2,7 @@
 
 Binaries: `tessel-battery` (= `battery_manager.py`), `tessel-battery-status` (= `battery_status.py`, GLib/GIO only, no GTK).
 Tests: `cargo test -p tessel-battery` (unit + `tests/private_bus.rs`, private dbus-daemon) and
-`tests/run_headless.sh` (private nested headless labwc; `RELEASE=1 BATTERY_PYTHON_SOURCE=~/tessel-bluetooth/tessel-battery`
-also measures the Python twin). Unit tests live in `src/**` `mod tests`.
+`tests/run_headless.sh` (private nested headless labwc; `RELEASE=1` for measurements).
 
 Shared-with-power-manager code is isolated for upstreaming: `src/power/` (no GTK: bus, values, scheduler,
 devices, charge_limits, backend) and `src/power_ui/` (style, battery_ui). Same gio `Bus` trait / `FakeBus` /

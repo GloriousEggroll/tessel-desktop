@@ -200,15 +200,15 @@ fn enable_disable_toggle_and_restore_edit_a_scratch_rc_xml() {
     assert_eq!(code, 0, "{err}");
     let on = String::from_utf8(std::fs::read(env.rc()).unwrap()).unwrap();
     assert!(on.contains("<!-- Tessel Tiling keyboard begin -->"));
-    let home = env.root.join("home");
-    assert!(on.contains(&format!("command=\"{}/.local/bin/tessel-tiling --settings\"", home.display())));
+    // The settings launcher is the installed program: here, the binary under test.
+    assert!(on.contains(&format!("command=\"{BIN} --settings\"")));
     let commands = env.commands();
     assert_eq!(&commands[..3], ["status", "status", "enable"]);
     let pid = env.state.lock().unwrap().pid;
     assert_eq!(std::fs::read_to_string(env.root.join("reconfigure.log")).unwrap(), format!("--reconfigure LABWC_PID={pid}\n"));
-    let prefs = env.root.join("config/tessel-tiling/config.json");
+    let prefs = env.root.join("config/tessel/tiling/config.json");
     assert_eq!(std::fs::read_to_string(&prefs).unwrap(), "{\"enabled\": true}\n");
-    assert!(std::fs::read_dir(env.root.join("state/tessel-tiling")).unwrap()
+    assert!(std::fs::read_dir(env.root.join("state/tessel/tiling")).unwrap()
         .any(|e| e.unwrap().file_name().to_string_lossy().starts_with("rc-")));
     let (code, _, _) = env.run(&["--toggle"]);
     assert_eq!(code, 0);
@@ -252,8 +252,8 @@ fn watch_prints_only_changes_and_ends_on_sigint() {
         assert!(env.commands().iter().all(|c| c == "status"));
     }
     // Focus outline sync from the palette: colours once, then idle.
-    std::fs::create_dir_all(env.root.join("cache/tessel-dock")).unwrap();
-    std::fs::write(env.root.join("cache/tessel-dock/palette.json"), r#"{"monitors":[{"name":"HEADLESS-1","accent":[1,2,3]}]}"#).unwrap();
+    std::fs::create_dir_all(env.root.join("cache/tessel/dock")).unwrap();
+    std::fs::write(env.root.join("cache/tessel/dock/palette.json"), r#"{"monitors":[{"name":"HEADLESS-1","accent":[1,2,3]}]}"#).unwrap();
     let mut child = env.command(BIN, &["--watch"]).stdout(Stdio::piped()).spawn().unwrap();
     let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
     lines.next().unwrap().unwrap();
@@ -270,28 +270,11 @@ fn argument_errors_match_argparse() {
     let env = Env::new("args");
     let (code, out, _) = env.run(&["--help"]);
     assert_eq!(code, 0);
-    assert!(out.starts_with("usage: tessel-tiling [-h] [--toggle | --enable | --disable | --restore | --status |\n"), "{out}");
+    assert!(out.starts_with("usage: tessel-tiling [-h] [--toggle | --enable | --disable | --restore |\n"), "{out}");
     let (code, _, err) = env.run(&["--status", "--toggle"]);
     assert_eq!(code, 2);
     assert!(err.ends_with("tessel-tiling: error: argument --toggle: not allowed with argument --status\n"));
     let (code, _, err) = env.run(&["--bogus"]);
     assert_eq!(code, 2);
     assert!(err.ends_with("error: unrecognized arguments: --bogus\n"));
-}
-
-#[test]
-fn python_shim_argv_keeps_script_names() {
-    use std::os::unix::process::CommandExt;
-    let env = Env::new("shim");
-    env.serve();
-    let output = env.command(BIN, &["/x/tiling_manager.py", "--bogus"]).arg0("/usr/bin/python3").output().unwrap();
-    assert_eq!(output.status.code(), Some(2));
-    let err = String::from_utf8(output.stderr).unwrap();
-    assert!(err.starts_with("usage: tiling_manager.py [-h]"), "{err}");
-    assert!(err.ends_with("tiling_manager.py: error: unrecognized arguments: --bogus\n"));
-    let mut child = env.command(BIN, &["/x/tiling_status.py"]).arg0("/usr/bin/python3").stdout(Stdio::piped()).spawn().unwrap();
-    let line = BufReader::new(child.stdout.take().unwrap()).lines().next().unwrap().unwrap();
-    assert_eq!(serde_json::from_str::<Value>(&line).unwrap()["class"], "inactive");
-    unsafe { libc::kill(child.id() as i32, libc::SIGINT) };
-    assert_eq!(child.wait().unwrap().code(), Some(0));
 }

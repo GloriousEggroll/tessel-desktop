@@ -315,14 +315,16 @@ impl Default for TilingConfig {
 }
 
 impl TilingConfig {
-    /// Python `TilingConfig(path, state_dir, config_dir, call, reload, launcher)`.
+    /// `state_dir` (rc.xml backups) and `config_dir` (config.json) default to
+    /// `~/.local/state/tessel/tiling` and `~/.config/tessel/tiling`; `launcher` to
+    /// the installed `tessel-tiling`.
     pub fn new(path: Option<PathBuf>, state_dir: Option<PathBuf>, config_dir: Option<PathBuf>, call: Option<Call>,
                reload: Option<Reload>, launcher: Option<PathBuf>) -> Self {
         Self {
             path,
-            state_dir: state_dir.unwrap_or_else(tessel_core::paths::state_home).join("tessel-tiling"),
-            preferences: config_dir.unwrap_or_else(tessel_core::paths::config_home).join("tessel-tiling/config.json"),
-            launcher: launcher.unwrap_or_else(|| tessel_core::paths::home().join(".local/bin/tessel-tiling")),
+            state_dir: state_dir.unwrap_or_else(|| tessel_core::paths::component_state_dir("tiling")),
+            preferences: config_dir.unwrap_or_else(|| tessel_core::paths::component_config_dir("tiling")).join("config.json"),
+            launcher: launcher.unwrap_or_else(|| tessel_core::paths::program("tessel-tiling")),
             call: call.unwrap_or_else(default_call),
             reload,
             write: Arc::new(compat::atomic_write),
@@ -638,7 +640,7 @@ mod tests {
         assert!(has_bindings(&fs::read(&path).unwrap()));
         assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o640, "the file mode is kept");
         assert_eq!(fs::read_to_string(&controller.preferences).unwrap(), "{\"enabled\": true}\n");
-        let backups: Vec<_> = fs::read_dir(root.join("tessel-tiling")).unwrap().filter_map(|e| e.ok())
+        let backups: Vec<_> = fs::read_dir(&root).unwrap().filter_map(|e| e.ok())
             .map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.starts_with("rc-")).collect();
         assert_eq!(backups.len(), 1);
         controller.set_enabled(false, true).unwrap();
@@ -763,7 +765,7 @@ mod tests {
                 }
                 Ok(())
             });
-            let preferences = root.join("tessel-tiling/config.json");
+            let preferences = root.join("config.json");
             let writer: Writer = Arc::new(move |target: &Path, data: &[u8], mode: u32| {
                 if failure == "preferences" && target == preferences {
                     return Err(io::Error::other("Disk full"));

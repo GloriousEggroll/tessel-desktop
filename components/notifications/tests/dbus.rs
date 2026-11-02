@@ -196,7 +196,7 @@ fn capabilities_identity_and_notify_replacement() {
     assert_eq!(sorted, ["actions", "body", "icon-static", "persistence"]);
     assert!(!caps.iter().any(|c| c == "sound"));
     let info = f.call("GetServerInformation", None, INTERFACE).unwrap();
-    assert_eq!(info, ("Tessel Dock Notifications", "Tessel Dock", "1.0", "1.2").to_variant());
+    assert_eq!(info, ("Tessel Notifications", "Tessel", "1.0", "1.2").to_variant());
     let ident = f.notify("Protocol Test", 0, "Hello", &[], vec![("urgency", 2u8.to_variant()), ("value", 62i32.to_variant())], 0);
     assert_eq!(f.notify("Protocol Test", ident, "Replacement", &[], vec![], 0), ident);
     let state = f.state();
@@ -302,11 +302,11 @@ fn existing_server_is_never_replaced_or_queued() {
     let second = NotificationService::new(&second_connection, &f.model, None);
     assert_eq!(second.start().unwrap_err(), "Another notification server is already running");
     let info = f.call("GetServerInformation", None, INTERFACE).unwrap();
-    assert_eq!(info.child_value(0).get::<String>().unwrap(), "Tessel Dock Notifications");
+    assert_eq!(info.child_value(0).get::<String>().unwrap(), "Tessel Notifications");
     f.service.close();
     second.start().unwrap();
     let info = f.call("GetServerInformation", None, INTERFACE).unwrap();
-    assert_eq!(info.child_value(0).get::<String>().unwrap(), "Tessel Dock Notifications");
+    assert_eq!(info.child_value(0).get::<String>().unwrap(), "Tessel Notifications");
     second.close();
     let _ = second_connection.close_sync(None::<&gio::Cancellable>);
 }

@@ -1,10 +1,10 @@
 //! Bounded, asynchronous fullscreen checks shared with Tessel Dock's game policy
 //! (ports of notification_policy.py and the verdict logic of
-//! tessel-dock/fullscreen_guard.py).
+//! Tessel Dock's fullscreen guard).
 //!
 //! Checks are event-driven: foreign-toplevel focus/state changes and new
 //! notifications call `refresh()`. There is no polling. The X11 probe process
-//! (`python3 -I -S <helper dir>/fullscreen_guard.py --probe`, 120 ms deadline)
+//! (`tessel-notifications --x11-probe`, Tessel Dock's X11 probe, 120 ms deadline)
 //! runs only when the focused window may be Xwayland and the cached verdict
 //! for its focus signature is missing (or, forced, older than 2 s).
 
@@ -17,6 +17,9 @@ use std::rc::Rc;
 use std::time::Duration;
 
 pub const PROBE_TIMEOUT_MS: u64 = 120;
+/// `tessel-notifications --x11-probe` prints the X11 focus snapshot as JSON
+/// (`null` when there is none) and exits.
+pub const X11_PROBE_FLAG: &str = "--x11-probe";
 /// A forced refresh (for example a new notification) reuses a verdict this young.
 pub const PROBE_MAX_AGE: f64 = 2.0;
 
@@ -200,10 +203,6 @@ fn local_display(display: &str) -> bool {
     digits(number) && screen.is_none_or(digits)
 }
 
-fn python() -> &'static str {
-    if std::path::Path::new("/usr/bin/python3").is_file() { "/usr/bin/python3" } else { "python3" }
-}
-
 /// Fresh X11 focus snapshot in an expendable process (fail-open `None`).
 pub fn x11_snapshot(done: impl FnOnce(Option<Value>) + 'static) {
     // Xwayland is local. Do not turn a notification into a remote DISPLAY query.
@@ -211,8 +210,8 @@ pub fn x11_snapshot(done: impl FnOnce(Option<Value>) + 'static) {
         glib::idle_add_local_once(move || done(None));
         return;
     }
-    let script = crate::backend::helper_dir().join("fullscreen_guard.py");
-    let argv = [std::ffi::OsStr::new(python()), "-I".as_ref(), "-S".as_ref(), script.as_os_str(), "--probe".as_ref()];
+    let program = crate::backend::helper("tessel-notifications");
+    let argv = [program.as_os_str(), X11_PROBE_FLAG.as_ref()];
     let process = match gio::Subprocess::newv(&argv, gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_SILENCE) {
         Ok(process) => process,
         Err(_) => {

@@ -3,7 +3,7 @@ name = "tessel-network-discovery"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Avahi network discovery toggle and device list popup (port of tessel-bluetooth/tessel-network-discovery)."
+description = "Avahi network discovery toggle and device list popup."
 
 [lib]
 name = "tessel_network_discovery"

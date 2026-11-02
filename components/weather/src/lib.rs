@@ -1,4 +1,4 @@
-//! Rust port of ~/tessel-bluetooth/tessel-weather (see contracts/tessel-weather.md).
+//! Tessel weather (see contracts/tessel-weather.md).
 
 pub mod app;
 pub mod backend;

@@ -35,7 +35,7 @@ fn fixture(name: &str) -> Fx {
     let base = std::env::var_os("TMPDIR").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
     let root = base.join(format!("power idle '{}-{name}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
-    let lock = root.join("waybar/scripts/screenlock.sh");
+    let lock = root.join("bin/tessel-lock");
     std::fs::create_dir_all(lock.parent().unwrap()).unwrap();
     std::fs::write(&lock, "#!/bin/sh\nexit 0\n").unwrap();
     std::fs::set_permissions(&lock, std::fs::Permissions::from_mode(0o700)).unwrap();
@@ -210,7 +210,7 @@ fn missing_dependencies_or_locker_surface_errors_without_launching() {
     assert!(!f.controller.ready());
     assert!(f.errors.borrow().last().unwrap().contains("requires swayidle and wlopm"));
     f.processes.missing.set(false);
-    std::fs::remove_file(f.root.join("waybar/scripts/screenlock.sh")).unwrap();
+    std::fs::remove_file(f.root.join("bin/tessel-lock")).unwrap();
     f.controller.start(&f.settings).unwrap();
     assert!(!f.controller.ready());
     assert!(f.errors.borrow().last().unwrap().contains("screen lock command"));

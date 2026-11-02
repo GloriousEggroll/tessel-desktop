@@ -2,7 +2,7 @@
 //! mutual exclusion, messages and exit status 2 on errors.
 
 pub const EDGES: [&str; 4] = ["top", "bottom", "left", "right"];
-const DESCRIPTION: &str = "NetworkManager controls and authentication for the Waybar desktop.";
+const DESCRIPTION: &str = "NetworkManager controls and authentication for Tessel.";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Args {

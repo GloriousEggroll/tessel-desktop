@@ -3,7 +3,7 @@
 # Never touches the live session: own XDG_RUNTIME_DIR, own D-Bus, no input devices.
 # CARGO_WS overrides the workspace to build in (default: the repository root).
 set -eu
-AGENT=tessel-keep-awake
+AGENT=${AGENT:-tessel-keep-awake}
 R=/run/user/1000/cbt/rust-$AGENT/n
 mkdir -p "$R/rt" "$R/cfg"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.

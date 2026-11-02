@@ -2781,6 +2781,7 @@ dependencies = [
  "libc",
  "serde_json",
  "tessel-core",
+ "tessel-dock",
  "tessel-gtk",
 ]
 

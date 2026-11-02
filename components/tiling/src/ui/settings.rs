@@ -292,7 +292,7 @@ impl TilingControls {
                launcher: Option<PathBuf>, runner: Runner) -> Self {
         let backend = backend.unwrap_or_else(|| Arc::new(TilingConfig::default()));
         let status_call = status.unwrap_or_else(|| Arc::new(client::status));
-        let launcher = launcher.unwrap_or_else(|| tessel_core::paths::home().join(".local/bin/tessel-tiling"));
+        let launcher = launcher.unwrap_or_else(|| tessel_core::paths::program("tessel-tiling"));
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 12);
         let (enabled_row, enabled_switch, enabled_detail) = row(&tr!("Window tiling"), &tr!(
             "Arrange new windows side by side automatically. Turning it off restores their sizes. Applies immediately."));

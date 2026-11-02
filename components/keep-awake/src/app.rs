@@ -151,7 +151,7 @@ impl KeepAwakeApplication {
 
     fn on_command_line(&self, command_line: &gio::ApplicationCommandLine) -> i32 {
         let argv: Vec<String> = command_line.arguments().iter().map(|a| a.to_string_lossy().into_owned()).collect();
-        let prog = args::prog(argv.first().map(String::as_str).unwrap_or("keep_awake.py"));
+        let prog = args::prog(argv.first().map(String::as_str).unwrap_or("tessel-keep-awake"));
         let parsed = match args::parse(argv.get(1..).unwrap_or(&[])) {
             Outcome::Run(parsed) => parsed,
             Outcome::Help => {

@@ -205,7 +205,7 @@ impl NotificationService {
         if interface == INTERFACE {
             return match method {
                 "GetCapabilities" => Ok(Some((CAPABILITIES.to_vec(),).to_variant())),
-                "GetServerInformation" => Ok(Some(("Tessel Dock Notifications", "Tessel Dock", "1.0", "1.2").to_variant())),
+                "GetServerInformation" => Ok(Some(("Tessel Notifications", "Tessel", "1.0", "1.2").to_variant())),
                 "Notify" => {
                     let args = NotifyArgs {
                         app_name: string(0), replaces_id: uint(1), app_icon: string(2), summary: string(3), body: string(4),

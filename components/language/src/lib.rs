@@ -1,6 +1,5 @@
 //! Language Settings: one language for Tessel, the session and the
-//! system (Rust port of tessel-bluetooth/tessel-language; contract in
-//! contracts/tessel-language.md).
+//! system (contract in contracts/tessel-language.md).
 
 pub mod app;
 pub mod args;

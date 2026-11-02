@@ -174,7 +174,7 @@ fn power_degraded_and_application_errors_are_visible_without_battery_widgets() {
     assert!(popup.status_label.text().contains("high operating temperature"));
     assert!(popup.status_label.text().contains("Idle settings"));
     // Raw paths never reach the popup (friendly_message substring table).
-    f.app_error.replace("The screen lock command is missing or not executable: /home/x/.config/waybar/scripts/screenlock.sh".into());
+    f.app_error.replace("The screen lock command is missing or not executable: /usr/lib/tessel/tessel-lock".into());
     popup.refresh();
     assert!(popup.status_label.text().contains("Automatic screen locking is not set up yet."));
     assert!(!popup.status_label.text().contains("/home/x"));

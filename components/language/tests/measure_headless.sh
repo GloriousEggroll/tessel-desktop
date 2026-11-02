@@ -1,12 +1,12 @@
 #!/bin/sh
-# Measure the Rust tessel-language vs the Python one in a private nested
+# Measure tessel-language in a private nested
 # headless labwc whose private D-Bus is also the "system" bus, populated only
 # by examples/fake_locale_services (fake localed/AccountsService, setters
 # logged, never real). Only --status and opening the wizard are exercised:
 # nothing is applied. XDG_CONFIG_HOME/HOME files are not read from the live
 # session's config (private XDG_CONFIG_HOME). Never touches the live session.
 set -eu
-AGENT=tessel-language
+AGENT=${AGENT:-tessel-language}
 R=/run/user/1000/cbt/rust-$AGENT/m
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
@@ -14,12 +14,11 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-language --bins --examples)
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-language
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache"
-export GSETTINGS_BACKEND=memory NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland PYTHONDONTWRITEBYTECODE=1
+export GSETTINGS_BACKEND=memory NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland
 "$REL/examples/fake_locale_services" "$R/fakes.ready" 2> "$R/fakes.log" & FAKES=\$!
 while [ ! -e "$R/fakes.ready" ]; do sleep 0.01; done
 ms() { date +%s%3N; }
@@ -36,7 +35,6 @@ measure() { # name command...
   sleep 0.5
 }
 measure rust "$REL/tessel-language"
-measure python /usr/bin/python3 "$PY/language_manager.py"
 kill -TERM \$FAKES; wait \$FAKES 2>/dev/null
 labwc --exit
 RUN
@@ -48,5 +46,4 @@ env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
 grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 ls -l "$REL/tessel-language" | awk '{print $9, $5}'
 grep -E "_ms=|rss|exit=" "$R/labwc.log" || { tail -30 "$R/labwc.log"; exit 1; }
-cmp "$R/rust-status.json" "$R/python-status.json" && echo "status output identical"
 grep -c "fake: Set" "$R/fakes.log" | sed 's/^/setter calls (must be 0): /' || true

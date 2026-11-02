@@ -1,5 +1,5 @@
 //! Build the native Wayland helper `tessel-keyboard-input` (native/input.c, unchanged
-//! from tessel-bluetooth/tessel-keyboard) next to this crate's build output.
+//! from the original keyboard) next to this crate's build output.
 //! It is a separate executable: the GTK process never binds the
 //! virtual-keyboard / input-method protocols itself.
 use std::path::PathBuf;

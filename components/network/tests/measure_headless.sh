@@ -1,6 +1,6 @@
 #!/bin/sh
 # Measure time-to-ready, idle RSS and screenshots of the popup/settings for the
-# Rust tessel-network vs the Python one, in a private nested headless labwc
+# Rust tessel-network, in a private nested headless labwc
 # with a private D-Bus that is also the "system" bus, populated only by
 # examples/fake_network_services (fake NetworkManager / Secret Service /
 # notifications). Never touches the live session or the real NetworkManager.
@@ -13,7 +13,6 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-network --bins --examples)
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-network
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
@@ -38,12 +37,10 @@ measure() { # name start-cmd check-cmd
   sleep 0.5
 }
 measure rust "$REL/tessel-network" "$REL/tessel-network"
-measure python "/usr/bin/python3 $PY/network_manager.py" "/usr/bin/python3 $PY/network_manager.py"
 stream() { name=\$1; shift; t0=\$(ms); "\$@" > "$R/\$name-stream.out" 2>/dev/null & pid=\$!
   until grep -q connected "$R/\$name-stream.out" 2>/dev/null; do sleep 0.01; [ \$((\$(ms)-t0)) -gt 10000 ] && break; done
   echo "\$name-status first_connected_line_ms=\$((\$(ms)-t0))"; sleep 2; echo "\$name-status idle_rss_kb=\$(rss \$pid)"; kill -TERM \$pid; wait \$pid 2>/dev/null; }
 stream rust "$REL/tessel-network-status"
-stream python /usr/bin/python3 "$PY/network_status.py"
 kill -TERM \$FAKES; wait \$FAKES 2>/dev/null
 labwc --exit
 RUN

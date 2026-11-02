@@ -66,13 +66,13 @@ pub struct Inner {
 pub struct BrightnessCore(pub Rc<Inner>);
 
 impl BrightnessCore {
-    /// `config_dir`/`state_dir` default to `$XDG_CONFIG_HOME` / `$XDG_STATE_HOME`.
+    /// `config_dir`/`state_dir` default to `~/.config/tessel/brightness` / `~/.local/state/tessel/brightness`.
     pub fn new(backend: Rc<dyn Hardware>, changed: impl Fn() + 'static, config_dir: Option<&Path>, state_dir: Option<&Path>) -> Self {
-        let config = config_dir.map(Path::to_path_buf).unwrap_or_else(tessel_core::paths::config_home);
-        let state = state_dir.map(Path::to_path_buf).unwrap_or_else(tessel_core::paths::state_home);
+        let config = config_dir.map(Path::to_path_buf).unwrap_or_else(|| tessel_core::paths::component_config_dir("brightness"));
+        let state = state_dir.map(Path::to_path_buf).unwrap_or_else(|| tessel_core::paths::component_state_dir("brightness"));
         let core = Self(Rc::new(Inner {
-            backend, changed: Box::new(changed), config_path: config.join("tessel-brightness/settings.json"),
-            journal_path: state.join("tessel-brightness/restore.json"), settings: RefCell::new(defaults()),
+            backend, changed: Box::new(changed), config_path: config.join("settings.json"),
+            journal_path: state.join("restore.json"), settings: RefCell::new(defaults()),
             error: RefCell::new(String::new()), entries: RefCell::new(Map::new()), pending: RefCell::new(HashMap::new()),
             want_dim: Cell::new(false), epoch: Cell::new(0), waiting: RefCell::new(Vec::new()), retry: RefCell::new(HashMap::new()),
             pumping: Cell::new(false), draining: Cell::new(false), journal_valid: Cell::new(true),

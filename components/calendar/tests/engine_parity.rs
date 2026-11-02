@@ -1,7 +1,6 @@
-//! Exhaustive parity of the iCalendar parser and recurrence engine with the
-//! Python implementation: fixtures from tests/gen_fixtures.py (curated cases
-//! with full expected output, seeded fuzz cases with a SHA-256 of it) are
-//! re-computed here and compared byte for byte.
+//! Exhaustive check of the iCalendar parser and recurrence engine against
+//! recorded fixtures (curated cases with full expected output, seeded fuzz
+//! cases with a SHA-256 of it): each is re-computed here and compared byte for byte.
 
 use tessel_calendar::civil::Date;
 use tessel_calendar::events::{expand, parse_calendar, Event, Freq, Value};
@@ -97,11 +96,11 @@ fn matches(expected: &str, actual: &str) -> bool {
 }
 
 #[test]
-fn engine_matches_python_fixtures() {
+fn engine_matches_recorded_fixtures() {
     // CALENDAR_FIXTURES=<file> checks an extra generated set (e.g. a larger fuzz run).
     let default = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/expansion.jsonl");
     let path = std::env::var("CALENDAR_FIXTURES").unwrap_or_else(|_| default.into());
-    let text = std::fs::read_to_string(path).expect("fixtures (run tests/gen_fixtures.py)");
+    let text = std::fs::read_to_string(path).expect("tests/fixtures/expansion.jsonl");
     let mut zones: std::collections::HashMap<String, ZoneRef> = Default::default();
     let (mut cases, mut runs, mut failures) = (0, 0, Vec::new());
     for line in text.lines() {
@@ -111,7 +110,7 @@ fn engine_matches_python_fixtures() {
         cases += 1;
         let parsed = dumps(&parse_dump(ics));
         if !matches(case["parse"].as_str().unwrap(), &parsed) {
-            failures.push(format!("{id}: parse\n  rust:   {parsed}\n  python: {}", case["parse"]));
+            failures.push(format!("{id}: parse\n  rust:   {parsed}\n  fixture: {}", case["parse"]));
         }
         for run in case["runs"].as_array().unwrap() {
             runs += 1;
@@ -121,7 +120,7 @@ fn engine_matches_python_fixtures() {
             let actual = dumps(&expansion(ics, first, last, &local));
             let expected = run[3].as_str().unwrap();
             if !matches(expected, &actual) {
-                failures.push(format!("{id} TZ={tz_name} {first:?}..{last:?}\n  rust:   {}\n  python: {}",
+                failures.push(format!("{id} TZ={tz_name} {first:?}..{last:?}\n  rust:   {}\n  fixture: {}",
                                       &actual[..actual.len().min(600)], &expected[..expected.len().min(600)]));
             }
         }
@@ -131,7 +130,7 @@ fn engine_matches_python_fixtures() {
         for failure in failures.iter().take(15) {
             eprintln!("{failure}\n");
         }
-        panic!("{} of {runs} expansions/parses differ from Python ({cases} cases)", failures.len());
+        panic!("{} of {runs} expansions/parses differ from the fixtures ({cases} cases)", failures.len());
     }
     eprintln!("{cases} cases, {runs} expansions identical to Python");
 }

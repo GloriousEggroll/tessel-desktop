@@ -1,11 +1,10 @@
 #!/bin/sh
 # Called from run.sh inside the private compositor: the real tessel-keyboard binary,
-# single-instance forwarding, exit codes, state file; MEASURE=1 compares with Python.
+# single-instance forwarding, exit codes, state file; MEASURE=1 measures startup and memory.
 set -u
 TARGET=$1 R=$2
 case "$XDG_RUNTIME_DIR:$WAYLAND_DISPLAY" in /run/user/1000:*|*:) exit 1;; esac
 STATE=$XDG_RUNTIME_DIR/tessel-keyboard/state.json
-PY=$HOME/tessel-bluetooth/tessel-keyboard
 fail=0
 check() { if eval "$2"; then echo "ok service: $1"; else echo "FAILED service: $1"; fail=1; fi; }
 rss() { awk '/VmRSS/{print $2}' /proc/$1/status; }
@@ -19,10 +18,10 @@ measure() { # label command...
   ready $pid; end=$(now); sleep 3
   echo "measure $label: ready_ms=$(( (end-start)/1000000 )) idle_rss_kb=$(rss $pid)"
   "$@" --quit; wait $pid; }
-export WAYKEYS_INPUT=$(ls -t "$TARGET"/build/on-screen-keyboard-*/out/tessel-keyboard-input | head -1)
+export WAYKEYS_INPUT=$(ls -t "$TARGET"/build/tessel-keyboard-*/out/tessel-keyboard-input | head -1)
 "$TARGET/tessel-keyboard" --background & pid=$!
 ready $pid; rc=$?; check "background publishes state" "[ $rc -eq 0 ]"
-# Like Python, a primary started with a bad flag stays held; forwarded ones exit 2.
+# A primary started with a bad flag stays held; forwarded ones exit 2.
 "$TARGET/tessel-keyboard" --bogus; rc=$?; check "unknown flag exits 2" "[ $rc -eq 2 ]"
 check "idle: no helper" "! pgrep -P $pid >/dev/null"
 check "idle state" "grep -q '\"visible\": false' $STATE"
@@ -39,9 +38,7 @@ check "state removed at shutdown" "[ ! -e $STATE ]"
 if [ -n "${MEASURE:-}" ]; then
   measure rust "$TARGET/tessel-keyboard"
   measure rust "$TARGET/tessel-keyboard"
-  [ -f "$PY/osk_manager.py" ] && measure python /usr/bin/python3 "$PY/osk_manager.py"
-  [ -f "$PY/osk_manager.py" ] && measure python /usr/bin/python3 "$PY/osk_manager.py"
-  "$TARGET/tessel-keyboard-status" > /dev/null & s=$!; /usr/bin/python3 -u "$PY/osk_status.py" > /dev/null & p=$!; sleep 1.5
-  echo "measure status: rust_rss_kb=$(rss $s) python_rss_kb=$(rss $p)"; kill $s $p
+  "$TARGET/tessel-keyboard-status" > /dev/null & s=$!; sleep 1.5
+  echo "measure status: rss_kb=$(rss $s)"; kill $s
 fi
 exit $fail

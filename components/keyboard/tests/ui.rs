@@ -1,4 +1,4 @@
-//! Port of tessel-bluetooth/tessel-keyboard/tests/test_ui.py (plus the tessel-lock
+//! Port of the Python test_ui.py (plus the tessel-lock
 //! keyboard check). Runs only inside a private nested headless labwc started by
 //! tests/run_headless.sh; under plain `cargo test` it skips itself. The input
 //! helper (virtual keyboard + input method) therefore only ever connects to

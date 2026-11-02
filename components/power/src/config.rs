@@ -31,7 +31,7 @@ pub fn defaults() -> Value {
 }
 
 pub fn settings_path() -> PathBuf {
-    tessel_core::paths::config_home().join("tessel-power/settings.json")
+    tessel_core::paths::component_config_dir("power").join("settings.json")
 }
 
 /// Python `type(value) is int` (booleans and floats excluded).
@@ -355,13 +355,13 @@ mod tests {
         let original = settings.clone();
         let directory = temp("xdg");
         let _cleanup = Cleanup(directory.clone());
-        let path = directory.join("tessel-power/settings.json");
+        let path = directory.join("tessel/power/settings.json");
         save_settings(&settings, Some(&path)).unwrap();
         assert_eq!(load_settings(Some(&path)).unwrap()["ac"]["sleep_after"], 300);
         assert_eq!(settings, original);
         if let Ok(home) = std::env::var("XDG_CONFIG_HOME") {
             if !home.is_empty() {
-                assert_eq!(settings_path(), PathBuf::from(home).join("tessel-power/settings.json"));
+                assert_eq!(settings_path(), PathBuf::from(home).join("tessel/power/settings.json"));
             }
         }
     }

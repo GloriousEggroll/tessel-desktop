@@ -2,7 +2,7 @@
 //! mutual exclusion, messages and exit status 2 on errors.
 
 pub const EDGES: [&str; 4] = ["top", "bottom", "left", "right"];
-const DESCRIPTION: &str = "A Waybar calendar popup and system date settings.";
+const DESCRIPTION: &str = "A Tessel Dock calendar popup and system date settings.";
 const OPTIONS: [&str; 5] = ["--help", "--popup", "--settings", "--popup-edge", "--popup-offset"];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -223,7 +223,7 @@ mod tests {
     fn usage_and_help_match_python_layout() {
         assert_eq!(usage("calendar_manager.py"), "usage: calendar_manager.py [-h] [--popup | --settings]\n                           \
             [--popup-edge {top,bottom,left,right}]\n                           [--popup-offset POPUP_OFFSET]\n");
-        assert!(help("calendar_manager.py").ends_with("\nA Waybar calendar popup and system date settings.\n\noptions:\n  -h, --help            \
+        assert!(help("calendar_manager.py").ends_with("\nA Tessel Dock calendar popup and system date settings.\n\noptions:\n  -h, --help            \
             show this help message and exit\n  --popup               show the calendar menu (default)\n  --settings            open system date settings\n  \
             --popup-edge {top,bottom,left,right}\n  --popup-offset POPUP_OFFSET\n"));
     }

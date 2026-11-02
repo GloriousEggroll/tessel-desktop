@@ -1,5 +1,5 @@
 //! `network_preferences.py`: notification preferences in
-//! `$XDG_CONFIG_HOME/waybar/network-notifications.json` (re-read on every
+//! `~/.config/tessel/network/notifications.json` (re-read on every
 //! get, atomic writes; only a literal `true` counts).
 
 use serde_json::{Map, Value};
@@ -21,7 +21,7 @@ impl Default for NotificationPreferences {
 
 impl NotificationPreferences {
     pub fn new() -> Self {
-        Self::at(tessel_core::paths::config_home().join("waybar/network-notifications.json"))
+        Self::at(tessel_core::paths::component_config_dir("network").join("notifications.json"))
     }
 
     pub fn at(path: PathBuf) -> Self {
@@ -68,9 +68,9 @@ mod tests {
     fn literal_true_only_and_merged_atomic_writes() {
         let dir = std::env::temp_dir().join(format!("netprefs-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        let prefs = NotificationPreferences::at(dir.join("waybar/network-notifications.json"));
+        let prefs = NotificationPreferences::at(dir.join("network/notifications.json"));
         assert!(!prefs.get_boolean("disable-vpn-notifications"));
-        std::fs::create_dir_all(dir.join("waybar")).unwrap();
+        std::fs::create_dir_all(dir.join("network")).unwrap();
         std::fs::write(&prefs.path, r#"{"disable-vpn-notifications": 1, "other": "kept"}"#).unwrap();
         assert!(!prefs.get_boolean("disable-vpn-notifications"));
         prefs.set_boolean("disable-portal-notifications", true).unwrap();
@@ -79,7 +79,7 @@ mod tests {
         assert!(prefs.get_boolean("disable-portal-notifications"));
         std::fs::write(&prefs.path, "[]").unwrap();
         assert!(!prefs.get_boolean("disable-portal-notifications"));
-        assert_eq!(std::fs::read_dir(dir.join("waybar")).unwrap().count(), 1, "no temporary left behind");
+        assert_eq!(std::fs::read_dir(dir.join("network")).unwrap().count(), 1, "no temporary left behind");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

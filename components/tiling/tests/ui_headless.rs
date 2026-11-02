@@ -139,7 +139,7 @@ fn shortcut_popup_controls_and_search(runner: Runner) {
     assert!(controls.gapless().switch().is_active() && controls.gapless().switch().state());
     let rc = std::fs::read(f.root.join("rc.xml")).unwrap();
     assert_eq!(with_gap(&rc, 0).unwrap().1, 0);
-    let prefs: Value = serde_json::from_str(&std::fs::read_to_string(f.root.join("tessel-tiling/config.json")).unwrap()).unwrap();
+    let prefs: Value = serde_json::from_str(&std::fs::read_to_string(f.root.join("config.json")).unwrap()).unwrap();
     assert_eq!(prefs, json!({"gapless": true, "gapped_spacing": 12}));
     // Tiling off, then a failing enable reverts the switch and shows the error.
     controls.enabled_switch().set_active(false);
@@ -159,7 +159,7 @@ fn shortcut_popup_controls_and_search(runner: Runner) {
     controls.outline_switch().set_active(false);
     assert!(wait_for(|| controls.outline_pending_sign_out(), 3.0));
     assert!(label(controls.notice()).contains("Saved. Sign out and back in to load the compositor outline update."));
-    let prefs: Value = serde_json::from_str(&std::fs::read_to_string(f.root.join("tessel-tiling/config.json")).unwrap()).unwrap();
+    let prefs: Value = serde_json::from_str(&std::fs::read_to_string(f.root.join("config.json")).unwrap()).unwrap();
     assert_eq!(prefs["focus_outline"], false);
     // Same-instance activation toggles the popup.
     app.activate();

@@ -218,7 +218,7 @@ impl Env {
     }
 
     fn journal(&self) -> Value {
-        serde_json::from_str(&std::fs::read_to_string(self.root.join("state/tessel-brightness/restore.json")).unwrap()).unwrap()
+        serde_json::from_str(&std::fs::read_to_string(self.root.join("state/tessel/brightness/restore.json")).unwrap()).unwrap()
     }
 }
 
@@ -519,7 +519,7 @@ elif [ "$op" = setvcp ]; then read raw max < "$dir/$1"; echo "$2 $max" > "$dir/$
     let (pid, argv) = env.swayidle();
     assert_eq!(argv[4], "60");
     let token = tessel_core::shell::shell_split(&argv[5])[2].clone();
-    assert_eq!(std::fs::read_to_string(root.join("config/tessel-brightness/settings.json")).unwrap(),
+    assert_eq!(std::fs::read_to_string(root.join("config/tessel/brightness/settings.json")).unwrap(),
                "{\n  \"auto_dim\": true,\n  \"dim_after\": 60,\n  \"dim_percent\": 20\n}\n");
     assert_eq!(env.run(&["--idle-dim", &token]).0, 0);
     wait_for("dim before orderly shutdown", Duration::from_secs(5), || env.raw() == 20);

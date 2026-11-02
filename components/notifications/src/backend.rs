@@ -58,19 +58,14 @@ struct Inner {
 #[derive(Clone)]
 pub struct WindowBackend(Rc<Inner>);
 
-/// Where `tessel-dock-toplevel` and `fullscreen_guard.py` live: the Rust-only
-/// `NOTIFICATION_MANAGER_HELPER_DIR` override, the executable's directory when
-/// it holds the helper, else the installed component directory.
-pub fn helper_dir() -> PathBuf {
+/// A helper program (`tessel-dock-toplevel`, `tessel-notifications --x11-probe`):
+/// from the Rust-only `NOTIFICATION_MANAGER_HELPER_DIR` override (tests), else
+/// found with [`tessel_core::paths::program`].
+pub fn helper(name: &str) -> PathBuf {
     if let Some(dir) = std::env::var_os("NOTIFICATION_MANAGER_HELPER_DIR").filter(|v| !v.is_empty()) {
-        return PathBuf::from(dir);
+        return PathBuf::from(dir).join(name);
     }
-    if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(PathBuf::from)) {
-        if dir.join("tessel-dock-toplevel").is_file() {
-            return dir;
-        }
-    }
-    tessel_core::paths::config_home().join("waybar/scripts/tessel-notifications")
+    tessel_core::paths::program(name)
 }
 
 fn native_id(value: &Value) -> Result<String, ()> {
@@ -93,7 +88,7 @@ impl WindowBackend {
     pub fn new(on_changed: impl Fn() + 'static, command: Option<Vec<PathBuf>>) -> Self {
         Self(Rc::new(Inner {
             on_changed: Box::new(on_changed),
-            command: command.unwrap_or_else(|| vec![helper_dir().join("tessel-dock-toplevel")]),
+            command: command.unwrap_or_else(|| vec![helper("tessel-dock-toplevel")]),
             ready: Cell::new(false), error: RefCell::new(String::new()), windows: RefCell::new(IndexMap::new()),
             outputs: RefCell::new(IndexMap::new()), output_names: RefCell::new(HashMap::new()), started: Cell::new(false),
             closed: Cell::new(false), session: Cell::new(0), process: RefCell::new(None), cancel: RefCell::new(None),

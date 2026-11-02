@@ -80,7 +80,7 @@ pub fn change(mode: &str) -> i32 {
 }
 
 pub fn main(argv: &[String]) -> i32 {
-    let name = prog(argv.first().map(String::as_str).unwrap_or("tiling_manager.py"));
+    let name = prog(argv.first().map(String::as_str).unwrap_or("tessel-tiling"));
     let parsed = match SPEC.parse(argv.get(1..).unwrap_or(&[]), false) {
         Outcome::Run(parsed) => parsed,
         Outcome::Help => {
@@ -111,7 +111,7 @@ mod tests {
     fn usage_matches_argparse() {
         assert_eq!(SPEC.usage("tiling_manager.py"),
                    "usage: tiling_manager.py [-h] [--toggle | --enable | --disable | --restore |\n                         --status | --watch | --settings | --popup]\n                         [--popup-edge {top,bottom,left,right}]\n                         [--popup-offset POPUP_OFFSET]\n");
-        assert!(SPEC.help("tiling_manager.py").contains("\nWaytile: optional automatic window tiling for the labwc desktop.\n\noptions:\n  -h, --help            show this help message and exit\n  --toggle\n"));
+        assert!(SPEC.help("tiling_manager.py").contains("\nTessel Tiling: optional automatic window tiling for the labwc desktop.\n\noptions:\n  -h, --help            show this help message and exit\n  --toggle\n"));
     }
 
     #[test]

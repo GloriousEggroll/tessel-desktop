@@ -1,13 +1,12 @@
 #!/bin/sh
 # Called from run_headless.sh (MEASURE=1) INSIDE the private nested labwc, with
 # examples/fake_bluez serving the private "system" and session buses.
-# Measures time-to-ready (D-Bus name owned) and idle RSS of the Rust binary and
-# of the Python tessel-bluetooth.py, both as `--popup`. Usage: measure.sh <rust-bin> <dir>
+# Measures time-to-ready (D-Bus name owned) and idle RSS of the binary as `--popup`. Usage: measure.sh <rust-bin> <dir>
 set -u
 RUST=$1; R=$2
 ms() { date +%s%3N; }
 owned() { gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
-          --method org.freedesktop.DBus.NameHasOwner org.tessel-bluetooth.Bluetooth 2>/dev/null | grep -q true; }
+          --method org.freedesktop.DBus.NameHasOwner org.tessel.Bluetooth 2>/dev/null | grep -q true; }
 rss() { echo "VmRSS=$(awk '/VmRSS/ {print $2}' /proc/$1/status)kB PSS=$(awk '/^Pss:/ {print $2}' /proc/$1/smaps_rollup)kB"; }
 measure() { name=$1; shift
   t0=$(ms); "$@" --popup >/dev/null 2>&1 & pid=$!
@@ -20,5 +19,4 @@ measure() { name=$1; shift
   while owned; do sleep 0.05; done
 }
 measure rust "$RUST"
-measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-bluetooth.py
 ls -l "$RUST" | awk '{print "rust binary bytes=" $5}'

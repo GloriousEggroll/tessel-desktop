@@ -12,9 +12,9 @@ pub type Call = Arc<dyn Fn(&str) -> Result<Reply, ClientError> + Send + Sync>;
 
 static NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z0-9_.-]{1,120}$").unwrap());
 
-pub fn preferences_path() -> PathBuf { tessel_core::paths::config_home().join("tessel-tiling/config.json") }
+pub fn preferences_path() -> PathBuf { tessel_core::paths::component_config_dir("tiling").join("config.json") }
 
-pub fn palette_path() -> PathBuf { tessel_core::paths::cache_home().join("tessel-dock/palette.json") }
+pub fn palette_path() -> PathBuf { tessel_core::paths::component_cache_dir("dock").join("palette.json") }
 
 /// `OutlineSync.read`: a JSON object, else `{}` (missing, > 1 MiB, invalid).
 pub fn read_object(path: &Path) -> Map<String, Value> {

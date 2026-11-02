@@ -9,12 +9,12 @@ description = "Notification daemon, history popup and settings for the labwc Tes
 name = "tessel_notifications"
 path = "src/lib.rs"
 
-# Mirrors tessel_notifications.py (--daemon/--check/--settings/--popup).
+# --daemon/--check/--settings/--popup.
 [[bin]]
 name = "tessel-notifications"
 path = "src/main.rs"
 
-# Mirrors tessel_notifications_status.py (Tessel Dock indicator stream); GLib/Gio only.
+# The Tessel Dock indicator stream; GLib/Gio only.
 [[bin]]
 name = "tessel-notifications-status"
 path = "src/bin/tessel-notifications-status.rs"
@@ -22,6 +22,8 @@ path = "src/bin/tessel-notifications-status.rs"
 [dependencies]
 tessel-core.workspace = true
 tessel-gtk.workspace = true
+# The X11 fullscreen probe (`--x11-probe`) shared with the dock's game policy.
+tessel-dock = { path = "../dock" }
 glib.workspace = true
 gio.workspace = true
 gtk.workspace = true

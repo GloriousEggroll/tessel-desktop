@@ -1,4 +1,4 @@
-//! `${XDG_CONFIG_HOME:-~/.config}/tessel-bluetooth/settings.ini`: `[receive] mode =
+//! `~/.config/tessel/bluetooth/settings.ini`: `[receive] mode =
 //! off|ask` (`load_receive_mode` / `save_receive_mode`), with a small port of
 //! the `configparser.ConfigParser(interpolation=None)` reader/writer so other
 //! sections survive a save byte-for-byte as Python would rewrite them.
@@ -8,12 +8,9 @@ use std::path::{Path, PathBuf};
 pub const RECEIVE_MODES: [&str; 2] = ["off", "ask"];
 pub const DEFAULT_RECEIVE_MODE: &str = "ask";
 
-/// Python reads `XDG_CONFIG_HOME` even when empty (`os.environ.get`).
+/// `~/.config/tessel/bluetooth`.
 pub fn config_dir() -> PathBuf {
-    match std::env::var_os("XDG_CONFIG_HOME") {
-        Some(dir) => PathBuf::from(dir).join("tessel-bluetooth"),
-        None => tessel_core::paths::home().join(".config").join("tessel-bluetooth"),
-    }
+    tessel_core::paths::component_config_dir("bluetooth")
 }
 
 pub fn config_file() -> PathBuf {
@@ -192,7 +189,7 @@ mod tests {
     #[test]
     fn receive_mode_round_trip_preserves_other_sections() {
         let folder = temp();
-        let path = folder.join("tessel-bluetooth").join("settings.ini");
+        let path = folder.join("bluetooth").join("settings.ini");
         assert_eq!(load_receive_mode(Some(&path)), DEFAULT_RECEIVE_MODE);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, "[other]\nkey = value\n").unwrap();

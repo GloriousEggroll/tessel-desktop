@@ -16,7 +16,7 @@ pub const DURATIONS: [u32; 4] = [30, 60, 120, 0];
 pub const UNSUPPORTED_DURATION: &str = "Unsupported Keep Awake duration.";
 
 /// `${XDG_STATE_HOME:-~/.local/state}/tessel-keep-awake/timer.json`.
-pub fn timer_path() -> PathBuf { tessel_core::paths::state_home().join("tessel-keep-awake").join("timer.json") }
+pub fn timer_path() -> PathBuf { tessel_core::paths::component_state_dir("keep-awake").join("timer.json") }
 
 /// The inhibitor the timer drives (the real [`InhibitorBackend`] or a test double).
 pub trait Inhibit {
