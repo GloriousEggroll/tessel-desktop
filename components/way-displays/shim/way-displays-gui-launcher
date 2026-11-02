@@ -1,5 +1,0 @@
-#!/bin/sh
-# ~/.local/bin/way-displays-gui after the swap: exec the Rust binary installed
-# next to the (still installed) Python module. Rollback restores
-#   exec /usr/bin/python3 ~/.local/share/way-displays/way-displays-gui "$@"
-exec "$HOME/.local/share/way-displays/way-displays-gui-rs" "$@"

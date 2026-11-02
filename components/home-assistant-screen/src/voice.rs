@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use serde_json::{json, Map, Value};
-use suite_lock::weather::{WeatherClient, WeatherStore};
-use weather_manager::backend::weather_description;
+use tessel_locking::weather::{WeatherClient, WeatherStore};
+use tessel_weather::backend::weather_description;
 
 use crate::levels::{change_volume, resolve_level, run_timeout};
 
@@ -89,7 +89,7 @@ pub fn main_with(args: &[String]) -> String {
                        else { "I could not change that setting just now." };
         object(json!({"success": false, "response": response}))
     });
-    suite_core::pyfmt::json_dumps(&Value::Object(result), &suite_core::pyfmt::JsonStyle::DEFAULT)
+    tessel_core::pyfmt::json_dumps(&Value::Object(result), &tessel_core::pyfmt::JsonStyle::DEFAULT)
 }
 
 #[cfg(test)]

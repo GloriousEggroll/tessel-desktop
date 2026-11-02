@@ -1,11 +1,11 @@
 # welcome — parity with contracts/welcome.md
 
-Crate `components/welcome` (lib `welcome`, binary `desktop-suite-welcome`, GApplication `org.waydock.Welcome`).
+Crate `components/welcome` (lib `welcome`, binary `tessel-welcome`, GApplication `org.tessel.Welcome`).
 Tests: `cargo test -p welcome --lib` (6: CLI texts byte-compared with argparse output captured from welcome.py in the
 private session, state paths, install_status, atomic setup-done, settings_command); `tests/run_headless.sh`
-(11 GTK checks in the private headless labwc via ../global-settings/tests/headless.sh: port of WelcomeUITests +
+(11 GTK checks in the private headless labwc via ../tessel-settings/tests/headless.sh: port of WelcomeUITests +
 Alt/Escape keys + single-instance routing through a second process + real Global Settings pages embedded).
-Measured with ../global-settings/tests/measure_inner.sh (screenshot of the first page: 0 px difference to Python).
+Measured with ../tessel-settings/tests/measure_inner.sh (screenshot of the first page: 0 px difference to Python).
 
 Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ deviation · ❌ gap
 
@@ -25,8 +25,8 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 | Installer (install.py --check/--apply/--rollback) | ⚠ | replaced by tools/install.py entry `welcome` (launcher swap only; the Python files stay) |
 
 ## Deviations ⚠
-1. `settings_command` falls back to the Rust `global-settings` binary beside this executable, then to
-   `/usr/bin/python3 ~/.local/share/global-settings/global_settings.py`, when `~/.local/bin/global-settings` is not
+1. `settings_command` falls back to the Rust `tessel-settings` binary beside this executable, then to
+   `/usr/bin/python3 ~/.local/share/tessel-settings/global_settings.py`, when `~/.local/bin/tessel-settings` is not
    executable (Python used `sys.executable` and its own source tree first).
-2. The "Install the desktop suite … before opening Welcome." exit cannot occur: the pages are linked in.
+2. The "Install Tessel … before opening Welcome." exit cannot occur: the pages are linked in.
 3. A page calling `host.show_section` from inside Welcome logs a warning (Python raised AttributeError).

@@ -700,7 +700,7 @@ fn live_sample_is_well_formed() {
     assert!(second["interval"].as_f64().unwrap() >= 0.0);
 }
 
-/// Manual parity aid: `SYSTEM_MONITOR_DUMP=<file> cargo test -p system-monitor -- --ignored dump`
+/// Manual parity aid: `SYSTEM_MONITOR_DUMP=<file> cargo test -p tessel-system-monitor -- --ignored dump`
 /// writes one live sample (read-only) for comparison with the Python Sampler.
 #[test]
 #[ignore]

@@ -9,14 +9,14 @@ use serde_json::{Map, Number, Value};
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
-use suite_core::pyfmt::{json_dumps, JsonStyle};
+use tessel_core::pyfmt::{json_dumps, JsonStyle};
 
 /// Minutes; 0 keeps the session awake until Keep Awake is turned off.
 pub const DURATIONS: [u32; 4] = [30, 60, 120, 0];
 pub const UNSUPPORTED_DURATION: &str = "Unsupported Keep Awake duration.";
 
-/// `${XDG_STATE_HOME:-~/.local/state}/keep-awake/timer.json`.
-pub fn timer_path() -> PathBuf { suite_core::paths::state_home().join("keep-awake").join("timer.json") }
+/// `${XDG_STATE_HOME:-~/.local/state}/tessel-keep-awake/timer.json`.
+pub fn timer_path() -> PathBuf { tessel_core::paths::state_home().join("tessel-keep-awake").join("timer.json") }
 
 /// The inhibitor the timer drives (the real [`InhibitorBackend`] or a test double).
 pub trait Inhibit {
@@ -100,7 +100,7 @@ pub fn timer_text(duration: u32, until: Option<f64>) -> String {
 
 impl TimedBackend {
     pub fn new(backend: Rc<dyn Inhibit>, path: Option<PathBuf>, clock: Option<Box<dyn Fn() -> f64>>) -> Self {
-        let clock = clock.unwrap_or_else(|| Box::new(suite_core::timer::now));
+        let clock = clock.unwrap_or_else(|| Box::new(tessel_core::timer::now));
         let (duration, until) = path.as_deref().map(|p| load_timer(p, clock())).unwrap_or((0, None));
         Self(Rc::new(Inner {
             backend, path, clock, duration: Cell::new(duration), until: Cell::new(until), timer: RefCell::new(None),
@@ -126,7 +126,7 @@ impl TimedBackend {
             let _ = std::fs::DirBuilder::new().recursive(true).mode(0o700).create(parent);
         }
         // Write errors are ignored: the timer still runs for this session.
-        let _ = suite_core::clock::atomic_write(path, timer_text(self.duration(), self.until()).as_bytes(), ".timer-");
+        let _ = tessel_core::clock::atomic_write(path, timer_text(self.duration(), self.until()).as_bytes(), ".timer-");
     }
 
     pub fn start(&self) {

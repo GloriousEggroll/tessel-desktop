@@ -1,4 +1,0 @@
-# Desktop suite defaults. Users' own choices (Global Settings) still override these.
-# Install, then run: glib-compile-schemas /usr/share/glib-2.0/schemas
-[org.gnome.desktop.interface]
-icon-theme='Papirus-Dark'

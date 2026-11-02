@@ -1,0 +1,22 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+GenericName=File Manager
+Comment=Browse files, devices, and network locations
+Exec=tessel-files %U
+Icon=system-file-manager
+Terminal=false
+StartupNotify=true
+StartupWMClass=org.tessel.Files
+MimeType=inode/directory;
+Categories=System;FileTools;FileManager;
+Keywords=Files;Folders;Explorer;Network;Trash;
+Actions=NewWindow;Home;
+
+[Desktop Action NewWindow]
+Name=New Window
+Exec=tessel-files --new-window
+
+[Desktop Action Home]
+Name=Home Folder
+Exec=tessel-files --home

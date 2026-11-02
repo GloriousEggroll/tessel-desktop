@@ -1,4 +1,4 @@
-//! Helpers missing from suite-core / way-displays (upstream candidates):
+//! Helpers missing from tessel-core / way-displays (upstream candidates):
 //! `etree` (ElementTree parse → indent → tostring round trip), `lock`
 //! (way-displays' private `color_config::locked`), `resolve` (non-strict
 //! `Path.resolve()`), `iso_utc_now`, `time_ns`.
@@ -19,13 +19,13 @@ impl Drop for Lock {
 pub fn locked(path: &Path) -> Result<Lock, String> {
     use std::os::fd::AsRawFd;
     let parent = path.parent().unwrap_or(Path::new("/"));
-    std::fs::create_dir_all(parent).map_err(|e| suite_core::pyerr::os_error_path(&e, parent))?;
+    std::fs::create_dir_all(parent).map_err(|e| tessel_core::pyerr::os_error_path(&e, parent))?;
     let name = format!(".{}.color.lock", path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default());
     let lock_path = parent.join(name);
     let file = std::fs::OpenOptions::new().append(true).create(true).open(&lock_path)
-        .map_err(|e| suite_core::pyerr::os_error_path(&e, &lock_path))?;
+        .map_err(|e| tessel_core::pyerr::os_error_path(&e, &lock_path))?;
     if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX) } != 0 {
-        return Err(suite_core::pyerr::os_error_text(&std::io::Error::last_os_error()));
+        return Err(tessel_core::pyerr::os_error_text(&std::io::Error::last_os_error()));
     }
     Ok(Lock(file))
 }

@@ -15,7 +15,7 @@ use std::fmt;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use suite_core::pyerr::{os_error_path, os_error_text, python_error_text};
+use tessel_core::pyerr::{os_error_path, os_error_text, python_error_text};
 
 pub const MAX_BYTES: usize = 64 * 1024 * 1024;
 pub const ENCODINGS: [&str; 12] = ["utf-8", "utf-8-sig", "utf-16-le", "utf-16-be", "utf-32-le", "utf-32-be",

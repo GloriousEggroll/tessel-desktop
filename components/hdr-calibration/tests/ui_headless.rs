@@ -5,8 +5,8 @@
 
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use hdr_calibration::calibration::{CalError, Profile, STATUS_FIELDS};
-use hdr_calibration::ui::{Backend, Window};
+use tessel_hdr_calibration::calibration::{CalError, Profile, STATUS_FIELDS};
+use tessel_hdr_calibration::ui::{Backend, Window};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -160,11 +160,11 @@ fn window_contract(app: &gtk::Application) {
     let window = Window::new(app, None, fake.clone());
     assert_eq!(window.window.title().as_deref(), Some("HDR Calibration"));
     assert_eq!(window.window.default_size(), (760, 840));
-    for class in ["way-displays", "hdr-calibration"] {
+    for class in ["way-displays", "tessel-hdr-calibration"] {
         assert!(window.window.has_css_class(class));
     }
     assert!(window.apply_button.has_css_class("primary"));
-    assert!(suite_gtk::app_menu::has_menu_icon(&window.menu_button));
+    assert!(tessel_gtk::app_menu::has_menu_icon(&window.menu_button));
     assert_eq!(window.mode.text(), "Current HDR mode");
     // Defaults from the status: peak 1000, full 300, white 203.
     let values: BTreeMap<&str, f64> = window.values.iter().map(|(k, s)| (*k, s.value())).collect();
@@ -212,7 +212,7 @@ fn main() {
         println!("ui_headless: skipped (run components/hdr-calibration/tests/run_headless.sh for the private compositor)");
         return;
     }
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     gtk::init().expect("display");
     let app = gtk::Application::new(Some("org.desktop.HDRCalibration.Test"), gio::ApplicationFlags::NON_UNIQUE);
     app.register(gio::Cancellable::NONE).unwrap();

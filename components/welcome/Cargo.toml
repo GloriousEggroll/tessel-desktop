@@ -3,30 +3,30 @@ name = "welcome"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Welcome (org.waydock.Welcome): first-run walk through language, keyboard, layout, light/dark and shortcuts, reusing the Global Settings pages."
+description = "Welcome (org.tessel.Welcome): first-run walk through language, keyboard, layout, light/dark and shortcuts, reusing the Global Settings pages."
 
 [lib]
 name = "welcome"
 path = "src/lib.rs"
 
 [[bin]]
-name = "desktop-suite-welcome"
+name = "tessel-welcome"
 path = "src/main.rs"
 
 [features]
 default = ["pages"]
 # The real Global Settings pages; `--no-default-features` builds Welcome with fallbacks only.
-pages = ["global-settings/pages", "dep:gs-applets", "dep:gs-desktop", "dep:gs-system", "dep:language-manager"]
+pages = ["tessel-settings/pages", "dep:gs-applets", "dep:gs-desktop", "dep:gs-system", "dep:tessel-language"]
 
 [dependencies]
-global-settings = { path = "../global-settings", default-features = false }
-gs-base = { path = "../global-settings/base" }
-gs-applets = { path = "../global-settings/applets", optional = true }
-gs-desktop = { path = "../global-settings/desktop", optional = true }
-gs-system = { path = "../global-settings/system", optional = true }
-language-manager = { path = "../language-manager", optional = true }
-suite-core.workspace = true
-suite-gtk.workspace = true
+tessel-settings = { path = "../settings", default-features = false }
+gs-base = { path = "../settings/base" }
+gs-applets = { path = "../settings/applets", optional = true }
+gs-desktop = { path = "../settings/desktop", optional = true }
+gs-system = { path = "../settings/system", optional = true }
+tessel-language = { path = "../language", optional = true }
+tessel-core.workspace = true
+tessel-gtk.workspace = true
 glib.workspace = true
 gio.workspace = true
 gtk.workspace = true

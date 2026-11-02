@@ -48,13 +48,13 @@ impl CalculatorApp {
                 slot.upgrade().and_then(|s| s.borrow().clone())
                     .is_some_and(|w| !w.closed.get() && w.window.upcast_ref::<gtk::Window>() == candidate)
             };
-            suite_gtk::utils::raise_window(&id, target.upcast_ref(), valid);
+            tessel_gtk::utils::raise_window(&id, target.upcast_ref(), valid);
         });
     }
 }
 
 pub fn create_application(application_id: &str, factory: Option<WindowFactory>) -> CalculatorApp {
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let app = gtk::Application::new(Some(application_id), gio::ApplicationFlags::HANDLES_COMMAND_LINE);
     glib::set_prgname(Some(application_id));
     let factory = factory.unwrap_or_else(|| Rc::new(|app: &gtk::Application| CalculatorWindow::new(app, None)));

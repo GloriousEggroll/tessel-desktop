@@ -1,0 +1,42 @@
+[package]
+name = "gs-applets"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Global Settings applet pages (applet_pages.py, weather_page.py, language_page.py, capture_page.py)."
+
+[lib]
+name = "gs_applets"
+path = "src/lib.rs"
+
+[dependencies]
+gs-base = { path = "../base" }
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+tessel-power-core.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+tessel-audio = { path = "../../audio" }
+tessel-bluetooth = { path = "../../bluetooth" }
+tessel-network = { path = "../../network" }
+tessel-power = { path = "../../power" }
+tessel-battery = { path = "../../battery" }
+tessel-keep-awake = { path = "../../keep-awake" }
+tessel-notifications = { path = "../../notifications" }
+tessel-calendar = { path = "../../calendar" }
+tessel-weather = { path = "../../weather" }
+tessel-language = { path = "../../language" }
+tessel-capture = { path = "../../capture" }
+tessel-archive-settings = { path = "../../archive/settings" }
+tessel-clipboard-settings = { path = "../../clipboard/settings" }
+tessel-keyring-ui = { path = "../../keyring/ui" }
+
+# GTK checks: run only through components/settings/tests/headless.sh
+# (private headless labwc + private bus); under plain `cargo test` they skip.
+[[test]]
+name = "applets_headless"
+path = "tests/applets_headless.rs"
+harness = false
+

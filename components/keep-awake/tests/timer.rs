@@ -1,6 +1,6 @@
 //! test_keep_awake.py TimerTests + timer.json format/load rules.
 
-use keep_awake::timed::{load_timer, timer_text, Inhibit, TimedBackend};
+use tessel_keep_awake::timed::{load_timer, timer_text, Inhibit, TimedBackend};
 use serde_json::{json, Value};
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
@@ -37,7 +37,7 @@ fn fixture(name: &str) -> Fixture {
     let dir = base.join(format!("keep-awake-timer-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     // The state dir does not exist yet: save() must create it (mode 0700).
-    let path = dir.join("keep-awake").join("timer.json");
+    let path = dir.join("tessel-keep-awake").join("timer.json");
     Fixture { _dir: TempDir(dir), path, now: Rc::new(Cell::new(1000.0)) }
 }
 

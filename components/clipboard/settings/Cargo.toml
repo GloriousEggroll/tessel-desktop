@@ -1,0 +1,22 @@
+[package]
+name = "tessel-clipboard-settings"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Clipboard preferences (clipboard.json) and the settings page Global Settings embeds."
+
+[lib]
+name = "tessel_clipboard_settings"
+path = "src/lib.rs"
+
+[features]
+default = ["page"]
+# The GTK settings page (Global Settings); the tessel-clipboard daemon uses only the model.
+page = ["dep:gtk", "dep:glib", "dep:gio"]
+
+[dependencies]
+tessel-core.workspace = true
+serde_json.workspace = true
+glib = { workspace = true, optional = true }
+gio = { workspace = true, optional = true }
+gtk = { workspace = true, optional = true }

@@ -10,9 +10,9 @@ use std::sync::Arc;
 pub const APP_ID: &str = "org.desktop.HDRCalibration";
 
 pub fn run() -> glib::ExitCode {
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let argv: Vec<String> = std::env::args().collect();
-    let prog = args::prog(argv.first().map(String::as_str).unwrap_or("hdr-calibration"));
+    let prog = args::prog(argv.first().map(String::as_str).unwrap_or("tessel-hdr-calibration"));
     let parsed = match args::parse(argv.get(1..).unwrap_or(&[])) {
         Outcome::Run(parsed) => parsed,
         Outcome::Help => {

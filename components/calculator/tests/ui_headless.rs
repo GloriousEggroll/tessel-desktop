@@ -55,7 +55,7 @@ impl Case {
         let _ = std::fs::remove_dir_all(&directory);
         std::fs::create_dir_all(&directory).unwrap();
         let store = CalculatorStore::new(Some(directory.join("state.json")));
-        let app = gtk::Application::new(Some(&format!("org.waydock.CalculatorTest{sequence}")), gio::ApplicationFlags::NON_UNIQUE);
+        let app = gtk::Application::new(Some(&format!("org.tessel.CalculatorTest{sequence}")), gio::ApplicationFlags::NON_UNIQUE);
         app.register(gio::Cancellable::NONE).unwrap();
         let window = CalculatorWindow::new(&app, Some(store));
         window.window.present();
@@ -84,7 +84,7 @@ fn primary_menu_and_standard_actions() {
     let w = &case.window;
     let header = w.menu_button.ancestor(gtk::HeaderBar::static_type()).unwrap();
     assert_eq!(header, w.header.clone().upcast::<gtk::Widget>());
-    assert!(suite_gtk::app_menu::has_menu_icon(&w.menu_button));
+    assert!(tessel_gtk::app_menu::has_menu_icon(&w.menu_button));
     assert!(w.menu_button.has_css_class("flat"));
     for name in ["shortcuts", "about", "quit"] {
         assert!(case.app.lookup_action(name).is_some(), "{name}");
@@ -245,8 +245,8 @@ fn palette_live_binding_and_close_cleanup() {
     let surface = w.window.surface().unwrap();
     let monitor = WidgetExt::display(&w.window).monitor_at_surface(&surface).unwrap();
     let g = monitor.geometry();
-    let palette = suite_gtk::theme::palette_path();
-    assert!(!palette.starts_with(suite_core::paths::home().join(".cache")), "palette must be private: {}", palette.display());
+    let palette = tessel_gtk::theme::palette_path();
+    assert!(!palette.starts_with(tessel_core::paths::home().join(".cache")), "palette must be private: {}", palette.display());
     std::fs::create_dir_all(palette.parent().unwrap()).unwrap();
     std::fs::write(&palette, serde_json::json!({"version": 1, "is_dark": true, "monitors": [
         {"name": "Test screen", "geometry": [g.x(), g.y(), g.width(), g.height()], "background": [39, 31, 47],
@@ -313,7 +313,7 @@ fn main() {
         println!("ui_headless: skipped (run components/calculator/tests/run_headless.sh for the private compositor)");
         return;
     }
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     gtk::init().expect("display");
     primary_menu_and_standard_actions();
     standard_buttons_previous_answer_and_error_recovery();

@@ -2,7 +2,7 @@
 resolver = "2"
 # "c[or][am]*/*" = crates/* + components/*; a literal "components/*" glob makes
 # cargo fail while components/ is still empty.
-members = ["c[or][am]*/*", "components/waykeyring/pam", "components/waykeyring/ui"]
+members = ["c[or][am]*/*", "components/keyring/pam", "components/keyring/ui"]
 
 [workspace.package]
 edition = "2021"
@@ -16,11 +16,11 @@ codegen-units = 4
 panic = "abort"
 
 [workspace.dependencies]
-suite-core = { path = "crates/suite-core" }
-suite-gtk = { path = "crates/suite-gtk" }
-suite-power = { path = "crates/suite-power" }
-suite-wayland = { path = "crates/suite-wayland", default-features = false }
-suite-lock = { path = "crates/suite-lock" }
+tessel-core = { path = "crates/core" }
+tessel-gtk = { path = "crates/gtk" }
+tessel-power-core = { path = "crates/power-core" }
+tessel-wayland = { path = "crates/wayland", default-features = false }
+tessel-locking = { path = "crates/locking" }
 glib = "0.22"
 # v2_80: DBusConnection::connect_closed and friends (system GLib is newer).
 gio = { version = "0.22", features = ["v2_80"] }

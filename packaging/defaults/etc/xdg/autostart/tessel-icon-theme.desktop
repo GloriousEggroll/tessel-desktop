@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Tessel icon theme check
+Comment=Use Papirus-Dark when the configured icon theme is not installed
+Exec=tessel-icon-theme
+TryExec=tessel-icon-theme
+OnlyShowIn=labwc;
+NoDisplay=true
+Terminal=false

@@ -1,0 +1,41 @@
+
+window.tessel-dock-surface { color: #23262d; }
+.tessel-dock-panel, .tessel-dock-popup {
+  background: rgba(250, 250, 252, 0.8);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+.tessel-dock-popup { background: rgba(250, 250, 252, 0.97); }
+.tessel-dock-panel button, .tessel-dock-popup button { color: #23262d; }
+.tessel-dock-panel button:hover, .tessel-dock-popup button:hover { background: rgba(0,0,0,0.08); }
+.tessel-dock-panel button:active, .tessel-dock-popup button:active { background: rgba(36,112,210,0.20); }
+.tessel-dock-panel button.focused, .tessel-dock-popup button.focused { background: rgba(36,112,210,0.12); }
+.tessel-dock-count { background: #dce2ed; color: #23262d; }
+.tessel-dock-indicator { background: #687382; }
+.tessel-dock-indicator.focused { background: #2470d2; }
+.tessel-dock-separator { background: rgba(0,0,0,0.16); }
+.tessel-dock-subtitle { color: #5c6572; }
+.tessel-dock-popup entry { background: #ffffff; color: #23262d; border-color: #c7cdd6; }
+.tessel-dock-popup entry:focus-within { border-color: #2470d2; outline-color: rgba(36,112,210,0.45); }
+.tessel-dock-popup list, .tessel-dock-popup row { color: #23262d; }
+.tessel-dock-popup row:hover { background: rgba(0,0,0,0.06); }
+.tessel-dock-app-menu-header { border-bottom-color: rgba(0,0,0,0.08); }
+.tessel-dock-app-menu .tessel-dock-app-categories row:selected { background: rgba(36,112,210,0.12); }
+.tessel-dock-app-menu .tessel-dock-app-categories row:focus-visible { outline-color: #2470d2; }
+.tessel-dock-app-menu separator { background: rgba(0,0,0,0.10); }
+.tessel-dock-app-menu flowbox { color: #23262d; }
+.tessel-dock-app-menu flowboxchild:hover { background: rgba(0,0,0,0.06); }
+.tessel-dock-app-menu flowboxchild:selected { background: rgba(36,112,210,0.12); }
+.tessel-dock-app-menu flowboxchild:focus { outline-color: #2470d2; }
+.tessel-dock-app-menu button.tessel-dock-app-pin { color: #6b7482; }
+.tessel-dock-app-menu button.tessel-dock-app-pin.pinned { color: #2470d2; }
+.tessel-dock-app-menu button.tessel-dock-app-pin:hover { color: #23262d; }
+.tessel-dock-app-menu button.tessel-dock-app-menu-settings { background: rgba(0,0,0,0.035); }
+.tessel-dock-app-menu button.tessel-dock-app-menu-settings:hover { background: rgba(0,0,0,0.08); }
+.tessel-dock-app-menu entry { background: #ffffff; border-color: rgba(0,0,0,0.12); }
+.tessel-dock-app-menu entry:focus, .tessel-dock-app-menu entry:focus-within { border-color: #2470d2; outline-color: #2470d2; }
+.tessel-dock-panel button.tessel-dock-workspace.active { background: rgba(36,112,210,0.24); color: #23262d; }
+.tessel-dock-status.connected, .tessel-dock-status.plugged, .tessel-dock-status.balanced,
+.tessel-dock-status.auto, .tessel-dock-status.active { color: #195aaa; }
+.tessel-dock-status.power-saver, .tessel-dock-status.full, .tessel-dock-status.vpn { color: #287747; }
+.tessel-dock-status.performance, .tessel-dock-status.dimmed, .tessel-dock-status.low,
+.tessel-dock-status.limited { color: #885f10; }

@@ -1,0 +1,5 @@
+#!/bin/sh
+# ~/.local/bin/tessel-language after the swap: Global Settings' Language page.
+# Rollback restores
+#   exec /usr/bin/python3 '~/.local/share/tessel-settings/global_settings.py' --section language "$@"
+exec "$HOME/.local/share/tessel-settings/tessel-settings" --section language "$@"

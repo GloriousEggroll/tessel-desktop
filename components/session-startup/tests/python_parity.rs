@@ -3,7 +3,7 @@
 //! binaries run `--check`, `--apply`, `--check` against it with the same environment
 //! (fake `systemctl`/`labwc` first on PATH, HOME = the copy). stdout, stderr, exit codes,
 //! the resulting trees (contents + modes) and the fake command logs must be identical.
-//! Skipped when python3 or the btmanager tree is missing.
+//! Skipped when python3 or the tessel-bluetooth tree is missing.
 
 mod common;
 
@@ -41,12 +41,12 @@ fn run_all(fixture: &dyn Fn(&Path), root: &Path, rust: bool, xdg: bool, steps: &
     for args in steps {
         let mut command = if rust {
             // The Python-path shims exec the binary with the script name as argv[0].
-            let mut command = Command::new(if xdg { env!("CARGO_BIN_EXE_configure-xdg-autostart") } else { env!("CARGO_BIN_EXE_configure-session") });
+            let mut command = Command::new(if xdg { env!("CARGO_BIN_EXE_tessel-xdg-autostart") } else { env!("CARGO_BIN_EXE_tessel-configure-session") });
             command.arg0(if xdg { "configure_xdg_autostart.py" } else { "configure_session.py" });
             command
         } else {
             let mut command = Command::new("python3");
-            command.arg("-B").arg(suite.join("session-startup").join(if xdg { "configure_xdg_autostart.py" } else { "configure_session.py" }));
+            command.arg("-B").arg(suite.join("tessel-session-startup").join(if xdg { "configure_xdg_autostart.py" } else { "configure_session.py" }));
             command
         };
         command
@@ -79,7 +79,7 @@ fn run_all(fixture: &dyn Fn(&Path), root: &Path, rust: bool, xdg: bool, steps: &
 
 fn compare(name: &str, xdg: bool, fixture: &dyn Fn(&Path), steps: &[&[&str]], extra_env: &[(&str, String)]) {
     if suite_root().is_none() || Command::new("python3").arg("-c").arg("import xml").output().is_err() {
-        eprintln!("skipping {name}: python3 or btmanager missing");
+        eprintln!("skipping {name}: python3 or tessel-bluetooth missing");
         return;
     }
     let root = std::env::temp_dir().join(format!("parity-{}-{name}", std::process::id()));
@@ -126,9 +126,9 @@ fn keybinding_variants_match_python() {
     let variants: Vec<(&str, String)> = vec![
         ("nokeyboard", "<labwc_config>\n</labwc_config>\n".into()),
         ("selfclosing", "<?xml version=\"1.0\"?>\n<labwc_config>\n  <keyboard/>\n  <theme/>\n</labwc_config>\n".into()),
-        ("user", "<labwc_config>\n  <keyboard>\n    <default/>\n    <keybind key=\"W-Return\"><action name=\"Execute\" command=\"foot\"/></keybind>\n    <keybind key=\"w-l\"><action name=\"Execute\"><command>HOME/.local/bin/wayshell-lock</command></action></keybind>\n    <keybind key=\"XF86AudioMute\">\n      <action name=\"Execute\" command=\"HOME/.config/waybar/scripts/audio-manager/audio_manager.py --toggle-mute\"/>\n    </keybind>\n  </keyboard>\n</labwc_config>\n".into()),
+        ("user", "<labwc_config>\n  <keyboard>\n    <default/>\n    <keybind key=\"W-Return\"><action name=\"Execute\" command=\"foot\"/></keybind>\n    <keybind key=\"w-l\"><action name=\"Execute\"><command>HOME/.local/bin/tessel-shell-lock</command></action></keybind>\n    <keybind key=\"XF86AudioMute\">\n      <action name=\"Execute\" command=\"HOME/.config/waybar/scripts/tessel-audio/audio_manager.py --toggle-mute\"/>\n    </keybind>\n  </keyboard>\n</labwc_config>\n".into()),
         ("crlf", "<labwc_config>\r\n  <keyboard>\r\n    <default/>\r\n  </keyboard>\r\n  <theme>\r\n\t<font place=\"ActiveWindow\"><name>Inter &amp; Co</name><size> 11 </size></font>\r\n\t<font place=\"InactiveWindow\"><name>X</name></font>\r\n    <active><titlebar color=\"#282a36\"/></active>\r\n    <inactive><border/></inactive>\r\n    <cornerRadius>4</cornerRadius>\r\n  </theme>\r\n</labwc_config>\r\n".into()),
-        ("prompts", "<labwc_config>\n  <core>\n    <promptCommand>HOME/bin/prompt 'x' &lt;&lt; EOF</promptCommand>\n    <errorCommand>  HOME/bin/err --a \"b\"  </errorCommand>\n  </core>\n  <keyboard><default/><!-- Waytile keyboard begin --><keybind key=\"W-C-Left\"><action name=\"X\"/></keybind><!-- Waytile keyboard end --></keyboard>\n  <mouse><context name=\"Root\"><mousebind button=\"Left\"><action name=\"Execute\" command='HOME/x'/></mousebind></context></mouse>\n</labwc_config>\n".into()),
+        ("prompts", "<labwc_config>\n  <core>\n    <promptCommand>HOME/bin/prompt 'x' &lt;&lt; EOF</promptCommand>\n    <errorCommand>  HOME/bin/err --a \"b\"  </errorCommand>\n  </core>\n  <keyboard><default/><!-- Tessel Tiling keyboard begin --><keybind key=\"W-C-Left\"><action name=\"X\"/></keybind><!-- Tessel Tiling keyboard end --></keyboard>\n  <mouse><context name=\"Root\"><mousebind button=\"Left\"><action name=\"Execute\" command='HOME/x'/></mousebind></context></mouse>\n</labwc_config>\n".into()),
         ("unicode", "<labwc_config>\n  <!-- ünïcödé comment with <keybind key=\"W-l\"/> -->\n  <keyboard>\n    <default/>\n    <keybind key=\"W-ä\"><action name=\"Execute\" command=\"bäz\"/></keybind>\n  </keyboard>\n</labwc_config>\n".into()),
     ];
     for (name, text) in variants {
@@ -150,7 +150,7 @@ fn keybinding_variants_match_python() {
         "rc-rebind",
         false,
         &|home| {
-            let (text, _) = session_startup::session::edit_rc(&format!("<labwc_config>\n  <keyboard>\n    <default/>\n  </keyboard>\n</labwc_config>\n"), home).unwrap();
+            let (text, _) = tessel_session_startup::session::edit_rc(&format!("<labwc_config>\n  <keyboard>\n    <default/>\n  </keyboard>\n</labwc_config>\n"), home).unwrap();
             write(&labwc(home).join("rc.xml"), &text.replace("<keybind key=\"W-l\">", "<keybind key=\"W-x\">").replace("key=\"C-A-Left\"", "key=\"A-Left\""));
         },
         &[&["--check"], &["--apply"], &["--check"]],
@@ -165,10 +165,10 @@ fn startup_and_environment_variants_match_python() {
         false,
         &|home| {
             let l = labwc(home);
-            write(&l.join("autostart"), "#!/bin/sh\n# helper\nif [ -x /x ]; then\n  /x &\nfi\nfoo \\\n  --bar &\n\n# Begin custom\nbaz\n# End custom\nsystemctl --user start waydock.service >/dev/null 2>&1 &\nsystemctl --user start chat.service &\ncase $X in a) b ;; esac\n");
+            write(&l.join("autostart"), "#!/bin/sh\n# helper\nif [ -x /x ]; then\n  /x &\nfi\nfoo \\\n  --bar &\n\n# Begin custom\nbaz\n# End custom\nsystemctl --user start tessel-dock.service >/dev/null 2>&1 &\nsystemctl --user start chat.service &\ncase $X in a) b ;; esac\n");
             chmod(&l.join("autostart"), 0o700);
             write(&l.join("autostart.local"), "existing &");
-            write(&l.join("environment"), "XDG_CURRENT_DESKTOP=sway\r\nexport FOO=1\r\n# comment for BAR\r\nBAR = two \r\nFOO=2\r\nMOZ_ENABLE_WAYLAND=1\r\nXKB_DEFAULT_LAYOUT=de\r\n# Desktop suite language — managed by Language Settings\r\nLANG=de_DE.UTF-8\r\n# End desktop suite language\r\n# way-displays-gui primary output environment begin\r\nX=1");
+            write(&l.join("environment"), "XDG_CURRENT_DESKTOP=sway\r\nexport FOO=1\r\n# comment for BAR\r\nBAR = two \r\nFOO=2\r\nMOZ_ENABLE_WAYLAND=1\r\nXKB_DEFAULT_LAYOUT=de\r\n# Tessel language — managed by Language Settings\r\nLANG=de_DE.UTF-8\r\n# End Tessel language\r\n# tessel-displays primary output environment begin\r\nX=1");
             write(&l.join("environment.d/90-local.env"), "BAR=two");
         },
         SESSION_STEPS,
@@ -184,13 +184,13 @@ fn unit_variants_match_python() {
         &|home| {
             let units = home.join(".config/systemd/user");
             let h = home.display().to_string();
-            write(&units.join("waydock.service"), &format!("[Service]\nExecStart={h}/.local/share/waydock/waydock\nEnvironmentFile=-{h}/.config/labwc/environment\nDescription={h}/x\n"));
-            write(&units.join("waydock.service.d/.hidden.conf"), "[Service]\nX=1\n");
-            write(&units.join("waydock.service.d/a.conf"), &format!("[Service]\nWorkingDirectory={h}/w\n"));
-            write(&units.join("waydock.service.d/50-desktop-suite-recovery.conf"), "old\n");
-            write(&units.join("keep-awake.service.d/z.conf"), "[Service]\nRestart=no\n");
-            chmod(&units.join("waydock.service"), 0o600);
-            write(&units.join("notifications.service"), "[Service]\nExecStart=/bin/true\n");
+            write(&units.join("tessel-dock.service"), &format!("[Service]\nExecStart={h}/.local/share/tessel-dock/tessel-dock\nEnvironmentFile=-{h}/.config/labwc/environment\nDescription={h}/x\n"));
+            write(&units.join("tessel-dock.service.d/.hidden.conf"), "[Service]\nX=1\n");
+            write(&units.join("tessel-dock.service.d/a.conf"), &format!("[Service]\nWorkingDirectory={h}/w\n"));
+            write(&units.join("tessel-dock.service.d/50-tessel-recovery.conf"), "old\n");
+            write(&units.join("tessel-keep-awake.service.d/z.conf"), "[Service]\nRestart=no\n");
+            chmod(&units.join("tessel-dock.service"), 0o600);
+            write(&units.join("tessel-notifications.service"), "[Service]\nExecStart=/bin/true\n");
             write(&labwc(home).join("autostart"), "");
         },
         SESSION_STEPS,

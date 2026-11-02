@@ -1,14 +1,14 @@
-# keep-awake — parity with contracts/keep-awake.md
+# tessel-keep-awake — parity with contracts/tessel-keep-awake.md
 
-Rust crate `keep-awake` (lib `keep_awake` + binary `keep-awake`). Tests:
-`cargo test -p keep-awake` (unit + `tests/{timer,inhibitor,cli}.rs`, private
+Rust crate `tessel-keep-awake` (lib `keep_awake` + binary `tessel-keep-awake`). Tests:
+`cargo test -p tessel-keep-awake` (unit + `tests/{timer,inhibitor,cli}.rs`, private
 `gio::TestDBus` bus that also serves as the "system" bus, with a fake logind) and
 `components/keep-awake/tests/run_headless.sh` (`tests/ui.rs` in a private headless
 labwc; set `CARGO_WS=<workspace>` to build somewhere other than the repository root).
 
 | Contract item | Status | Test |
 |---|---|---|
-| §1 app id `org.waybar.KeepAwake`, `HANDLES_COMMAND_LINE`, `IS_LAUNCHER` unless `--background` | done (`gio::Application` subclass) | `cli` (launcher loop, second `--background`) |
+| §1 app id `org.tessel.KeepAwake`, `HANDLES_COMMAND_LINE`, `IS_LAUNCHER` unless `--background` | done (`gio::Application` subclass) | `cli` (launcher loop, second `--background`) |
 | §1 `local_command_line` passes everything to the primary; remote `print_literal` | done | `cli` (`--status` stdout from primary) |
 | §1 launcher with no primary: no backend, exit ≠ 0 | done (GLib "Failed to register", rc 1, same as Python) | `cli`, `ui::launcher_without_primary_never_creates_a_backend` |
 | §1 SIGTERM/SIGINT → quit, FD released | done (`compat::unix_signal_add_local`) | `cli` (SIGTERM → rc 0, pipe EOF) |
@@ -16,8 +16,8 @@ labwc; set `CARGO_WS=<workspace>` to build somewhere other than the repository r
 | §1 local parse first (errors on caller's stderr), re-parse in primary | done | `cli` |
 | §1 `--popup` / no mode / `activate` → popup; new (edge, offset) recreates, same → `activate()` | done | `ui` |
 | §1 `--enable/--disable/--toggle` never open the popup | done | `ui`, `cli` (empty stderr, no display) |
-| §2.1 `Controls`: `GetState`, `SetEnabled(b)→(bs)` ok = no error, `Changed` | done (suite-core `SettingsService`) | `cli` |
-| §2.1 `Duration`: `GetState`, `SetDuration(u)`, error `org.waybar.KeepAwake.Duration.Error` "Unsupported Keep Awake duration.", `Changed` after SetDuration | done; backend changes emit `Changed` on `Controls` only, exactly like Python | `cli` |
+| §2.1 `Controls`: `GetState`, `SetEnabled(b)→(bs)` ok = no error, `Changed` | done (tessel-core `SettingsService`) | `cli` |
+| §2.1 `Duration`: `GetState`, `SetDuration(u)`, error `org.tessel.KeepAwake.Duration.Error` "Unsupported Keep Awake duration.", `Changed` after SetDuration | done; backend changes emit `Changed` on `Controls` only, exactly like Python | `cli` |
 | §2.2 logind watch, `Inhibit("idle:sleep","Keep Awake","Keep this desktop awake until turned off","block")`, NO_AUTO_START, 10 s, FD CLOEXEC | done (gio, `call_with_unix_fd_list`) | `inhibitor::real_unix_fd_transfer_on_private_bus`, `cli` |
 | §2.2 vanish → FD closed, "System power management is unavailable."; owner change → re-acquire if requested | done | `inhibitor` (fake + real bus), `cli` |
 | §2.2 bus `closed` → detach, retry every 2 s; bus-get failure text | done | not tested (needs killing a bus daemon mid-run) |
@@ -28,8 +28,8 @@ labwc; set `CARGO_WS=<workspace>` to build somewhere other than the repository r
 | §4 restore unexpired timer on start; "until turned off" not restored | done | `timer`, `cli` |
 | §4 set_enabled / set_duration / timer `max(1,min(60,int(left)+1))` / expiry / forget when off elsewhere | done | `timer` |
 | §4 generation counter, stale replies closed, denied → requested=false + error, immediate failure | done | `inhibitor` |
-| §5 popup widgets, strings, CSS (APPLICATION priority, removed on unrealize), classes `keep-awake popup-surface card row-title row-detail status error` | done | `ui`, `ui::tests::subtitle_and_status_texts` |
-| §5 PopupController (layer shell, `desktop-applet`, click-away, Escape), theme attach | done (suite-gtk) | `ui` |
+| §5 popup widgets, strings, CSS (APPLICATION priority, removed on unrealize), classes `tessel-keep-awake popup-surface card row-title row-detail status error` | done | `ui`, `ui::tests::subtitle_and_status_texts` |
+| §5 PopupController (layer shell, `desktop-applet`, click-away, Escape), theme attach | done (tessel-gtk) | `ui` |
 | §5 sensitivity rules | done | `ui` |
 | §5 embedded mode + `KeepAwakeClient` | done in Rust (`KeepAwakePopup::new(.., embedded=true)`, `client::KeepAwakeClient`); Global Settings still imports the **Python** modules | `cli` (client follows state, `request_duration`, unavailable text) |
 | §7 i18n via `tr!` | done | English checked; catalogs read from suite locale dir |
@@ -47,7 +47,7 @@ labwc; set `CARGO_WS=<workspace>` to build somewhere other than the repository r
 - Daemon without a display keeps running; Python's Gtk.Application would abort.
 - argparse colour output (Python 3.14 on a tty) is not reproduced.
 - Rust uses gio for D-Bus (not zbus): GApplication command-line forwarding and
-  suite-core's SettingsService are gio already, and FD passing needs no extra runtime.
+  tessel-core's SettingsService are gio already, and FD passing needs no extra runtime.
 
 ## Gaps
 - Bus `closed` → 2 s reconnect path is implemented but untested.

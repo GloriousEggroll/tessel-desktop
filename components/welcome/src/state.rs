@@ -5,17 +5,17 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-/// `state_directory(environ)`: `$XDG_STATE_HOME or ~/.local/state` + `desktop-suite`.
+/// `state_directory(environ)`: `$XDG_STATE_HOME or ~/.local/state` + `tessel`.
 pub fn state_directory_from(state_home: Option<&str>, home: &Path) -> PathBuf {
     match state_home.filter(|s| !s.is_empty()) {
         Some(base) => PathBuf::from(base),
         None => home.join(".local/state"),
     }
-    .join("desktop-suite")
+    .join("tessel")
 }
 
 pub fn state_directory() -> PathBuf {
-    state_directory_from(std::env::var("XDG_STATE_HOME").ok().as_deref(), &suite_core::paths::home())
+    state_directory_from(std::env::var("XDG_STATE_HOME").ok().as_deref(), &tessel_core::paths::home())
 }
 
 pub fn setup_done_path() -> PathBuf { state_directory().join("setup-done") }
@@ -42,13 +42,13 @@ pub fn install_status(path: Option<&Path>) -> Option<InstallStatus> {
                 if matches!(status, Some("failed") | Some("not run")) {
                     failed.push(match item.get("step") {
                         None => "?".to_owned(),
-                        Some(value) => suite_core::pyjson::py_str(value),
+                        Some(value) => tessel_core::pyjson::py_str(value),
                     });
                 }
             }
         }
     }
-    let ok = object.get("ok").is_some_and(suite_core::pyjson::truthy) && failed.is_empty();
+    let ok = object.get("ok").is_some_and(tessel_core::pyjson::truthy) && failed.is_empty();
     Some(InstallStatus { ok, failed })
 }
 
@@ -64,7 +64,7 @@ pub fn mark_setup_done(path: Option<&Path>) -> std::io::Result<PathBuf> {
     let parent = path.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."));
     std::fs::create_dir_all(&parent)?;
     let (temporary, mut file) = loop {
-        let name = parent.join(format!(".setup-done-{}", suite_core::secrets::token_urlsafe(6)));
+        let name = parent.join(format!(".setup-done-{}", tessel_core::secrets::token_urlsafe(6)));
         match std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&name) {
             Ok(file) => break (name, file),
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -83,16 +83,16 @@ pub fn mark_setup_done(path: Option<&Path>) -> std::io::Result<PathBuf> {
 /// argv for Global Settings: the installed launcher, else the Rust binary
 /// beside this executable, else the installed Python entry point.
 pub fn settings_command(arguments: &[&str], home: Option<&Path>) -> Vec<String> {
-    let home = home.map(Path::to_path_buf).unwrap_or_else(suite_core::paths::home);
-    let launcher = home.join(".local/bin/global-settings");
-    let mut argv = if launcher.is_file() && suite_core::shell::is_executable(&launcher) {
+    let home = home.map(Path::to_path_buf).unwrap_or_else(tessel_core::paths::home);
+    let launcher = home.join(".local/bin/tessel-settings");
+    let mut argv = if launcher.is_file() && tessel_core::shell::is_executable(&launcher) {
         vec![launcher.to_string_lossy().into_owned()]
-    } else if let Some(binary) = std::env::current_exe().ok().and_then(|exe| exe.parent().map(|p| p.join("global-settings")))
-        .filter(|p| p.is_file() && suite_core::shell::is_executable(p)) {
+    } else if let Some(binary) = std::env::current_exe().ok().and_then(|exe| exe.parent().map(|p| p.join("tessel-settings")))
+        .filter(|p| p.is_file() && tessel_core::shell::is_executable(p)) {
         vec![binary.to_string_lossy().into_owned()]
     } else {
         vec!["/usr/bin/python3".to_owned(),
-             home.join(".local/share/global-settings/global_settings.py").to_string_lossy().into_owned()]
+             home.join(".local/share/tessel-settings/global_settings.py").to_string_lossy().into_owned()]
     };
     argv.extend(arguments.iter().map(|a| a.to_string()));
     argv
@@ -124,8 +124,8 @@ mod tests {
     #[test]
     fn state_paths_follow_xdg_state_home() {
         assert_eq!(state_directory_from(Some("/x/state"), Path::new("/home/u")).join("setup-done"),
-                   PathBuf::from("/x/state/desktop-suite/setup-done"));
-        assert_eq!(state_directory_from(Some(""), Path::new("/home/u")), PathBuf::from("/home/u/.local/state/desktop-suite"));
+                   PathBuf::from("/x/state/tessel/setup-done"));
+        assert_eq!(state_directory_from(Some(""), Path::new("/home/u")), PathBuf::from("/home/u/.local/state/tessel"));
     }
 
     #[test]
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(install_status(Some(&path)), None);
         std::fs::write(&path, "not json").unwrap();
         assert_eq!(install_status(Some(&path)), None);
-        std::fs::write(&path, r#"{"ok": true, "steps": [{"step": "waydock", "status": "ok"}]}"#).unwrap();
+        std::fs::write(&path, r#"{"ok": true, "steps": [{"step": "tessel_dock", "status": "ok"}]}"#).unwrap();
         assert_eq!(install_status(Some(&path)), Some(InstallStatus { ok: true, failed: vec![] }));
         std::fs::write(&path, r#"{"ok": false, "steps": [{"step": "gtk4", "status": "failed"}, {"step": "weather", "status": "not run"}, {"step": "hdr", "status": "skipped"}]}"#).unwrap();
         assert_eq!(install_status(Some(&path)), Some(InstallStatus { ok: false, failed: vec!["gtk4".into(), "weather".into()] }));
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn mark_setup_done_is_atomic_and_repeatable() {
         let base = scratch("done");
-        let path = base.join("state/desktop-suite/setup-done");
+        let path = base.join("state/tessel/setup-done");
         mark_setup_done(Some(&path)).unwrap();
         mark_setup_done(Some(&path)).unwrap();
         let text = std::fs::read_to_string(&path).unwrap();
@@ -162,7 +162,7 @@ mod tests {
         let base = scratch("launcher");
         let command = settings_command(&["--shortcuts"], Some(&base));
         assert_eq!(command.last().unwrap(), "--shortcuts");
-        let launcher = base.join(".local/bin/global-settings");
+        let launcher = base.join(".local/bin/tessel-settings");
         std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
         std::fs::write(&launcher, "#!/bin/sh\n").unwrap();
         std::fs::set_permissions(&launcher, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();

@@ -1,4 +1,4 @@
-//! Helpers suite-core / suite-gtk do not offer yet (upstream candidates).
+//! Helpers tessel-core / tessel-gtk do not offer yet (upstream candidates).
 
 use std::ffi::CStr;
 use std::fs::File;
@@ -96,11 +96,11 @@ pub fn named_temporary(dir: &Path, prefix: &str, suffix: &str) -> Result<(PathBu
         match std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&path) {
             Ok(file) => return Ok((path, file)),
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => last = Some((error, path)),
-            Err(error) => return Err(crate::document::DocError::Os(suite_core::pyerr::os_error_path(&error, &path))),
+            Err(error) => return Err(crate::document::DocError::Os(tessel_core::pyerr::os_error_path(&error, &path))),
         }
     }
     let (error, path) = last.expect("100 attempts");
-    Err(crate::document::DocError::Exists(suite_core::pyerr::os_error_path(&error, &path)))
+    Err(crate::document::DocError::Exists(tessel_core::pyerr::os_error_path(&error, &path)))
 }
 
 pub fn random_bytes(buffer: &mut [u8]) {
@@ -131,16 +131,16 @@ pub fn now() -> f64 {
 
 /// `companion_theme.attach_application(app)` with an explicit shared client, so
 /// the editor can read `palette.is_dark` (Python `companion_theme._client`).
-/// suite-gtk keeps its process-wide client private.
-pub fn attach_application(app: &gtk::Application, client: &suite_gtk::theme::PaletteClient) {
+/// tessel-gtk keeps its process-wide client private.
+pub fn attach_application(app: &gtk::Application, client: &tessel_gtk::theme::PaletteClient) {
     use gtk::prelude::*;
     let client = client.clone();
     let shared = client.clone();
     app.connect_window_added(move |_, window| {
-        suite_gtk::theme::attach(window, Some(&shared));
+        tessel_gtk::theme::attach(window, Some(&shared));
     });
     for window in app.windows() {
-        suite_gtk::theme::attach(&window, Some(&client));
+        tessel_gtk::theme::attach(&window, Some(&client));
     }
 }
 

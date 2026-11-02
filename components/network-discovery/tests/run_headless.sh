@@ -3,13 +3,13 @@
 # one process per case (each registers the real application id on the private bus).
 # Never touches the live session: own XDG_RUNTIME_DIR, own D-Bus, no input devices.
 set -eu
-AGENT=network-discovery
+AGENT=tessel-network-discovery
 R=/run/user/1000/cbt/rust-$AGENT/n
 mkdir -p "$R/rt" "$R/cfg"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=${CARGO_WS:-$(cd "$(dirname "$0")/../../.." && pwd)}
-BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p network-discovery --test ui_headless --no-run --message-format=json 2>/dev/null \
+BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-network-discovery --test ui_headless --no-run --message-format=json 2>/dev/null \
       | python3 -c 'import json,sys
 for line in sys.stdin:
     m=json.loads(line)

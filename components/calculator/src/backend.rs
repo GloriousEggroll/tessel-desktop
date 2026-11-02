@@ -417,14 +417,14 @@ pub struct CalculatorStore {
 
 fn default_replace(from: &Path, to: &Path) -> std::io::Result<()> { fs::rename(from, to) }
 
-/// `$XDG_STATE_HOME/waydock-calculator/state.json` (Python: `os.environ.get(...) or ~/.local/state`).
+/// `$XDG_STATE_HOME/tessel-dock-calculator/state.json` (Python: `os.environ.get(...) or ~/.local/state`).
 pub fn default_state_path() -> PathBuf {
     let base = std::env::var_os("XDG_STATE_HOME").filter(|v| !v.is_empty()).map(PathBuf::from)
-        .unwrap_or_else(|| suite_core::paths::home().join(".local/state"));
-    base.join("waydock-calculator/state.json")
+        .unwrap_or_else(|| tessel_core::paths::home().join(".local/state"));
+    base.join("tessel-dock-calculator/state.json")
 }
 
-fn os_error(error: &std::io::Error, path: &Path) -> String { suite_core::pyerr::os_error_path(error, path) }
+fn os_error(error: &std::io::Error, path: &Path) -> String { tessel_core::pyerr::os_error_path(error, path) }
 
 impl CalculatorStore {
     pub fn new(path: Option<PathBuf>) -> Self {
@@ -493,7 +493,7 @@ impl CalculatorStore {
             }
             out.push_str(&format!("{{\"expression\": {}, \"result\": {}, \"degrees\": {}, \"timestamp\": {}}}",
                                   compat::json_string(&entry.expression), compat::json_string(&entry.result), entry.degrees,
-                                  suite_core::pyfmt::float_repr(entry.timestamp)));
+                                  tessel_core::pyfmt::float_repr(entry.timestamp)));
         }
         out.push_str("]}\n");
         out
@@ -514,12 +514,12 @@ impl CalculatorStore {
             }
         };
         let result = (|| -> Result<(), String> {
-            file.write_all(self.state_json().as_bytes()).map_err(|e| suite_core::pyerr::os_error_text(&e))?;
-            file.flush().map_err(|e| suite_core::pyerr::os_error_text(&e))?;
-            file.sync_all().map_err(|e| suite_core::pyerr::os_error_text(&e))?;
+            file.write_all(self.state_json().as_bytes()).map_err(|e| tessel_core::pyerr::os_error_text(&e))?;
+            file.flush().map_err(|e| tessel_core::pyerr::os_error_text(&e))?;
+            file.sync_all().map_err(|e| tessel_core::pyerr::os_error_text(&e))?;
             drop(file);
             (self.replace)(&temporary, &self.path).map_err(|e| match e.raw_os_error() {
-                Some(_) => format!("{}: '{}' -> '{}'", suite_core::pyerr::os_error_text(&e), temporary.display(), self.path.display()),
+                Some(_) => format!("{}: '{}' -> '{}'", tessel_core::pyerr::os_error_text(&e), temporary.display(), self.path.display()),
                 None => e.to_string(),
             })
         })();
@@ -535,7 +535,7 @@ impl CalculatorStore {
 
     pub fn record(&mut self, expression: &str, result: &Decimal) -> HistoryEntry {
         let entry = HistoryEntry { expression: expression.to_owned(), result: format_number(result), degrees: self.degrees,
-                                   timestamp: suite_core::timer::now() };
+                                   timestamp: tessel_core::timer::now() };
         self.history.retain(|old| (&old.expression, &old.result, old.degrees) != (&entry.expression, &entry.result, entry.degrees));
         self.history.insert(0, entry.clone());
         self.history.truncate(MAX_HISTORY);
@@ -615,7 +615,7 @@ fn named_temporary(directory: &Path, prefix: &str) -> Result<(PathBuf, fs::File)
     for _ in 0..100 {
         let mut random = [0u8; 8];
         if fs::File::open("/dev/urandom").and_then(|mut f| std::io::Read::read_exact(&mut f, &mut random)).is_err() {
-            random = (suite_core::timer::now().to_bits() ^ std::process::id() as u64).to_le_bytes();
+            random = (tessel_core::timer::now().to_bits() ^ std::process::id() as u64).to_le_bytes();
         }
         let name: String = random.iter().map(|b| LETTERS[*b as usize % LETTERS.len()] as char).collect();
         let path = directory.join(format!("{prefix}{name}"));
@@ -625,5 +625,5 @@ fn named_temporary(directory: &Path, prefix: &str) -> Result<(PathBuf, fs::File)
             Err(error) => return Err(os_error(&error, &path)),
         }
     }
-    Err(last.map(|e| suite_core::pyerr::os_error_text(&e)).unwrap_or_default())
+    Err(last.map(|e| tessel_core::pyerr::os_error_text(&e)).unwrap_or_default())
 }

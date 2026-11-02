@@ -1,4 +1,4 @@
-//! `desktop-suite-icon-theme`: at login, fall back to the suite's default icon
+//! `tessel-icon-theme`: at login, fall back to the suite's default icon
 //! theme (Papirus-Dark) when the configured one is not installed, e.g. after
 //! its package was removed. A valid user choice is never changed.
 //!
@@ -7,7 +7,7 @@
 //! writes gsettings and both GTK `settings.ini` files.
 use std::path::PathBuf;
 
-use suite_core::icon_theme::{self as icons, DEFAULT};
+use tessel_core::icon_theme::{self as icons, DEFAULT};
 
 use crate::cli::{Parsed, Parser};
 
@@ -45,7 +45,7 @@ impl Environment {
         Self {
             setting: icons::interface_settings().map(|s| Box::new(GioIconSetting(s)) as Box<dyn IconSetting>),
             search_dirs: icons::search_dirs(),
-            config_home: suite_core::paths::config_home(),
+            config_home: tessel_core::paths::config_home(),
         }
     }
 
@@ -243,13 +243,13 @@ mod tests {
         assert_eq!(ensure(&f.environment, false), Outcome::WouldRepair { missing: Some("breeze".into()) });
         assert!(f.writes.borrow().is_empty());
         assert_eq!(ini(&f.root, "4.0"), None);
-        assert_eq!(main(&["--check".into()], "desktop-suite-icon-theme", &f.environment), 0);
+        assert_eq!(main(&["--check".into()], "tessel-icon-theme", &f.environment), 0);
         assert!(f.writes.borrow().is_empty());
         let f = fixture("nodefault", Some(Some("breeze")), &["Adwaita"]);
         assert_eq!(ensure(&f.environment, true), Outcome::DefaultMissing { missing: Some("breeze".into()) });
         assert!(f.writes.borrow().is_empty());
         assert_eq!(ini(&f.root, "3.0"), None);
-        assert_eq!(main(&[], "desktop-suite-icon-theme", &f.environment), 1);
+        assert_eq!(main(&[], "tessel-icon-theme", &f.environment), 1);
     }
 
     #[test]
@@ -261,6 +261,6 @@ mod tests {
             other => panic!("{other:?}"),
         }
         assert_eq!(ini(&f.root, "4.0").unwrap(), "[Settings]\ngtk-icon-theme-name=Papirus-Dark\n");
-        assert_eq!(main(&["--bogus".into()], "desktop-suite-icon-theme", &f.environment), 2);
+        assert_eq!(main(&["--bogus".into()], "tessel-icon-theme", &f.environment), 2);
     }
 }

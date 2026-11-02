@@ -1,7 +1,7 @@
-# text-editor — parity with contracts/text-editor.md
+# tessel-text-editor — parity with contracts/tessel-text-editor.md
 
-Crate `components/text-editor`, binary `text-editor` (= the `/usr/local/bin/text-editor` command), GApplication
-`org.waydock.TextEditor` (HANDLES_OPEN). Tests: `env -u TMPDIR cargo test -p text-editor` (31 unit tests; the UI
+Crate `components/text-editor`, binary `tessel-text-editor` (= the `/usr/local/bin/tessel-text-editor` command), GApplication
+`org.tessel.TextEditor` (HANDLES_OPEN). Tests: `env -u TMPDIR cargo test -p tessel-text-editor` (31 unit tests; the UI
 test skips itself), `tests/run_headless.sh` (21 GTK checks in a private nested headless labwc + private D-Bus +
 private XDG dirs), `tests/measure_headless.sh` (Rust vs Python, same small file, 2 runs each).
 
@@ -23,16 +23,16 @@ count and asserts on success → `compat::replace_all` calls the C function) and
 ## §1 Entry points / CLI
 | Item | | Test |
 |---|---|---|
-| App id `org.waydock.TextEditor`, HANDLES_OPEN, activate → new scratch window, open → focus existing / new window / missing path named | ✅ | `test_multiple_cli_files_get_separate_windows_and_reuse_existing`, measure_headless (app_id mapped) |
+| App id `org.tessel.TextEditor`, HANDLES_OPEN, activate → new scratch window, open → focus existing / new window / missing path named | ✅ | `test_multiple_cli_files_get_separate_windows_and_reuse_existing`, measure_headless (app_id mapped) |
 | `[-h] [--check] [files ...]`, prefixes, `--`, negative numbers, unknown → exit 2 | ✅ | `cli::tests::argparse_rules` |
 | `--check` JSON `{"ready": true, "gtk": 4, "gtksourceview": 5, "tabs": false}` | ⚠ | `argparse_rules` — always ready: a missing libgtksourceview makes the dynamic loader fail (exit 127) before `main`, so the `{"ready": false, …}` form cannot occur |
-| Help/usage text | ⚠ | prog is the binary name (`text-editor`), Python prints `text_editor.py`; no colour on TTYs |
+| Help/usage text | ⚠ | prog is the binary name (`tessel-text-editor`), Python prints `text_editor.py`; no colour on TTYs |
 | Installer / launcher / .desktop | ❌ | installer step (desktop-apps/install.py), not in the crate |
 
 ## §2 Files
 | Item | | Test |
 |---|---|---|
-| `desktop-suite/text-editor.json` load rules (type identity, clamp, 12 recent) + `indent=2` bytes + tmp/0600/rename | ✅ | `preferences::tests::*`, `test_view_toggles_persist_preferences` |
+| `tessel/tessel-text-editor.json` load rules (type identity, clamp, 12 recent) + `indent=2` bytes + tmp/0600/rename | ✅ | `preferences::tests::*`, `test_view_toggles_persist_preferences` |
 | Recent list update + Open Recent menu in every window | ✅ | `test_view_toggles_persist_preferences` (recent array), menu walk in `test_primary_menu_holds_former_menubar_entries` |
 | Recovery draft path, id validation, JSON bytes, 0700 dir / 0600 file, tmp+fsync+rename, remove | ✅ | `recovery::tests::write_pending_remove_round_trip`, `test_drafts_are_written_after_edits_and_removed_on_save_or_discard` |
 | `pending()` (version==1, text str, pid liveness by cmdline, field defaults, `float(saved or 0)`, newest first) | ✅ | `write_pending_remove_round_trip`, `test_recovered_drafts_are_offered_and_restored` |
@@ -95,7 +95,7 @@ count and asserts on success → `compat::replace_all` calls the C function) and
 
 ## compat (upstream candidates)
 `compat::expanduser` (`os.path.expanduser`), `compat::resolve` (`Path.resolve()` non-strict), `compat::named_temporary`
-(`NamedTemporaryFile(delete=False)`), `compat::uuid4_hex`, `compat::attach_application(app, &PaletteClient)` (suite-gtk
+(`NamedTemporaryFile(delete=False)`), `compat::uuid4_hex`, `compat::attach_application(app, &PaletteClient)` (tessel-gtk
 keeps its shared palette client private; the editor needs `palette.is_dark`), `compat::replace_all` (sourceview5
 binding fix), `worker::Worker` (`ThreadPoolExecutor(max_workers=1)` + futures oneshot), `codec` (Python codec names /
 strict errors).

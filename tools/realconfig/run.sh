@@ -1,5 +1,5 @@
 #!/bin/sh
-# Real-configuration memory harness: Python vs Rust waydock + wayshell in a
+# Real-configuration memory harness: Python vs Rust tessel-dock + tessel-shell in a
 # private headless labwc (tools/headless.md) with two 3840x2160 outputs, the
 # live session's renderer (labwc WLR_RENDERER=vulkan on the GPU render node,
 # GTK's default GSK renderer) and a fake HOME made of copies of the real config
@@ -15,8 +15,8 @@ R=/run/user/1000/cbt/rust-mem/n
 TEMPLATE=$ROOT/target/realconfig-home
 IMPLS=${1:-python,rust}
 IDLE=${2:-20}
-RUST_DOCK=${RUST_DOCK:-$ROOT/target/release/waydock}
-RUST_SHELL=${RUST_SHELL:-$ROOT/target/release/wayshell}
+RUST_DOCK=${RUST_DOCK:-$ROOT/target/release/tessel-dock}
+RUST_SHELL=${RUST_SHELL:-$ROOT/target/release/tessel-shell}
 if [ ! -d "$TEMPLATE" ] || [ -n "${REBUILD_HOME:-}" ]; then sh "$HERE/make_home.sh" "$TEMPLATE"; fi
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/svc" "$R/tmp"; chmod 700 "$R/rt"
 ln -s "$ROOT/target/realconfig-homes" "$R/homes" 2>/dev/null || true

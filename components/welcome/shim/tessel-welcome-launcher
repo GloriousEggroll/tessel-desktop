@@ -1,0 +1,5 @@
+#!/bin/sh
+# ~/.local/bin/tessel-welcome after the swap (first-login autostart and the
+# labwc menu run this path). Rollback restores
+#   exec /usr/bin/python3 '~/.local/share/tessel-welcome/welcome.py' "$@"
+exec "$HOME/.local/share/tessel-welcome/tessel-welcome" "$@"

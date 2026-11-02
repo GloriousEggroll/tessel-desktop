@@ -17,7 +17,7 @@ pub enum Outcome {
 }
 
 pub fn prog(argv0: &str) -> String {
-    std::path::Path::new(argv0).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "hdr-calibration".into())
+    std::path::Path::new(argv0).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "tessel-hdr-calibration".into())
 }
 
 pub fn usage(prog: &str) -> String {

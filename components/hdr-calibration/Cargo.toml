@@ -1,21 +1,21 @@
 [package]
-name = "hdr-calibration"
+name = "tessel-hdr-calibration"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "HDR Calibration (port of btmanager/hdr-calibration): per-monitor HDR limits and SDR white via labwc's managed rc.xml block. Uses the C hdr-pattern helper."
+description = "HDR Calibration (port of tessel-bluetooth/tessel-hdr-calibration): per-monitor HDR limits and SDR white via labwc's managed rc.xml block. Uses the C hdr-pattern helper."
 
 [lib]
-name = "hdr_calibration"
+name = "tessel_hdr_calibration"
 path = "src/lib.rs"
 
 [[bin]]
-name = "hdr-calibration"
+name = "tessel-hdr-calibration"
 path = "src/main.rs"
 
 [dependencies]
-suite-core.workspace = true
-suite-gtk.workspace = true
+tessel-core.workspace = true
+tessel-gtk.workspace = true
 gtk.workspace = true
 glib.workspace = true
 gio.workspace = true
@@ -23,7 +23,7 @@ serde_json.workspace = true
 libc.workspace = true
 regex.workspace = true
 roxmltree = "0.20"
-way-displays = { path = "../way-displays" }
+way-displays = { path = "../displays" }
 
 [[test]]
 name = "ui_headless"

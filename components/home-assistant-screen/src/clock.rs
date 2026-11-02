@@ -9,16 +9,16 @@ use std::time::Duration;
 
 use gtk::prelude::*;
 use serde_json::{json, Map, Value};
-use suite_core::pyfmt::{json_dumps, JsonStyle};
-use suite_core::tr;
-use suite_gtk::utils::image;
-use suite_lock::config::LockConfig;
-use suite_lock::dashboard::WallpaperDashboard;
-use suite_lock::info::WeatherView;
-use suite_lock::media::{album_name, AlbumArt, LockMedia, Media, MediaIcons};
-use suite_lock::visuals::{VoiceBand, Wallpaper};
-use suite_lock::voice_state::VoiceLog;
-use suite_lock::weather::{LockWeather, WeatherReader, WeatherStore};
+use tessel_core::pyfmt::{json_dumps, JsonStyle};
+use tessel_core::tr;
+use tessel_gtk::utils::image;
+use tessel_locking::config::LockConfig;
+use tessel_locking::dashboard::WallpaperDashboard;
+use tessel_locking::info::WeatherView;
+use tessel_locking::media::{album_name, AlbumArt, LockMedia, Media, MediaIcons};
+use tessel_locking::visuals::{VoiceBand, Wallpaper};
+use tessel_locking::voice_state::VoiceLog;
+use tessel_locking::weather::{LockWeather, WeatherReader, WeatherStore};
 
 use crate::levels::{self, ScreenLevels};
 use crate::panel::{self, AdminPanel, Hooks};
@@ -28,35 +28,35 @@ pub const APPLICATION_ID: &str = "local.luna.Clock";
 pub const USAGE: &str = "Usage: luna_clock.py [--show|--hide|--status|--next-wallpaper|--quit|--volume up/down/mute/0–100|--brightness up/down/10–100]\n";
 
 pub const STYLE: &str = "
-window.lock-screen { background: #161820; color: white; }
-.lock-screen .lock-clock { font-size: 144px; font-weight: 600; color: white; text-shadow: 0 2px 8px #000; }
-.lock-screen .lock-date { font-size: 38px; color: white; text-shadow: 0 2px 5px #000; }
-.lock-screen .lock-name { font-size: 18px; font-weight: 600; letter-spacing: 5px; color: white; text-shadow: 0 2px 5px #000; }
-.lock-screen.lock-compact .lock-clock, .lock-screen.lock-narrow .lock-clock { font-size: 104px; }
-.lock-screen.lock-compact .lock-date, .lock-screen.lock-narrow .lock-date { font-size: 30px; }
-.lock-screen.lock-compact .lock-forecast-day { font-size: 18px; }
-.lock-screen.lock-compact .lock-forecast-high { font-size: 22px; }
-.lock-screen.lock-compact .lock-information .lock-caption { font-size: 16px; }
-.lock-screen.lock-compact .lock-temperature { font-size: 40px; }
-.lock-screen .lock-information { font-size: 20px; color: white; }
-.lock-screen .lock-location { font-size: 24px; font-weight: 600; }
-.lock-screen .lock-forecast-day { font-size: 20px; }
-.lock-screen .lock-forecast-high { font-size: 24px; font-weight: 600; }
-.lock-screen .lock-information .lock-caption { font-size: 18px; }
-.lock-screen .lock-media-title { font-size: 26px; font-weight: 600; }
-.lock-screen .album-cover { border-radius: 12px; }
-.lock-screen .album-player { padding: 4px; border-radius: 50%; background: rgba(20,24,30,.85); }
-.lock-screen .lock-information label { color: white; text-shadow: 0 2px 6px #000; }
-.lock-screen .lock-group-heading { font-size: 18px; font-weight: 500; letter-spacing: 1px; }
-.lock-screen .lock-temperature { font-size: 48px; font-weight: 600; }
-.lock-screen .lock-condition { font-size: 22px; }
-.lock-screen .lock-media-action { border-radius: 50%; padding: 0; min-width: 58px; min-height: 58px;
+window.tessel_lock { background: #161820; color: white; }
+.tessel_lock .lock-clock { font-size: 144px; font-weight: 600; color: white; text-shadow: 0 2px 8px #000; }
+.tessel_lock .lock-date { font-size: 38px; color: white; text-shadow: 0 2px 5px #000; }
+.tessel_lock .lock-name { font-size: 18px; font-weight: 600; letter-spacing: 5px; color: white; text-shadow: 0 2px 5px #000; }
+.tessel_lock.lock-compact .lock-clock, .tessel_lock.lock-narrow .lock-clock { font-size: 104px; }
+.tessel_lock.lock-compact .lock-date, .tessel_lock.lock-narrow .lock-date { font-size: 30px; }
+.tessel_lock.lock-compact .lock-forecast-day { font-size: 18px; }
+.tessel_lock.lock-compact .lock-forecast-high { font-size: 22px; }
+.tessel_lock.lock-compact .lock-information .lock-caption { font-size: 16px; }
+.tessel_lock.lock-compact .lock-temperature { font-size: 40px; }
+.tessel_lock .lock-information { font-size: 20px; color: white; }
+.tessel_lock .lock-location { font-size: 24px; font-weight: 600; }
+.tessel_lock .lock-forecast-day { font-size: 20px; }
+.tessel_lock .lock-forecast-high { font-size: 24px; font-weight: 600; }
+.tessel_lock .lock-information .lock-caption { font-size: 18px; }
+.tessel_lock .lock-media-title { font-size: 26px; font-weight: 600; }
+.tessel_lock .album-cover { border-radius: 12px; }
+.tessel_lock .album-player { padding: 4px; border-radius: 50%; background: rgba(20,24,30,.85); }
+.tessel_lock .lock-information label { color: white; text-shadow: 0 2px 6px #000; }
+.tessel_lock .lock-group-heading { font-size: 18px; font-weight: 500; letter-spacing: 1px; }
+.tessel_lock .lock-temperature { font-size: 48px; font-weight: 600; }
+.tessel_lock .lock-condition { font-size: 22px; }
+.tessel_lock .lock-media-action { border-radius: 50%; padding: 0; min-width: 58px; min-height: 58px;
     color: white; background: rgba(25,28,34,.45); border: 1px solid rgba(255,255,255,.25); }
-.lock-screen .lock-media-action:hover { background: rgba(255,255,255,.25); }
-.lock-screen .lock-media-action:disabled { opacity: .5; }
-.lock-screen .settings-gear { min-width: 64px; min-height: 64px; border-radius: 20px;
+.tessel_lock .lock-media-action:hover { background: rgba(255,255,255,.25); }
+.tessel_lock .lock-media-action:disabled { opacity: .5; }
+.tessel_lock .settings-gear { min-width: 64px; min-height: 64px; border-radius: 20px;
   padding: 4px; color: white; background: rgba(20,32,37,.85); border: 1px solid rgba(255,255,255,.5); }
-.lock-screen .settings-gear:hover { background: rgba(50,73,70,.95); }
+.tessel_lock .settings-gear:hover { background: rgba(50,73,70,.95); }
 ";
 
 /// `config.json` next to the program (`ROOT / 'config.json'`).
@@ -88,7 +88,7 @@ pub struct Options {
     pub weather_client: Option<Arc<dyn WeatherReader>>,
     pub scheduler_socket: PathBuf,
     /// `None` = udev discovery + monitor (production).
-    pub keyboard_devices: Option<Vec<waykeys::devices::Device>>,
+    pub keyboard_devices: Option<Vec<tessel_keyboard::devices::Device>>,
     pub launch: Option<Rc<dyn Fn(&str)>>,
 }
 
@@ -103,7 +103,7 @@ impl Options {
 fn get<'a>(config: &'a Map<String, Value>, key: &str) -> Option<&'a Value> { config.get(key) }
 
 fn flag(config: &Map<String, Value>, key: &str, default: bool) -> bool {
-    get(config, key).map(suite_core::pyjson::truthy).unwrap_or(default)
+    get(config, key).map(tessel_core::pyjson::truthy).unwrap_or(default)
 }
 
 fn required<'a>(config: &'a Map<String, Value>, key: &str) -> Result<&'a Value, String> {
@@ -179,15 +179,15 @@ impl ClockWindow {
         let inner = &app.0;
         let config = &inner.config;
         let window = gtk::ApplicationWindow::builder().application(&inner.app).title("Kasumi Clock").decorated(false).build();
-        window.add_css_class("lock-screen");
+        window.add_css_class("tessel-lock");
         window.set_default_size(1280, 720);
         let wallpaper = Wallpaper::new("", || {});
-        let directory = suite_lock::expanduser(Path::new(&suite_core::pyjson::py_str(&config["wallpaper_directory"])));
+        let directory = tessel_locking::expanduser(Path::new(&tessel_core::pyjson::py_str(&config["wallpaper_directory"])));
         let pictures: Vec<String> = config["wallpapers"].as_array().into_iter().flatten()
-            .map(|name| directory.join(suite_core::pyjson::py_str(name)).to_string_lossy().into_owned()).collect();
-        let blur_radius = get(config, "blur_radius").and_then(|v| suite_core::pyjson::py_int(Some(v))).unwrap_or(0);
+            .map(|name| directory.join(tessel_core::pyjson::py_str(name)).to_string_lossy().into_owned()).collect();
+        let blur_radius = get(config, "blur_radius").and_then(|v| tessel_core::pyjson::py_int(Some(v))).unwrap_or(0);
         let lock_config = LockConfig {
-            wallpaper_mode: "slideshow".into(), slideshow: pictures, interval: suite_core::pyjson::py_int(Some(&config["wallpaper_seconds"])).unwrap_or(300),
+            wallpaper_mode: "slideshow".into(), slideshow: pictures, interval: tessel_core::pyjson::py_int(Some(&config["wallpaper_seconds"])).unwrap_or(300),
             blur: blur_radius > 0, blur_strength: blur_radius, ..LockConfig::default()
         };
         wallpaper.configure(&lock_config, 0);
@@ -196,7 +196,7 @@ impl ClockWindow {
         window.set_child(Some(&root));
         let clock = gtk::Label::builder().css_classes(["lock-clock"]).build();
         let date = gtk::Label::builder().css_classes(["lock-date"]).build();
-        let name = get(config, "assistant_name").map(suite_core::pyjson::py_str).unwrap_or_else(|| "Kasumi".into());
+        let name = get(config, "assistant_name").map(tessel_core::pyjson::py_str).unwrap_or_else(|| "Kasumi".into());
         let assistant = gtk::Label::builder().label(name.to_uppercase()).css_classes(["lock-name"]).build();
         let weather = WeatherView::new();
         let media_row = gtk::Box::builder().spacing(18).halign(gtk::Align::Center).visible(false).build();
@@ -232,7 +232,7 @@ impl ClockWindow {
         let media_next = gtk::Button::builder().child(&image("media-skip-forward-symbolic", 26)).tooltip_text(tr!("Next track"))
             .css_classes(["lock-media-action"]).build();
         for (button, title) in [(&media_previous, "Previous track"), (&media_button, "Play"), (&media_next, "Next track")] {
-            button.update_property(&[gtk::accessible::Property::Label(&suite_core::i18n::translate(title))]);
+            button.update_property(&[gtk::accessible::Property::Label(&tessel_core::i18n::translate(title))]);
             controls.append(button);
         }
         media_row.append(&controls);
@@ -261,7 +261,7 @@ impl ClockWindow {
         let voice = VoiceBand::new();
         root.add_overlay(voice.widget());
         voice.widget().set_visible(flag(config, "show_voice", true));
-        let levels_path = get(config, "levels_state").map(suite_core::pyjson::py_str)
+        let levels_path = get(config, "levels_state").map(tessel_core::pyjson::py_str)
             .unwrap_or_else(|| "~/.config/kasumi-screen/levels.json".into());
         let levels = ScreenLevels::new(&root, Path::new(&levels_path));
         let gear = gtk::Button::builder().child(&image("emblem-system-symbolic", 34)).halign(gtk::Align::End).valign(gtk::Align::End)
@@ -375,7 +375,7 @@ impl ClockWindow {
         self.0.voice.close();
         if let Some(app) = self.app() {
             app.0.last_dismissal.replace(Some(reason.to_owned()));
-            let idle = app.0.config.get("idle_seconds").map(suite_core::pyjson::py_str).unwrap_or_default();
+            let idle = app.0.config.get("idle_seconds").map(tessel_core::pyjson::py_str).unwrap_or_default();
             crate::log("INFO", &format!("Desktop shown ({reason}); return after {idle}s idle"));
         }
     }
@@ -457,7 +457,7 @@ impl LunaClock {
         let app = gtk::Application::builder().application_id(&options.application_id)
             .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE).build();
         let config = options.config.clone();
-        let voice_log = suite_core::pyjson::py_str(&config["voice_log"]);
+        let voice_log = tessel_core::pyjson::py_str(&config["voice_log"]);
         let (store, client) = (options.weather_store.clone(), options.weather_client.clone());
         let inner = Rc::new_cyclic(|weak: &Weak<AppInner>| {
             let changed = |weak: Weak<AppInner>| move || if let Some(app) = app_up(&weak) { app.information_changed() };
@@ -510,7 +510,7 @@ impl LunaClock {
         // Hold: the dashboard keeps running while hidden.
         std::mem::forget(inner.app.hold());
         let css = [STYLE, levels::CSS, schedules::TIMER_CSS, schedules::ALARM_CSS, panel::CSS].concat();
-        inner.provider.replace(Some(suite_gtk::utils::add_css(&css, None, suite_gtk::utils::PRIORITY_APPLICATION)));
+        inner.provider.replace(Some(tessel_gtk::utils::add_css(&css, None, tessel_gtk::utils::PRIORITY_APPLICATION)));
         let window = ClockWindow::new(self);
         inner.window.replace(Some(window.clone()));
         let poll_schedules = inner.options.borrow().as_ref().is_none_or(|o| o.poll_schedules);
@@ -550,7 +550,7 @@ impl LunaClock {
         timers.push(every(1000, Box::new(move || if let Some(win) = w1().and_then(|a| a.window()) { win.0.alarms.tick() })));
         for signal in [libc::SIGTERM, libc::SIGINT] {
             let w1 = w.clone();
-            timers.push(suite_core::glib_compat::unix_signal_add_local(signal, move || {
+            timers.push(tessel_core::glib_compat::unix_signal_add_local(signal, move || {
                 if let Some(app) = w1() {
                     app.0.app.quit();
                 }
@@ -660,7 +660,7 @@ impl LunaClock {
     fn start_idle_monitor(&self) {
         let exe = std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| "luna-clock".into());
         let command = shell_join(&[&exe, "--show"]);
-        let idle = self.0.config.get("idle_seconds").map(suite_core::pyjson::py_str).unwrap_or_default();
+        let idle = self.0.config.get("idle_seconds").map(tessel_core::pyjson::py_str).unwrap_or_default();
         match Command::new("swayidle").args(["-w", "-C", "/dev/null", "timeout", &idle, &command]).spawn() {
             Ok(child) => {
                 self.0.idle_process.replace(Some(child));
@@ -727,7 +727,7 @@ impl LunaClock {
         }
         if let Some(provider) = inner.provider.borrow_mut().take() {
             if let Some(display) = gtk::gdk::Display::default() {
-                suite_gtk::utils::remove_css(&display, &provider);
+                tessel_gtk::utils::remove_css(&display, &provider);
             }
         }
     }

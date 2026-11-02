@@ -1,4 +1,4 @@
-//! The unique `org.waybar.KeepAwake` GApplication (keep_awake.py
+//! The unique `org.tessel.KeepAwake` GApplication (keep_awake.py
 //! `KeepAwakeApplication`). The primary is a plain `gio::Application`: GTK is
 //! initialised only when the first popup is shown, so the resident daemon
 //! needs no display connection or widget memory.
@@ -14,9 +14,9 @@ use gio::subclass::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
-use suite_core::service_settings::SettingsService;
+use tessel_core::service_settings::SettingsService;
 
-pub const APPLICATION_ID: &str = "org.waybar.KeepAwake";
+pub const APPLICATION_ID: &str = "org.tessel.KeepAwake";
 
 /// Builds the inhibitor from the change callback (Python `backend_factory`).
 pub type BackendFactory = Box<dyn FnOnce(Rc<dyn Fn()>) -> Rc<dyn Inhibit>>;
@@ -91,7 +91,7 @@ impl KeepAwakeApplication {
     pub fn new(application_id: &str, backend_factory: BackendFactory, launcher: bool, timer_file: Option<PathBuf>) -> Self {
         let app: Self = glib::Object::builder()
             .property("application-id", application_id)
-            .property("flags", suite_core::single_instance::application_flags(launcher))
+            .property("flags", tessel_core::single_instance::application_flags(launcher))
             .build();
         app.imp().factory.replace(Some(backend_factory));
         app.imp().timer_file.replace(timer_file);
@@ -125,7 +125,7 @@ impl KeepAwakeApplication {
             Ok(app.remote_enable(value.get::<bool>().ok_or("Invalid argument.")?))
         }) {
             Ok(service) => { self.imp().settings_service.replace(Some(service)); }
-            Err(error) => eprintln!("keep-awake: could not export {INTERFACE}: {error}"),
+            Err(error) => eprintln!("tessel-keep-awake: could not export {INTERFACE}: {error}"),
         }
         // A second interface on the same object, so the shared transport stays unchanged.
         let weak = self.downgrade();
@@ -134,12 +134,12 @@ impl KeepAwakeApplication {
             app.remote_duration(value.get::<u32>().ok_or("Invalid argument.")?)
         }) {
             Ok(service) => { self.imp().duration_service.replace(Some(service)); }
-            Err(error) => eprintln!("keep-awake: could not export {DURATION_INTERFACE}: {error}"),
+            Err(error) => eprintln!("tessel-keep-awake: could not export {DURATION_INTERFACE}: {error}"),
         }
         self.imp().held.replace(Some(self.hold()));
         for number in [libc::SIGTERM, libc::SIGINT] {
             let weak = self.downgrade();
-            let id = suite_core::glib_compat::unix_signal_add_local(number, move || {
+            let id = tessel_core::glib_compat::unix_signal_add_local(number, move || {
                 if let Some(app) = weak.upgrade() {
                     app.quit();
                 }
@@ -180,7 +180,7 @@ impl KeepAwakeApplication {
         let Some(backend) = self.backend() else { return };
         if !gtk::is_initialized_main_thread() {
             if let Err(error) = gtk::init() {
-                eprintln!("keep-awake: cannot show the popup: {error}");
+                eprintln!("tessel-keep-awake: cannot show the popup: {error}");
                 return;
             }
         }
@@ -252,7 +252,7 @@ impl KeepAwakeApplication {
             service.close();
         }
         for id in imp.signals.take() {
-            suite_core::glib_compat::source_remove(id);
+            tessel_core::glib_compat::source_remove(id);
         }
         if let Some(backend) = imp.backend.borrow().clone() {
             backend.close();
@@ -264,5 +264,5 @@ impl KeepAwakeApplication {
     }
 }
 
-use suite_gtk::gtk;
-use suite_gtk::gtk::prelude::WidgetExt;
+use tessel_gtk::gtk;
+use tessel_gtk::gtk::prelude::WidgetExt;

@@ -1,0 +1,43 @@
+[package]
+name = "tessel-keyboard"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Tessel Keyboard: automatic touch keyboard for the labwc session (Rust port of tessel_keyboard.py)."
+build = "build.rs"
+
+[lib]
+name = "tessel_keyboard"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tessel-keyboard"
+path = "src/bin/tessel-keyboard.rs"
+
+[[bin]]
+name = "tessel-keyboard-status"
+path = "src/bin/tessel-keyboard-status.rs"
+
+[dependencies]
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+gtk.workspace = true
+gtk4-layer-shell.workspace = true
+glib.workspace = true
+gio.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+regex.workspace = true
+udev = "0.9"
+unicode-normalization = "0.1"
+
+[[test]]
+name = "ui"
+harness = false
+
+[[test]]
+name = "lock_monitor"
+harness = false
+
+[build-dependencies]
+cc.workspace = true

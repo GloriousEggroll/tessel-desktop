@@ -10,17 +10,17 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
 use std::sync::Arc;
-use suite_core::tr;
+use tessel_core::tr;
 use way_displays::color_config::Status;
 
 pub const STYLE: &str = r#"
-.hdr-calibration .hdr-section { padding: 16px; border-radius: 12px; }
-.hdr-calibration .hdr-section-title { font-size: 10pt; font-weight: 600; opacity: .7; }
-.hdr-calibration .hdr-field-title { font-size: 10.5pt; font-weight: 600; }
-.hdr-calibration .hdr-detail { font-size: 9pt; opacity: .7; }
-.hdr-calibration .hdr-empty { padding: 48px 24px; }
-.hdr-calibration .hdr-empty-title { font-size: 16pt; font-weight: 600; }
-.hdr-calibration .hdr-empty-icon { opacity: .5; }
+.tessel_hdr_calibration .hdr-section { padding: 16px; border-radius: 12px; }
+.tessel_hdr_calibration .hdr-section-title { font-size: 10pt; font-weight: 600; opacity: .7; }
+.tessel_hdr_calibration .hdr-field-title { font-size: 10.5pt; font-weight: 600; }
+.tessel_hdr_calibration .hdr-detail { font-size: 9pt; opacity: .7; }
+.tessel_hdr_calibration .hdr-empty { padding: 48px 24px; }
+.tessel_hdr_calibration .hdr-empty-title { font-size: 16pt; font-weight: 600; }
+.tessel_hdr_calibration .hdr-empty-icon { opacity: .5; }
 "#;
 
 /// `(key, label, lower, upper, step, digits, help)`.
@@ -96,7 +96,7 @@ pub struct Inner {
     pub reset_dialog: RefCell<Option<gtk::AlertDialog>>,
     pub timer: RefCell<Option<glib::SourceId>>,
     pub backend: RefCell<Arc<dyn Backend>>,
-    _theme: suite_gtk::theme::WindowTheme,
+    _theme: tessel_gtk::theme::WindowTheme,
 }
 
 #[derive(Clone)]
@@ -151,14 +151,14 @@ impl Window {
         let header = gtk::HeaderBar::new();
         window.set_titlebar(Some(&header));
         let theme = way_displays::style::style_window(&window, false);
-        window.add_css_class("hdr-calibration");
+        window.add_css_class("tessel-hdr-calibration");
         let css = gtk::CssProvider::new();
         css.load_from_string(STYLE);
         // Above the palette stylesheet (APPLICATION + 30) so the chrome rules win.
         gtk::style_context_add_provider_for_display(&WidgetExt::display(&window), &css, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 31);
-        let details = suite_gtk::app_menu::AboutDetails { name: "HDR Calibration".into(), icon: "preferences-desktop-display".into(),
+        let details = tessel_gtk::app_menu::AboutDetails { name: "HDR Calibration".into(), icon: "preferences-desktop-display".into(),
             comments: Some("Set HDR brightness limits and SDR white for each monitor".into()), ..Default::default() };
-        let menu_button = suite_gtk::app_menu::install_app_menu(app, &window, suite_gtk::app_menu::MenuTarget::New, details,
+        let menu_button = tessel_gtk::app_menu::install_app_menu(app, &window, tessel_gtk::app_menu::MenuTarget::New, details,
                                                                 Vec::new(), Some(&header), None);
         let pages = gtk::Stack::builder().vexpand(true).build();
         window.set_child(Some(&pages));
@@ -594,9 +594,9 @@ impl Window {
         let source = if field.starts_with("sdr-") { "white" } else { field };
         self.values[source].update();
         let helper = pattern_helper();
-        let child = std::process::Command::new(&helper).args([connector.as_str(), field, &suite_core::pyfmt::float_repr(self.values[source].value())])
+        let child = std::process::Command::new(&helper).args([connector.as_str(), field, &tessel_core::pyfmt::float_repr(self.values[source].value())])
             .stdin(std::process::Stdio::inherit()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped())
-            .spawn().map_err(|e| suite_core::pyerr::os_error_path(&e, &helper))?;
+            .spawn().map_err(|e| tessel_core::pyerr::os_error_path(&e, &helper))?;
         self.child.replace(Some(child));
         self.outcome.set_text(&if field.starts_with("sdr-") {
             tr!("SDR reference open at the applied white target. H hides instructions; Enter closes and Escape cancels.")

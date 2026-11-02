@@ -11,12 +11,12 @@ use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::{Rc, Weak};
 use std::sync::{Arc, Mutex};
-use suite_core::tr;
-use suite_gtk::app_menu::{install_app_menu, AboutDetails, MenuTarget, Shortcut, ShortcutSection};
-use suite_gtk::utils::{accessible, add_css, headerbar, set_margins};
+use tessel_core::tr;
+use tessel_gtk::app_menu::{install_app_menu, AboutDetails, MenuTarget, Shortcut, ShortcutSection};
+use tessel_gtk::utils::{accessible, add_css, headerbar, set_margins};
 
 pub const STYLE: &str = r#"
-window.system-monitor { font-size: 10pt; }
+window.tessel_system_monitor { font-size: 10pt; }
 .monitor-nav { padding: 12px 8px; border-right: 1px solid alpha(currentColor,.12); }
 .monitor-page { padding: 20px; }
 .monitor-heading { font-size: 16pt; font-weight: 600; }
@@ -338,7 +338,7 @@ pub struct Inner {
     pub worker_pending: Cell<bool>,
     pub current_user: String,
     css: gtk::CssProvider,
-    theme: suite_gtk::theme::WindowTheme,
+    theme: tessel_gtk::theme::WindowTheme,
     pub sampler: Option<Arc<Mutex<Sampler>>>,
     pub backend: RefCell<Arc<dyn ProcessBackend>>,
     pub prompt: RefCell<Option<PromptHook>>,
@@ -388,10 +388,10 @@ impl MonitorWindow {
         let window = gtk::ApplicationWindow::builder().application(application).title(tr!("System Monitor")).build();
         window.set_default_size(1120, 760);
         window.set_size_request(820, 540);
-        window.add_css_class("system-monitor");
+        window.add_css_class("tessel-system-monitor");
         // Above the palette stylesheet (APPLICATION + 30) so the chrome rules win.
         let css = add_css(STYLE, Some(&WidgetExt::display(&window)), gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 31);
-        let theme = suite_gtk::theme::attach(&window, None);
+        let theme = tessel_gtk::theme::attach(&window, None);
         let header = headerbar(&tr!("System Monitor"));
         window.set_titlebar(Some(&header));
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -400,7 +400,7 @@ impl MonitorWindow {
         root.append(&content);
         let navigation = gtk::ListBox::builder().selection_mode(gtk::SelectionMode::Single).build();
         navigation.add_css_class("monitor-nav");
-        suite_gtk::utils::sidebar_style(&navigation);
+        tessel_gtk::utils::sidebar_style(&navigation);
         navigation.set_size_request(170, -1);
         content.append(&navigation);
         let mut page_rows = HashMap::new();
@@ -462,13 +462,13 @@ impl MonitorWindow {
             if !all_users.is_active() && data.get("user").and_then(Value::as_str) != Some(user.as_str()) {
                 return false;
             }
-            let query = suite_core::pyjson::casefold(search.text().trim());
+            let query = tessel_core::pyjson::casefold(search.text().trim());
             if query.is_empty() {
                 return true;
             }
             let haystack: Vec<String> = ["name", "pid", "user", "status"].iter()
                 .map(|k| data.get(*k).map(format::display).unwrap_or_default()).collect();
-            suite_core::pyjson::casefold(&haystack.join(" ")).contains(&query)
+            tessel_core::pyjson::casefold(&haystack.join(" ")).contains(&query)
         });
         let filtered = gtk::FilterListModel::new(Some(store.clone()), Some(filter.clone()));
         let sorted = gtk::SortListModel::new(Some(filtered), None::<gtk::Sorter>);
@@ -948,7 +948,7 @@ impl MonitorWindow {
         self.selection_changed();
         let per_core: Vec<Option<f64>> = cpu.get("per_core").and_then(Value::as_array).map(|a| a.iter().map(Value::as_f64).collect()).unwrap_or_default();
         if self.core_labels.borrow().len() != per_core.len() {
-            suite_gtk::utils::remove_children(&self.core_grid);
+            tessel_gtk::utils::remove_children(&self.core_grid);
             let mut labels = self.core_labels.borrow_mut();
             labels.clear();
             for _ in &per_core {
@@ -986,14 +986,14 @@ impl MonitorWindow {
     pub fn render_information(&self, key: &str) {
         let Some(container) = self.info_boxes.get(key) else { return };
         let Some(data) = self.snapshot.borrow().clone() else { return };
-        suite_gtk::utils::remove_children(container);
+        tessel_gtk::utils::remove_children(container);
         match key {
             "storage" => self.storage_list(container, &data["disks"]),
             "network" => {
                 for interface in data["network"].get("interfaces").and_then(Value::as_array).cloned().unwrap_or_default() {
                     let up = interface.get("up").cloned().unwrap_or(Value::Null);
                     let status = match up { Value::Null => tr!("Unavailable"), Value::Bool(true) => tr!("Connected"),
-                                            ref v if suite_core::pyjson::truthy(v) => tr!("Connected"), _ => tr!("Disconnected") };
+                                            ref v if tessel_core::pyjson::truthy(v) => tr!("Connected"), _ => tr!("Disconnected") };
                     let speed = interface.get("speed_mbps").filter(|s| s.as_f64().unwrap_or(0.0) > 0.0)
                         .map(|s| format!("{} Mbps", format::display(s))).unwrap_or_else(|| DASH.into());
                     info_card(container, &text_of(&interface["name"]), &[
@@ -1140,7 +1140,7 @@ impl MonitorWindow {
                 let text = match value {
                     Value::Array(items) if key == "command_line" => {
                         let words: Vec<String> = items.iter().map(format::display).collect();
-                        suite_core::shell::shell_join(&words)
+                        tessel_core::shell::shell_join(&words)
                     }
                     Value::Null => DASH.into(),
                     other => format::display(other),
@@ -1152,7 +1152,7 @@ impl MonitorWindow {
             info_card(&content, &title, &entries, None);
             scroll.set_child(Some(&content));
             dialog.set_child(Some(&scroll));
-            suite_gtk::theme::attach(&dialog, None);
+            tessel_gtk::theme::attach(&dialog, None);
             dialog.present();
         });
     }
@@ -1268,7 +1268,7 @@ impl MonitorWindow {
         }));
         content.append(&actions);
         dialog.set_child(Some(&content));
-        suite_gtk::theme::attach(&dialog, None);
+        tessel_gtk::theme::attach(&dialog, None);
         dialog.present();
         Some(dialog)
     }
@@ -1344,7 +1344,7 @@ impl MonitorWindow {
             timer.remove();
         }
         self.theme.close();
-        suite_gtk::utils::remove_css(&WidgetExt::display(&self.window), &self.css);
+        tessel_gtk::utils::remove_css(&WidgetExt::display(&self.window), &self.css);
     }
 
     pub fn close(&self) {
@@ -1355,7 +1355,7 @@ impl MonitorWindow {
 fn compare(first: &ProcessRow, second: &ProcessRow, key: &str) -> gtk::Ordering {
     let (a, b) = (first.get(key), second.get(key));
     let ordering = if matches!(key, "name" | "user" | "status") {
-        let text = |v: &Value| if suite_core::pyjson::truthy(v) { suite_core::pyjson::casefold(&format::display(v)) } else { String::new() };
+        let text = |v: &Value| if tessel_core::pyjson::truthy(v) { tessel_core::pyjson::casefold(&format::display(v)) } else { String::new() };
         text(&a).cmp(&text(&b))
     } else {
         let number = |v: &Value| v.as_f64().unwrap_or(0.0);

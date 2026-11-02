@@ -1,0 +1,151 @@
+
+@define-color bt_accent @theme_selected_bg_color;
+@define-color bt_surface mix(@theme_base_color, @theme_bg_color, 0.18);
+@define-color bt_muted alpha(@theme_fg_color, 0.62);
+@define-color bt_line alpha(@theme_fg_color, 0.10);
+@define-color bt_green mix(@theme_fg_color, #28a273, 0.70);
+@define-color bt_error mix(@theme_fg_color, #e05d65, 0.75);
+
+window.tessel-bluetooth { background-color: @theme_bg_color; }
+.tessel-bluetooth headerbar {
+    background-image: none;
+    background-color: @theme_bg_color;
+    border: none;
+    box-shadow: none;
+    padding: 8px 14px;
+}
+.tessel-bluetooth .page-title { font-size: 26pt; font-weight: 700; letter-spacing: -0.8px; }
+.tessel-bluetooth .page-subtitle { color: @bt_muted; font-size: 10pt; }
+.tessel-bluetooth .power-card {
+    background-color: @bt_surface;
+    border: 1px solid @bt_line;
+    border-radius: 16px;
+    box-shadow: 0 2px 5px alpha(black, 0.035);
+}
+.tessel-bluetooth .power-title { font-size: 12pt; font-weight: 600; }
+.tessel-bluetooth .secondary-label { color: @bt_muted; font-size: 9pt; }
+.tessel-bluetooth .bluetooth-tile {
+    background-color: alpha(@bt_accent, 0.12);
+    color: @bt_accent;
+    border-radius: 15px;
+    min-width: 56px;
+    min-height: 56px;
+}
+.tessel-bluetooth .bluetooth-tile.off { background-color: alpha(@theme_fg_color, 0.06); color: @bt_muted; }
+.tessel-bluetooth .section-title { font-size: 10pt; font-weight: 600; }
+.tessel-bluetooth .trust-column { min-width: 56px; }
+.tessel-bluetooth .count-badge {
+    font-size: 8pt;
+    font-weight: 600;
+    color: @bt_muted;
+    background-color: alpha(@theme_fg_color, 0.065);
+    border-radius: 10px;
+    min-width: 18px;
+    padding: 2px 5px;
+}
+.tessel-bluetooth .connected-count { color: @bt_green; background-color: alpha(@bt_green, 0.10); }
+.tessel-bluetooth .device-list {
+    background-color: @bt_surface;
+    border: 1px solid @bt_line;
+    border-radius: 13px;
+    box-shadow: 0 2px 5px alpha(black, 0.025);
+}
+.tessel-bluetooth .device-list > row {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    border-bottom: 1px solid @bt_line;
+}
+.tessel-bluetooth .device-list > row:last-child { border-bottom: none; }
+.tessel-bluetooth .device-list > row:first-child { border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.tessel-bluetooth .device-list > row:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.tessel-bluetooth .device-list > row:hover { background-color: alpha(@theme_fg_color, 0.025); }
+.tessel-bluetooth .device-icon {
+    min-width: 42px;
+    min-height: 42px;
+    background-color: alpha(@theme_fg_color, 0.055);
+    color: alpha(@theme_fg_color, 0.72);
+    border-radius: 12px;
+}
+.tessel-bluetooth .device-icon.connected { color: @bt_accent; background-color: alpha(@bt_accent, 0.10); }
+.tessel-bluetooth .device-name { font-weight: 600; font-size: 10pt; }
+.tessel-bluetooth .device-address { color: @bt_muted; font-size: 8.5pt; }
+.tessel-bluetooth .connection-status { color: @bt_green; font-size: 8.5pt; }
+.tessel-bluetooth .empty-label { color: @bt_muted; font-size: 9pt; }
+.tessel-bluetooth .empty-icon { color: alpha(@theme_fg_color, 0.34); }
+.tessel-bluetooth .off-title { font-size: 15pt; font-weight: 600; }
+.tessel-bluetooth .off-symbol { color: @bt_muted; margin-bottom: 12px; }
+.tessel-bluetooth button:not(.titlebutton) {
+    background-image: none;
+    background-color: @bt_surface;
+    color: @theme_fg_color;
+    border: 1px solid @bt_line;
+    border-radius: 8px;
+    box-shadow: none;
+    text-shadow: none;
+    min-height: 28px;
+    padding: 4px 13px;
+    font-weight: 500;
+}
+.tessel-bluetooth button:hover { background-color: mix(@bt_surface, @theme_fg_color, 0.06); }
+.tessel-bluetooth button:active, .tessel-bluetooth button:checked { background-color: mix(@bt_surface, @theme_fg_color, 0.10); }
+.tessel-bluetooth button:focus { outline: 2px solid alpha(@bt_accent, 0.7); outline-offset: 2px; }
+.tessel-bluetooth button.suggested-action { background-color: @bt_accent; color: @theme_selected_fg_color; border-color: transparent; }
+.tessel-bluetooth button.suggested-action:hover { background-color: shade(@bt_accent, 1.10); }
+.tessel-bluetooth button.connect-action { color: @bt_accent; background-color: alpha(@bt_accent, 0.09); border-color: transparent; }
+.tessel-bluetooth button.connect-action:hover { background-color: alpha(@bt_accent, 0.17); }
+.tessel-bluetooth button.icon-button { padding: 4px 7px; min-width: 24px; background-color: transparent; border-color: transparent; }
+.tessel-bluetooth button.icon-button:hover, .tessel-bluetooth button.icon-button:checked { background-color: alpha(@theme_fg_color, 0.07); }
+.tessel-bluetooth button:disabled { opacity: 0.45; }
+.tessel-bluetooth button.destructive-action { color: @bt_error; background-color: alpha(@bt_error, 0.09); border-color: transparent; }
+.tessel-bluetooth button.destructive-action:hover { background-color: alpha(@bt_error, 0.18); }
+.tessel-bluetooth switch {
+    min-width: 44px;
+    min-height: 24px;
+    border-radius: 20px;
+}
+.tessel-bluetooth switch slider { border-radius: 20px; min-width: 20px; min-height: 20px; }
+.tessel-bluetooth switch:checked {
+    background-image: none;
+    background-color: @bt_accent;
+    border-color: @bt_accent;
+}
+.tessel-bluetooth switch:checked slider { background-image: none; background-color: @theme_selected_fg_color; }
+.tessel-bluetooth .event-bar { color: @bt_muted; font-size: 9pt; }
+.tessel-bluetooth .event-bar.error { color: @bt_error; }
+.tessel-bluetooth popover { border-radius: 12px; }
+
+/* The Waybar launcher uses a compact, undecorated panel surface. */
+window.tessel-bluetooth.tray-popup { background-color: transparent; }
+.tessel-bluetooth.tray-popup .popup-surface {
+    background-color: @theme_bg_color;
+    border: 1px solid alpha(@theme_fg_color, 0.14);
+    border-radius: 16px;
+}
+.tessel-bluetooth.tray-popup .power-card {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+.tessel-bluetooth.tray-popup .bluetooth-tile {
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 12px;
+}
+.tessel-bluetooth.tray-popup .popup-icon-tile.off { color: @bt_muted; background-color: alpha(@theme_fg_color, 0.06); }
+.tessel-bluetooth.tray-popup .trust-column { min-width: 48px; }
+.tessel-bluetooth.tray-popup .device-icon {
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 10px;
+}
+.tessel-bluetooth.tray-popup button:not(.titlebutton) {
+    min-height: 24px;
+    padding: 3px 10px;
+}
+.tessel-bluetooth.tray-popup button.icon-button { min-width: 22px; padding: 3px 5px; }
+.tessel-bluetooth.tray-popup .device-actions button { font-size: 9pt; }
+.tessel-bluetooth.tray-popup button.add-device-action { min-height: 28px; }
+.tessel-bluetooth.tray-popup .off-title { font-size: 13pt; }
+.tessel-bluetooth.tray-popup .off-symbol { margin-bottom: 4px; }
+.tessel-bluetooth.tray-popup .event-bar { font-size: 8pt; }

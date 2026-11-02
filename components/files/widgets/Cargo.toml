@@ -1,0 +1,30 @@
+[package]
+name = "tessel-files-widgets"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Files GTK widgets: files_style.py, files_information.py, file_print.py, file_quicklook.py, file_dialogs.py, file_jobs.py, files_devices.DiskUsage."
+
+[lib]
+name = "tessel_files_widgets"
+path = "src/lib.rs"
+
+[dependencies]
+tessel-files-ops = { path = "../ops" }
+tessel-files-model = { path = "../model" }
+tessel-dock = { path = "../../dock" }
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+# GtkSourceView 5 links by soname via the workspace .cargo/config.toml (see tessel-text-editor).
+sourceview5 = { version = "0.11", features = ["v5_18"] }
+kamadak-exif = "0.6"
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false

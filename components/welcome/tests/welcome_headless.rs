@@ -63,7 +63,7 @@ struct Fixture {
 fn app() -> gtk::Application {
     static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    let app = gtk::Application::new(Some(&format!("org.waydock.TestWelcome{n}")), gio::ApplicationFlags::NON_UNIQUE);
+    let app = gtk::Application::new(Some(&format!("org.tessel.TestWelcome{n}")), gio::ApplicationFlags::NON_UNIQUE);
     app.register(gio::Cancellable::NONE).unwrap();
     app
 }
@@ -71,7 +71,7 @@ fn app() -> gtk::Application {
 fn fixture() -> Fixture {
     static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    let done = PathBuf::from(std::env::var("TMPDIR").unwrap()).join(format!("welcome-{n}/state/desktop-suite/setup-done"));
+    let done = PathBuf::from(std::env::var("TMPDIR").unwrap()).join(format!("welcome-{n}/state/tessel/setup-done"));
     let colors = Rc::new(FakeColors::default());
     *colors.value.borrow_mut() = "default".into();
     Fixture { app: app(), events: Rc::default(), launched: Rc::default(), colors, done, window: None }
@@ -298,7 +298,7 @@ fn single_instance_routes_page() {
     assert_eq!(app.command_line(&["--first-run".into()]), 0);
     settle(0.05);
     let window = app.window.borrow().clone().unwrap();
-    let binary = env!("CARGO_BIN_EXE_desktop-suite-welcome");
+    let binary = env!("CARGO_BIN_EXE_tessel-welcome");
     let run = |args: &[&str]| -> (i32, String) {
         let mut child = std::process::Command::new(binary).args(args).stderr(std::process::Stdio::piped()).spawn().unwrap();
         for _ in 0..200 {
@@ -335,7 +335,7 @@ fn real_settings_pages_embed() {
         settle(0.3);
         assert!(!window.is_fallback(key), "{key} fell back");
     }
-    let wizard = window.page("language").unwrap().controller::<language_manager::ui::LanguageWizard>().expect("wizard");
+    let wizard = window.page("language").unwrap().controller::<tessel_language::ui::LanguageWizard>().expect("wizard");
     assert!(!wizard.step_label.is_visible());
     assert!(!wizard.footer.is_visible());
     assert!(wizard.on_wizard_changed.borrow().is_some());
@@ -352,7 +352,7 @@ fn main() {
         eprintln!("welcome_headless: run through tests/run_headless.sh (private compositor only); skipping");
         return;
     }
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     gtk::init().expect("gtk");
     let filter: Vec<String> = std::env::args().skip(1).filter(|a| !a.starts_with('-')).collect();
     let checks: &[(&str, fn())] = &[

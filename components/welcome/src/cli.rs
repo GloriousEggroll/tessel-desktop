@@ -12,7 +12,7 @@ pub type Exit = (i32, String, String);
 pub const USAGE: &str = "usage: welcome.py [-h] [--first-run] [--page PAGE]\n";
 
 pub fn help() -> String {
-    format!("{USAGE}\nWelcome: first-run setup for the desktop suite; reopen it from the application\nmenu.\n\noptions:\n  -h, --help   show this help message and exit\n  --first-run  opened by the first-login setup\n  --page PAGE  start at this step\n")
+    format!("{USAGE}\nWelcome: first-run setup for Tessel; reopen it from the application\nmenu.\n\noptions:\n  -h, --help   show this help message and exit\n  --first-run  opened by the first-login setup\n  --page PAGE  start at this step\n")
 }
 
 fn error(message: &str) -> Exit { (2, String::new(), format!("{USAGE}{PROG}: error: {message}\n")) }

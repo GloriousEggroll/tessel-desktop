@@ -1,6 +1,6 @@
-# hdr-calibration — parity with contracts/hdr-calibration.md
+# tessel-hdr-calibration — parity with contracts/tessel-hdr-calibration.md
 
-Crate `components/hdr-calibration`, binary `hdr-calibration` (GApplication `org.desktop.HDRCalibration`,
+Crate `components/hdr-calibration`, binary `tessel-hdr-calibration` (GApplication `org.desktop.HDRCalibration`,
 NON_UNIQUE). Ports hdr_calibration.py, calibration.py and correction.py. Depends on the way-displays lib
 crate by path for `color_config` (status keyfile, `parse_colors`, `atomic_write`, `rollback`, `Transaction`)
 and `style::style_window`. **`hdr-pattern` stays the C helper** (hdr-pattern.c, built by `build.py`): it is a
@@ -8,7 +8,7 @@ raw Wayland client using the staging color-management-v1 protocol with XRGB21010
 port; the Rust binary runs `<exe dir>/hdr-pattern`, else `<exe dir>/build/hdr-pattern` (same lookup as Python),
 with a Rust-only `HDR_CALIBRATION_PATTERN` override for development runs.
 
-Tests: `env -u TMPDIR cargo test -p hdr-calibration` (19 unit tests incl. compat::etree), `tests/run_headless.sh`
+Tests: `env -u TMPDIR cargo test -p tessel-hdr-calibration` (19 unit tests incl. compat::etree), `tests/run_headless.sh`
 (6 GTK checks in a private nested headless labwc, fake backend, logging fakes on PATH),
 `tests/measure_headless.sh` (Rust vs Python startup/RSS/PSS in the same private compositor; both only read the
 private compositor's own status file, never write or signal; verified rc.xml unchanged, no XDG files, no tool calls).
@@ -45,7 +45,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 | Reset waits for confirmation (AlertDialog) | ✅ | `worker` |
 | Active saved correction kept; unknown active correction blocks `profile()` until cleared | ✅ | `worker` |
 | Old compositor → empty page, controls insensitive | ✅ | `worker` |
-| Title, size, `way-displays` + `hdr-calibration` classes, `.primary`, app menu, defaults from status, close refused while applying | ✅ | `window_contract` |
+| Title, size, `way-displays` + `tessel-hdr-calibration` classes, `.primary`, app menu, defaults from status, close refused while applying | ✅ | `window_contract` |
 | Visual parity | ✅ | Main page screenshot from `run_headless.sh HDR_TEST_SCREENSHOT=…` is **byte-identical** to Python's `preview.png` (same scenario); unavailable page identical in `measure_headless.sh` |
 | Pattern child (spawn, 100 ms poll, JSON encoding check, nits recorded, cancel text, SIGTERM on close/unavailable) | ☑ | not exercised (needs the colour-managed wlroots test server; the C helper keeps `test_patterns.py`) |
 | FileChooserNative `.cube` import | ☑ | import logic tested in unit tests |

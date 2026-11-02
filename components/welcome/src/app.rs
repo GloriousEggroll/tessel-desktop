@@ -1,4 +1,4 @@
-//! `welcome.py`: the GApplication (`org.waydock.Welcome`, HANDLES_COMMAND_LINE).
+//! `welcome.py`: the GApplication (`org.tessel.Welcome`, HANDLES_COMMAND_LINE).
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -65,7 +65,7 @@ pub fn main(argv: Vec<String>) -> i32 {
         eprint!("{err}");
         return code;
     }
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let app = WelcomeApplication::new(APPLICATION_ID, None);
     i32::from(app.app.run_with_args(&argv).get())
 }

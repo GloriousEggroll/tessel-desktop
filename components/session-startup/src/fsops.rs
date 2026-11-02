@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 use std::time::{Duration, Instant};
 
-use suite_core::pyerr::os_error_path;
+use tessel_core::pyerr::os_error_path;
 
 use crate::pystr;
 
@@ -147,7 +147,7 @@ fn signal_name(signal: i32) -> String {
 pub fn run(argv: &[&str], check: bool, timeout: Option<Duration>) -> Result<Run, String> {
     let _ = std::io::stdout().flush();
     let mut child = Command::new(argv[0]).args(&argv[1..]).spawn().map_err(|error| {
-        let mut text = suite_core::pyerr::os_error_text(&error);
+        let mut text = tessel_core::pyerr::os_error_text(&error);
         if error.raw_os_error().is_some() {
             text = format!("{text}: {}", pystr::py_repr(argv[0]));
         }
@@ -155,7 +155,7 @@ pub fn run(argv: &[&str], check: bool, timeout: Option<Duration>) -> Result<Run,
     })?;
     let started = Instant::now();
     let status = loop {
-        if let Some(status) = child.try_wait().map_err(|error| suite_core::pyerr::os_error_text(&error))? {
+        if let Some(status) = child.try_wait().map_err(|error| tessel_core::pyerr::os_error_text(&error))? {
             break status;
         }
         if let Some(limit) = timeout {
@@ -204,5 +204,5 @@ pub fn py_path(path: &Path) -> PathBuf {
 
 /// `Path.home()`.
 pub fn home() -> PathBuf {
-    py_path(&suite_core::paths::home())
+    py_path(&tessel_core::paths::home())
 }

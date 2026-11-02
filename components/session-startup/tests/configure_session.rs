@@ -9,9 +9,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use common::*;
-use session_startup::fsops;
-use session_startup::session::{self, Kind};
-use session_startup::xml;
+use tessel_session_startup::fsops;
+use tessel_session_startup::session::{self, Kind};
+use tessel_session_startup::xml;
 
 struct Live {
     home: PathBuf,
@@ -91,8 +91,8 @@ fn environment_effective_values_are_unchanged() {
         assert!(!generic.contains(personal), "{personal}");
         assert!(local.contains(&format!("{personal}\n")), "{personal}");
     }
-    assert!(generic.contains("# way-displays-gui primary output environment begin\nSDL_VIDEO_DISPLAY_PRIORITY=HDMI-A-1\n"));
-    assert!(generic.contains("# Desktop suite language — managed by Language Settings\n"));
+    assert!(generic.contains("# tessel-displays primary output environment begin\nSDL_VIDEO_DISPLAY_PRIORITY=HDMI-A-1\n"));
+    assert!(generic.contains("# Tessel language — managed by Language Settings\n"));
     assert!(generic.contains("XKB_DEFAULT_OPTIONS=grp:alt_shift_toggle\n"));
     assert!(!local.contains("HDMI-A-1"));
 }
@@ -144,15 +144,15 @@ fn keybindings_are_portable_and_replace_waybar_commands() {
         assert_eq!(binds[key].len(), 1, "{key}");
     }
     let action = |key: &str| xml::findall(binds[key][0], "action").next().unwrap();
-    assert_eq!(xml::get(action("W-l"), "command"), Some("~/.local/bin/wayshell-lock"));
+    assert_eq!(xml::get(action("W-l"), "command"), Some("~/.local/bin/tessel-shell-lock"));
     assert_eq!(xml::sorted_attributes(action("W-4")), [("name".into(), "GoToDesktop".into()), ("to".into(), "4".into())]);
     assert_eq!(xml::sorted_attributes(action("W-S-2")), [("name".into(), "SendToDesktop".into()), ("to".into(), "2".into())]);
-    assert_eq!(xml::get(action("Super_L"), "command"), Some("~/.local/bin/waydock --menu-hotkey"));
+    assert_eq!(xml::get(action("Super_L"), "command"), Some("~/.local/bin/tessel-dock --menu-hotkey"));
     assert_eq!(xml::get(action("W-F4"), "name"), Some("None"));
-    assert!(text.contains("/usr/local/bin/waycapture --capture area"));
+    assert!(text.contains("/usr/local/bin/tessel-capture --capture area"));
     let core = xml::findall(root, "core").next().unwrap();
-    assert!(xml::findtext(core, "promptCommand").unwrap().starts_with("exec \"$HOME\"/.local/bin/wayshell-prompt --message-stdin"));
-    assert_eq!(xml::findtext(core, "errorCommand").unwrap(), "sh -c 'exec \"$HOME\"/.local/bin/wayshell-prompt --error'");
+    assert!(xml::findtext(core, "promptCommand").unwrap().starts_with("exec \"$HOME\"/.local/bin/tessel-prompt --message-stdin"));
+    assert_eq!(xml::findtext(core, "errorCommand").unwrap(), "sh -c 'exec \"$HOME\"/.local/bin/tessel-prompt --error'");
     assert!(text.find("<default/>").unwrap() < text.find(session::BLOCK_BEGIN).unwrap());
 }
 
@@ -161,8 +161,8 @@ fn menu_opens_configured_terminal() {
     let Some(t) = live() else { return };
     t.install();
     let text = t.read(&t.labwc.join("menu.xml"));
-    assert!(text.contains("command=\"~/.local/bin/desktop-suite-action terminal\""));
-    assert!(text.contains("command=\"~/.local/bin/waydock --menu\""));
+    assert!(text.contains("command=\"~/.local/bin/tessel-action terminal\""));
+    assert!(text.contains("command=\"~/.local/bin/tessel-dock --menu\""));
     assert!(!text.contains("ghostty"));
 }
 
@@ -170,19 +170,19 @@ fn menu_opens_configured_terminal() {
 fn units_use_home_specifier_and_recover_from_crashes() {
     let Some(t) = live() else { return };
     t.install();
-    let network = t.read(&t.units.join("netman.service"));
-    assert!(network.contains("ExecStart=/usr/bin/python3 %h/.config/waybar/scripts/network-manager/network_manager.py"));
-    for (unit, environment) in [("netman.service", false), ("power-manager.service", true), ("notifications.service", true)] {
+    let network = t.read(&t.units.join("tessel-network.service"));
+    assert!(network.contains("ExecStart=/usr/bin/python3 %h/.config/waybar/scripts/tessel-network/network_manager.py"));
+    for (unit, environment) in [("tessel-network.service", false), ("tessel-power.service", true), ("tessel-notifications.service", true)] {
         let dropin = t.read(&t.units.join(format!("{unit}.d")).join(session::RECOVERY_DROPIN));
-        assert!(dropin.contains("OnFailure=desktop-suite-failed@%n.service\n"));
+        assert!(dropin.contains("OnFailure=tessel-failed@%n.service\n"));
         assert!(dropin.contains("RestartSec=1\n"));
         assert!(dropin.contains("StartLimitBurst=5\n"));
         assert_eq!(dropin.contains("90-local.env"), environment, "{unit}");
     }
-    assert!(!t.units.join("power-manager-lock.service.d").exists());
-    assert!(!t.units.join("waydock.service.d").exists());
-    let template = t.read(&t.units.join("desktop-suite-failed@.service"));
-    assert!(template.contains("%h/.local/share/desktop-suite/session/desktop_suite_failed.py %i"));
+    assert!(!t.units.join("tessel-lock.service.d").exists());
+    assert!(!t.units.join("tessel-dock.service.d").exists());
+    let template = t.read(&t.units.join("tessel-failed@.service"));
+    assert!(template.contains("%h/.local/share/tessel/session/desktop_suite_failed.py %i"));
     assert!(!template.contains("[Install]"));
     for (path, _, _) in session::runtime_files(&t.home, &source()).unwrap() {
         assert!(path.is_file(), "{}", path.display());
@@ -192,15 +192,15 @@ fn units_use_home_specifier_and_recover_from_crashes() {
 #[test]
 fn missing_base_units_are_created_and_existing_units_kept() {
     let Some(t) = live() else { return };
-    write(&t.units.join("wayshell.service"), "[Service]\nExecStart=/usr/bin/my-shell\n");
+    write(&t.units.join("tessel-shell.service"), "[Service]\nExecStart=/usr/bin/my-shell\n");
     t.install();
-    assert_eq!(t.read(&t.units.join("wayshell.service")), "[Service]\nExecStart=/usr/bin/my-shell\n");
-    for name in ["notifications.service", "way-displays.service"] {
+    assert_eq!(t.read(&t.units.join("tessel-shell.service")), "[Service]\nExecStart=/usr/bin/my-shell\n");
+    for name in ["tessel-notifications.service", "way-displays.service"] {
         let text = t.read(&t.units.join(name));
         assert_eq!(text, fs::read_to_string(source().session.join("units").join(name)).unwrap());
         assert!(!text.contains("[Install]"));
     }
-    let dropin = t.read(&t.units.join("notifications.service.d").join(session::RECOVERY_DROPIN));
+    let dropin = t.read(&t.units.join("tessel-notifications.service.d").join(session::RECOVERY_DROPIN));
     assert!(dropin.contains("90-local.env"));
     assert!(session::changes_for(&t.home, &source()).unwrap().0.is_empty());
     assert!(session::base_units(&t.home, &source()).unwrap().is_empty());
@@ -238,7 +238,7 @@ fn users_own_binding_is_never_replaced() {
 #[test]
 fn old_suite_bindings_after_defaults_are_replaced() {
     let (text, skipped) = edit(&rc(&format!(
-        "    <keybind key=\"XF86AudioMute\"><action name=\"Execute\" command=\"{HOME}/.config/waybar/scripts/audio-manager/audio_manager.py --toggle-mute\"/></keybind>\n    <keybind key=\"W-2\"><action name=\"GoToDesktop\" to=\"2\"/></keybind>\n"
+        "    <keybind key=\"XF86AudioMute\"><action name=\"Execute\" command=\"{HOME}/.config/waybar/scripts/tessel-audio/audio_manager.py --toggle-mute\"/></keybind>\n    <keybind key=\"W-2\"><action name=\"GoToDesktop\" to=\"2\"/></keybind>\n"
     )));
     assert!(skipped.is_empty());
     assert!(!text.contains("audio_manager.py"));
@@ -248,11 +248,11 @@ fn old_suite_bindings_after_defaults_are_replaced() {
 
 #[test]
 fn tiling_block_keeps_precedence_and_is_untouched() {
-    let tiling = "    <!-- Waytile keyboard begin -->\n    <keybind key=\"W-C-Left\"><action name=\"Tiling\" command=\"group-prev\"/></keybind>\n    <!-- Waytile keyboard end -->\n";
+    let tiling = "    <!-- Tessel Tiling keyboard begin -->\n    <keybind key=\"W-C-Left\"><action name=\"Tiling\" command=\"group-prev\"/></keybind>\n    <!-- Tessel Tiling keyboard end -->\n";
     let (text, skipped) = edit(&rc(tiling));
     assert!(skipped.is_empty());
     assert!(text.contains(tiling));
-    assert!(text.find(session::BLOCK_END).unwrap() < text.find("Waytile keyboard begin").unwrap());
+    assert!(text.find(session::BLOCK_END).unwrap() < text.find("Tessel Tiling keyboard begin").unwrap());
 }
 
 #[test]
@@ -280,9 +280,9 @@ fn invalid_documents_are_rejected() {
         ("<!DOCTYPE x><labwc_config/>", "labwc XML document types and entities are not supported."),
         ("<openbox_config/>", "Expected a labwc_config document."),
         ("<labwc_config><keyboard/><keyboard/></labwc_config>", "Multiple labwc keyboard sections are not supported."),
-        ("<labwc_config><keyboard><default/></keyboard><!-- Desktop suite keybindings begin --></labwc_config>", "Repair the markers of the labwc keybinding block: <!-- Desktop suite keybindings begin"),
-        ("<labwc_config><keyboard><default/><!-- Desktop suite keybindings end --><!-- Desktop suite keybindings begin --></keyboard></labwc_config>", "Reversed labwc keybinding block: <!-- Desktop suite keybindings begin"),
-        ("<labwc_config><keyboard><default/></keyboard><!-- Waytile keyboard begin --><!-- Waytile keyboard end --></labwc_config>", "A managed keybinding block is outside the keyboard section."),
+        ("<labwc_config><keyboard><default/></keyboard><!-- Tessel keybindings begin --></labwc_config>", "Repair the markers of the labwc keybinding block: <!-- Tessel keybindings begin"),
+        ("<labwc_config><keyboard><default/><!-- Tessel keybindings end --><!-- Tessel keybindings begin --></keyboard></labwc_config>", "Reversed labwc keybinding block: <!-- Tessel keybindings begin"),
+        ("<labwc_config><keyboard><default/></keyboard><!-- Tessel Tiling keyboard begin --><!-- Tessel Tiling keyboard end --></labwc_config>", "A managed keybinding block is outside the keyboard section."),
     ] {
         assert_eq!(session::edit_rc(text, home).unwrap_err(), message);
     }
@@ -353,7 +353,7 @@ fn preview_writes_nothing() {
     let home = scratch("labwc-session-cli");
     write(&home.join(".config/labwc/autostart"), "custom-command &\n");
     let before = tree(&home);
-    let output = Command::new(env!("CARGO_BIN_EXE_configure-session"))
+    let output = Command::new(env!("CARGO_BIN_EXE_tessel-configure-session"))
         .env_clear()
         .env("HOME", &home)
         .env("PATH", "/usr/bin:/bin")
@@ -368,7 +368,7 @@ fn preview_writes_nothing() {
 #[test]
 fn argument_errors_match_argparse() {
     let run = |args: &[&str]| {
-        let output = Command::new(env!("CARGO_BIN_EXE_configure-session")).args(args).env("HOME", "/nonexistent").output().unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_tessel-configure-session")).args(args).env("HOME", "/nonexistent").output().unwrap();
         (output.status.code().unwrap(), String::from_utf8_lossy(&output.stderr).into_owned())
     };
     let (code, stderr) = run(&["--check", "--apply"]);

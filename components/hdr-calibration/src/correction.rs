@@ -30,14 +30,14 @@ pub fn sha256_hex(data: &[u8]) -> String {
 /// `read_cube(path, identity, mode) -> (data, sha256, size)`.
 pub fn read_cube(path: &Path, identity: &str, mode: &str) -> Result<(Vec<u8>, String, u32), CalError> {
     let mut file = std::fs::OpenOptions::new().read(true).custom_flags(libc::O_NONBLOCK).open(path)
-        .map_err(|e| CalError::Os(suite_core::pyerr::os_error_path(&e, path)))?;
-    let info = file.metadata().map_err(|e| CalError::Os(suite_core::pyerr::os_error_text(&e)))?;
+        .map_err(|e| CalError::Os(tessel_core::pyerr::os_error_path(&e, path)))?;
+    let info = file.metadata().map_err(|e| CalError::Os(tessel_core::pyerr::os_error_text(&e)))?;
     let file_type = info.file_type();
     if !file_type.is_file() || file_type.is_fifo() || !(128..=MAX_BYTES).contains(&info.len()) {
         return Err(value("Choose a regular HDR correction file smaller than 16 MiB."));
     }
     let mut data = Vec::new();
-    (&mut file).take(MAX_BYTES + 1).read_to_end(&mut data).map_err(|e| CalError::Os(suite_core::pyerr::os_error_text(&e)))?;
+    (&mut file).take(MAX_BYTES + 1).read_to_end(&mut data).map_err(|e| CalError::Os(tessel_core::pyerr::os_error_text(&e)))?;
     if data.len() as u64 > MAX_BYTES || data.contains(&0) {
         return Err(value("Invalid HDR correction file."));
     }
@@ -110,10 +110,10 @@ pub fn read_cube(path: &Path, identity: &str, mode: &str) -> Result<(Vec<u8>, St
     Ok((data, sha, dim))
 }
 
-/// Copy a validated cube to `$XDG_CONFIG_HOME/hdr-calibration/corrections/<sha>.cube` (0400).
+/// Copy a validated cube to `$XDG_CONFIG_HOME/tessel-hdr-calibration/corrections/<sha>.cube` (0400).
 pub fn import_cube(path: &Path, identity: &str, mode: &str) -> Result<Map<String, Value>, CalError> {
     let (data, sha, dim) = read_cube(path, identity, mode)?;
-    let target = crate::calibration::config_home().join("hdr-calibration/corrections").join(format!("{sha}.cube"));
+    let target = crate::calibration::config_home().join("tessel-hdr-calibration/corrections").join(format!("{sha}.cube"));
     way_displays::color_config::atomic_write(&target, &data, 0o400)?;
     Ok(json!({"path": target.to_string_lossy(), "sha256": sha, "encoding": "BT2020-PQ", "size": dim}).as_object().unwrap().clone())
 }

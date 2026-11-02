@@ -9,12 +9,12 @@ use gs_base::style::{card, install, page_header, symbolic_icon, unify_header, He
 use gs_base::{tags, Host, PageHost, SettingsPage};
 use gtk::prelude::*;
 use gtk::{gdk, gio, glib, pango};
-use suite_core::tr;
-use suite_gtk::utils::{headerbar, image, key_controller};
+use tessel_core::tr;
+use tessel_gtk::utils::{headerbar, image, key_controller};
 
 use crate::state::{self, InstallStatus};
 
-pub const APPLICATION_ID: &str = "org.waydock.Welcome";
+pub const APPLICATION_ID: &str = "org.tessel.Welcome";
 
 /// (key, step name shown in the sidebar, icon)
 pub const STEPS: &[(&str, &str, &str)] = &[
@@ -32,7 +32,7 @@ pub fn step_keys() -> Vec<&'static str> { STEPS.iter().map(|s| s.0).collect() }
 /// Pages embedded from Global Settings; the section matches its --section name.
 pub const SETTINGS_SECTIONS: &[(&str, &str)] = &[("language", "language_page"), ("keyboard", "keyboard_page"), ("layout", "layout_page")];
 
-/// The suite's default shortcuts (session-startup and capture-manager).
+/// The suite's default shortcuts (tessel-session-startup and tessel-capture).
 pub const SHORTCUTS: &[(&str, &str)] = &[
     ("Super_L", "Open the application menu"),
     ("W-l", "Lock the screen"),
@@ -141,13 +141,13 @@ fn interface_settings() -> Option<Rc<dyn ColorSettings>> {
 
 #[cfg(feature = "pages")]
 fn display_key(key: &str) -> String {
-    gs_system::shortcuts_model::display_key_with(key, &|t: &str| suite_core::i18n::translate(t))
+    gs_system::shortcuts_model::display_key_with(key, &|t: &str| tessel_core::i18n::translate(t))
 }
 
 /// `shortcuts_model.display_key(key, tr)` (fallback copy without gs-system).
 #[cfg(not(feature = "pages"))]
 fn display_key(key: &str) -> String {
-    let translate = |t: &str| suite_core::i18n::translate(t);
+    let translate = |t: &str| tessel_core::i18n::translate(t);
     let modifiers = |part: &str| -> String {
         match part.to_uppercase().as_str() {
             "W" => "Super", "C" => "Ctrl", "A" => "Alt", "S" => "Shift", "H" => "Hyper", "M" => "Meta",
@@ -261,7 +261,7 @@ fn content(spacing: i32) -> gtk::Box {
 }
 
 #[cfg(feature = "pages")]
-type Wizard = language_manager::ui::LanguageWizard;
+type Wizard = tessel_language::ui::LanguageWizard;
 
 impl WelcomeWindow {
     pub fn new(application: &gtk::Application, options: Options) -> WelcomeWindow {
@@ -294,7 +294,7 @@ impl WelcomeWindow {
             tags::set_str(&row, "step", key);
             let line = gtk::Box::new(gtk::Orientation::Horizontal, 12);
             line.append(&symbolic_icon(icon, 16));
-            line.append(&gtk::Label::builder().label(suite_core::i18n::translate(name)).xalign(0.0).build());
+            line.append(&gtk::Label::builder().label(tessel_core::i18n::translate(name)).xalign(0.0).build());
             row.set_child(Some(&line));
             step_list.append(&row);
             rows.insert(*key, row);
@@ -520,7 +520,7 @@ impl WelcomeWindow {
     fn fallback(&self, key: &'static str, error: &str) -> SettingsPage {
         let body = content(18);
         let (_, name, icon) = STEPS.iter().find(|s| s.0 == key).copied().unwrap();
-        body.append(&page_header(&suite_core::i18n::translate(name),
+        body.append(&page_header(&tessel_core::i18n::translate(name),
             Some(&tr!("This step could not be shown here. You can make the same choice in Settings.")), Some(icon)).root);
         let detail = label(error, Some("gs-muted"), true);
         detail.set_selectable(true);
@@ -560,10 +560,10 @@ impl WelcomeWindow {
         for (value, name, icon) in COLOR_SCHEMES {
             let b = gtk::Box::new(gtk::Orientation::Vertical, 8);
             b.append(&symbolic_icon(icon, 32));
-            b.append(&gtk::Label::new(Some(&suite_core::i18n::translate(name))));
+            b.append(&gtk::Label::new(Some(&tessel_core::i18n::translate(name))));
             let button = gtk::ToggleButton::builder().child(&b).build();
             button.add_css_class("welcome-scheme");
-            button.update_property(&[gtk::accessible::Property::Label(&suite_core::i18n::translate(name))]);
+            button.update_property(&[gtk::accessible::Property::Label(&tessel_core::i18n::translate(name))]);
             match &first {
                 None => first = Some(button.clone()),
                 Some(first) => button.set_group(Some(first)),
@@ -644,7 +644,7 @@ impl WelcomeWindow {
             let keys = label(&display_key(key), Some("welcome-key"), false);
             keys_column.add_widget(&keys);
             row.append(&keys);
-            let text = label(&suite_core::i18n::translate(description), None, true);
+            let text = label(&tessel_core::i18n::translate(description), None, true);
             text.set_hexpand(true);
             row.append(&text);
             b.append(&row);

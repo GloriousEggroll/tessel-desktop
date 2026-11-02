@@ -40,13 +40,13 @@ pub fn natural_key(text: &str) -> Vec<Part> {
         let is_digit = c.is_ascii_digit();
         if !current.is_empty() && is_digit != digits {
             parts.push(if digits { Part::Number(std::mem::take(&mut current)) }
-                       else { Part::Text(suite_core::pyjson::casefold(&std::mem::take(&mut current))) });
+                       else { Part::Text(tessel_core::pyjson::casefold(&std::mem::take(&mut current))) });
         }
         digits = is_digit;
         current.push(c);
     }
     if !current.is_empty() {
-        parts.push(if digits { Part::Number(current) } else { Part::Text(suite_core::pyjson::casefold(&current)) });
+        parts.push(if digits { Part::Number(current) } else { Part::Text(tessel_core::pyjson::casefold(&current)) });
     }
     parts
 }
@@ -55,7 +55,7 @@ fn text(value: Option<&Value>) -> String {
     match value {
         None | Some(Value::Null) => String::new(),
         Some(Value::String(s)) => s.clone(),
-        Some(other) => suite_core::pyjson::py_str(other),
+        Some(other) => tessel_core::pyjson::py_str(other),
     }
 }
 
@@ -136,7 +136,7 @@ pub fn capitalize(text: &str) -> String {
 pub fn display(value: &Value) -> String {
     match value {
         Value::String(s) => s.clone(),
-        other => suite_core::pyjson::py_str(other),
+        other => tessel_core::pyjson::py_str(other),
     }
 }
 

@@ -14,8 +14,8 @@ use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::{Rc, Weak};
 use std::time::Duration;
-use suite_core::tr;
-use suite_gtk::utils::{accessible, headerbar, image, set_margins};
+use tessel_core::tr;
+use tessel_gtk::utils::{accessible, headerbar, image, set_margins};
 
 /// A deferred operation run with the window (`guard(callback)`, `save(after=...)`).
 pub type Callback = Box<dyn FnOnce(&EditorWindow)>;
@@ -123,7 +123,7 @@ impl EditorWindow {
     pub fn new(application: &EditorApplication) -> EditorWindow {
         let window = gtk::ApplicationWindow::builder().application(&application.app).title(tr!("Text Editor"))
             .default_width(1000).default_height(720).build();
-        window.add_css_class("text-editor");
+        window.add_css_class("tessel-text-editor");
         let font_scope = format!("editor-font-{}", SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
 
         let title_label = gtk::Label::new(Some(&tr!("Untitled")));
@@ -482,11 +482,11 @@ impl EditorWindow {
         }
         root.append_section(None, &groups);
         root.append_section(None, &section(&[("Preferences…", "preferences"), ("Set as Default Text Editor", "set-default")]));
-        let details = suite_gtk::app_menu::AboutDetails {
+        let details = tessel_gtk::app_menu::AboutDetails {
             name: "Text Editor".into(), icon: "accessories-text-editor".into(), version: None,
             comments: Some("Edit plain text and source code".into()), website: None,
         };
-        let menu_button = suite_gtk::app_menu::install_app_menu(&self.app.app, &self.window, suite_gtk::app_menu::MenuTarget::Model(root.clone()),
+        let menu_button = tessel_gtk::app_menu::install_app_menu(&self.app.app, &self.window, tessel_gtk::app_menu::MenuTarget::Model(root.clone()),
                                                                 details, style::shortcuts(), Some(&self.header), None);
         self.menu_button.replace(Some(menu_button));
         let recent = gio::SimpleAction::new("open-recent", Some(glib::VariantTy::STRING));
@@ -759,7 +759,7 @@ impl EditorWindow {
     }
 
     pub fn set_default(&self) {
-        let Some(info) = suite_core::glib_compat::desktop_app_info(DESKTOP_ID) else {
+        let Some(info) = tessel_core::glib_compat::desktop_app_info(DESKTOP_ID) else {
             self.message(&tr!("Text Editor's application entry is not installed."), false);
             return;
         };
@@ -1327,7 +1327,7 @@ impl EditorWindow {
             #[allow(deprecated)]
             let prefer = settings.is_gtk_application_prefer_dark_theme();
             dark = prefer
-                || settings.gtk_theme_name().is_some_and(|name| suite_core::pyjson::casefold(&name).contains("dark"));
+                || settings.gtk_theme_name().is_some_and(|name| tessel_core::pyjson::casefold(&name).contains("dark"));
         }
         let mut scheme = if dark { "Adwaita-dark" } else { "Adwaita" };
         // This flag follows the system preference; the palette's actual
@@ -1444,7 +1444,7 @@ impl EditorWindow {
         row("Line endings", ending.upcast_ref());
         let manager = sourceview5::LanguageManager::default();
         let mut languages: Vec<sourceview5::Language> = manager.language_ids().iter().filter_map(|id| manager.language(id)).collect();
-        languages.sort_by_key(|lang| suite_core::pyjson::casefold(&lang.name()));
+        languages.sort_by_key(|lang| tessel_core::pyjson::casefold(&lang.name()));
         let mut labels = vec![tr!("Plain Text")];
         labels.extend(languages.iter().map(|lang| lang.name().to_string()));
         let label_refs: Vec<&str> = labels.iter().map(String::as_str).collect();
@@ -1478,7 +1478,7 @@ impl EditorWindow {
     }
 
     pub fn vim_command(&self, command: &str) -> bool {
-        let command = suite_core::pyjson::py_strip(command.trim_start_matches(':'));
+        let command = tessel_core::pyjson::py_strip(command.trim_start_matches(':'));
         let (name, path) = match command.find(' ') {
             Some(index) => (&command[..index], &command[index + 1..]),
             None => (command, ""),

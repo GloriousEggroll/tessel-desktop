@@ -1,14 +1,14 @@
-//! `keep-awake [--background | --popup | --status | --enable | --disable | --toggle]
+//! `tessel-keep-awake [--background | --popup | --status | --enable | --disable | --toggle]
 //! [--popup-edge E] [--popup-offset N]` (keep_awake.py `main`).
 
 use gio::prelude::*;
-use keep_awake::app::{login_factory, KeepAwakeApplication, APPLICATION_ID};
-use keep_awake::args::{self, Outcome};
+use tessel_keep_awake::app::{login_factory, KeepAwakeApplication, APPLICATION_ID};
+use tessel_keep_awake::args::{self, Outcome};
 
 fn main() -> glib::ExitCode {
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let argv: Vec<String> = std::env::args_os().map(|a| a.to_string_lossy().into_owned()).collect();
-    let prog = args::prog(argv.first().map(String::as_str).unwrap_or("keep-awake"));
+    let prog = args::prog(argv.first().map(String::as_str).unwrap_or("tessel-keep-awake"));
     let parsed = match args::parse(argv.get(1..).unwrap_or(&[])) {
         Outcome::Run(parsed) => parsed,
         Outcome::Help => {

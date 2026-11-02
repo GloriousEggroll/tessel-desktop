@@ -1,18 +1,18 @@
-# Foundation crates: `suite-core`, `suite-gtk`, `suite-power` and `suite-wayland`
+# Foundation crates: `tessel-core`, `tessel-gtk`, `tessel-power-core` and `tessel-wayland`
 
-Rust ports of `~/btmanager/shared` (plus Waydock's palette theme, and the
-power backend shared by power-manager and battery-manager). Behaviour,
+Rust ports of `~/tessel-bluetooth/shared` (plus Tessel Dock's palette theme, and the
+power backend shared by tessel-power and tessel-battery). Behaviour,
 file paths, CSS class names and strings match the Python modules; read this
 instead of the source. Depend on them from a component with:
 
 ```toml
 [dependencies]
-suite-core.workspace = true
-suite-gtk.workspace = true          # GUI components only
+tessel-core.workspace = true
+tessel-gtk.workspace = true          # GUI components only
 gtk.workspace = true                # = gtk4 0.11, feature v4_22 (system GTK 4.22)
 gtk4-layer-shell.workspace = true   # if you use layer shell directly
-suite-power = { workspace = true, features = ["gtk"] }   # power/battery components only
-suite-wayland = { workspace = true, features = ["glib"] } # + "gtk" for GTK-display use / textures
+tessel-power-core = { workspace = true, features = ["gtk"] }   # power/battery components only
+tessel-wayland = { workspace = true, features = ["glib"] } # + "gtk" for GTK-display use / textures
 ```
 
 `gio` is built with feature `v2_80` workspace-wide. Unix signal/fd sources come
@@ -21,7 +21,7 @@ from `suite_core::glib_compat` (no direct `glib-unix` dependency needed).
 Startup order in every `main`: `suite_core::i18n::initialize();` **before**
 `gtk::init()` / `Application::run` (GTK calls setlocale too).
 
-Link order: `suite-gtk`'s build script links `-lgtk4-layer-shell` before
+Link order: `tessel-gtk`'s build script links `-lgtk4-layer-shell` before
 `-lwayland-client` (layer shell interposes `wl_*`; Python achieves this by
 loading it `RTLD_GLOBAL` first). Do not add your own earlier
 `wayland-client` link, or layer surfaces silently fail
@@ -29,7 +29,7 @@ loading it `RTLD_GLOBAL` first). Do not add your own earlier
 
 ---
 
-## suite-core
+## tessel-core
 
 ### `i18n` (suite_i18n.py) and `tr!`
 - `tr!("Text")`, `tr!("Saved {n} at {p:.0f}%", n = 3, p = 41.6)` → `String`.
@@ -44,7 +44,7 @@ loading it `RTLD_GLOBAL` first). Do not add your own earlier
   entries fall back to the source; format failures fall back to the formatted
   source (and finally the raw source, where Python would raise).
 - `initialize() -> &'static str` (idempotent). With a valid
-  `~/.config/desktop-suite/language.json` (`{"version":1,"language":"fr","locale":"fr_FR.UTF-8"}`)
+  `~/.config/tessel/language.json` (`{"version":1,"language":"fr","locale":"fr_FR.UTF-8"}`)
   it removes `LC_ALL` (copying its value, else `LANG`, else `C.UTF-8`, into the
   unset `LC_NUMERIC…LC_IDENTIFICATION`), sets `LANG`/`LC_MESSAGES` to the
   locale and `LANGUAGE` to the code, then `setlocale(LC_ALL, "")`. Without a
@@ -56,10 +56,10 @@ loading it `RTLD_GLOBAL` first). Do not add your own earlier
   lazily and cached per code (`clear_catalog_cache()`). `catalog_directory()`:
   1. `$DESKTOP_SUITE_LOCALE_DIR` (Rust-only override for tests/dev runs),
   2. `<directory of the executable>/locale` if it exists,
-  3. `$XDG_DATA_HOME/desktop-suite/locale` = `~/.local/share/desktop-suite/locale`.
+  3. `$XDG_DATA_HOME/tessel/locale` = `~/.local/share/tessel/locale`.
 
-  **Installer must ship** `~/btmanager/shared/locale/*.json` (31 files) to
-  `~/.local/share/desktop-suite/locale/`. The Python installers currently ship
+  **Installer must ship** `~/tessel-bluetooth/shared/locale/*.json` (31 files) to
+  `~/.local/share/tessel/locale/`. The Python installers currently ship
   only the generated `suite_catalogs.py` (base85+zlib bundle) next to each
   component, which the Rust side does not read. Missing catalogs ⇒ English UI.
 
@@ -69,8 +69,8 @@ loading it `RTLD_GLOBAL` first). Do not add your own earlier
 
 ### `paths` (XDG exactly as Python: non-empty env var, else `$HOME/…`)
 `home, config_home, cache_home, data_home, state_home, runtime_dir,
-suite_config_dir (~/.config/desktop-suite), suite_data_dir
-(~/.local/share/desktop-suite), component_config_dir/cache_dir/state_dir(name)`.
+suite_config_dir (~/.config/tessel), suite_data_dir
+(~/.local/share/tessel), component_config_dir/cache_dir/state_dir(name)`.
 
 ### `clock` (clock_preferences.py)
 - `ClockPreferences { stacked, date_first, use_24_hour, date_order ("mdy"…),
@@ -78,7 +78,7 @@ suite_config_dir (~/.config/desktop-suite), suite_data_dir
   short_names }` with Python defaults; `from_map`, `to_map`,
   `format_time/format_date/format_weekday/ordered_parts(&impl ClockTime)`.
   `ClockTime` is implemented for `glib::DateTime` (locale-aware `%p %a %A %b %B`).
-- `ClockPreferencesStore::new(path)` / `default()` (`~/.config/desktop-suite/clock.json`):
+- `ClockPreferencesStore::new(path)` / `default()` (`~/.config/tessel/clock.json`):
   `load()` (re-reads on inode/mtime/size change; keeps last good state on a bad
   file), `update(&Map)` → `Result<_, StoreError::{Invalid, Io}>` (validates,
   merges into the current file preserving unknown keys, writes `version: 1`,
@@ -176,11 +176,11 @@ bool), `int` (`type(v) is int`), `is_true`/`is_false` (`v is True/False`),
 
 ### `service_settings::SettingsClient::proxy()`
 `Option<gio::DBusProxy>` once connected (Python `self._proxy`), for raw calls on
-another interface of the same object (keep-awake's `SetDuration`).
+another interface of the same object (tessel-keep-awake's `SetDuration`).
 
 ---
 
-## suite-gtk (`suite_gtk::gtk` re-exports gtk4)
+## tessel-gtk (`suite_gtk::gtk` re-exports gtk4)
 
 ### `utils` (gtk4_utils.py)
 `add_css(css, Option<&Display>, priority) -> CssProvider` (also installs once the
@@ -203,7 +203,7 @@ size 16), `accessible(widget, label)`, `append(box, child, expand, end)`,
   click-away backdrops per monitor (`desktop-applet-dismiss`,
   `.desktop-applet-backdrop`); Escape / close-request / monitor change dismiss.
 - `show()`: `begin_show()` starts a new generation, a `PointerMonitor` finds the
-  pointer's output, `dock_placement` asks Waydock, then (only if the generation
+  pointer's output, `dock_placement` asks Tessel Dock, then (only if the generation
   is still current) moves to that monitor (hiding first if it changed),
   applies `edge/offset/align`, shows backdrops, calls `apply_state`, presents.
 - `show_pending()` is true from `begin_show()` until the popup is presented
@@ -229,7 +229,7 @@ size 16), `accessible(widget, label)`, `append(box, child, expand, end)`,
 `PointerMonitor::new(FnOnce(Option<Monitor>))` (1×1 input-transparent probe,
 namespace `suite-output-probe`, 1 s timeout; `.cancel()`),
 `dock_placement(monitor, group, FnOnce(Option<Placement>))` — D-Bus
-`org.waydock.Waydock /org/waydock/Settings org.waydock.Settings.GetPopupPlacement(ss) -> s`,
+`org.tessel.Tessel Dock /org/tessel/Settings org.tessel.Settings.GetPopupPlacement(ss) -> s`,
 500 ms, no auto-start; `Placement {edge, align, offset}` / `Placement::from_json`,
 `anchor_popup(&window, edge, offset, align)` (12 px side margin unless center),
 `edge_from_name`, `pass_input(&native)` (empty input region).
@@ -255,12 +255,12 @@ classes `flat suite-app-menu`. `ShortcutSection = (String, Vec<Shortcut>)`,
 namespace `desktop-adjustment-osd`, input passes through, centered, `CSS`,
 helpers `icon_name`, `value_text`.
 
-### `theme` (waydock/companion_theme.py) — how every app gets the dock palette
+### `theme` (tessel-dock/companion_theme.py) — how every app gets the dock palette
 - `attach(&window, None) -> WindowTheme` (idempotent; call for every toplevel,
   dialog and popup window) or `attach_application(&app)` (all present and
-  future windows). Follows `~/.cache/waydock/palette.json` (directory monitor
+  future windows). Follows `~/.cache/tessel-dock/palette.json` (directory monitor
   + 2 s poll), picks the entry whose geometry equals the window's monitor,
-  adds class `waydock-companion-<n>` and a provider at APPLICATION+30
+  adds class `tessel-dock-companion-<n>` and a provider at APPLICATION+30
   (square corners: extra provider at USER+3). No palette ⇒ app CSS untouched.
   Also drives compositor blur (`blur` module) when `apps_frosted`.
 - Pure functions: `validate_palette(&Value) -> PaletteFile`, `palette_for_geometry`,
@@ -269,7 +269,7 @@ helpers `icon_name`, `value_text`.
   `window_frame_css`, `window_glyph_svg`, `window_light_svg`, `square_corners_css`,
   `is_dialog` (dialogs ≥ 0.97 opacity), `PaletteClient` (shared watcher).
 
-### `palette` (waydock/dock_style.py + gtk_color_scheme.color_css)
+### `palette` (tessel-dock/dock_style.py + gtk_color_scheme.color_css)
 `color_palette(is_dark, Option<wallpaper rgb>) -> Palette {background, foreground, accent}`,
 `surface_palette(.., Option<manual bg>)`, `wallpaper_accent`, `contrast`,
 `relative_luminance`, `mix` (Python half-even rounding), `rgb_to_hls/hls_to_rgb`,
@@ -284,13 +284,13 @@ saturation ≥ 0.45 with ≥ 4.5:1 contrast, blue fallback for colourless input.
 `.configure(enabled, strength 0..100, rounded, target, include_root)`,
 `.refresh()`, `.surface_count()`, `.geometry(i)`, `.close()`. The former C
 bridge (native/background_blur.c) is gone; there is one implementation, in
-suite-wayland (see below). suite-gtk's build.rs now only fixes the link order.
+tessel-wayland (see below). tessel-gtk's build.rs now only fixes the link order.
 
 ---
 
-## suite-power (power_backend.py, power_charge_limits.py; `gtk` feature: power_style.py, power_battery_ui.py)
+## tessel-power-core (power_backend.py, power_charge_limits.py; `gtk` feature: power_style.py, power_battery_ui.py)
 
-Used by power-manager (`Mode::Full`) and battery-manager (`Mode::BatteriesOnly`).
+Used by tessel-power (`Mode::Full`) and tessel-battery (`Mode::BatteriesOnly`).
 Without the `gtk` feature it links only GLib/GIO (status-stream binaries).
 
 - `backend::PowerBackend::new(on_changed, on_error, Options {mode, connector,
@@ -329,15 +329,15 @@ Without the `gtk` feature it links only GLib/GIO (status-stream binaries).
 
 ---
 
-## suite-wayland (waydock toplevel_helper.c / workspace_helper.c, wayshell overview_capture.c, shared/background_blur.c)
+## tessel-wayland (tessel-dock toplevel_helper.c / workspace_helper.c, tessel-shell overview_capture.c, shared/background_blur.c)
 
 wayland-client 0.31 on the **system backend** (libwayland-client), so the same
 code can run on its own connection or on GTK's `wl_display`. Protocols come from
-wayland-protocols / wayland-protocols-wlr (XMLs identical to ~/btmanager's
+wayland-protocols / wayland-protocols-wlr (XMLs identical to ~/tessel-bluetooth's
 vendored copies); the private `waydock_blur_manager_v1` is generated with
 wayland-scanner from `protocols/waydock-blur-v1.xml`. Features: `glib`
 (default, GSource), `capture-png` (default, cairo PNG thumbnails for
-`wayshell-overview`), `gtk` (gdk4-wayland: blur, GTK-display clients, textures).
+`tessel-overview`), `gtk` (gdk4-wayland: blur, GTK-display clients, textures).
 Build needs wayland-client (and cairo for `capture-png`) dev files.
 
 ### `model` — pure state, unit-testable with mocked events
@@ -414,31 +414,31 @@ connection on GTK's wl_display), `gtk_wl_surface(&impl IsA<Native>) -> Option<Wl
 `Client::for_gdk_display`, `Frame::to_texture`.
 
 ### `blur` (feature `gtk`; re-exported as `suite_gtk::blur`)
-Rust port of background_blur.c/.py with the same API (see suite-gtk above).
+Rust port of background_blur.c/.py with the same API (see tessel-gtk above).
 Per GdkDisplay it binds `ext_background_effect_manager_v1` v1 and
 `waydock_blur_manager_v1` v1 on a private queue of GTK's connection; per mapped
 native (root via `target_class`/whole window, popovers via their `contents`) it
 creates one effect object (one owner per wl_surface, data key
-`waydock-background-blur-owner`), a rounded region (`rounded_region_rects`) and
+`tessel-dock-background-blur-owner`), a rounded region (`rounded_region_rects`) and
 radius `round(strength·0.4)`; never commits — `queue_render()` lets GTK's next
 frame carry it. `compositor_supports_blur(&display)`, `compositor_supports_radius`.
 
 ### Helper-compat binaries (`compat`, `src/bin/`)
 Byte-for-byte drop-ins for the C helpers (verified against them in the headless
-test): `waydock-toplevel [--snapshot]` and the identical `wayshell-toplevel`
+test): `tessel-dock-toplevel [--snapshot]` and the identical `tessel-shell-toplevel`
 (events `ready/output/output-removed/window/closed/error`; stdin
 `activate|minimize|unminimize|close <id>\n`, sscanf rules, 4096-byte lines),
-`waydock-workspaces [--snapshot]` (`state`, `ready`, `unsupported`, `error`; stdin
-strict `activate <id>\n`, 128-byte lines, NUL rejected), `wayshell-overview [connector]`
+`tessel-dock-workspaces [--snapshot]` (`state`, `ready`, `unsupported`, `error`; stdin
+strict `activate <id>\n`, 128-byte lines, NUL rejected), `tessel-overview [connector]`
 (`desktop` frame, `identities`, `window` frames; cairo-bilinear PNG ≤ 640×400 /
 1600×1000, base64; 1.2 s per frame, 10 s total). Same exit codes. Install them
 where the C builds went (installer step, not done here):
-`~/.local/share/waydock/{waydock-toplevel,waydock-workspaces}`,
-`~/.local/share/wayshell/{wayshell-toplevel,wayshell-overview}`,
-`~/.config/waybar/scripts/{notification-manager,on-screen-keyboard}/waydock-toplevel`.
-Consumers unchanged: waydock window_backend.py/workspace_backend.py, wayshell
+`~/.local/share/tessel-dock/{tessel-dock-toplevel,tessel-dock-workspaces}`,
+`~/.local/share/tessel-shell/{tessel-shell-toplevel,tessel-overview}`,
+`~/.config/waybar/scripts/{tessel-notifications,tessel-keyboard}/tessel-dock-toplevel`.
+Consumers unchanged: tessel-dock window_backend.py/workspace_backend.py, tessel-shell
 switcher/overview.py/capture_output.py/capture_icons.py (`--snapshot`), Rust
-notification-manager (read-only) and session-manager (`close N`).
+tessel-notifications (read-only) and tessel-session (`close N`).
 
 ### labwc notes
 labwc 0.20.2 offers everything above. Its pixman renderer offers only XRGB8888
@@ -449,24 +449,24 @@ sees the same).
 ---
 
 ## Tests
-`cargo test` (suite-power: test_power_backend / test_power_charge_limits for both
-modes; suite-core: unit tests ported from test_suite_i18n / test_clock_preferences /
+`cargo test` (tessel-power-core: test_power_backend / test_power_charge_limits for both
+modes; tessel-core: unit tests ported from test_suite_i18n / test_clock_preferences /
 test_service_settings (private `gio::TestDBus`) / test_color_palette /
 test_companion_theme / test_gtk4_utils icon fallbacks; byte-for-byte parity of
-generated CSS/SVG with Python in `suite-gtk/tests/python_parity.rs`).
-suite-wayland: `tests/model.rs` (mocked-event state tracking, JSON bytes,
+generated CSS/SVG with Python in `tessel-gtk/tests/python_parity.rs`).
+tessel-wayland: `tests/model.rs` (mocked-event state tracking, JSON bytes,
 request parsing, PNG thumbnails) under plain `cargo test`;
-`crates/suite-wayland/tests/run_headless.sh` builds the original C helpers from
-~/btmanager into `$TMPDIR/c-helpers` and runs `tests/headless.rs` in a private
+`crates/wayland/tests/run_headless.sh` builds the original C helpers from
+~/tessel-bluetooth into `$TMPDIR/c-helpers` and runs `tests/headless.rs` in a private
 labwc (`tests/headless.sh <cmd>` runs any command there, 3 desktops): GTK
 windows observed/activated/minimized/maximized/fullscreened/closed, toplevel and
 output capture, workspaces, GTK-display client + `set_rectangle`, blur, and C vs
 Rust helper output parity.
 Widget checks (popup, anchors, app menu, live theme, OSD, CSS parsing):
-`crates/suite-gtk/tests/run_headless.sh` — private nested headless labwc per
+`crates/gtk/tests/run_headless.sh` — private nested headless labwc per
 `tools/headless.md`; under plain `cargo test` that binary skips itself.
 
 Not ported (not needed by components yet or tool/installer-only): wallpaper_chooser,
 wallpaper_import, application_audio, capture_selection, the `install_*.py`
-scripts, Waydock's static `dock_style.CSS/LIGHT_CSS`, and the dock-side writers
+scripts, Tessel Dock's static `dock_style.CSS/LIGHT_CSS`, and the dock-side writers
 (`palette_state.PaletteState`, `gtk_color_scheme.GtkColorScheme` file management).

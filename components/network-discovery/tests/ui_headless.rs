@@ -4,16 +4,16 @@
 //! Under plain `cargo test` it skips itself.
 
 use gio::prelude::*;
-use network_discovery::app::{create_application, Backend, BackendFactory, Browser, BrowserFactory, Discovery, APPLICATION_ID};
-use network_discovery::backend::{summarize, Done, SOCKET};
-use network_discovery::browse::Device;
+use tessel_network_discovery::app::{create_application, Backend, BackendFactory, Browser, BrowserFactory, Discovery, APPLICATION_ID};
+use tessel_network_discovery::backend::{summarize, Done, SOCKET};
+use tessel_network_discovery::browse::Device;
 use serde_json::{json, Map, Value};
 use std::cell::{Cell, RefCell};
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use suite_gtk::gtk;
-use suite_gtk::gtk::prelude::*;
+use tessel_gtk::gtk;
+use tessel_gtk::gtk::prelude::*;
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -129,8 +129,8 @@ fn popup_style_state_and_dismissal_before_authentication() {
     assert_eq!(popup.state_label().text(), "Discovery is on.");
     assert!(!popup.detail().is_visible(), "Only problems use the detail line");
     // The palette theme adds its own window class; ours must not replace it.
-    let theme = window.css_classes().iter().any(|c| c.starts_with("waydock-companion-"));
-    let palette = suite_core::paths::cache_home().join("waydock/palette.json");
+    let theme = window.css_classes().iter().any(|c| c.starts_with("tessel-dock-companion-"));
+    let palette = tessel_core::paths::cache_home().join("tessel-dock/palette.json");
     assert!(theme || !palette.exists() || !window.is_realized(), "theme class missing");
     assert!(window.width() <= 420, "width {}", window.width());
     assert_eq!(STARTED.with(Cell::get), 1, "Opening the popup lists discovered devices");
@@ -230,7 +230,7 @@ fn main() {
     if let Ok(args) = std::env::var("DISCOVERY_REMOTE") {
         let mut argv = vec!["discovery_manager.py".to_owned()];
         argv.extend(args.split('\x1f').map(String::from));
-        let app = gio::Application::new(Some(APPLICATION_ID), suite_core::single_instance::application_flags(true));
+        let app = gio::Application::new(Some(APPLICATION_ID), tessel_core::single_instance::application_flags(true));
         std::process::exit(i32::from(app.run_with_args(&argv)));
     }
     let Ok(case) = std::env::var("DISCOVERY_UI") else {
@@ -239,7 +239,7 @@ fn main() {
     };
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     assert!(!runtime.is_empty() && runtime != "/run/user/1000", "refusing to run on the live session");
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     gtk::init().unwrap();
     let context = glib::MainContext::default();
     let _guard = context.acquire().unwrap();

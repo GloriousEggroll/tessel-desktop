@@ -2,7 +2,7 @@
 use gtk::prelude::*;
 
 fn main() -> glib::ExitCode {
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let config = match kasumi_screen::clock::load_config(&kasumi_screen::clock::default_config_path()) {
         Ok(config) => config,
         Err(error) => {

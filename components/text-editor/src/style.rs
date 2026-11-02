@@ -2,20 +2,20 @@
 
 use gtk::gdk;
 use gtk::pango;
-use suite_core::tr;
-use suite_gtk::app_menu::{Shortcut, ShortcutSection};
+use tessel_core::tr;
+use tessel_gtk::app_menu::{Shortcut, ShortcutSection};
 
 pub const CSS: &str = "
-.text-editor button { border-radius: 8px; }
-.text-editor .editor-toolbar { padding: 8px 12px; }
-.text-editor .editor-status { padding: 7px 14px; font-size: 9pt; }
-.text-editor .search-panel { padding: 10px 14px; }
-.text-editor .error-banner { padding: 10px 14px; }
-.text-editor .muted { opacity: .7; }
-.text-editor .editor-title { font-weight: 650; }
-.text-editor .editor-subtitle { font-size: 9pt; }
-.text-editor .settings-card { padding: 12px; border-radius: 12px; }
-.text-editor textview { padding: 8px; }
+.tessel_text_editor button { border-radius: 8px; }
+.tessel_text_editor .editor-toolbar { padding: 8px 12px; }
+.tessel_text_editor .editor-status { padding: 7px 14px; font-size: 9pt; }
+.tessel_text_editor .search-panel { padding: 10px 14px; }
+.tessel_text_editor .error-banner { padding: 10px 14px; }
+.tessel_text_editor .muted { opacity: .7; }
+.tessel_text_editor .editor-title { font-weight: 650; }
+.tessel_text_editor .editor-subtitle { font-size: 9pt; }
+.tessel_text_editor .settings-card { padding: 12px; border-radius: 12px; }
+.tessel_text_editor textview { padding: 8px; }
 ";
 
 /// `SHORTCUTS` for the standard Keyboard Shortcuts window (English; translated there).
@@ -103,7 +103,7 @@ pub fn font_size_text(size: f64) -> String {
     } else if size >= 36.0 {
         "36".into()
     } else {
-        suite_core::pyfmt::float_repr(size)
+        tessel_core::pyfmt::float_repr(size)
     }
 }
 
@@ -111,7 +111,7 @@ pub fn font_size_text(size: f64) -> String {
 pub fn font_css(scope: &str, font: &str) -> String {
     let description = pango::FontDescription::from_string(font);
     let family = description.family().map(|f| f.to_string()).filter(|f| !f.is_empty()).unwrap_or_else(|| "Monospace".into());
-    let quoted = suite_core::pyfmt::json_dumps(&serde_json::Value::String(family), &suite_core::pyfmt::JsonStyle::DEFAULT);
+    let quoted = tessel_core::pyfmt::json_dumps(&serde_json::Value::String(family), &tessel_core::pyfmt::JsonStyle::DEFAULT);
     let size = description.size() as f64 / pango::SCALE as f64;
     format!(".{scope} {{ font-family: {quoted}; font-size: {}pt; }}", font_size_text(size))
 }

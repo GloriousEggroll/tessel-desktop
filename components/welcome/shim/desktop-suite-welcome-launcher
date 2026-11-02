@@ -1,5 +1,0 @@
-#!/bin/sh
-# ~/.local/bin/desktop-suite-welcome after the swap (first-login autostart and the
-# labwc menu run this path). Rollback restores
-#   exec /usr/bin/python3 '~/.local/share/desktop-suite-welcome/welcome.py' "$@"
-exec "$HOME/.local/share/desktop-suite-welcome/desktop-suite-welcome" "$@"

@@ -1,7 +1,7 @@
 === --help
 usage: welcome.py [-h] [--first-run] [--page PAGE]
 
-Welcome: first-run setup for the desktop suite; reopen it from the application
+Welcome: first-run setup for Tessel; reopen it from the application
 menu.
 
 options:

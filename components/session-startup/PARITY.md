@@ -1,24 +1,24 @@
-# session-startup — parity with contracts/session-startup.md
+# tessel-session-startup — parity with contracts/tessel-session-startup.md
 
 Rust crate `components/session-startup` (library `session_startup` + 3 binaries):
 
 | Binary | Replaces | Notes |
 |---|---|---|
-| `configure-session` | `configure_session.py` (`--check` default \| `--apply`) | identical stdout/stderr/exit codes and identical written trees |
-| `configure-xdg-autostart` | `configure_xdg_autostart.py` (`[--apply]`) | identical; Python tracebacks become the bare exception message |
-| `desktop-suite-failed` | `desktop_suite_failed.py UNIT.service` | gio D-Bus, `suite_core::tr!` |
+| `tessel-configure-session` | `configure_session.py` (`--check` default \| `--apply`) | identical stdout/stderr/exit codes and identical written trees |
+| `tessel-xdg-autostart` | `configure_xdg_autostart.py` (`[--apply]`) | identical; Python tracebacks become the bare exception message |
+| `tessel-failed` | `desktop_suite_failed.py UNIT.service` | gio D-Bus, `suite_core::tr!` |
 
-`desktop-suite-action` stays the POSIX shell script (contract §1); it is tested, not ported.
+`tessel-action` stays the POSIX shell script (contract §1); it is tested, not ported.
 Not wired into `install_all.py` or anything else.
 
 Shipped files (`desktop_suite_failed.py`, `shared/{suite_i18n,language_data,suite_catalogs}.py`,
-`desktop-suite-failed@.service`, `desktop-suite-action`, `units/*.service`,
+`tessel-failed@.service`, `tessel-action`, `units/*.service`,
 `labwc-xdg-autostart.target`) are read at run time from the suite tree:
 `$DESKTOP_SUITE_SOURCE`, else the first ancestor of the executable that holds
-`session-startup/desktop-suite-action`, else `~/btmanager` (Python: the script's own directory).
+`tessel-session-startup/tessel-action`, else `~/tessel-bluetooth` (Python: the script's own directory).
 argparse's program name is `argv[0]`'s basename, so shims exec with the Python script name.
 
-Tests: `TMPDIR=/run/user/1000/cbt/rust-session-startup cargo test -p session-startup`
+Tests: `TMPDIR=/run/user/1000/cbt/rust-session-startup cargo test -p tessel-session-startup`
 (55 tests: 12 unit, 20 `configure_session`, 9 `python_parity`, 9 `shell_scripts`,
 5 `failure_helper`). Every home is a fresh directory under `$TMPDIR`; external commands
 (`systemctl`, `labwc`, `dbus-update-activation-environment`, `sh` for the failure case) are
@@ -31,14 +31,14 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 |---|---|---|
 | `configure_session` argparse: `--check \| --apply` exclusive, `-h`, prefixes (`--a`), `--x=1`, `--`, unrecognized → exit 2 with argparse text | ✅ | `python_parity::failures_match_python` (argv), `configure_session::argument_errors_match_argparse` |
 | Preview: unified diff per changed file (`difflib` port incl. autojunk), notes, `N files prepared…` | ✅ | `python_parity::*` (byte-identical stdout), `difflib::tests` |
-| Apply: snapshot re-check, backup `~/.local/state/desktop-suite/backups/session-<%Y%m%dT%H%M%S%f>/`, `atomic_write` (`.labwc-services-*`, chmod, replace), `sh -n` autostart(+.local), XML re-parse of rc/menu, rollback (restore / unlink new) | ✅ | `python_parity::{live_home_matches_python, failures_match_python}` (shfail: rollback tree identical) |
+| Apply: snapshot re-check, backup `~/.local/state/tessel/backups/session-<%Y%m%dT%H%M%S%f>/`, `atomic_write` (`.labwc-services-*`, chmod, replace), `sh -n` autostart(+.local), XML re-parse of rc/menu, rollback (restore / unlink new) | ✅ | `python_parity::{live_home_matches_python, failures_match_python}` (shfail: rollback tree identical) |
 | After apply: `systemctl --user daemon-reload` (30 s), `labwc --reconfigure` (10 s) iff `$LABWC_PID` and rc/menu written; errors → `sys.exit(str)` text, exit 1 | ✅ | `python_parity::{live_home_inside_labwc_reconfigures, failures_match_python}` (nosystemctl), fake command logs compared |
 | `configure_xdg_autostart`: plan (env/start/stop blocks, desktop identity, target, nm-applet/blueman exclusions from `~/.config` + `$XDG_CONFIG_DIRS`), mode kept, backup `xdg-autostart-<ts>`, `sh -n` autostart+shutdown, byte re-read, rollback | ✅ | `python_parity::{xdg_autostart_matches_python, xdg_failures_match_python}`, `shell_scripts::xdg_*`, `xdg::tests` |
 | `desktop_suite_failed`: exactly one `[A-Za-z0-9:_.\\-]+\.service` arg else usage + exit 2; always 0 otherwise | ✅ | `failure_helper::invalid_unit_names_are_rejected`, `failed::tests` |
 | `configure.py` (legacy one-time migration writing `.migration.json` into the source tree) | ❌ | not ported (historic, already applied; contract marks generators optional) |
 
-## §2 desktop-suite-action
-Kept as shell. ActionScriptTests ported against the btmanager script: playerctl, missing
+## §2 tessel-action
+Kept as shell. ActionScriptTests ported against the tessel-bluetooth script: playerctl, missing
 `$TERMINAL` skipped, `$TERMINAL` with args, `--menu` only when the source mentions it,
 unknown → 2 — ✅ `shell_scripts::*`.
 
@@ -49,7 +49,7 @@ unknown → 2 — ✅ `shell_scripts::*`.
 | Missing / self-closing `<keyboard>`; DOCTYPE/ENTITY, root, multiple keyboards, marker errors (exact messages) | ✅ | `missing_keyboard_section_keeps_labwc_defaults`, `invalid_documents_are_rejected` |
 | `command=`/`<command>` home → `~/` (escaped + raw), `promptCommand` → `"$HOME"/`, `errorCommand` → `sh -c 'exec …'` (shlex.quote) | ✅ | `keybindings_are_portable_*`, parity `rc-prompts` |
 | Theme: cornerRadius 12, Active/InactiveWindow fonts (name/size kept, SemiBold, indent), dead `<active>/<inactive>` removed (backreference regex emulated) | ✅ | `theme_has_matching_title_fonts_*`, parity `rc-crlf` |
-| menu.xml terminals → `desktop-suite-action terminal` | ✅ | `menu_opens_configured_terminal` |
+| menu.xml terminals → `tessel-action terminal` | ✅ | `menu_opens_configured_terminal` |
 | autostart template verbatim, statement parser (continuations, nesting with Python's lookarounds, `# Begin/End` blocks), identity keys, personal lines → autostart.local once (header / newline rules) | ✅ | `personal_startup_*`, `new_personal_lines_*`, `statements_follow_shell_nesting_*`, parity `env` |
 | environment template, kept Settings variables, way-displays + language blocks (exact marker lines), personal vars → `environment.d/90-local.env` (last value, comments, local de-dup) | ✅ | `environment_effective_values_are_unchanged`, parity `env` (CRLF, `export`, unterminated block, local w/o newline) |
 | Base units created only when missing (not over symlinks), suite units + `*.conf` drop-ins (dotfiles included, sorted) → `%h/`, recovery drop-in with env-file iff `/.config/labwc/environment` mentioned, no drop-in for absent units | ✅ | `units_use_home_specifier_*`, `missing_base_units_*`, `units_are_portable_*`, parity `units` |
@@ -94,4 +94,4 @@ test_xdg_generator.py exercises `/usr/lib/systemd/user-generators/systemd-xdg-au
 ## Additions (no Python counterpart)
 | Item | | Test |
 |---|---|---|
-| `desktop-suite-icon-theme [--check]`: at login, when the configured icon theme (gsettings `org.gnome.desktop.interface icon-theme`, else `gtk-icon-theme-name` in `~/.config/gtk-4.0/settings.ini`) is not installed, set Papirus-Dark in gsettings and both GTK `settings.ini` files (other lines kept); an installed choice is never changed; nothing changes when Papirus-Dark is missing too. Run by `packaging/defaults/etc/xdg/autostart/desktop-suite-icon-theme.desktop`. | ✅ | `icon_theme::tests::*`, `suite_core::icon_theme::tests::*` |
+| `tessel-icon-theme [--check]`: at login, when the configured icon theme (gsettings `org.gnome.desktop.interface icon-theme`, else `gtk-icon-theme-name` in `~/.config/gtk-4.0/settings.ini`) is not installed, set Papirus-Dark in gsettings and both GTK `settings.ini` files (other lines kept); an installed choice is never changed; nothing changes when Papirus-Dark is missing too. Run by `packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop`. | ✅ | `icon_theme::tests::*`, `suite_core::icon_theme::tests::*` |

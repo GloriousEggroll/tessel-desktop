@@ -3,7 +3,7 @@
 //! (private bus, fake HOME, fake pactl/wpctl/systemctl/swayidle on PATH, fake
 //! scheduler socket, fake HTTP server on a random 127.0.0.1 port). Never a
 //! real Home Assistant / admin endpoint or token.
-#[path = "../../media-manager/tests/support/fake_player.rs"]
+#[path = "../../media/tests/support/fake_player.rs"]
 mod fake_player;
 
 use std::cell::{Cell, RefCell};
@@ -19,10 +19,10 @@ use gtk::prelude::*;
 use kasumi_screen::clock::{LunaClock, Options};
 use kasumi_screen::webkit;
 use serde_json::{json, Map, Value};
-use suite_lock::media::Media;
-use suite_lock::weather::{WeatherReader, WeatherStore};
-use weather_manager::backend::{week_dates, CurrentWeather, ForecastDay, WeatherConfig, WeatherSnapshot};
-use weather_manager::dates::Date;
+use tessel_locking::media::Media;
+use tessel_locking::weather::{WeatherReader, WeatherStore};
+use tessel_weather::backend::{week_dates, CurrentWeather, ForecastDay, WeatherConfig, WeatherSnapshot};
+use tessel_weather::dates::Date;
 
 fn spin(mut predicate: impl FnMut() -> bool, seconds: f64) -> bool {
     let context = glib::MainContext::default();
@@ -216,7 +216,7 @@ fn embedded_keyboard_types_in_web_panel_and_hides_without_losing_field() -> Outc
     keys.widget().hide_button().emit_clicked();
     wait(0.2);
     check!(!keys.widget().root().get_visible());
-    keys.devices_changed(&[waykeys::devices::Device::new("Touch", "touch", "touchscreen")]);
+    keys.devices_changed(&[tessel_keyboard::devices::Device::new("Touch", "touch", "touchscreen")]);
     wait(0.5);
     javascript(&web, "document.getElementById(\"second\").focus(); \"ok\"")?;
     wait(0.3);
@@ -702,8 +702,8 @@ fn cli_primary_status_levels_and_voice_controls() -> Outcome {
 
 fn suite_lock_widgets() -> Outcome {
     // LoginLayer on a real frame clock + opaque underlay / stationary backdrop pixels.
-    use suite_lock::config::LockConfig;
-    use suite_lock::visuals::{LoginLayer, Wallpaper};
+    use tessel_locking::config::LockConfig;
+    use tessel_locking::visuals::{LoginLayer, Wallpaper};
     let window = gtk::Window::builder().default_width(400).default_height(300).build();
     let overlay = gtk::Overlay::new();
     let wallpaper = Wallpaper::new("", || {});
@@ -783,7 +783,7 @@ fn main() {
     assert!(std::env::var("WAYLAND_DISPLAY").is_ok(), "private WAYLAND_DISPLAY required");
     // SAFETY: single-threaded start-up before GTK.
     unsafe { std::env::set_var("MEDIA_PRIVATE_BUS", "1") };
-    let _ = suite_core::i18n::initialize();
+    let _ = tessel_core::i18n::initialize();
     gtk::init().expect("gtk");
     let filter: Vec<String> = std::env::args().skip(1).filter(|a| !a.starts_with('-')).collect();
     let tests: [(&str, fn() -> Outcome); 11] = [

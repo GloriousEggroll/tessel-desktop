@@ -1,0 +1,40 @@
+[package]
+name = "tessel-battery"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Battery status and charging controls (port of tessel-bluetooth/tessel-battery)."
+
+[lib]
+name = "tessel_battery"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tessel-battery"
+path = "src/main.rs"
+
+[[bin]]
+name = "tessel-battery-status"
+path = "src/bin/battery_status.rs"
+test = false
+
+[dependencies]
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+tessel-power-core = { workspace = true, features = ["gtk"] }
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+indexmap = "2"
+
+[[test]]
+name = "private_bus"
+path = "tests/private_bus.rs"
+harness = false
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false

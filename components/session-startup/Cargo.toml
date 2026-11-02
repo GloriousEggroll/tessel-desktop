@@ -1,32 +1,32 @@
 [package]
-name = "session-startup"
+name = "tessel-session-startup"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "labwc session generators (configure_session, configure_xdg_autostart) and the desktop-suite-failed crash notifier."
+description = "labwc session generators (tessel_configure_session, tessel_xdg_autostart) and the tessel-failed crash notifier."
 
 [lib]
-name = "session_startup"
+name = "tessel_session_startup"
 path = "src/lib.rs"
 
 [[bin]]
-name = "configure-session"
-path = "src/bin/configure-session.rs"
+name = "tessel-configure-session"
+path = "src/bin/tessel-configure-session.rs"
 
 [[bin]]
-name = "configure-xdg-autostart"
-path = "src/bin/configure-xdg-autostart.rs"
+name = "tessel-xdg-autostart"
+path = "src/bin/tessel-xdg-autostart.rs"
 
 [[bin]]
-name = "desktop-suite-failed"
-path = "src/bin/desktop-suite-failed.rs"
+name = "tessel-failed"
+path = "src/bin/tessel-failed.rs"
 
 [[bin]]
-name = "desktop-suite-icon-theme"
-path = "src/bin/desktop-suite-icon-theme.rs"
+name = "tessel-icon-theme"
+path = "src/bin/tessel-icon-theme.rs"
 
 [dependencies]
-suite-core.workspace = true
+tessel-core.workspace = true
 glib.workspace = true
 gio.workspace = true
 regex.workspace = true

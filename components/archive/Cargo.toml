@@ -1,0 +1,40 @@
+[package]
+name = "tessel-archive"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Archive Manager (tessel-archive, org.tessel.ArchiveManager): GTK4 archive manager with Ark's features, plugins and drag-and-drop protocol."
+build = "build.rs"
+
+[lib]
+name = "tessel_archive"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tessel-archive"
+path = "src/main.rs"
+
+[dependencies]
+tessel-archive-settings = { path = "settings" }
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+async-channel = "2.5"
+md-5 = "0.10.6"
+sha1 = "0.10.6"
+sha2 = "0.10.9"
+
+[dev-dependencies]
+# Files' own Ark drop client (components/files/src/ark_drop.rs) drives the protocol test.
+tessel-files = { path = "../files" }
+wayland-client = "0.31"
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false

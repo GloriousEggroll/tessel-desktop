@@ -12,9 +12,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use text_editor::document::Target;
-use text_editor::recovery;
-use text_editor::{EditorApplication, EditorWindow};
+use tessel_text_editor::document::Target;
+use tessel_text_editor::recovery;
+use tessel_text_editor::{EditorApplication, EditorWindow};
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -108,7 +108,7 @@ fn test_primary_menu_holds_former_menubar_entries(f: &Fixture) {
     }
     assert!(!f.window.save_button.has_css_class("suggested-action"));
     assert_eq!(f.app.app.accels_for_action("win.find"), ["<Control>f"]);
-    assert_eq!((text_editor::style::line_count(1), text_editor::style::line_count(3)), ("1 line".into(), "3 lines".into()));
+    assert_eq!((tessel_text_editor::style::line_count(1), tessel_text_editor::style::line_count(3)), ("1 line".into(), "3 lines".into()));
 }
 
 fn test_load_edit_save_and_single_document_window(f: &Fixture) {
@@ -339,7 +339,7 @@ fn scheme_color(scheme: &sourceview5::StyleScheme, style: &str, background: bool
 
 fn test_document_surface_keeps_neutral_colors_inside_wallpaper_theme(f: &Fixture) {
     let w = &f.window;
-    let path = suite_gtk::theme::palette_path();
+    let path = tessel_gtk::theme::palette_path();
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     let surface = w.window.surface().expect("mapped window");
     let monitor = WidgetExt::display(&w.window).monitor_at_surface(&surface).unwrap();
@@ -538,12 +538,12 @@ fn test_gio_file_open_and_set_default_text_editor(f: &Fixture) {
     assert_eq!(f.window.text(), "key = 1\n");
     let applications = PathBuf::from(std::env::var("XDG_DATA_HOME").unwrap()).join("applications");
     std::fs::create_dir_all(&applications).unwrap();
-    let desktop = std::fs::read_to_string("/home/tcrider/btmanager/text-editor/org.waydock.TextEditor.desktop").unwrap();
-    std::fs::write(applications.join("org.waydock.TextEditor.desktop"), desktop.replace("Exec=text-editor", "Exec=true")).unwrap();
+    let desktop = std::fs::read_to_string("/home/tcrider/tessel-bluetooth/tessel-text-editor/org.tessel.TextEditor.desktop").unwrap();
+    std::fs::write(applications.join("org.tessel.TextEditor.desktop"), desktop.replace("Exec=tessel-text-editor", "Exec=true")).unwrap();
     WidgetExt::activate_action(&f.window.window, "win.set-default", None).unwrap();
     settle(0.1);
     let mimeapps = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap()).join("mimeapps.list");
-    assert!(std::fs::read_to_string(mimeapps).unwrap().contains("text/plain=org.waydock.TextEditor.desktop"));
+    assert!(std::fs::read_to_string(mimeapps).unwrap().contains("text/plain=org.tessel.TextEditor.desktop"));
     assert!(f.window.banner.is_visible());
     assert_eq!(f.window.banner_label.text(), "Text Editor is now the default application for text files.");
 }
@@ -573,7 +573,7 @@ fn test_non_utf8_asks_for_an_encoding(f: &Fixture) {
 fn test_view_toggles_persist_preferences(f: &Fixture) {
     WidgetExt::activate_action(&f.window.window, "win.wrap", None).unwrap();
     assert_eq!(f.window.view.wrap_mode(), gtk::WrapMode::None);
-    let config = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap()).join("desktop-suite/text-editor.json");
+    let config = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap()).join("tessel/tessel-text-editor.json");
     let value: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&config).unwrap()).unwrap();
     assert_eq!(value["wrap"], false);
     assert!(value["recent"].is_array());
@@ -597,7 +597,7 @@ fn main() {
         return;
     }
     gtk::init().expect("GTK");
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let app = EditorApplication::new();
     app.app.register(None::<&gio::Cancellable>).expect("register on the private bus");
     settle(0.2);

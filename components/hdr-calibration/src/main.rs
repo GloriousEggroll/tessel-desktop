@@ -1,3 +1,3 @@
 fn main() -> glib::ExitCode {
-    hdr_calibration::app::run()
+    tessel_hdr_calibration::app::run()
 }

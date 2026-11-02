@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build tests/welcome_headless.rs and run it in the private headless labwc
-# (../global-settings/tests/headless.sh). Extra arguments filter check names.
+# (../tessel-settings/tests/headless.sh). Extra arguments filter check names.
 set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../../.." && pwd)
@@ -12,4 +12,4 @@ for line in sys.stdin:
     m=json.loads(line)
     if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="welcome_headless" and m.get("executable"): print(m["executable"])')
 [ -n "$BIN" ] || { echo "build failed"; exit 1; }
-AGENT=${AGENT:-welcome} "$ROOT/components/global-settings/tests/headless.sh" "$BIN" "$@"
+AGENT=${AGENT:-welcome} "$ROOT/components/settings/tests/headless.sh" "$BIN" "$@"

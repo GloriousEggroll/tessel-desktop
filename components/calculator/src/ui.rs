@@ -8,10 +8,10 @@ use gtk::{gdk, glib, pango};
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
-use suite_core::tr;
-use suite_gtk::app_menu::{self, AboutDetails, MenuTarget, Shortcut, ShortcutSection};
-use suite_gtk::theme::{self, WindowTheme};
-use suite_gtk::utils::{accessible, add_css, children, headerbar, image, remove_css, set_margins, PRIORITY_APPLICATION};
+use tessel_core::tr;
+use tessel_gtk::app_menu::{self, AboutDetails, MenuTarget, Shortcut, ShortcutSection};
+use tessel_gtk::theme::{self, WindowTheme};
+use tessel_gtk::utils::{accessible, add_css, children, headerbar, image, remove_css, set_margins, PRIORITY_APPLICATION};
 
 pub const STYLE: &str = "
 .calculator { color: @theme_fg_color; background: @theme_bg_color; }
@@ -528,7 +528,7 @@ impl CalculatorWindow {
 
     pub fn calculate(&self) -> bool {
         let text = self.expression.text().to_string();
-        let expression = suite_core::pyjson::py_strip(&text).to_string();
+        let expression = tessel_core::pyjson::py_strip(&text).to_string();
         if expression.is_empty() {
             return false;
         }
@@ -580,7 +580,7 @@ impl CalculatorWindow {
                 return Ok(());
             }
             let text = self.expression.text().to_string();
-            let value = if self.just_evaluated.get() || suite_core::pyjson::py_strip(&text).is_empty() {
+            let value = if self.just_evaluated.get() || tessel_core::pyjson::py_strip(&text).is_empty() {
                 self.answer.borrow().clone()
             } else {
                 let (degrees, answer) = (self.store.borrow().degrees, self.answer.borrow().clone());
@@ -648,13 +648,13 @@ impl CalculatorWindow {
             match result {
                 Err(error) => {
                     if !window.closed.get() {
-                        window.status(&suite_core::pyerr::python_error_text(&error), true);
+                        window.status(&tessel_core::pyerr::python_error_text(&error), true);
                     }
                 }
                 Ok(value) => {
                     if let Some(value) = value.filter(|v| !v.is_empty()) {
                         if !window.closed.get() && serial == window.paste_serial.get() {
-                            window.insert(suite_core::pyjson::py_strip(&value));
+                            window.insert(tessel_core::pyjson::py_strip(&value));
                         }
                     }
                 }

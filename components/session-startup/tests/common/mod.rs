@@ -8,22 +8,22 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use session_startup::session::Source;
+use tessel_session_startup::session::Source;
 
-/// The Python suite tree (read only): `$DESKTOP_SUITE_SOURCE` or `~/btmanager`.
+/// The Python suite tree (read only): `$DESKTOP_SUITE_SOURCE` or `~/tessel-bluetooth`.
 pub fn suite_root() -> Option<PathBuf> {
     let root = std::env::var_os("DESKTOP_SUITE_SOURCE")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(std::env::var_os("HOME").unwrap()).join("btmanager"));
-    root.join("session-startup/configure_session.py").is_file().then_some(root)
+        .unwrap_or_else(|| PathBuf::from(std::env::var_os("HOME").unwrap()).join("tessel-bluetooth"));
+    root.join("tessel-session-startup/configure_session.py").is_file().then_some(root)
 }
 
 pub fn source() -> Source {
-    Source::from_root(&suite_root().expect("btmanager source tree"))
+    Source::from_root(&suite_root().expect("tessel-bluetooth source tree"))
 }
 
 pub fn data(name: &str) -> String {
-    fs::read_to_string(suite_root().unwrap().join("session-startup/testdata").join(name)).unwrap()
+    fs::read_to_string(suite_root().unwrap().join("tessel-session-startup/testdata").join(name)).unwrap()
 }
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -59,16 +59,16 @@ pub fn live_home(home: &Path) {
     chmod(&labwc.join("autostart"), 0o755);
     let home_text = home.display();
     write(
-        &units.join("netman.service"),
-        &format!("[Unit]\nDescription=Network\n\n[Service]\nExecStart=/usr/bin/python3 {home_text}/.config/waybar/scripts/network-manager/network_manager.py --background\nRestart=on-failure\nType=simple\n"),
+        &units.join("tessel-network.service"),
+        &format!("[Unit]\nDescription=Network\n\n[Service]\nExecStart=/usr/bin/python3 {home_text}/.config/waybar/scripts/tessel-network/network_manager.py --background\nRestart=on-failure\nType=simple\n"),
     );
     write(
-        &units.join("power-manager.service"),
-        &format!("[Service]\nType=simple\nEnvironmentFile=-%h/.config/labwc/environment\nExecStart=/usr/bin/python3 {home_text}/.config/waybar/scripts/power-manager/power_manager.py --background\nRestart=on-failure\nRestartSec=2\n"),
+        &units.join("tessel-power.service"),
+        &format!("[Service]\nType=simple\nEnvironmentFile=-%h/.config/labwc/environment\nExecStart=/usr/bin/python3 {home_text}/.config/waybar/scripts/tessel-power/power_manager.py --background\nRestart=on-failure\nRestartSec=2\n"),
     );
-    write(&units.join("power-manager-lock.service"), "[Service]\nExecStart=/bin/true\n");
+    write(&units.join("tessel-lock.service"), "[Service]\nExecStart=/bin/true\n");
     write(
-        &units.join("notifications.service.d/desktop-suite.conf"),
+        &units.join("tessel-notifications.service.d/tessel.conf"),
         "[Service]\nEnvironmentFile=-%h/.config/labwc/environment\nExecStart=\nExecStart=/usr/bin/true\n",
     );
 }

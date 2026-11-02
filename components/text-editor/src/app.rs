@@ -9,10 +9,10 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
-use suite_gtk::theme::PaletteClient;
+use tessel_gtk::theme::PaletteClient;
 
-pub const APP_ID: &str = "org.waydock.TextEditor";
-pub const DESKTOP_ID: &str = "org.waydock.TextEditor.desktop";
+pub const APP_ID: &str = "org.tessel.TextEditor";
+pub const DESKTOP_ID: &str = "org.tessel.TextEditor.desktop";
 
 pub struct AppInner {
     pub app: gtk::Application,
@@ -86,7 +86,7 @@ impl EditorApplication {
 
     fn startup(&self) {
         // Let the compositor resolve the desktop entry's icon (no default icon set).
-        suite_gtk::utils::add_css(style::CSS, None, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 31);
+        tessel_gtk::utils::add_css(style::CSS, None, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 31);
         let client = PaletteClient::new(None);
         crate::compat::attach_application(&self.app, &client);
         self.palette.replace(Some(client));

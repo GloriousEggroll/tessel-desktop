@@ -3,7 +3,7 @@
 //!
 //! Observe systemd over D-Bus instead of repeatedly spawning status commands.
 //! Only an explicit user action invokes the original privileged systemctl
-//! change. Waydock embeds this backend in-process (status_backend.py).
+//! change. Tessel Dock embeds this backend in-process (status_backend.py).
 
 use gio::prelude::*;
 use regex::Regex;
@@ -138,7 +138,7 @@ pub fn summarize(units: &Map<String, Value>, ready: bool, error: &str, busy: boo
 }
 
 pub fn snapshot_text(state: &Map<String, Value>) -> String {
-    suite_core::pyfmt::json_dumps(&Value::Object(state.clone()), &suite_core::pyfmt::JsonStyle::DEFAULT)
+    tessel_core::pyfmt::json_dumps(&Value::Object(state.clone()), &tessel_core::pyfmt::JsonStyle::DEFAULT)
 }
 
 /// Starts the privileged command (tests substitute a recorder).

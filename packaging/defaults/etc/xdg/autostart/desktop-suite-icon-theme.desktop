@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Desktop Suite icon theme check
-Comment=Use Papirus-Dark when the configured icon theme is not installed
-Exec=desktop-suite-icon-theme
-TryExec=desktop-suite-icon-theme
-OnlyShowIn=labwc;
-NoDisplay=true
-Terminal=false

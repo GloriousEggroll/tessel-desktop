@@ -10,8 +10,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use system_monitor::backend::ProcessActionError;
-use system_monitor::ui::{MonitorWindow, ProcessBackend, Prompt, PromptHook, PAGES};
+use tessel_system_monitor::backend::ProcessActionError;
+use tessel_system_monitor::ui::{MonitorWindow, ProcessBackend, Prompt, PromptHook, PAGES};
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -95,7 +95,7 @@ thread_local! { static SEQUENCE: std::cell::Cell<u32> = const { std::cell::Cell:
 impl Case {
     fn new() -> Self {
         let sequence = SEQUENCE.with(|s| { s.set(s.get() + 1); s.get() });
-        let app = gtk::Application::new(Some(&format!("org.waydock.MonitorTest{sequence}")), gio::ApplicationFlags::NON_UNIQUE);
+        let app = gtk::Application::new(Some(&format!("org.tessel.MonitorTest{sequence}")), gio::ApplicationFlags::NON_UNIQUE);
         app.register(gio::Cancellable::NONE).unwrap();
         let win = MonitorWindow::new(&app, None, false);
         let recorder = Arc::new(Recorder::default());
@@ -123,7 +123,7 @@ impl Drop for Case {
 }
 
 fn name_at(win: &MonitorWindow, index: u32) -> String {
-    win.sorted.item(index).and_downcast::<system_monitor::ui::ProcessRow>().unwrap().get("name").as_str().unwrap().to_owned()
+    win.sorted.item(index).and_downcast::<tessel_system_monitor::ui::ProcessRow>().unwrap().get("name").as_str().unwrap().to_owned()
 }
 
 fn descendants(widget: &gtk::Widget, out: &mut Vec<gtk::Widget>) {
@@ -157,7 +157,7 @@ fn rows_sort_search_and_preserve_identity() {
     win.search.set_text("browser");
     win.refilter();
     assert_eq!(win.sorted.n_items(), 1);
-    assert_eq!(win.sorted.item(0).and_downcast::<system_monitor::ui::ProcessRow>().unwrap().pid(), 5100);
+    assert_eq!(win.sorted.item(0).and_downcast::<tessel_system_monitor::ui::ProcessRow>().unwrap().pid(), 5100);
     win.search.set_text("");
     win.refilter();
     win.select_positions(&[0]);
@@ -239,9 +239,9 @@ fn unavailable_metrics_sort_and_display_without_inventing_values() {
     println!("ok unavailable_metrics_sort_and_display_without_inventing_values");
 }
 
-fn monitor_windows(client: &mut suite_wayland::client::Client) -> Vec<u64> {
+fn monitor_windows(client: &mut tessel_wayland::client::Client) -> Vec<u64> {
     let _ = client.roundtrip();
-    client.model.windows().filter(|w| w.app_id == "org.waydock.SystemMonitor").map(|w| w.id).collect()
+    client.model.windows().filter(|w| w.app_id == "org.tessel.SystemMonitor").map(|w| w.id).collect()
 }
 
 fn launcher_reuses_existing_window_and_exits_cleanly() {
@@ -249,7 +249,7 @@ fn launcher_reuses_existing_window_and_exits_cleanly() {
         println!("skip launcher_reuses_existing_window_and_exits_cleanly (SYSTEM_MONITOR_BIN unset)");
         return;
     };
-    let mut native = suite_wayland::client::Client::connect(suite_wayland::client::Protocols::TOPLEVELS).expect("toplevel client");
+    let mut native = tessel_wayland::client::Client::connect(tessel_wayland::client::Protocols::TOPLEVELS).expect("toplevel client");
     let _ = native.roundtrip();
     let mut child = std::process::Command::new(&binary).args(["--page", "performance"]).spawn().unwrap();
     let pid = child.id();
@@ -447,7 +447,7 @@ fn context_menu_header_menu_and_accessible_graphs() {
     settle(0.1);
     let button = win.menu_button.borrow().clone().unwrap();
     assert_eq!(button.ancestor(gtk::HeaderBar::static_type()).as_ref(), Some(win.header.upcast_ref::<gtk::Widget>()));
-    assert!(suite_gtk::app_menu::has_menu_icon(&button));
+    assert!(tessel_gtk::app_menu::has_menu_icon(&button));
     assert!(case.app.lookup_action("quit").is_some());
     win.show_page("performance");
     settle(0.15);
@@ -468,7 +468,7 @@ fn context_menu_header_menu_and_accessible_graphs() {
 fn window_contract() {
     let case = Case::new();
     let win = &case.win;
-    assert!(win.window.has_css_class("system-monitor"));
+    assert!(win.window.has_css_class("tessel-system-monitor"));
     assert_eq!(win.window.title().as_deref(), Some("System Monitor"));
     // Before mapping (the 1280x720 headless output clamps a mapped window).
     let fresh = MonitorWindow::new(&case.app, None, false);
@@ -489,7 +489,7 @@ fn main() {
         println!("ui_headless: skipped (run components/system-monitor/tests/run_headless.sh for the private compositor)");
         return;
     }
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     gtk::init().expect("display");
     rows_sort_search_and_preserve_identity();
     all_pages_render_missing_metrics_and_local_graphs();

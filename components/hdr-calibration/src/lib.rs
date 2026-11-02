@@ -1,4 +1,4 @@
-//! Rust port of `~/btmanager/hdr-calibration` (see contracts/hdr-calibration.md).
+//! Rust port of `~/tessel-bluetooth/tessel-hdr-calibration` (see contracts/tessel-hdr-calibration.md).
 //! The native `hdr-pattern` test-pattern client stays the C helper (hdr-pattern.c).
 pub mod app;
 pub mod args;

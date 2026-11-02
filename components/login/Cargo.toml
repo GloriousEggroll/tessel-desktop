@@ -1,0 +1,46 @@
+[package]
+name = "tessel-login"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Tessel Login: greetd greeter (GTK4 + layer shell), root appearance helper and post-login desktop fade (Rust port of tessel-login/)."
+
+[lib]
+name = "tessel_login"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tessel-login"
+path = "src/bin/tessel-login.rs"
+
+[[bin]]
+name = "tessel-session-transition"
+path = "src/bin/tessel-session-transition.rs"
+
+# Root helper: deliberately does not use the `tessel-login` library (no GTK linked).
+[[bin]]
+name = "tessel-login-helper"
+path = "src/bin/tessel-login-helper.rs"
+
+[dependencies]
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+tessel-locking = { workspace = true, features = ["gtk"] }
+gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk4-layer-shell.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+zeroize = "1"
+async-channel = "2"
+tessel-keyboard = { path = "../keyboard" }
+
+[[test]]
+name = "helper_cli"
+path = "tests/helper_cli.rs"
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false

@@ -7,7 +7,7 @@ mod common;
 
 use gio::prelude::*;
 use common::{pipe, read, wait_for, FakeLogin, PrivateBus, Read};
-use keep_awake::backend::{is_cloexec, BusSource, InhibitReply, InhibitorBackend, LoginConnection, INHIBIT_ARGS, UNAVAILABLE};
+use tessel_keep_awake::backend::{is_cloexec, BusSource, InhibitReply, InhibitorBackend, LoginConnection, INHIBIT_ARGS, UNAVAILABLE};
 use std::cell::{Cell, RefCell};
 use std::os::fd::OwnedFd;
 use std::rc::Rc;

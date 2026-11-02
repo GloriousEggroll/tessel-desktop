@@ -1,15 +1,15 @@
-//! `screen_keyboard.py`: the shared Waykeys widget, embedded below Kasumi's
+//! `screen_keyboard.py`: the shared Tessel Keyboard widget, embedded below Kasumi's
 //! local web controls.
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
 
 use gtk::prelude::*;
 use serde_json::{json, Map, Value};
-use waykeys::backend::{Command, InputBridge};
-use waykeys::config::{layout_name, Config, Settings};
-use waykeys::devices::{automatic_available, discover, Device, DeviceMonitor};
-use waykeys::keyboard::Keyboard;
-use waykeys::state::Visibility;
+use tessel_keyboard::backend::{Command, InputBridge};
+use tessel_keyboard::config::{layout_name, Config, Settings};
+use tessel_keyboard::devices::{automatic_available, discover, Device, DeviceMonitor};
+use tessel_keyboard::keyboard::Keyboard;
+use tessel_keyboard::state::Visibility;
 
 pub type BridgeFactory = Rc<dyn Fn(&str, Box<dyn Fn(Map<String, Value>)>, Box<dyn Fn(String)>) -> Result<InputBridge, String>>;
 
@@ -136,7 +136,7 @@ impl PanelKeyboard {
                 if self.0.panel.get_visible() {
                     self.0.panel.present();
                 }
-                if !event.get("input_method").is_some_and(suite_core::pyjson::truthy) {
+                if !event.get("input_method").is_some_and(tessel_core::pyjson::truthy) {
                     self.0.error.replace("Use the keyboard button to show the keyboard manually.".into());
                 }
             }
@@ -148,7 +148,7 @@ impl PanelKeyboard {
                 if changed {
                     self.0.widget.reset();
                 }
-                let active = event.get("active").is_some_and(suite_core::pyjson::truthy);
+                let active = event.get("active").is_some_and(tessel_core::pyjson::truthy);
                 self.0.policy.borrow_mut().context(active, epoch.unwrap_or(0));
                 self.0.purpose.set(Some(purpose));
                 if changed {
@@ -159,7 +159,7 @@ impl PanelKeyboard {
                 self.0.error.replace("Another input method is active. Manual keyboard input is still available.".into());
             }
             "error" => {
-                let message = event.get("message").map(suite_core::pyjson::py_str).unwrap_or_else(|| "Keyboard input failed.".into());
+                let message = event.get("message").map(tessel_core::pyjson::py_str).unwrap_or_else(|| "Keyboard input failed.".into());
                 self.failure(message);
                 return;
             }

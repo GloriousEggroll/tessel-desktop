@@ -1,7 +1,7 @@
 //! Python `str` behaviour the generators rely on: `splitlines`, `split()`,
 //! universal-newline decoding, `html.escape`/`html.unescape`, `repr`.
 
-pub use suite_core::pyjson::{casefold, is_py_space, py_strip};
+pub use tessel_core::pyjson::{casefold, is_py_space, py_strip};
 
 fn is_line_break(ch: char) -> bool {
     matches!(ch, '\n' | '\r' | '\x0b' | '\x0c' | '\x1c' | '\x1d' | '\x1e' | '\u{85}' | '\u{2028}' | '\u{2029}')

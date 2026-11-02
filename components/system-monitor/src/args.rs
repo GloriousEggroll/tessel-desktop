@@ -19,7 +19,7 @@ pub enum Outcome {
 
 /// argparse `prog`: the basename of argv[0].
 pub fn prog(argv0: &str) -> String {
-    std::path::Path::new(argv0).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "system-monitor".into())
+    std::path::Path::new(argv0).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "tessel-system-monitor".into())
 }
 
 pub fn usage(prog: &str) -> String {

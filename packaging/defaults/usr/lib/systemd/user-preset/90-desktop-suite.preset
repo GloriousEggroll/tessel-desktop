@@ -1,3 +1,0 @@
-# Desktop suite user services enabled for every user (systemctl --user preset).
-# clipboard-manager.service (wayclip): keeps copied content after its application closes.
-enable clipboard-manager.service

@@ -39,38 +39,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "archive-manager"
-version = "0.1.0"
-dependencies = [
- "archive-settings",
- "async-channel",
- "file-manager",
- "gio",
- "glib",
- "gtk4",
- "libc",
- "md-5",
- "serde_json",
- "sha1",
- "sha2 0.10.9",
- "suite-core",
- "suite-gtk",
- "wayland-client",
- "wayland-protocols-wlr",
-]
-
-[[package]]
-name = "archive-settings"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "serde_json",
- "suite-core",
-]
-
-[[package]]
 name = "argon2"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -101,34 +69,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "audio-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "indexmap",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "authentication-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "glib-unix",
- "gtk4",
- "libc",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -145,21 +85,6 @@ name = "base64ct"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
-
-[[package]]
-name = "battery-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "indexmap",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-power",
-]
 
 [[package]]
 name = "bitflags"
@@ -211,40 +136,6 @@ checksum = "e412e2cd0f2b2d93e02543ceae7917b3c70331573df19ee046bcbc35e45e87d7"
 dependencies = [
  "byteorder",
  "cipher",
-]
-
-[[package]]
-name = "bluetooth-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "brightness-manager"
-version = "0.1.0"
-dependencies = [
- "async-channel",
- "gio",
- "glib",
- "glib-unix",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "serde_json",
- "sha2 0.10.9",
- "suite-core",
- "suite-gtk",
- "yaml-rust2",
 ]
 
 [[package]]
@@ -316,41 +207,8 @@ dependencies = [
  "num-traits",
  "regex",
  "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "calendar-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "capture-manager"
-version = "0.1.0"
-dependencies = [
- "cairo-rs",
- "gio",
- "gio-unix",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "image",
- "libc",
- "regex",
- "roxmltree 0.20.0",
- "serde_json",
- "suite-core",
- "suite-gtk",
+ "tessel-core",
+ "tessel-gtk",
 ]
 
 [[package]]
@@ -427,30 +285,6 @@ dependencies = [
  "crypto-common 0.1.7",
  "inout",
  "zeroize",
-]
-
-[[package]]
-name = "clipboard-manager"
-version = "0.1.0"
-dependencies = [
- "clipboard-settings",
- "libc",
- "suite-core",
- "wayland-backend",
- "wayland-client",
- "wayland-protocols",
- "wayland-protocols-wlr",
-]
-
-[[package]]
-name = "clipboard-settings"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "serde_json",
- "suite-core",
 ]
 
 [[package]]
@@ -682,80 +516,6 @@ checksum = "38e2275cc4e4fc009b0669731a1e5ab7ebf11f469eaede2bab9309a5b4d6057f"
 dependencies = [
  "memoffset",
  "rustc_version",
-]
-
-[[package]]
-name = "file-manager"
-version = "0.1.0"
-dependencies = [
- "files-model",
- "files-ops",
- "files-widgets",
- "gio",
- "glib",
- "gtk4",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "waydock",
-]
-
-[[package]]
-name = "files-model"
-version = "0.1.0"
-dependencies = [
- "async-channel",
- "gio",
- "glib",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "waydock",
-]
-
-[[package]]
-name = "files-ops"
-version = "0.1.0"
-dependencies = [
- "async-channel",
- "blake2",
- "bzip2",
- "digest 0.10.7",
- "flate2",
- "gio",
- "glib",
- "libc",
- "md-5",
- "regex",
- "ruzstd",
- "serde_json",
- "sha1",
- "sha2 0.10.9",
- "sha3",
- "suite-core",
- "tar",
- "xz2",
- "zip",
-]
-
-[[package]]
-name = "files-widgets"
-version = "0.1.0"
-dependencies = [
- "files-model",
- "files-ops",
- "gio",
- "glib",
- "gtk4",
- "kamadak-exif",
- "libc",
- "serde_json",
- "sourceview5",
- "suite-core",
- "suite-gtk",
- "waydock",
 ]
 
 [[package]]
@@ -1163,24 +923,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "global-settings"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gs-applets",
- "gs-base",
- "gs-desktop",
- "gs-system",
- "gtk4",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "unicode-normalization",
-]
-
-[[package]]
 name = "gobject-sys"
 version = "0.22.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1216,28 +958,28 @@ dependencies = [
 name = "gs-applets"
 version = "0.1.0"
 dependencies = [
- "archive-settings",
- "audio-manager",
- "battery-manager",
- "bluetooth-manager",
- "calendar-manager",
- "capture-manager",
- "clipboard-settings",
  "gio",
  "glib",
  "gs-base",
  "gtk4",
- "keep-awake",
- "language-manager",
- "network-manager",
- "notification-manager",
- "power-manager",
  "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-power",
- "waykeyring-ui",
- "weather-manager",
+ "tessel-archive-settings",
+ "tessel-audio",
+ "tessel-battery",
+ "tessel-bluetooth",
+ "tessel-calendar",
+ "tessel-capture",
+ "tessel-clipboard-settings",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-keep-awake",
+ "tessel-keyring-ui",
+ "tessel-language",
+ "tessel-network",
+ "tessel-notifications",
+ "tessel-power",
+ "tessel-power-core",
+ "tessel-weather",
 ]
 
 [[package]]
@@ -1248,8 +990,8 @@ dependencies = [
  "glib",
  "gtk4",
  "serde_json",
- "suite-core",
- "suite-gtk",
+ "tessel-core",
+ "tessel-gtk",
 ]
 
 [[package]]
@@ -1264,14 +1006,14 @@ dependencies = [
  "indexmap",
  "libc",
  "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-lock",
- "tiling-manager",
+ "tessel-core",
+ "tessel-dock",
+ "tessel-gtk",
+ "tessel-locking",
+ "tessel-shell",
+ "tessel-tiling",
+ "tessel-weather",
  "way-displays",
- "waydock",
- "wayshell",
- "weather-manager",
 ]
 
 [[package]]
@@ -1283,12 +1025,12 @@ dependencies = [
  "gs-base",
  "gtk4",
  "libc",
- "on-screen-keyboard",
  "regex",
  "serde_json",
- "suite-core",
- "suite-gtk",
- "tiling-manager",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-keyboard",
+ "tessel-tiling",
 ]
 
 [[package]]
@@ -1438,22 +1180,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hdr-calibration"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "roxmltree 0.20.0",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "way-displays",
-]
-
-[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1491,13 +1217,13 @@ dependencies = [
  "glib",
  "gtk4",
  "libc",
- "media-manager",
- "on-screen-keyboard",
  "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-lock",
- "weather-manager",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-keyboard",
+ "tessel-locking",
+ "tessel-media",
+ "tessel-weather",
 ]
 
 [[package]]
@@ -1709,37 +1435,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "keep-awake"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
 name = "khronos_api"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
-
-[[package]]
-name = "language-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
 
 [[package]]
 name = "libbz2-rs-sys"
@@ -1786,45 +1485,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
 
 [[package]]
-name = "lock-screen"
-version = "0.1.0"
-dependencies = [
- "async-channel",
- "gio",
- "glib",
- "gtk4",
- "libc",
- "on-screen-keyboard",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-lock",
- "zeroize",
-]
-
-[[package]]
 name = "log"
 version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
-
-[[package]]
-name = "login-manager"
-version = "0.1.0"
-dependencies = [
- "async-channel",
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "on-screen-keyboard",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-lock",
- "zeroize",
-]
 
 [[package]]
 name = "lzma-rust2"
@@ -1854,22 +1518,6 @@ checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
 dependencies = [
  "cfg-if",
  "digest 0.10.7",
-]
-
-[[package]]
-name = "media-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "gio-unix",
- "glib",
- "gtk4",
- "libc",
- "native-tls",
- "regex",
- "suite-core",
- "suite-gtk",
- "ureq",
 ]
 
 [[package]]
@@ -1947,34 +1595,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "network-discovery"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "network-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
 name = "nix"
 version = "0.31.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1984,21 +1604,6 @@ dependencies = [
  "cfg-if",
  "cfg_aliases",
  "libc",
-]
-
-[[package]]
-name = "notification-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "indexmap",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
 ]
 
 [[package]]
@@ -2027,24 +1632,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "on-screen-keyboard"
-version = "0.1.0"
-dependencies = [
- "cc",
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "udev",
- "unicode-normalization",
 ]
 
 [[package]]
@@ -2103,7 +1690,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pam-waykeyring"
+name = "pam-tessel-keyring"
 version = "0.1.0"
 dependencies = [
  "libc",
@@ -2166,22 +1753,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
-name = "picture-viewer"
-version = "0.1.0"
-dependencies = [
- "futures-channel",
- "gio",
- "glib",
- "gtk4",
- "image",
- "kamadak-exif",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2224,22 +1795,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d83eb9bc6d8e5cf568e7a1101d60ee05e81ed50ea106026f3d18deeb046d7661"
 dependencies = [
  "zerovec",
-]
-
-[[package]]
-name = "power-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-power",
 ]
 
 [[package]]
@@ -2499,32 +2054,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "session-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "session-startup"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "libc",
- "regex",
- "roxmltree 0.21.2",
- "suite-core",
-]
-
-[[package]]
 name = "sha1"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2645,78 +2174,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
-name = "suite-core"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "glib-unix",
- "libc",
- "regex",
- "serde_json",
-]
-
-[[package]]
-name = "suite-gtk"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-wayland",
-]
-
-[[package]]
-name = "suite-lock"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "media-manager",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "weather-manager",
-]
-
-[[package]]
-name = "suite-power"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "suite-wayland"
-version = "0.1.0"
-dependencies = [
- "cairo-rs",
- "gdk4-wayland",
- "glib",
- "gtk4",
- "libc",
- "serde_json",
- "wayland-backend",
- "wayland-client",
- "wayland-protocols",
- "wayland-protocols-wlr",
- "wayland-scanner",
-]
-
-[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2789,20 +2246,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "system-monitor"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-wayland",
-]
-
-[[package]]
 name = "tar"
 version = "0.4.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2832,7 +2275,655 @@ dependencies = [
 ]
 
 [[package]]
-name = "text-editor"
+name = "tessel-archive"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "md-5",
+ "serde_json",
+ "sha1",
+ "sha2 0.10.9",
+ "tessel-archive-settings",
+ "tessel-core",
+ "tessel-files",
+ "tessel-gtk",
+ "wayland-client",
+ "wayland-protocols-wlr",
+]
+
+[[package]]
+name = "tessel-archive-settings"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "serde_json",
+ "tessel-core",
+]
+
+[[package]]
+name = "tessel-audio"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "indexmap",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-auth"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "glib-unix",
+ "gtk4",
+ "libc",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-battery"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "indexmap",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-power-core",
+]
+
+[[package]]
+name = "tessel-bluetooth"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-brightness"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "gio",
+ "glib",
+ "glib-unix",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "sha2 0.10.9",
+ "tessel-core",
+ "tessel-gtk",
+ "yaml-rust2",
+]
+
+[[package]]
+name = "tessel-calendar"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-capture"
+version = "0.1.0"
+dependencies = [
+ "cairo-rs",
+ "gio",
+ "gio-unix",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "image",
+ "libc",
+ "regex",
+ "roxmltree 0.20.0",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-capture-picker"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "gio-unix",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-tiling",
+]
+
+[[package]]
+name = "tessel-clipboard"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "tessel-clipboard-settings",
+ "tessel-core",
+ "wayland-backend",
+ "wayland-client",
+ "wayland-protocols",
+ "wayland-protocols-wlr",
+]
+
+[[package]]
+name = "tessel-clipboard-settings"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "serde_json",
+ "tessel-core",
+]
+
+[[package]]
+name = "tessel-core"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "glib-unix",
+ "libc",
+ "regex",
+ "serde_json",
+]
+
+[[package]]
+name = "tessel-dock"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "glib-unix",
+ "gtk4",
+ "gtk4-layer-shell",
+ "indexmap",
+ "libc",
+ "regex",
+ "roxmltree 0.21.2",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-media",
+ "tessel-network-discovery",
+ "tessel-wayland",
+ "x11rb",
+]
+
+[[package]]
+name = "tessel-files"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-dock",
+ "tessel-files-model",
+ "tessel-files-ops",
+ "tessel-files-widgets",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-files-model"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "gio",
+ "glib",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-dock",
+]
+
+[[package]]
+name = "tessel-files-ops"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "blake2",
+ "bzip2",
+ "digest 0.10.7",
+ "flate2",
+ "gio",
+ "glib",
+ "libc",
+ "md-5",
+ "regex",
+ "ruzstd",
+ "serde_json",
+ "sha1",
+ "sha2 0.10.9",
+ "sha3",
+ "tar",
+ "tessel-core",
+ "xz2",
+ "zip",
+]
+
+[[package]]
+name = "tessel-files-widgets"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "kamadak-exif",
+ "libc",
+ "serde_json",
+ "sourceview5",
+ "tessel-core",
+ "tessel-dock",
+ "tessel-files-model",
+ "tessel-files-ops",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-gtk"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-wayland",
+]
+
+[[package]]
+name = "tessel-hdr-calibration"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "roxmltree 0.20.0",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "way-displays",
+]
+
+[[package]]
+name = "tessel-keep-awake"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-keyboard"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "udev",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "tessel-keyring"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "argon2",
+ "base64",
+ "blowfish",
+ "cbc",
+ "chacha20poly1305",
+ "getrandom 0.2.17",
+ "gio",
+ "glib",
+ "hkdf",
+ "libc",
+ "num-bigint",
+ "pbkdf2",
+ "serde_json",
+ "sha1",
+ "sha2 0.10.9",
+ "tessel-core",
+ "zeroize",
+]
+
+[[package]]
+name = "tessel-keyring-ui"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-language"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-lock"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-keyboard",
+ "tessel-locking",
+ "zeroize",
+]
+
+[[package]]
+name = "tessel-locking"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-media",
+ "tessel-weather",
+]
+
+[[package]]
+name = "tessel-login"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-keyboard",
+ "tessel-locking",
+ "zeroize",
+]
+
+[[package]]
+name = "tessel-media"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "gio-unix",
+ "glib",
+ "gtk4",
+ "libc",
+ "native-tls",
+ "regex",
+ "tessel-core",
+ "tessel-gtk",
+ "ureq",
+]
+
+[[package]]
+name = "tessel-network"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-network-discovery"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-notifications"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "indexmap",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-pictures"
+version = "0.1.0"
+dependencies = [
+ "futures-channel",
+ "gio",
+ "glib",
+ "gtk4",
+ "image",
+ "kamadak-exif",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-power"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-power-core",
+]
+
+[[package]]
+name = "tessel-power-core"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-prompt"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "roxmltree 0.21.2",
+ "serde_json",
+ "sha2 0.10.9",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-theme",
+]
+
+[[package]]
+name = "tessel-session"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-session-startup"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "libc",
+ "regex",
+ "roxmltree 0.21.2",
+ "tessel-core",
+]
+
+[[package]]
+name = "tessel-settings"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gs-applets",
+ "gs-base",
+ "gs-desktop",
+ "gs-system",
+ "gtk4",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "tessel-shell"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "gio-unix",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-theme",
+ "tessel-wayland",
+]
+
+[[package]]
+name = "tessel-system-monitor"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-wayland",
+]
+
+[[package]]
+name = "tessel-text-editor"
 version = "0.1.0"
 dependencies = [
  "encoding_rs",
@@ -2845,8 +2936,66 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "sourceview5",
- "suite-core",
- "suite-gtk",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-theme"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-tiling"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "regex",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+]
+
+[[package]]
+name = "tessel-wayland"
+version = "0.1.0"
+dependencies = [
+ "cairo-rs",
+ "gdk4-wayland",
+ "glib",
+ "gtk4",
+ "libc",
+ "serde_json",
+ "wayland-backend",
+ "wayland-client",
+ "wayland-protocols",
+ "wayland-protocols-wlr",
+ "wayland-scanner",
+]
+
+[[package]]
+name = "tessel-weather"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "libc",
+ "native-tls",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "ureq",
 ]
 
 [[package]]
@@ -2861,20 +3010,6 @@ dependencies = [
  "quick-error",
  "weezl",
  "zune-jpeg",
-]
-
-[[package]]
-name = "tiling-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
 ]
 
 [[package]]
@@ -3111,66 +3246,9 @@ dependencies = [
  "regex",
  "roxmltree 0.20.0",
  "serde_json",
- "suite-core",
- "suite-gtk",
+ "tessel-core",
+ "tessel-gtk",
  "yaml-rust2",
-]
-
-[[package]]
-name = "waydock"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "glib-unix",
- "gtk4",
- "gtk4-layer-shell",
- "indexmap",
- "libc",
- "media-manager",
- "network-discovery",
- "regex",
- "roxmltree 0.21.2",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-wayland",
- "x11rb",
-]
-
-[[package]]
-name = "waykeyring"
-version = "0.1.0"
-dependencies = [
- "aes",
- "argon2",
- "base64",
- "blowfish",
- "cbc",
- "chacha20poly1305",
- "getrandom 0.2.17",
- "gio",
- "glib",
- "hkdf",
- "libc",
- "num-bigint",
- "pbkdf2",
- "serde_json",
- "sha1",
- "sha2 0.10.9",
- "suite-core",
- "zeroize",
-]
-
-[[package]]
-name = "waykeyring-ui"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "suite-core",
- "suite-gtk",
 ]
 
 [[package]]
@@ -3247,84 +3325,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wayshell"
-version = "0.1.0"
-dependencies = [
- "gio",
- "gio-unix",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "suite-wayland",
- "wayshell-theme",
-]
-
-[[package]]
-name = "wayshell-capture-picker"
-version = "0.1.0"
-dependencies = [
- "gio",
- "gio-unix",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "tiling-manager",
-]
-
-[[package]]
-name = "wayshell-prompt"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "regex",
- "roxmltree 0.21.2",
- "serde_json",
- "sha2 0.10.9",
- "suite-core",
- "suite-gtk",
- "wayshell-theme",
-]
-
-[[package]]
-name = "wayshell-theme"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "serde_json",
- "suite-core",
- "suite-gtk",
-]
-
-[[package]]
-name = "weather-manager"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "libc",
- "native-tls",
- "serde_json",
- "suite-core",
- "suite-gtk",
- "ureq",
-]
-
-[[package]]
 name = "weezl"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3336,17 +3336,17 @@ version = "0.1.0"
 dependencies = [
  "gio",
  "glib",
- "global-settings",
  "gs-applets",
  "gs-base",
  "gs-desktop",
  "gs-system",
  "gtk4",
- "language-manager",
  "libc",
  "serde_json",
- "suite-core",
- "suite-gtk",
+ "tessel-core",
+ "tessel-gtk",
+ "tessel-language",
+ "tessel-settings",
 ]
 
 [[package]]

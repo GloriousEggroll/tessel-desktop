@@ -4,8 +4,8 @@
 //! recording shell script, never pkexec.
 
 use gio::prelude::*;
-use network_discovery::backend::{change_command, snapshot_text, DiscoveryBackend, Spawner, SERVICE, SOCKET};
-use network_discovery::browse::ServiceBrowser;
+use tessel_network_discovery::backend::{change_command, snapshot_text, DiscoveryBackend, Spawner, SERVICE, SOCKET};
+use tessel_network_discovery::browse::ServiceBrowser;
 use serde_json::Value;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -397,7 +397,7 @@ fn browser_is_async_single_flight_and_reports_missing_tools() {
 fn status_command_prints_one_json_line(fake: &FakeSystemd, address: &str) {
     fake.set(SOCKET, Some(("loaded", "active", "enabled")));
     fake.set(SERVICE, Some(("loaded", "inactive", "indirect")));
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_network-discovery")).arg("--status")
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_tessel-network-discovery")).arg("--status")
         .env("DBUS_SYSTEM_BUS_ADDRESS", address).env("DBUS_SESSION_BUS_ADDRESS", address)
         .env("DESKTOP_SUITE_LOCALE_DIR", "/nonexistent").env_remove("WAYLAND_DISPLAY").env_remove("DISPLAY")
         .stdout(std::process::Stdio::piped()).spawn().unwrap();
@@ -412,7 +412,7 @@ fn status_command_prints_one_json_line(fake: &FakeSystemd, address: &str) {
     assert_eq!(text.lines().count(), 1);
     let state: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(state["class"], "active");
-    let local = network_discovery::backend::summarize(state["units"].as_object().unwrap(), true, "", false);
+    let local = tessel_network_discovery::backend::summarize(state["units"].as_object().unwrap(), true, "", false);
     assert_eq!(text.trim_end(), snapshot_text(&local));
     println!("ok status_command_prints_one_json_line");
 }

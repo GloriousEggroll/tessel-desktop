@@ -25,7 +25,7 @@ fn page_size() -> u64 {
 }
 
 fn os_error(error: &io::Error) -> PsError {
-    PsError::Os(suite_core::pyerr::os_error_text(error))
+    PsError::Os(tessel_core::pyerr::os_error_text(error))
 }
 
 /// psutil's `wrap_exceptions` for per-process reads.
@@ -597,7 +597,7 @@ impl Source for ProcFs {
         let mut st: libc::statvfs = unsafe { std::mem::zeroed() };
         if unsafe { libc::statvfs(path.as_ptr(), &mut st) } != 0 {
             let error = io::Error::last_os_error();
-            return Err(PsError::Os(suite_core::pyerr::os_error_path(&error, Path::new(mountpoint))));
+            return Err(PsError::Os(tessel_core::pyerr::os_error_path(&error, Path::new(mountpoint))));
         }
         let frsize = st.f_frsize as u64;
         let total = st.f_blocks as u64 * frsize;

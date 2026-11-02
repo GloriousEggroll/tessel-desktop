@@ -1,4 +1,4 @@
-//! desktop-suite-failed (FailureHelperTests of test_configure_session.py) end to end on a
+//! tessel-failed (FailureHelperTests of test_configure_session.py) end to end on a
 //! private dbus-daemon (no service directories, so nothing is ever auto-started) with a fake
 //! org.freedesktop.Notifications server and a logging fake `systemctl`. The same scenarios
 //! run against `desktop_suite_failed.py` and must record the same calls.
@@ -129,11 +129,11 @@ fn helper(rust: bool, root: &Path, address: &str, args: &[&str], extra: &[(&str,
     let bin = fake_bin(&root.join(if rust { "r" } else { "p" }), &["systemctl"], &log);
     let suite = suite_root();
     let mut command = if rust {
-        Command::new(env!("CARGO_BIN_EXE_desktop-suite-failed"))
+        Command::new(env!("CARGO_BIN_EXE_tessel-failed"))
     } else {
         let suite = suite.clone().unwrap();
         let mut command = Command::new("python3");
-        command.arg("-B").arg(suite.join("session-startup/desktop_suite_failed.py"));
+        command.arg("-B").arg(suite.join("tessel-session-startup/desktop_suite_failed.py"));
         command
     };
     let home = root.join("home");
@@ -170,7 +170,7 @@ fn setup(name: &str) -> Option<(PathBuf, Bus)> {
 #[test]
 fn invalid_unit_names_are_rejected() {
     for args in [&["../../evil"][..], &[], &["a.service", "b.service"]] {
-        let output = Command::new(env!("CARGO_BIN_EXE_desktop-suite-failed")).args(args).output().unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_tessel-failed")).args(args).output().unwrap();
         assert_eq!(output.status.code(), Some(2));
         assert_eq!(String::from_utf8_lossy(&output.stderr), "usage: desktop_suite_failed.py UNIT.service\n");
     }
@@ -180,7 +180,7 @@ fn invalid_unit_names_are_rejected() {
 fn session_ending_is_not_reported() {
     let root = scratch("failed-ending");
     let runtime = root.display().to_string();
-    let (output, log) = helper(true, &root, "unix:path=/nonexistent", &["waydock.service"], &[("WAYLAND_DISPLAY", "gone-0"), ("XDG_RUNTIME_DIR", &runtime)]);
+    let (output, log) = helper(true, &root, "unix:path=/nonexistent", &["tessel-dock.service"], &[("WAYLAND_DISPLAY", "gone-0"), ("XDG_RUNTIME_DIR", &runtime)]);
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(log, "", "systemctl must not run once the compositor socket is gone");
 }
@@ -195,12 +195,12 @@ fn restart_action_resets_failed_state_and_starts_unit() {
         // A fresh bus per run: the previous fake server still owns the name.
         let Some((root, bus)) = setup(if rust { "restart-rust" } else { "restart-python" }) else { return };
         let (calls, stop) = serve(&bus.address, Then::Restart);
-        let (output, log) = helper(rust, &root, &bus.address, &["netman.service"], &[]);
+        let (output, log) = helper(rust, &root, &bus.address, &["tessel-network.service"], &[]);
         let _ = stop.send(());
         assert_eq!(output.status.code(), Some(0), "{}", String::from_utf8_lossy(&output.stderr));
         assert_eq!(
             log,
-            "systemctl --user is-active --quiet graphical-session.target\nsystemctl --user reset-failed netman.service\nsystemctl --user start --no-block netman.service\n"
+            "systemctl --user is-active --quiet graphical-session.target\nsystemctl --user reset-failed tessel-network.service\nsystemctl --user start --no-block tessel-network.service\n"
         );
         let calls = calls.lock().unwrap().clone();
         assert_eq!(calls.len(), 1);
@@ -218,7 +218,7 @@ fn closing_the_notification_does_not_restart() {
     let Some((root, bus)) = setup("closed") else { return };
     let (_calls, stop) = serve(&bus.address, Then::Close);
     let started = std::time::Instant::now();
-    let (output, log) = helper(true, &root, &bus.address, &["polkitman.service"], &[]);
+    let (output, log) = helper(true, &root, &bus.address, &["tessel-auth.service"], &[]);
     let _ = stop.send(());
     assert_eq!(output.status.code(), Some(0));
     assert!(started.elapsed() < Duration::from_secs(5), "NotificationClosed must end the wait");
@@ -233,11 +233,11 @@ fn missing_notification_service_is_reported_on_stderr() {
         if !rust && !python_available() {
             continue;
         }
-        let (output, _log) = helper(rust, &root, &bus.address, &["notifications.service"], &[]);
+        let (output, _log) = helper(rust, &root, &bus.address, &["tessel-notifications.service"], &[]);
         assert_eq!(output.status.code(), Some(0), "rust={rust} {}", String::from_utf8_lossy(&output.stderr));
         texts.push(String::from_utf8_lossy(&output.stderr).into_owned());
     }
-    assert!(texts[0].starts_with("notifications.service failed; no notification could be shown: "), "{}", texts[0]);
+    assert!(texts[0].starts_with("tessel-notifications.service failed; no notification could be shown: "), "{}", texts[0]);
     if texts.len() == 2 {
         assert_eq!(texts[0], texts[1]);
     }

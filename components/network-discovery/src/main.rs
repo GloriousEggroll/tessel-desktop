@@ -1,12 +1,12 @@
-//! `network-discovery [--toggle | --popup | --settings | --status]
+//! `tessel-network-discovery [--toggle | --popup | --settings | --status]
 //! [--popup-edge E] [--popup-offset N]` (discovery_manager.py).
 
 use gio::prelude::*;
-use network_discovery::app::{create_application, default_backend, default_browser, SPEC};
-use network_discovery::compat::{prog, Outcome};
+use tessel_network_discovery::app::{create_application, default_backend, default_browser, SPEC};
+use tessel_network_discovery::compat::{prog, Outcome};
 
 fn main() -> glib::ExitCode {
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     let mut argv: Vec<String> = std::env::args_os().map(|a| a.to_string_lossy().into_owned()).collect();
     // The Python shim execs `[python, discovery_manager.py, *args]`: drop the
     // interpreter so argv[0] is the script path (argparse's prog name).
@@ -14,7 +14,7 @@ fn main() -> glib::ExitCode {
         .is_some_and(|n| n.to_string_lossy().starts_with("python")) {
         argv.remove(0);
     }
-    let name = prog(argv.first().map(String::as_str).unwrap_or("network-discovery"));
+    let name = prog(argv.first().map(String::as_str).unwrap_or("tessel-network-discovery"));
     let args = match SPEC.parse(argv.get(1..).unwrap_or(&[]), true) {
         Outcome::Run(args) => args,
         Outcome::Help => {
@@ -27,7 +27,7 @@ fn main() -> glib::ExitCode {
         }
     };
     if args.mode == Some("status") {
-        println!("{}", network_discovery::read_status());
+        println!("{}", tessel_network_discovery::read_status());
         return glib::ExitCode::SUCCESS;
     }
     let (app, _state) = create_application(default_backend(), default_browser());

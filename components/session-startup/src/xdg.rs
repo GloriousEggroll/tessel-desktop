@@ -32,10 +32,10 @@ dbus-update-activation-environment --systemd \
 systemctl --user daemon-reload
 # End labwc XDG session environment"#;
 pub const START_BLOCK: &str = "# Begin labwc XDG application autostart
-# Wait for Waydock's tray host before starting applications which only try
+# Wait for Tessel Dock's tray host before starting applications which only try
 # to register their tray icon once. Type=notify makes this a readiness wait,
-# even if Waydock's start was already requested in the background above.
-systemctl --user start waydock.service
+# even if Tessel Dock's start was already requested in the background above.
+systemctl --user start tessel-dock.service
 # The installed generator handles user overrides, Hidden, desktop filters,
 # TryExec and Exec argument parsing. Active services are not launched twice.
 systemctl --user --no-block start labwc-xdg-autostart.target
@@ -215,7 +215,7 @@ pub fn main(args: &[String], prog: &str, home: &Path, source: &Path) -> Result<i
     if !apply || changes.is_empty() {
         return Ok(0);
     }
-    let backup = home.join(".local/state/desktop-suite/backups").join(fsops::timestamp("xdg-autostart-"));
+    let backup = home.join(".local/state/tessel/backups").join(fsops::timestamp("xdg-autostart-"));
     let mut written: Vec<(PathBuf, Snapshot)> = Vec::new();
     let result = (|| -> Result<(), Error> {
         for (path, data, mode, original) in &changes {

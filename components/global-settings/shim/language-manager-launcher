@@ -1,5 +1,0 @@
-#!/bin/sh
-# ~/.local/bin/language-manager after the swap: Global Settings' Language page.
-# Rollback restores
-#   exec /usr/bin/python3 '~/.local/share/global-settings/global_settings.py' --section language "$@"
-exec "$HOME/.local/share/global-settings/global-settings" --section language "$@"

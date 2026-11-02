@@ -1,5 +1,5 @@
-//! Helpers missing from suite-core (candidates to upstream; the same
-//! argparse twin lives in tiling-manager): Python `repr`/`int()` and an
+//! Helpers missing from tessel-core (candidates to upstream; the same
+//! argparse twin lives in tessel-tiling): Python `repr`/`int()` and an
 //! argparse parser for `--mode | … --popup-edge E --popup-offset N`.
 
 use std::path::Path;

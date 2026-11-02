@@ -211,7 +211,7 @@ fn managed_block_bytes_match_python() {
     c::write_config(&f.path, "DP-1", Some(&corrected)).unwrap();
     c::write_config(&f.path, "HDMI-A-1", None).unwrap();
     // The second write leaves the first block's trailing newline (Python does the same).
-    assert_eq!(f.read(), format!("<labwc_config>\n\n<!-- hdr-calibration begin -->\n<hdrCalibration>\n  <output name=\"DP-1\" displayId=\"0123456789abcdef\" black=\"0.0005\" peak=\"1000\" fullFrame=\"300\" white=\"160\" pictureMode=\"A &quot;B&quot; &amp; &lt;C&gt;\" correction=\"/x/y.cube\" correctionSha256=\"{}\" />\n  <output name=\"HDMI-A-1\" enabled=\"false\" />\n</hdrCalibration>\n<!-- hdr-calibration end -->\n</labwc_config>\n", "a".repeat(64)));
+    assert_eq!(f.read(), format!("<labwc_config>\n\n<!-- tessel-hdr-calibration begin -->\n<hdrCalibration>\n  <output name=\"DP-1\" displayId=\"0123456789abcdef\" black=\"0.0005\" peak=\"1000\" fullFrame=\"300\" white=\"160\" pictureMode=\"A &quot;B&quot; &amp; &lt;C&gt;\" correction=\"/x/y.cube\" correctionSha256=\"{}\" />\n  <output name=\"HDMI-A-1\" enabled=\"false\" />\n</hdrCalibration>\n<!-- tessel-hdr-calibration end -->\n</labwc_config>\n", "a".repeat(64)));
 }
 
 #[test]
@@ -219,7 +219,7 @@ fn rollback_and_concurrent_changes() {
     let f = Fixture::new("rollback");
     f.write("<labwc_config/>");
     let tx = c::write_config(&f.path, "DP-1", Some(&profile())).unwrap();
-    assert!(tx.backup.starts_with(f.root.join("state/desktop-suite/backups/hdr")));
+    assert!(tx.backup.starts_with(f.root.join("state/tessel/backups/hdr")));
     color_config::rollback(&tx).unwrap();
     assert_eq!(f.read(), "<labwc_config/>");
     let tx = c::write_config(&f.path, "DP-1", Some(&profile())).unwrap();
@@ -412,7 +412,7 @@ fn report_records_pending_measurements_and_mismatch() {
     let f = Fixture::new("report");
     let host = FakeHost::always(status(&[("hdr_correction_supported", "true")], monitor()), &f.path);
     let path = c::workspace_report("DP-1", &profile(), &host).unwrap();
-    assert!(path.starts_with(f.root.join("state/hdr-calibration/reports")));
+    assert!(path.starts_with(f.root.join("state/tessel-hdr-calibration/reports")));
     let report: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
     assert_eq!(report["software_configuration_matches"], json!(false));
     assert_eq!(report["meter_verification"], json!("not performed"));

@@ -24,23 +24,23 @@ import install  # noqa: E402
 
 REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir).resolve()
 SCRATCH = Path(os.environ.get("TMPDIR") or f"/run/user/{os.getuid()}/cbt/rust-installer")
-DSA_PROBE = 'grep -q -E -e "[\\"\']$2[\\"\']" "$1"'   # supports() in desktop-suite-action
+DSA_PROBE = 'grep -q -E -e "[\\"\']$2[\\"\']" "$1"'   # supports() in tessel-action
 USER = [c for c in install.COMPONENTS if c.scope == "user" and not c.explicit]
 EXPLICIT = [c for c in install.COMPONENTS if c.explicit]
 SYSTEM = [c for c in install.COMPONENTS if c.scope == "system" and not c.explicit]
-SYSTEM_SKIP = ("var/lib/desktop-suite", "var/backups")
+SYSTEM_SKIP = ("var/lib/tessel", "var/backups")
 # Runs install.py as if euid were 0 (only ever together with --root <private prefix>; see run_system).
 FAKE_ROOT_EUID = ("import os, runpy, sys; os.geteuid = lambda: 0; sys.argv = sys.argv[1:]; "
                   "runpy.run_path(sys.argv[0], run_name='__main__')")
-# login-manager/start-greeter as installed (the comment block trimmed); {lib} = <prefix>/usr/local/lib/waylogin.
+# tessel-login/start-greeter as installed (the comment block trimmed); {lib} = <prefix>/usr/local/lib/tessel-login.
 START_GREETER = """#!/bin/sh
 # No user desktop autostart, portals, terminal shortcuts, or X11 fallback.
 unset DISPLAY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS
 export GDK_BACKEND=wayland
-export XDG_CONFIG_HOME=/etc/waylogin
+export XDG_CONFIG_HOME=/etc/tessel-login
 export PYTHONNOUSERSITE=1
 umask 077
-exec /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/waylogin/labwc \\
+exec /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/tessel-login/labwc \\
     --session '/usr/bin/python3 -I {lib}/login_ui.py'
 """
 
@@ -56,27 +56,27 @@ exit 0
 RC = """<?xml version="1.0"?>
 <labwc_config>
   <core>
-    <promptCommand>exec "$HOME"/.local/bin/wayshell-prompt --message-stdin &lt;&lt;'WAYSHELL_PROMPT_x'
+    <promptCommand>exec "$HOME"/.local/bin/tessel-prompt --message-stdin &lt;&lt;'WAYSHELL_PROMPT_x'
 WAYSHELL_PROMPT_x</promptCommand>
   </core>
   <keyboard>
-    <!-- <keybind key="A-Tab"><action name="Execute" command="/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window"/></keybind> -->
+    <!-- <keybind key="A-Tab"><action name="Execute" command="/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py switch-window"/></keybind> -->
     <keybind key="W-S-0"><action name="SendToDesktop" to="10"/></keybind>
     <keybind key="A-Tab">
-      <action name="Execute" command="/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window"/>
+      <action name="Execute" command="/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py switch-window"/>
     </keybind>
     <keybind  key='A-S-Tab' >
-      <action   name="Execute"  command='/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window --reverse' />
+      <action   name="Execute"  command='/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py switch-window --reverse' />
     </keybind>
-    <keybind key="W-Tab"><action name="Execute" command="/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py show-activities"/></keybind>
+    <keybind key="W-Tab"><action name="Execute" command="/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py show-activities"/></keybind>
     <keybind key="Super_L" onRelease="yes">
-      <action name="Execute" command="~/.local/bin/waydock --menu-hotkey"/>
+      <action name="Execute" command="~/.local/bin/tessel-dock --menu-hotkey"/>
     </keybind>
   </keyboard>
 </labwc_config>
 """
-RC_PY_TAB = "/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py switch-window"
-RC_RUST_TAB = "~/.local/share/wayshell/wayshell-cli switch-window"
+RC_PY_TAB = "/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py switch-window"
+RC_RUST_TAB = "~/.local/share/tessel-shell/tessel-shell-cli switch-window"
 SYSTEMCTL = """#!/bin/sh
 echo "$@" >> "$SYSTEMCTL_LOG"
 case "$*" in
@@ -168,76 +168,76 @@ class InstallerTest(unittest.TestCase):
                 entry = component.shims[0].entry if component.shims else component.python_entries[0]
                 (units / unit.name).write_text(UNIT.format(name=unit.name, entry=f"{scripts(component)}/{entry}",
                                                            args=" ".join(unit.args or ())))
-                (units / (unit.name + ".d") / "50-desktop-suite-recovery.conf").write_text(RECOVERY)
+                (units / (unit.name + ".d") / "50-tessel-recovery.conf").write_text(RECOVERY)
             for entry in component.python_entries:
                 (directory / entry).write_text(PY_ENTRY.format(name=entry, flags=()))
-        notif = home / install.UNITS / "notifications.service"
+        notif = home / install.UNITS / "tessel-notifications.service"
         notif.write_text("[Service]\nExecStart=dunst\n[Install]\nWantedBy=graphical-session.target\n")
-        (home / install.UNITS / "notifications.service.d/desktop-suite.conf").write_text(
-            '[Service]\nExecStart=\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/notification-manager/'
+        (home / install.UNITS / "tessel-notifications.service.d/tessel.conf").write_text(
+            '[Service]\nExecStart=\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/tessel-notifications/'
             'notification_manager.py" --daemon\n')
-        weather = home / install.UNITS / "weather-manager.service"
-        weather.write_text("[Service]\nExecStart=/usr/bin/python3 %h/.local/share/weather-manager/weather_manager.py "
+        weather = home / install.UNITS / "tessel-weather.service"
+        weather.write_text("[Service]\nExecStart=/usr/bin/python3 %h/.local/share/tessel-weather/weather_manager.py "
                            "--tray --popup-edge top --popup-offset 40\n")
-        loop = home / install.UNITS / "audio-manager-loopbacks.service"
-        loop.write_text('[Service]\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/audio-manager/'
+        loop = home / install.UNITS / "tessel-audio-loopbacks.service"
+        loop.write_text('[Service]\nExecStart=/usr/bin/python3 "%h/.config/waybar/scripts/tessel-audio/'
                         'loopback_service.py"\nEnvironment=PYTHONUNBUFFERED=1\n')
-        # As installed: wayshell.service's ExecStart is stale; palette.conf is what runs the daemon.
+        # As installed: tessel-shell.service's ExecStart is stale; palette.conf is what runs the daemon.
         units = home / install.UNITS
-        (units / "wayshell.service").write_text(
-            "[Unit]\nDescription=Wayshell Daemon\n\n[Service]\nEnvironmentFile=%h/.config/labwc/environment\n"
-            "ExecStart=/usr/bin/wayshell\nRestart=on-failure\nType=simple\n\n[Install]\n"
+        (units / "tessel-shell.service").write_text(
+            "[Unit]\nDescription=Tessel Shell Daemon\n\n[Service]\nEnvironmentFile=%h/.config/labwc/environment\n"
+            "ExecStart=/usr/bin/tessel-shell\nRestart=on-failure\nType=simple\n\n[Install]\n"
             "WantedBy=graphical-session.target\n")
-        (units / "wayshell.service.d/palette.conf").write_text(
-            "[Service]\nExecStart=\nExecStart=%h/.local/share/wayshell/wayshell\n")
-        (units / "waydock.service").write_text(
-            "[Unit]\nDescription=Waydock\nPartOf=graphical-session.target\n\n[Service]\nType=notify\n"
+        (units / "tessel-shell.service.d/palette.conf").write_text(
+            "[Service]\nExecStart=\nExecStart=%h/.local/share/tessel-shell/tessel-shell\n")
+        (units / "tessel-dock.service").write_text(
+            "[Unit]\nDescription=Tessel Dock\nPartOf=graphical-session.target\n\n[Service]\nType=notify\n"
             "NotifyAccess=main\nTimeoutStartSec=30\nEnvironment=GDK_BACKEND=wayland\n"
-            'ExecStart=/usr/bin/python3 "%h/.local/share/waydock/waydock.py"\nRestart=on-failure\nRestartSec=1\n')
+            'ExecStart=/usr/bin/python3 "%h/.local/share/tessel-dock/tessel-dock.py"\nRestart=on-failure\nRestartSec=1\n')
         (home / ".config/labwc").mkdir(parents=True)
         (home / install.RC_XML).write_text(RC)
         local_bin = home / ".local/bin"
         local_bin.mkdir(parents=True)
-        for name, entry in (("waydock", "waydock/waydock.py"), ("wayshell-prompt", "wayshell/wayshell_prompt.py"),
-                            ("wayshell-capture-picker", "wayshell/capture_picker.py"),
-                            ("hdr-calibration", "hdr-calibration/hdr_calibration.py")):
+        for name, entry in (("tessel-dock", "tessel-dock/tessel-dock.py"), ("tessel-prompt", "tessel-shell/wayshell_prompt.py"),
+                            ("tessel-capture-picker", "tessel-shell/capture_picker.py"),
+                            ("tessel-hdr-calibration", "tessel-hdr-calibration/hdr_calibration.py")):
             (local_bin / name).write_text(f"#!/bin/sh\nexec /usr/bin/python3 {home}/.local/share/{entry} \"$@\"\n")
         (local_bin / "notifications").write_text(
-            '#!/bin/sh\nexec /usr/bin/python3 "$HOME/.config/waybar/scripts/notification-manager/notification_manager.py" "$@"\n')
-        for name, entry in (("waymedia", "media-manager/media_manager.py"), ("waytile", "tiling-manager/tiling_manager.py")):
+            '#!/bin/sh\nexec /usr/bin/python3 "$HOME/.config/waybar/scripts/tessel-notifications/notification_manager.py" "$@"\n')
+        for name, entry in (("waymedia", "tessel-media/media_manager.py"), ("tessel-tiling", "tessel-tiling/tiling_manager.py")):
             (local_bin / name).write_text(f"#!/bin/sh\nexec /usr/bin/python3 {home}/{install.SCRIPTS}/{entry} \"$@\"\n")
-        (local_bin / "way-displays-gui").write_text(
-            f"#!/bin/sh\nexec /usr/bin/python3 {home}/.local/share/way-displays/way-displays-gui \"$@\"\n")
-        # The original btmanager.py is a module Global Settings imports (btmanager.App).
-        (home / install.SCRIPTS / "btmanager/btmanager.py").write_text(
+        (local_bin / "tessel-displays").write_text(
+            f"#!/bin/sh\nexec /usr/bin/python3 {home}/.local/share/way-displays/tessel-displays \"$@\"\n")
+        # The original tessel-bluetooth.py is a module Global Settings imports (tessel-bluetooth.App).
+        (home / install.SCRIPTS / "tessel-bluetooth/tessel-bluetooth.py").write_text(
             "import btpopup\nORIGIN = __file__\n\n\nclass App:\n    embedded = True\n\n\n"
-            "if __name__ == '__main__':\n    print('python btmanager')\n")
-        netman = home / install.SCRIPTS / "network-manager"
+            "if __name__ == '__main__':\n    print('python tessel-bluetooth')\n")
+        netman = home / install.SCRIPTS / "tessel-network"
         (netman / "network_manager.py").write_text(
-            "import network_backend\nAPPLICATION_ID = 'org.waybar.NetworkManager'\nFALLBACK_PORTAL_URI = 'x'\n"
+            "import network_backend\nAPPLICATION_ID = 'org.tessel.NetworkManager'\nFALLBACK_PORTAL_URI = 'x'\n"
             "ORIGIN = __file__\n\n\nclass NetworkApplication:\n    pass\n\n\ndef arguments():\n    pass\n\n\n"
             "def portal_uri():\n    pass\n")
         (netman / "network_status.py").write_text("STREAM = 'python'\n")
-        (local_bin / "waykeys").write_text(
-            f"#!/bin/sh\nexec /usr/bin/python3 {home}/.config/waybar/scripts/on-screen-keyboard/osk_manager.py \"$@\"\n")
+        (local_bin / "tessel-keyboard").write_text(
+            f"#!/bin/sh\nexec /usr/bin/python3 {home}/.config/waybar/scripts/tessel-keyboard/osk_manager.py \"$@\"\n")
         for launcher in local_bin.iterdir():
             launcher.chmod(0o755)
         apps = home / install.APPS
         apps.mkdir(parents=True)
-        for desktop, entry in (("org.waybar.PowerManager.desktop", "power-manager/power_manager.py"),
-                               ("org.waybar.BatteryManager.desktop", "battery-manager/battery_manager.py")):
+        for desktop, entry in (("org.tessel.PowerManager.desktop", "tessel-power/power_manager.py"),
+                               ("org.tessel.BatteryManager.desktop", "tessel-battery/battery_manager.py")):
             (apps / desktop).write_text(f"[Desktop Entry]\nName=X\nExec=/usr/bin/python3 {home}/{install.SCRIPTS}/{entry} "
                                         "--settings\nIcon=x\n")
-        (apps / "org.waydock.Notifications.desktop").write_text("[Desktop Entry]\nExec=notifications --popup\n")
+        (apps / "org.tessel.Notifications.desktop").write_text("[Desktop Entry]\nExec=notifications --popup\n")
         (apps / "org.desktop.HDRCalibration.desktop").write_text(
-            f"[Desktop Entry]\nName=HDR Calibration\nExec={home}/.local/bin/hdr-calibration\n")
+            f"[Desktop Entry]\nName=HDR Calibration\nExec={home}/.local/bin/tessel-hdr-calibration\n")
         # As install_lock.py writes it (the porter's copy with the Python ExecStart).
-        (home / install.UNITS / "power-manager-lock.service").write_text(
-            (install.REPO / "components/lock-screen/power-manager-lock.service").read_text().replace(
-                "ExecStart=%h/.local/share/lock-screen/lock-screen",
-                "ExecStart=/usr/bin/python3 %h/.local/share/lock-screen/lock_screen.py"))
-        (home / scripts(install.BY_KEY["lock-screen"]) / "waylock-pam").write_bytes(b"\x7fELF c pam helper")
-        (home / scripts(install.BY_KEY["lock-screen"]) / "waylock-pam").chmod(0o755)
+        (home / install.UNITS / "tessel-lock.service").write_text(
+            (install.REPO / "components/lock/tessel-lock.service").read_text().replace(
+                "ExecStart=%h/.local/share/tessel-lock/tessel-lock",
+                "ExecStart=/usr/bin/python3 %h/.local/share/tessel-lock/lock_screen.py"))
+        (home / scripts(install.BY_KEY["tessel-lock"]) / "tessel-lock-pam").write_bytes(b"\x7fELF c pam helper")
+        (home / scripts(install.BY_KEY["tessel-lock"]) / "tessel-lock-pam").chmod(0o755)
 
     def env(self, **extra):
         env = dict(os.environ, HOME=str(self.home), PATH=f"{self.bin}:{os.environ['PATH']}",
@@ -279,12 +279,12 @@ class InstallerTest(unittest.TestCase):
             self.assertIn(component.key, out)
             for shim in component.shims:
                 self.assertIn(str(self.home / scripts(component) / shim.entry), out)
-        self.assertIn("ExecStart: /usr/bin/python3 %h/.config/waybar/scripts/keep-awake/keep_awake.py --background"
-                      " -> %h/.config/waybar/scripts/keep-awake/keep-awake --background", out)
-        self.assertIn('ExecStart: /usr/bin/python3 "%h/.config/waybar/scripts/notification-manager/'
-                      'notification_manager.py" --daemon -> %h/.config/waybar/scripts/notification-manager/'
-                      'notification-manager --daemon', out)
-        self.assertIn('-> %h/.config/waybar/scripts/audio-manager/audio-manager-loopbacks\n', out)
+        self.assertIn("ExecStart: /usr/bin/python3 %h/.config/waybar/scripts/tessel-keep-awake/keep_awake.py --background"
+                      " -> %h/.config/waybar/scripts/tessel-keep-awake/tessel-keep-awake --background", out)
+        self.assertIn('ExecStart: /usr/bin/python3 "%h/.config/waybar/scripts/tessel-notifications/'
+                      'notification_manager.py" --daemon -> %h/.config/waybar/scripts/tessel-notifications/'
+                      'tessel-notifications --daemon', out)
+        self.assertIn('-> %h/.config/waybar/scripts/tessel-audio/tessel-audio-loopbacks\n', out)
         self.assertIn("shared/install_popup_fixes.py rewrites notification_manager.py", out)
         self.assertIn("still owns an unrelated application", out)
         self.assertIn("Preview only", out)
@@ -305,16 +305,16 @@ class InstallerTest(unittest.TestCase):
             for shim in component.shims:
                 entry = directory / shim.entry
                 text = entry.read_text()
-                self.assertIn("desktop-suite-rust shim", text)
+                self.assertIn("tessel-rust shim", text)
                 compile(text, str(entry), "exec")
                 self.assertTrue(text.startswith("#!"))
                 self.assertEqual(entry.stat().st_mode & 0o777, 0o755)
                 if shim.porter:
                     self.assertIn((install.REPO / shim.porter).read_text().split("\n", 1)[1], text)
-                for flag in shim.flags:     # desktop-suite-action's quoted-flag probe still matches
+                for flag in shim.flags:     # tessel-action's quoted-flag probe still matches
                     probe = subprocess.run(["sh", "-c", DSA_PROBE, "sh", str(entry), flag])
                     self.assertEqual(probe.returncode, 0, (shim.entry, flag))
-                # The shim execs the binary next to it with the same arguments (waydock uses -u).
+                # The shim execs the binary next to it with the same arguments (tessel-dock uses -u).
                 ran = subprocess.run(["/usr/bin/python3", "-u", str(entry), "--x", "a b"],
                                      capture_output=True, text=True, env=self.env())
                 expected = f"rust-{shim.binary}-v1" + (" --x a b" if forwards_args(shim) else "")
@@ -322,47 +322,47 @@ class InstallerTest(unittest.TestCase):
             for unit in component.units:
                 self.assertEqual(install.effective_execstart(home, unit.name),
                                  install.unit_command(home, component, unit))
-                self.assertTrue((home / install.UNITS / (unit.name + ".d/50-desktop-suite-recovery.conf")).is_file())
+                self.assertTrue((home / install.UNITS / (unit.name + ".d/50-tessel-recovery.conf")).is_file())
         self.assertEqual(keeps, {key: (home / scripts(install.BY_KEY[key[0]]) / key[1]).read_bytes() for key in keeps})
-        self.assertIn('"--power-button"', self.entry("power-manager", "power_manager.py").read_text())
-        fallback = self.entry("keep-awake", "keep_awake_python.py")
+        self.assertIn('"--power-button"', self.entry("tessel-power", "power_manager.py").read_text())
+        fallback = self.entry("tessel-keep-awake", "keep_awake_python.py")
         self.assertIn("python original of keep_awake.py", fallback.read_text())
-        notifications = home / install.SCRIPTS / "notification-manager/notification-manager"
+        notifications = home / install.SCRIPTS / "tessel-notifications/tessel-notifications"
         self.assertIn(str(notifications), (home / ".local/bin/notifications").read_text())
-        ran = subprocess.run([str(home / ".local/bin/waykeys"), "--settings"], capture_output=True, text=True)
+        ran = subprocess.run([str(home / ".local/bin/tessel-keyboard"), "--settings"], capture_output=True, text=True)
         self.assertEqual(ran.stdout.strip(), "rust-osk-manager-v1 --settings")
-        power = (home / install.APPS / "org.waybar.PowerManager.desktop").read_text()
-        self.assertIn(f"Exec={home}/{install.SCRIPTS}/power-manager/power-manager --settings\n", power)
-        self.assertEqual((home / install.APPS / "org.waydock.Notifications.desktop").read_text(),
+        power = (home / install.APPS / "org.tessel.PowerManager.desktop").read_text()
+        self.assertIn(f"Exec={home}/{install.SCRIPTS}/tessel-power/tessel-power --settings\n", power)
+        self.assertEqual((home / install.APPS / "org.tessel.Notifications.desktop").read_text(),
                          "[Desktop Entry]\nExec=notifications --popup\n")
         self.assertEqual(json.loads((home / install.LOCALE / "fr.json").read_text()), {"Hello": "fr"})
-        for name in ("keep-awake.service", "notifications.service", "notifications.service.d/desktop-suite.conf"):
+        for name in ("tessel-keep-awake.service", "tessel-notifications.service", "tessel-notifications.service.d/tessel.conf"):
             self.assertEqual(tree(home)[f"{install.UNITS}/{name}"], before[f"{install.UNITS}/{name}"])
         # Only read-only queries (the locker must be inactive) besides the reload.
-        self.assertEqual(self.systemctl_calls(), ["--user is-active --quiet power-manager-lock.service",
+        self.assertEqual(self.systemctl_calls(), ["--user is-active --quiet tessel-lock.service",
                                                   "--user daemon-reload"])
         backups = list((home / install.BACKUPS).glob("rust-swap-*"))
         self.assertEqual(len(backups), 1)
         manifest = json.loads((backups[0] / "manifest.json").read_text())
         self.assertTrue(any(item["kind"] == "shim" and item["before"] == "file" for item in manifest))
         self.assertTrue(any(item["kind"] == "helper" and item["before"] == "file" for item in manifest))
-        original = backups[0] / install.SCRIPTS / "keep-awake/keep_awake.py"
+        original = backups[0] / install.SCRIPTS / "tessel-keep-awake/keep_awake.py"
         self.assertIn("python original", original.read_text())
         # Same flags as the Python unit when the table does not fix them; TimeoutStopSec stays in the base unit.
-        self.assertEqual(install.effective_execstart(home, "weather-manager.service"),
-                         "%h/.local/share/weather-manager/weather-manager --tray --popup-edge top --popup-offset 40")
-        self.assertIn(f"{home}/{install.SCRIPTS}/media-manager/media-manager",
+        self.assertEqual(install.effective_execstart(home, "tessel-weather.service"),
+                         "%h/.local/share/tessel-weather/tessel-weather --tray --popup-edge top --popup-offset 40")
+        self.assertIn(f"{home}/{install.SCRIPTS}/tessel-media/tessel-media",
                       subprocess.run(["sh", "-x", str(home / ".local/bin/waymedia")], capture_output=True, text=True,
                                      env=self.env()).stderr)
         for name in ("tiling_manager_python.py", "tiling_status_python.py"):
-            self.assertIn("python original", self.entry("tiling-manager", name).read_text())
-        self.assertIn("python original", self.entry("network-discovery", "discovery_manager_python.py").read_text())
-        ran = subprocess.run([str(home / ".local/bin/way-displays-gui"), "--x"], capture_output=True, text=True,
+            self.assertIn("python original", self.entry("tessel-tiling", name).read_text())
+        self.assertIn("python original", self.entry("tessel-network-discovery", "discovery_manager_python.py").read_text())
+        ran = subprocess.run([str(home / ".local/bin/tessel-displays"), "--x"], capture_output=True, text=True,
                              env=self.env())
-        self.assertEqual(ran.stdout.strip(), "rust-way-displays-gui-v1 --x")
-        self.assertTrue((home / ".local/share/way-displays/way-displays-gui-rs").is_file())
-        self.assertIn("'--menu'", self.entry("session-manager", "session_manager.py").read_text())
-        self.assertIn("python original", self.entry("language-manager", "language_manager_python.py").read_text())
+        self.assertEqual(ran.stdout.strip(), "rust-tessel-displays-v1 --x")
+        self.assertTrue((home / ".local/share/way-displays/tessel-displays-rs").is_file())
+        self.assertIn("'--menu'", self.entry("tessel-session", "session_manager.py").read_text())
+        self.assertIn("python original", self.entry("tessel-language", "language_manager_python.py").read_text())
         self.assertIn("nothing to change", self.run_installer("--apply", "--i-am-at-the-keyboard").stdout)
 
     def test_rollback_restores_exactly(self):
@@ -378,58 +378,58 @@ class InstallerTest(unittest.TestCase):
 
     def test_only_and_partial_rollback(self):
         before = tree(self.home)
-        self.run_installer("--apply", "--only", "keep-awake,audio-manager")
-        self.assertIn(install.SHIM_MARKER, self.entry("keep-awake", "keep_awake.py").read_text())
-        self.assertIn(install.SHIM_MARKER, self.entry("audio-manager", "loopback_service.py").read_text())
-        self.assertNotIn(install.SHIM_MARKER, self.entry("power-manager", "power_manager.py").read_text())
-        self.assertFalse(self.entry("power-manager", "power-manager").exists())
-        self.run_installer("--rollback", "--only", "keep-awake")
+        self.run_installer("--apply", "--only", "tessel-keep-awake,tessel-audio")
+        self.assertIn(install.SHIM_MARKER, self.entry("tessel-keep-awake", "keep_awake.py").read_text())
+        self.assertIn(install.SHIM_MARKER, self.entry("tessel-audio", "loopback_service.py").read_text())
+        self.assertNotIn(install.SHIM_MARKER, self.entry("tessel-power", "power_manager.py").read_text())
+        self.assertFalse(self.entry("tessel-power", "tessel-power").exists())
+        self.run_installer("--rollback", "--only", "tessel-keep-awake")
         after = tree(self.home)
-        key = f"{install.SCRIPTS}/keep-awake/keep_awake.py"
+        key = f"{install.SCRIPTS}/tessel-keep-awake/keep_awake.py"
         self.assertEqual(after[key], before[key])
-        self.assertNotIn(f"{install.SCRIPTS}/keep-awake/keep_awake_python.py", after)
+        self.assertNotIn(f"{install.SCRIPTS}/tessel-keep-awake/keep_awake_python.py", after)
         self.assertIn(f"{install.LOCALE}/de.json", after)          # still used by the audio swap
         self.run_installer("--rollback")
         self.assertEqual(tree(self.home), before)
 
     def test_symlink_is_refused_and_nothing_written(self):
-        entry = self.entry("keep-awake", "keep_awake.py")
+        entry = self.entry("tessel-keep-awake", "keep_awake.py")
         real = entry.with_name("real_keep_awake.py")
         entry.rename(real)
         entry.symlink_to(real.name)
         before = tree(self.home, skip=())
-        result = self.run_installer("--apply", "--only", "keep-awake", check=False)
+        result = self.run_installer("--apply", "--only", "tessel-keep-awake", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Refusing to replace a linked installed file", result.stderr)
         self.assertEqual(tree(self.home, skip=()), before)
         self.assertEqual(self.systemctl_calls(), [])
 
     def test_missing_python_component_blocks(self):
-        (self.home / install.UNITS / "battery-manager.service").unlink()
-        result = self.run_installer("--apply", "--only", "battery-manager", check=False)
+        (self.home / install.UNITS / "tessel-battery.service").unlink()
+        result = self.run_installer("--apply", "--only", "tessel-battery", check=False)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("battery-manager.service is not installed", result.stderr)
-        self.assertFalse(self.entry("battery-manager", "battery-manager").exists())
+        self.assertIn("tessel-battery.service is not installed", result.stderr)
+        self.assertFalse(self.entry("tessel-battery", "tessel-battery").exists())
 
     def test_unbuilt_binary_blocks_apply(self):
-        (self.prebuilt / "power-status").unlink()
-        self.assertIn("not built", self.run_installer("--only", "power-manager", check=False).stdout)
-        result = self.run_installer("--apply", "--only", "power-manager", check=False)
+        (self.prebuilt / "tessel-power-status").unlink()
+        self.assertIn("not built", self.run_installer("--only", "tessel-power", check=False).stdout)
+        result = self.run_installer("--apply", "--only", "tessel-power", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("not built", result.stderr)
-        self.assertFalse(self.entry("power-manager", "power-manager").exists())
+        self.assertFalse(self.entry("tessel-power", "tessel-power").exists())
 
     def test_restart_only_swapped_active_units(self):
-        self.run_installer("--apply", "--only", "keep-awake", "--restart", SYSTEMCTL_ACTIVE="1")
+        self.run_installer("--apply", "--only", "tessel-keep-awake", "--restart", SYSTEMCTL_ACTIVE="1")
         restarts = [call for call in self.systemctl_calls() if "restart" in call]
-        self.assertEqual(restarts, ["--user restart keep-awake.service"])
+        self.assertEqual(restarts, ["--user restart tessel-keep-awake.service"])
         self.log.unlink()
-        self.run_installer("--rollback", "--only", "keep-awake", "--restart")   # unit inactive: left stopped
-        self.assertNotIn("--user restart keep-awake.service", self.systemctl_calls())
+        self.run_installer("--rollback", "--only", "tessel-keep-awake", "--restart")   # unit inactive: left stopped
+        self.assertNotIn("--user restart tessel-keep-awake.service", self.systemctl_calls())
 
     def test_shell_units_need_restart_shell(self):
-        component = install.Component("wayshell", "wayshell", "wayshell", ("wayshell",), shims=(),
-                                      units=(install.Unit("wayshell.service", "wayshell"),))
+        component = install.Component("tessel-shell", "tessel-shell", "tessel-shell", ("tessel-shell",), shims=(),
+                                      units=(install.Unit("tessel-shell.service", "tessel-shell"),))
         calls = []
         original = install.systemctl
         install.systemctl = lambda *args, check=False: calls.append(args) or subprocess.CompletedProcess(args, 0)
@@ -437,135 +437,135 @@ class InstallerTest(unittest.TestCase):
             install.restart_units([component], self.home, allow_shell=False)
             self.assertEqual(calls, [])
             install.restart_units([component], self.home, allow_shell=True)
-            self.assertIn(("restart", "wayshell.service"), calls)
+            self.assertIn(("restart", "tessel-shell.service"), calls)
         finally:
             install.systemctl = original
 
     def test_reapply_upgrade_then_rollback_restores_original(self):
         before = tree(self.home)
-        self.run_installer("--apply", "--only", "keep-awake")
+        self.run_installer("--apply", "--only", "tessel-keep-awake")
         self.make_binaries("v2")
-        self.run_installer("--apply", "--only", "keep-awake")
-        ran = subprocess.run(["/usr/bin/python3", str(self.entry("keep-awake", "keep_awake.py"))],
+        self.run_installer("--apply", "--only", "tessel-keep-awake")
+        ran = subprocess.run(["/usr/bin/python3", str(self.entry("tessel-keep-awake", "keep_awake.py"))],
                              capture_output=True, text=True, env=self.env())
         self.assertEqual(ran.stdout.strip(), "rust-keep-awake-v2")
         self.run_installer("--rollback")
         self.assertEqual(tree(self.home), before)
 
     def test_overwritten_shim_is_reported_and_kept_on_rollback(self):
-        self.run_installer("--apply", "--only", "power-manager")
-        entry = self.entry("power-manager", "power_manager.py")
+        self.run_installer("--apply", "--only", "tessel-power")
+        entry = self.entry("tessel-power", "power_manager.py")
         entry.write_text("# newer python from install_all.py\n")
-        report = self.statuses("power-manager")["power-manager"]
+        report = self.statuses("tessel-power")["tessel-power"]
         self.assertEqual(report["configured"], "python (shim overwritten)")
         self.assertEqual(report["shims"]["power_manager.py"], "python (shim overwritten)")
         self.assertEqual(report["shims"]["power_status.py"], "rust")
         self.assertTrue(any("install_gtk4.py" in warning for warning in report["warnings"]))
-        self.assertIn("python (shim overwritten)", self.run_installer("--status", "--only", "power-manager").stdout)
-        result = self.run_installer("--rollback", "--only", "power-manager")
+        self.assertIn("python (shim overwritten)", self.run_installer("--status", "--only", "tessel-power").stdout)
+        result = self.run_installer("--rollback", "--only", "tessel-power")
         self.assertIn("KEEP", result.stdout)
         self.assertEqual(entry.read_text(), "# newer python from install_all.py\n")
-        self.assertFalse((self.home / install.UNITS / "power-manager.service.d" / install.DROPIN).exists())
+        self.assertFalse((self.home / install.UNITS / "tessel-power.service.d" / install.DROPIN).exists())
 
     def test_status_reports_mode_and_rss(self):
-        entry = self.entry("battery-manager", "battery_status.py")
-        python = subprocess.Popen(["/usr/bin/python3", "-u", str(entry)])   # how waydock runs status streams
+        entry = self.entry("tessel-battery", "battery_status.py")
+        python = subprocess.Popen(["/usr/bin/python3", "-u", str(entry)])   # how tessel-dock runs status streams
         self.addCleanup(lambda: (python.kill(), python.wait()))
         time.sleep(0.3)
-        report = self.statuses("keep-awake,battery-manager")
-        self.assertEqual(report["battery-manager"]["configured"], "python")
-        self.assertEqual([p["impl"] for p in report["battery-manager"]["processes"]], ["python"])
-        self.assertGreater(report["battery-manager"]["rss_kb"], 0)
-        self.assertEqual(report["battery-manager"]["warnings"], [])
+        report = self.statuses("tessel-keep-awake,tessel-battery")
+        self.assertEqual(report["tessel-battery"]["configured"], "python")
+        self.assertEqual([p["impl"] for p in report["tessel-battery"]["processes"]], ["python"])
+        self.assertGreater(report["tessel-battery"]["rss_kb"], 0)
+        self.assertEqual(report["tessel-battery"]["warnings"], [])
         python.kill()
         python.wait()
-        self.run_installer("--apply", "--only", "keep-awake")
-        binary = self.entry("keep-awake", "keep-awake")
+        self.run_installer("--apply", "--only", "tessel-keep-awake")
+        binary = self.entry("tessel-keep-awake", "tessel-keep-awake")
         rust = subprocess.Popen(["sh", "-c", f'exec -a "{binary}" sleep 30'])
         self.addCleanup(lambda: (rust.kill(), rust.wait()))
         time.sleep(0.3)
-        report = self.statuses("keep-awake,battery-manager")
-        self.assertEqual(report["keep-awake"]["configured"], "rust")
-        self.assertEqual([p["impl"] for p in report["keep-awake"]["processes"]], ["rust"])
-        self.assertEqual(report["battery-manager"]["configured"], "python")
-        self.assertTrue(report["keep-awake"]["units"]["keep-awake.service"]["dropin"])
+        report = self.statuses("tessel-keep-awake,tessel-battery")
+        self.assertEqual(report["tessel-keep-awake"]["configured"], "rust")
+        self.assertEqual([p["impl"] for p in report["tessel-keep-awake"]["processes"]], ["rust"])
+        self.assertEqual(report["tessel-battery"]["configured"], "python")
+        self.assertTrue(report["tessel-keep-awake"]["units"]["tessel-keep-awake.service"]["dropin"])
         table = self.run_installer("--status").stdout
-        self.assertIn("keep-awake", table)
+        self.assertIn("tessel-keep-awake", table)
         self.assertIn("MB", table)
         self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
 
     def test_authentication_needs_confirmation(self):
         before = tree(self.home, skip=())
-        result = self.run_installer("--apply", "--only", "keep-awake,authentication-manager", check=False)
+        result = self.run_installer("--apply", "--only", "tessel-keep-awake,tessel-auth", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--i-am-at-the-keyboard", result.stderr)
         self.assertEqual(tree(self.home, skip=()), before)
-        self.assertIn("needs --i-am-at-the-keyboard", self.run_installer("--only", "authentication-manager").stdout)
-        self.run_installer("--apply", "--only", "authentication-manager", "--i-am-at-the-keyboard")
-        self.assertEqual(install.effective_execstart(self.home, "polkitman.service"),
-                         "%h/.local/share/authentication-manager/authentication-manager")
-        self.run_installer("--rollback", "--only", "authentication-manager")      # rollback needs no confirmation
+        self.assertIn("needs --i-am-at-the-keyboard", self.run_installer("--only", "tessel-auth").stdout)
+        self.run_installer("--apply", "--only", "tessel-auth", "--i-am-at-the-keyboard")
+        self.assertEqual(install.effective_execstart(self.home, "tessel-auth.service"),
+                         "%h/.local/share/tessel-auth/tessel-auth")
+        self.run_installer("--rollback", "--only", "tessel-auth")      # rollback needs no confirmation
         self.assertEqual(tree(self.home), {k: v for k, v in before.items() if not k.startswith(".local/state")})
 
     def test_optional_home_assistant_weather_is_skipped_when_absent(self):
-        shutil.rmtree(self.home / ".local/share/weather-manager")
-        (self.home / install.UNITS / "weather-manager.service").unlink()
-        out = self.run_installer("--only", "weather-manager,weather-manager-ha").stdout
+        shutil.rmtree(self.home / ".local/share/tessel-weather")
+        (self.home / install.UNITS / "tessel-weather.service").unlink()
+        out = self.run_installer("--only", "tessel-weather,weather-manager-ha").stdout
         self.assertIn("is not installed (optional)", out)
-        self.run_installer("--apply", "--only", "weather-manager,weather-manager-ha")
-        self.assertIn(install.SHIM_MARKER, self.entry("weather-manager", "weather_status.py").read_text())
-        self.assertFalse((self.home / ".local/share/weather-manager").exists())
+        self.run_installer("--apply", "--only", "tessel-weather,weather-manager-ha")
+        self.assertIn(install.SHIM_MARKER, self.entry("tessel-weather", "weather_status.py").read_text())
+        self.assertFalse((self.home / ".local/share/tessel-weather").exists())
 
     def test_restart_terminates_resident_calendar_only(self):
-        binary = self.entry("calendar-manager", "calendar-manager")
-        self.run_installer("--apply", "--only", "calendar-manager")
+        binary = self.entry("tessel-calendar", "tessel-calendar")
+        self.run_installer("--apply", "--only", "tessel-calendar")
         calendar = subprocess.Popen(["sh", "-c", f'exec -a "{binary}" sleep 30'])
         other = subprocess.Popen(["sleep", "30"])
         self.addCleanup(lambda: [(p.kill(), p.wait()) for p in (calendar, other)])
         time.sleep(0.3)
-        result = self.run_installer("--apply", "--only", "calendar-manager", "--restart")
+        result = self.run_installer("--apply", "--only", "tessel-calendar", "--restart")
         self.assertIn(f"kill -TERM {calendar.pid}", result.stdout)
         self.assertEqual(calendar.wait(timeout=5), -15)
         self.assertIsNone(other.poll())
         self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
 
-    def test_btmanager_shim_still_imports_the_python_module(self):
-        self.run_installer("--apply", "--only", "bluetooth-manager")
-        directory = self.entry("bluetooth-manager", "btmanager.py").parent
-        self.assertIn("class App", (directory / "btmanager_gtk.py").read_text())
-        # Global Settings' applet_pages.py: sys.path gets the scripts dir, then `import btmanager`.
-        probe = ("import sys; sys.path.insert(0, sys.argv[1]); import btmanager; "
-                 "print(btmanager.App.embedded, btmanager.ORIGIN.endswith('btmanager_gtk.py'))")
+    def test_tessel-bluetooth_shim_still_imports_the_python_module(self):
+        self.run_installer("--apply", "--only", "tessel-bluetooth")
+        directory = self.entry("tessel-bluetooth", "tessel-bluetooth.py").parent
+        self.assertIn("class App", (directory / "tessel-bluetooth_gtk.py").read_text())
+        # Global Settings' applet_pages.py: sys.path gets the scripts dir, then `import tessel-bluetooth`.
+        probe = ("import sys; sys.path.insert(0, sys.argv[1]); import tessel-bluetooth; "
+                 "print(tessel-bluetooth.App.embedded, tessel-bluetooth.ORIGIN.endswith('tessel-bluetooth_gtk.py'))")
         ran = subprocess.run([sys.executable, "-c", probe, str(directory)], capture_output=True, text=True,
                              env=self.env())
         self.assertEqual(ran.stdout.strip(), "True True", ran.stderr)
-        ran = subprocess.run(["/usr/bin/python3", str(directory / "btmanager.py"), "--popup"],
+        ran = subprocess.run(["/usr/bin/python3", str(directory / "tessel-bluetooth.py"), "--popup"],
                              capture_output=True, text=True, env=self.env())
-        self.assertEqual(ran.stdout.strip(), "rust-btmanager-v1 --popup")
-        self.assertEqual(self.statuses("bluetooth-manager")["bluetooth-manager"]["configured"], "rust")
+        self.assertEqual(ran.stdout.strip(), "rust-tessel-bluetooth-v1 --popup")
+        self.assertEqual(self.statuses("tessel-bluetooth")["tessel-bluetooth"]["configured"], "rust")
         self.assertEqual(self.statuses("way-displays")["way-displays"]["configured"], "python")
 
     def test_network_manager_shims_reexport_the_python_modules(self):
-        self.assertIn("NetworkManager-libnm is not installed", self.run_installer("--only", "network-manager").stdout)
+        self.assertIn("NetworkManager-libnm is not installed", self.run_installer("--only", "tessel-network").stdout)
         self.assertNotIn("NetworkManager-libnm is not installed",
-                         self.run_installer("--only", "network-manager", FAKE_RPM_OK="1").stdout)
-        self.assertNotEqual(self.run_installer("--apply", "--only", "network-manager", check=False).returncode, 0)
-        self.run_installer("--apply", "--only", "network-manager", "--i-am-at-the-keyboard")
-        directory = self.entry("network-manager", "network_manager.py").parent
+                         self.run_installer("--only", "tessel-network", FAKE_RPM_OK="1").stdout)
+        self.assertNotEqual(self.run_installer("--apply", "--only", "tessel-network", check=False).returncode, 0)
+        self.run_installer("--apply", "--only", "tessel-network", "--i-am-at-the-keyboard")
+        directory = self.entry("tessel-network", "network_manager.py").parent
         # Global Settings' applet_pages.py: sys.path gets the scripts dir, then `from network_manager import ...`.
         probe = ("import sys; sys.path.insert(0, sys.argv[1]); from network_manager import NetworkApplication, "
                  "APPLICATION_ID; import network_manager, network_status; "
                  "print(APPLICATION_ID, network_manager.ORIGIN.endswith('network_manager_impl.py'), network_status.STREAM)")
         ran = subprocess.run([sys.executable, "-c", probe, str(directory)], capture_output=True, text=True,
                              env=self.env())
-        self.assertEqual(ran.stdout.strip(), "org.waybar.NetworkManager True python", ran.stderr)
+        self.assertEqual(ran.stdout.strip(), "org.tessel.NetworkManager True python", ran.stderr)
         ran = subprocess.run(["/usr/bin/python3", str(directory / "network_manager.py"), "--settings"],
                              capture_output=True, text=True, env=self.env())
         self.assertEqual(ran.stdout.strip(), "rust-network-manager-v1 --settings")
-        self.assertEqual(install.effective_execstart(self.home, "netman.service"),
-                         "%h/.config/waybar/scripts/network-manager/network-manager --background")
+        self.assertEqual(install.effective_execstart(self.home, "tessel-network.service"),
+                         "%h/.config/waybar/scripts/tessel-network/tessel-network --background")
 
-    # ---- wave 3: wayshell (+ prompt, capture picker) and waydock ---------------------------
+    # ---- wave 3: tessel-shell (+ prompt, capture picker) and tessel-dock ---------------------------
 
     def expected_rc(self, rc=RC):
         """rc with exactly the two live Alt+Tab commands repointed (the commented copy and W-Tab stay)."""
@@ -575,104 +575,104 @@ class InstallerTest(unittest.TestCase):
         return (rc.replace(tab, f'\n      <action name="Execute" command="{RC_RUST_TAB}"/>')
                 .replace(reverse, f"command='{RC_RUST_TAB} --reverse'"))
 
-    def test_wayshell_swap_edits_only_the_alt_tab_commands(self):
+    def test_tessel-shell_swap_edits_only_the_alt_tab_commands(self):
         before = tree(self.home)
         rc = self.home / install.RC_XML
         units = self.home / install.UNITS
-        palette = (units / "wayshell.service.d/palette.conf").read_bytes()
-        result = self.run_installer("--apply", "--only", "wayshell", check=False)
+        palette = (units / "tessel-shell.service.d/palette.conf").read_bytes()
+        result = self.run_installer("--apply", "--only", "tessel-shell", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--i-am-at-the-keyboard", result.stderr)
         self.assertEqual(tree(self.home), before)
-        out = self.run_installer("--only", "wayshell").stdout
+        out = self.run_installer("--only", "tessel-shell").stdout
         self.assertIn(f"A-Tab: {RC_PY_TAB} -> {RC_RUST_TAB}", out)
-        self.assertIn("ExecStart: %h/.local/share/wayshell/wayshell -> %h/.local/share/wayshell/wayshell-rs", out)
+        self.assertIn("ExecStart: %h/.local/share/tessel-shell/tessel-shell -> %h/.local/share/tessel-shell/tessel-shell-rs", out)
         self.assertIn("labwc --reconfigure only with --restart --restart-shell", out)
-        self.assertIn("wayshell-cli switcher-status must exit 0", out)
+        self.assertIn("tessel-shell-cli switcher-status must exit 0", out)
 
-        result = self.run_installer("--apply", "--only", "wayshell", "--i-am-at-the-keyboard")
+        result = self.run_installer("--apply", "--only", "tessel-shell", "--i-am-at-the-keyboard")
         self.assertIn("labwc --reconfigure", result.stdout)
         self.assertEqual(rc.read_text(), self.expected_rc())          # every other byte preserved
         self.assertEqual(rc.stat().st_mode & 0o777, before[install.RC_XML][1])
         # zz- sorts after palette.conf, which stays byte-identical; the base unit too.
-        self.assertEqual(install.effective_execstart(self.home, "wayshell.service"),
-                         "%h/.local/share/wayshell/wayshell-rs")
-        self.assertEqual((units / "wayshell.service.d/palette.conf").read_bytes(), palette)
-        self.assertEqual(tree(self.home)[f"{install.UNITS}/wayshell.service"], before[f"{install.UNITS}/wayshell.service"])
-        directory = self.home / ".local/share/wayshell"
-        self.assertEqual((directory / "wayshell-rs").read_text(), (self.prebuilt / "wayshell").read_text())
-        self.assertIn("python original of wayshell", (directory / "wayshell").read_text())     # kept for rollback
+        self.assertEqual(install.effective_execstart(self.home, "tessel-shell.service"),
+                         "%h/.local/share/tessel-shell/tessel-shell-rs")
+        self.assertEqual((units / "tessel-shell.service.d/palette.conf").read_bytes(), palette)
+        self.assertEqual(tree(self.home)[f"{install.UNITS}/tessel-shell.service"], before[f"{install.UNITS}/tessel-shell.service"])
+        directory = self.home / ".local/share/tessel-shell"
+        self.assertEqual((directory / "tessel-shell-rs").read_text(), (self.prebuilt / "tessel-shell").read_text())
+        self.assertIn("python original of tessel-shell", (directory / "tessel-shell").read_text())     # kept for rollback
         ran = subprocess.run(["/usr/bin/python3", str(directory / "wayshell_cli.py"), "switch-window", "--reverse"],
                              capture_output=True, text=True, env=self.env())
-        self.assertEqual(ran.stdout.strip(), "rust-wayshell-cli-v1 switch-window --reverse")
+        self.assertEqual(ran.stdout.strip(), "rust-tessel-shell-cli-v1 switch-window --reverse")
         # labwc runs the new command through sh with ~ expanded: it reaches the binary.
         ran = subprocess.run(["sh", "-c", RC_RUST_TAB + " --reverse"], capture_output=True, text=True, env=self.env())
-        self.assertEqual(ran.stdout.strip(), "rust-wayshell-cli-v1 switch-window --reverse")
+        self.assertEqual(ran.stdout.strip(), "rust-tessel-shell-cli-v1 switch-window --reverse")
         self.assertEqual(self.labwc_calls(), [])
         self.assertFalse(any("restart" in call for call in self.systemctl_calls()))
-        report = self.statuses("wayshell")["wayshell"]
+        report = self.statuses("tessel-shell")["tessel-shell"]
         self.assertEqual(report["keybinds"], {"A-Tab": "rust", "A-S-Tab": "rust"})
         self.assertEqual(report["configured"], "rust")
 
         swapped = tree(self.home)
-        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "wayshell",
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "tessel-shell",
                                                               "--i-am-at-the-keyboard").stdout)
         self.assertEqual(tree(self.home), swapped)                   # re-apply is idempotent
         self.assertEqual(rc.read_text(), self.expected_rc())
-        self.run_installer("--rollback", "--only", "wayshell")
+        self.run_installer("--rollback", "--only", "tessel-shell")
         self.assertEqual(tree(self.home), before)
         self.assertEqual(rc.read_text(), RC)
-        self.assertEqual(self.statuses("wayshell")["wayshell"]["keybinds"], {"A-Tab": "python", "A-S-Tab": "python"})
+        self.assertEqual(self.statuses("tessel-shell")["tessel-shell"]["keybinds"], {"A-Tab": "python", "A-S-Tab": "python"})
 
     def test_rc_xml_edited_after_the_swap_rolls_back_only_the_keybinds(self):
         rc = self.home / install.RC_XML
         theme = "  <theme><cornerRadius>8</cornerRadius></theme>\n  <keyboard>\n"
-        self.run_installer("--apply", "--only", "wayshell", "--i-am-at-the-keyboard")
+        self.run_installer("--apply", "--only", "tessel-shell", "--i-am-at-the-keyboard")
         # Global Settings saves into rc.xml after the swap.
         edited = rc.read_text().replace("  <keyboard>\n", theme)
         rc.write_text(edited)
-        self.assertIn("revert", self.run_installer("--rollback", "--check", "--only", "wayshell").stdout)
+        self.assertIn("revert", self.run_installer("--rollback", "--check", "--only", "tessel-shell").stdout)
         self.assertEqual(rc.read_text(), edited)
-        result = self.run_installer("--rollback", "--only", "wayshell")
+        result = self.run_installer("--rollback", "--only", "tessel-shell")
         self.assertIn("only the swapped keybind commands are put back", result.stdout)
         self.assertEqual(rc.read_text(), RC.replace("  <keyboard>\n", theme))
-        self.assertFalse((self.home / ".local/share/wayshell/wayshell-rs").exists())
+        self.assertFalse((self.home / ".local/share/tessel-shell/tessel-shell-rs").exists())
         # A keybind the user re-pointed elsewhere after the swap is left alone.
-        self.run_installer("--apply", "--only", "wayshell", "--i-am-at-the-keyboard")
+        self.run_installer("--apply", "--only", "tessel-shell", "--i-am-at-the-keyboard")
         custom = rc.read_text().replace(f'command="{RC_RUST_TAB}"', 'command="my-switcher"')
         rc.write_text(custom)
-        self.run_installer("--rollback", "--only", "wayshell")
+        self.run_installer("--rollback", "--only", "tessel-shell")
         self.assertIn('command="my-switcher"', rc.read_text())
         self.assertIn(f"command='{RC_PY_TAB} --reverse'", rc.read_text())
 
-    def test_waydock_prompt_and_picker_swap_change_only_execstart_and_launchers(self):
+    def test_tessel-dock_prompt_and_picker_swap_change_only_execstart_and_launchers(self):
         before = tree(self.home)
         units = self.home / install.UNITS
-        base = (units / "waydock.service").read_bytes()
-        only = "waydock,wayshell-prompt,wayshell-capture-picker"
-        self.assertNotEqual(self.run_installer("--apply", "--only", "waydock", check=False).returncode, 0)
+        base = (units / "tessel-dock.service").read_bytes()
+        only = "tessel-dock,tessel-prompt,tessel-capture-picker"
+        self.assertNotEqual(self.run_installer("--apply", "--only", "tessel-dock", check=False).returncode, 0)
         self.run_installer("--apply", "--only", only, "--i-am-at-the-keyboard")
-        dropin = (units / "waydock.service.d" / install.DROPIN).read_text()
+        dropin = (units / "tessel-dock.service.d" / install.DROPIN).read_text()
         body = [line for line in dropin.splitlines() if line and not line.startswith("#")]
-        self.assertEqual(body, ["[Service]", "ExecStart=", "ExecStart=%h/.local/share/waydock/waydock"])
-        self.assertEqual((units / "waydock.service").read_bytes(), base)      # Type=notify, NotifyAccess=main stay
+        self.assertEqual(body, ["[Service]", "ExecStart=", "ExecStart=%h/.local/share/tessel-dock/tessel-dock"])
+        self.assertEqual((units / "tessel-dock.service").read_bytes(), base)      # Type=notify, NotifyAccess=main stay
         self.assertIn("Type=notify\nNotifyAccess=main\n", base.decode())
-        dock = self.home / ".local/share/waydock"
-        self.assertEqual((dock / "waydock").read_text(), (self.prebuilt / "waydock").read_text())
-        for keep in set(install.BY_KEY["waydock"].keeps) - set(install.BY_KEY["waydock"].python_entries):
+        dock = self.home / ".local/share/tessel-dock"
+        self.assertEqual((dock / "tessel-dock").read_text(), (self.prebuilt / "tessel-dock").read_text())
+        for keep in set(install.BY_KEY["tessel-dock"].keeps) - set(install.BY_KEY["tessel-dock"].python_entries):
             self.assertEqual((dock / keep).read_text(), f"# module {keep}\n")
-        self.assertIn("python original of waydock.py", (dock / "waydock.py").read_text())
-        for launcher, binary, args in (("waydock", "waydock", ["--check"]),
-                                       ("wayshell-prompt", "wayshell-prompt", ["--error"]),
-                                       ("wayshell-capture-picker", "wayshell-capture-picker", [])):
+        self.assertIn("python original of tessel-dock.py", (dock / "tessel-dock.py").read_text())
+        for launcher, binary, args in (("tessel-dock", "tessel-dock", ["--check"]),
+                                       ("tessel-prompt", "tessel-prompt", ["--error"]),
+                                       ("tessel-capture-picker", "tessel-capture-picker", [])):
             ran = subprocess.run([str(self.home / ".local/bin" / launcher), *args], capture_output=True, text=True,
                                  env=self.env())
             self.assertEqual(ran.stdout.strip(), " ".join([f"rust-{binary}-v1", *args]), launcher)
-        self.assertEqual((self.home / install.RC_XML).read_text(), RC)          # only wayshell edits rc.xml
+        self.assertEqual((self.home / install.RC_XML).read_text(), RC)          # only tessel-shell edits rc.xml
         self.assertEqual(json.loads((self.home / install.LOCALE / "de.json").read_text()), {"Hello": "de"})
         reports = self.statuses(only)
         self.assertEqual({k: v["configured"] for k, v in reports.items()},
-                         {"waydock": "rust", "wayshell-prompt": "rust", "wayshell-capture-picker": "rust"})
+                         {"tessel-dock": "rust", "tessel-prompt": "rust", "tessel-capture-picker": "rust"})
         swapped = tree(self.home)
         self.assertIn("nothing to change", self.run_installer("--apply", "--only", only,
                                                               "--i-am-at-the-keyboard").stdout)
@@ -681,20 +681,20 @@ class InstallerTest(unittest.TestCase):
         self.assertEqual(tree(self.home), before)
 
     def test_shell_restart_needs_restart_shell_then_reconfigures_and_checks_health(self):
-        self.run_installer("--apply", "--only", "wayshell,waydock", "--i-am-at-the-keyboard", "--restart",
+        self.run_installer("--apply", "--only", "tessel-shell,tessel-dock", "--i-am-at-the-keyboard", "--restart",
                            SYSTEMCTL_ACTIVE="1", LABWC_PID="1")
         self.assertFalse(any("restart " in call for call in self.systemctl_calls()))
         self.assertEqual(self.labwc_calls(), [])
         self.run_installer("--rollback")
         self.log.unlink()
-        result = self.run_installer("--apply", "--only", "wayshell,waydock", "--i-am-at-the-keyboard", "--restart",
+        result = self.run_installer("--apply", "--only", "tessel-shell,tessel-dock", "--i-am-at-the-keyboard", "--restart",
                                     "--restart-shell", SYSTEMCTL_ACTIVE="1", LABWC_PID="1")
         restarts = [call for call in self.systemctl_calls() if "restart " in call]
-        self.assertEqual(restarts, ["--user restart wayshell.service", "--user restart waydock.service"])
+        self.assertEqual(restarts, ["--user restart tessel-shell.service", "--user restart tessel-dock.service"])
         self.assertNotIn("labwc.service", " ".join(self.systemctl_calls()))
         self.assertEqual(self.labwc_calls(), ["--reconfigure"])                # a reload, never a restart
-        self.assertIn(f"healthy: {self.home}/.local/share/waydock/waydock --check", result.stdout)
-        self.assertIn(f"healthy: {self.home}/.local/share/wayshell/wayshell-cli switcher-status", result.stdout)
+        self.assertIn(f"healthy: {self.home}/.local/share/tessel-dock/tessel-dock --check", result.stdout)
+        self.assertIn(f"healthy: {self.home}/.local/share/tessel-shell/tessel-shell-cli switcher-status", result.stdout)
         # Rollback reloads the restored keybinds the same way; outside labwc it only says so.
         result = self.run_installer("--rollback", "--restart", "--restart-shell", SYSTEMCTL_ACTIVE="1")
         self.assertEqual(self.labwc_calls(), ["--reconfigure"])
@@ -705,7 +705,7 @@ class InstallerTest(unittest.TestCase):
     def test_live_rc_xml_copy_changes_only_the_two_commands(self):
         """Read-only copy of the user's rc.xml: the swap and its reverse touch only the Alt+Tab commands."""
         text = (REAL_HOME / install.RC_XML).read_text()
-        component = install.BY_KEY["wayshell"]
+        component = install.BY_KEY["tessel-shell"]
         new, originals = install.rc_swap_text(text, component, self.home)
         if not originals:
             self.skipTest("the live rc.xml has no Python Alt+Tab keybind")
@@ -715,93 +715,93 @@ class InstallerTest(unittest.TestCase):
         self.assertLessEqual(len(changed), 2)
         for before, after in changed:
             self.assertIn("wayshell_cli.py switch-window", before)
-            self.assertEqual(after, before.replace("/usr/bin/python3 ~/.local/share/wayshell/wayshell_cli.py",
-                                                   "~/.local/share/wayshell/wayshell-cli"))
+            self.assertEqual(after, before.replace("/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py",
+                                                   "~/.local/share/tessel-shell/tessel-shell-cli"))
         self.assertEqual(install.rc_revert_text(new, component, originals), text)
         self.assertEqual(install.rc_swap_text(new, component, self.home)[0], new)
 
     def test_health_check_waits_for_ready_and_fails_loudly(self):
-        self.run_installer("--apply", "--only", "waydock", "--i-am-at-the-keyboard")
-        binary = self.home / ".local/share/waydock/waydock"
+        self.run_installer("--apply", "--only", "tessel-dock", "--i-am-at-the-keyboard")
+        binary = self.home / ".local/share/tessel-dock/tessel-dock"
         flag = self.root / "ready"
         binary.write_text(f'#!/bin/sh\nif [ -e "{flag}" ]; then echo \'{{"ready": true}}\'; '
                           'else echo \'{"ready": false}\'; fi\n')
-        component = install.BY_KEY["waydock"]
-        with self.assertRaisesRegex(RuntimeError, "did not become healthy.*--rollback --only waydock"):
+        component = install.BY_KEY["tessel-dock"]
+        with self.assertRaisesRegex(RuntimeError, "did not become healthy.*--rollback --only tessel-dock"):
             install.wait_healthy(self.home, component, timeout=0.3)
         flag.write_text("")
         install.wait_healthy(self.home, component, timeout=2)
 
-    # ---- wave 4/5 user entries: hdr-calibration, lock-screen ---------------------------------
+    # ---- wave 4/5 user entries: tessel-hdr-calibration, tessel-lock ---------------------------------
 
     def test_hdr_calibration_swap_reapply_and_rollback(self):
         before = tree(self.home)
         desktop = (self.home / install.APPS / "org.desktop.HDRCalibration.desktop").read_bytes()
-        self.run_installer("--apply", "--only", "hdr-calibration")
-        directory = self.home / ".local/share/hdr-calibration"
-        self.assertEqual((directory / "hdr-calibration").read_text(), (self.prebuilt / "hdr-calibration").read_text())
+        self.run_installer("--apply", "--only", "tessel-hdr-calibration")
+        directory = self.home / ".local/share/tessel-hdr-calibration"
+        self.assertEqual((directory / "tessel-hdr-calibration").read_text(), (self.prebuilt / "tessel-hdr-calibration").read_text())
         # way-displays' color_controls.py: python3 .../hdr_calibration.py --output <connector>
         ran = subprocess.run(["/usr/bin/python3", str(directory / "hdr_calibration.py"), "--output", "DP-1"],
                              capture_output=True, text=True, env=self.env())
         self.assertEqual(ran.stdout.strip(), "rust-hdr-calibration-v1 --output DP-1")
-        ran = subprocess.run([str(self.home / ".local/bin/hdr-calibration"), "--sdr-editing"], capture_output=True,
+        ran = subprocess.run([str(self.home / ".local/bin/tessel-hdr-calibration"), "--sdr-editing"], capture_output=True,
                              text=True, env=self.env())
         self.assertEqual(ran.stdout.strip(), "rust-hdr-calibration-v1 --sdr-editing")
         self.assertEqual((directory / "hdr-pattern").read_text(), "# module hdr-pattern\n")     # the C helper stays
         self.assertEqual((self.home / install.APPS / "org.desktop.HDRCalibration.desktop").read_bytes(), desktop)
-        self.assertEqual(self.statuses("hdr-calibration")["hdr-calibration"]["configured"], "rust")
+        self.assertEqual(self.statuses("tessel-hdr-calibration")["tessel-hdr-calibration"]["configured"], "rust")
         self.assertEqual(json.loads((self.home / install.LOCALE / "de.json").read_text()), {"Hello": "de"})
         swapped = tree(self.home)
-        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "hdr-calibration").stdout)
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "tessel-hdr-calibration").stdout)
         self.assertEqual(tree(self.home), swapped)
-        self.run_installer("--rollback", "--only", "hdr-calibration")
+        self.run_installer("--rollback", "--only", "tessel-hdr-calibration")
         self.assertEqual(tree(self.home), before)
 
     def test_lock_screen_swap_needs_confirmation_and_an_unlocked_session(self):
         before = tree(self.home)
         units = self.home / install.UNITS
-        base = (units / "power-manager-lock.service").read_bytes()
-        result = self.run_installer("--apply", "--only", "lock-screen", check=False)
+        base = (units / "tessel-lock.service").read_bytes()
+        result = self.run_installer("--apply", "--only", "tessel-lock", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--i-am-at-the-keyboard", result.stderr)
-        result = self.run_installer("--apply", "--only", "lock-screen", "--i-am-at-the-keyboard", check=False,
+        result = self.run_installer("--apply", "--only", "tessel-lock", "--i-am-at-the-keyboard", check=False,
                                     SYSTEMCTL_ACTIVE="1")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("power-manager-lock.service is active", result.stderr)
+        self.assertIn("tessel-lock.service is active", result.stderr)
         self.assertEqual(tree(self.home), before)
-        out = self.run_installer("--only", "lock-screen").stdout
-        self.assertIn("lock-screen --check", out)
-        self.assertIn("ExecStart: /usr/bin/python3 %h/.local/share/lock-screen/lock_screen.py -> "
-                      "%h/.local/share/lock-screen/lock-screen\n", out)
+        out = self.run_installer("--only", "tessel-lock").stdout
+        self.assertIn("tessel-lock --check", out)
+        self.assertIn("ExecStart: /usr/bin/python3 %h/.local/share/tessel-lock/lock_screen.py -> "
+                      "%h/.local/share/tessel-lock/tessel-lock\n", out)
 
-        result = self.run_installer("--apply", "--only", "lock-screen", "--i-am-at-the-keyboard", "--restart")
-        self.assertIn("WARNING: lock-screen", result.stdout)
+        result = self.run_installer("--apply", "--only", "tessel-lock", "--i-am-at-the-keyboard", "--restart")
+        self.assertIn("WARNING: tessel-lock", result.stdout)
         self.assertNotIn("restart power-manager-lock", " ".join(self.systemctl_calls()))   # never restarted
-        dropin = (units / "power-manager-lock.service.d" / install.DROPIN).read_text()
+        dropin = (units / "tessel-lock.service.d" / install.DROPIN).read_text()
         body = [line for line in dropin.splitlines() if line and not line.startswith("#")]
-        self.assertEqual(body, ["[Service]", "ExecStart=", "ExecStart=%h/.local/share/lock-screen/lock-screen"])
-        self.assertEqual((units / "power-manager-lock.service").read_bytes(), base)   # Type=notify, LimitCORE=0 stay
+        self.assertEqual(body, ["[Service]", "ExecStart=", "ExecStart=%h/.local/share/tessel-lock/tessel-lock"])
+        self.assertEqual((units / "tessel-lock.service").read_bytes(), base)   # Type=notify, LimitCORE=0 stay
         self.assertIn("Type=notify\nNotifyAccess=main\n", base.decode())
-        directory = self.home / ".local/share/lock-screen"
-        for name in ("lock-screen", "waylock-pam"):
+        directory = self.home / ".local/share/tessel-lock"
+        for name in ("tessel-lock", "tessel-lock-pam"):
             mode = (directory / name).stat().st_mode
             self.assertEqual(stat.S_IMODE(mode), 0o755, name)
             self.assertFalse(mode & (stat.S_ISUID | stat.S_ISGID), name)
             self.assertEqual((directory / name).read_text(), (self.prebuilt / name).read_text())
-        for keep in install.BY_KEY["lock-screen"].keeps:
+        for keep in install.BY_KEY["tessel-lock"].keeps:
             self.assertEqual((directory / keep).read_text(), f"# module {keep}\n")
         # lock_settings.py: python3 lock_screen.py --preview
         ran = subprocess.run(["/usr/bin/python3", str(directory / "lock_screen.py"), "--preview"],
                              capture_output=True, text=True, env=self.env())
         self.assertEqual(ran.stdout.strip(), "rust-lock-screen-v1 --preview")
-        self.assertEqual(self.statuses("lock-screen")["lock-screen"]["configured"], "rust")
+        self.assertEqual(self.statuses("tessel-lock")["tessel-lock"]["configured"], "rust")
         swapped = tree(self.home)
-        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "lock-screen",
+        self.assertIn("nothing to change", self.run_installer("--apply", "--only", "tessel-lock",
                                                               "--i-am-at-the-keyboard").stdout)
         self.assertEqual(tree(self.home), swapped)
-        self.run_installer("--rollback", "--only", "lock-screen")
+        self.run_installer("--rollback", "--only", "tessel-lock")
         self.assertEqual(tree(self.home), before)
-        self.assertEqual((directory / "waylock-pam").read_bytes(), b"\x7fELF c pam helper")
+        self.assertEqual((directory / "tessel-lock-pam").read_bytes(), b"\x7fELF c pam helper")
 
     # ---- --system entries (fake root prefix) ---------------------------------------------------
 
@@ -810,7 +810,7 @@ class InstallerTest(unittest.TestCase):
         lib = root / install.SYSTEM_LIB
         for component in SYSTEM:
             if component.fresh:
-                continue                     # no Python original (archive-manager)
+                continue                     # no Python original (tessel-archive)
             directory = root / scripts(component)
             directory.mkdir(parents=True, exist_ok=True)
             for keep in component.keeps:
@@ -825,13 +825,13 @@ class InstallerTest(unittest.TestCase):
                 (root / relative).chmod(0o755)
         apps = root / "usr/share/applications"
         apps.mkdir(parents=True)
-        (apps / "org.waydock.Calculator.desktop").write_text(f"[Desktop Entry]\nExec={root}/usr/local/bin/calculator\n")
-        login = root / "usr/local/lib/waylogin"
+        (apps / "org.tessel.Calculator.desktop").write_text(f"[Desktop Entry]\nExec={root}/usr/local/bin/calculator\n")
+        login = root / "usr/local/lib/tessel-login"
         (login / "start-greeter").write_text(START_GREETER.format(lib=login))
         (login / "start-greeter").chmod(0o755)
-        for relative in ("etc/waylogin/greetd.toml", "etc/pam.d/waylogin", "etc/pam.d/waylock",
-                         "etc/polkit-1/rules.d/50-waylogin-power.rules", "etc/systemd/system/waylogin.service",
-                         "etc/security/waylogin-faillock.conf"):
+        for relative in ("etc/tessel-login/greetd.toml", "etc/pam.d/tessel-login", "etc/pam.d/tessel-lock",
+                         "etc/polkit-1/rules.d/50-tessel-login-power.rules", "etc/systemd/system/tessel-login.service",
+                         "etc/security/tessel-login-faillock.conf"):
             (root / relative).parent.mkdir(parents=True, exist_ok=True)
             (root / relative).write_text(f"# {relative}\n")
         for directory in [root, *(p for p in root.rglob("*") if p.is_dir())]:
@@ -867,19 +867,19 @@ class InstallerTest(unittest.TestCase):
         result = self.run_installer("--apply", "--only", "calculator", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("calculator needs --system", result.stderr)
-        result = self.run_system(root, "--apply", "--only", "keep-awake", check=False)
-        self.assertIn("keep-awake needs neither --system", result.stderr)
+        result = self.run_system(root, "--apply", "--only", "tessel-keep-awake", check=False)
+        self.assertIn("tessel-keep-awake needs neither --system", result.stderr)
         self.assertEqual(tree(root, skip=()), before)
         self.assertEqual(self.systemctl_calls(), [])
 
     def test_system_apps_swap_reapply_and_rollback(self):
         root = self.populate_system()
         before = tree(root, skip=("var",))
-        apps = [c.key for c in SYSTEM if c.key != "login-manager"]
+        apps = [c.key for c in SYSTEM if c.key != "tessel-login"]
         out = self.run_system(root, "--apply", "--only", ",".join(apps)).stdout
         self.assertIn("Nothing was restarted", out)
         for component in SYSTEM:
-            if component.key == "login-manager":
+            if component.key == "tessel-login":
                 continue
             directory = root / scripts(component)
             binary = install.installed_names(component)[0]
@@ -897,10 +897,10 @@ class InstallerTest(unittest.TestCase):
             self.assertEqual(stat.S_IMODE((root / relative).stat().st_mode), 0o755)
             ran = subprocess.run([str(root / relative), "--check"], capture_output=True, text=True, env=self.env())
             self.assertEqual(ran.stdout.strip(), f"rust-{binary}-v1 --check")
-        self.assertTrue((root / install.SYSTEM_LIB / "file-manager/wayfiles").is_file())        # the stable path
-        self.assertTrue((root / install.SYSTEM_LIB / "capture-manager/libcapture-pipewire.so").is_file())
-        self.assertEqual(tree(root, skip=("var",))["usr/share/applications/org.waydock.Calculator.desktop"],
-                         before["usr/share/applications/org.waydock.Calculator.desktop"])
+        self.assertTrue((root / install.SYSTEM_LIB / "tessel-files/tessel-files").is_file())        # the stable path
+        self.assertTrue((root / install.SYSTEM_LIB / "tessel-capture/libcapture-pipewire.so").is_file())
+        self.assertEqual(tree(root, skip=("var",))["usr/share/applications/org.tessel.Calculator.desktop"],
+                         before["usr/share/applications/org.tessel.Calculator.desktop"])
         self.assertTrue((root / install.SYSTEM_STATE).is_file())
         self.assertEqual(len(list((root / install.SYSTEM_BACKUPS).glob("rust-swap-*"))), 1)
         self.assertFalse((self.home / install.STATE).exists())                 # nothing in the user's home
@@ -919,14 +919,14 @@ class InstallerTest(unittest.TestCase):
     def test_keyring_adds_pam_lines_and_rolls_back_exactly(self):
         sources = [install.REPO / source for _, source, _ in next(c for c in install.COMPONENTS if c.key == "keyring").files]
         if not all(p.exists() for p in sources):
-            self.skipTest("cargo build --release -p waykeyring-ui -p pam-waykeyring first")
+            self.skipTest("cargo build --release -p tessel-keyring-ui -p pam-tessel-keyring first")
         root = self.populate_system()
-        waylogin = ("#%PAM-1.0\nauth required pam_succeed_if.so user != root quiet\nauth include waylogin-auth\n"
+        tessel-login = ("#%PAM-1.0\nauth required pam_succeed_if.so user != root quiet\nauth include tessel-login-auth\n"
                     "account include system-auth\nsession include system-auth\n"
                     "-session optional pam_gnome_keyring.so auto_start\n")
         passwd = ("#%PAM-1.0\npassword   substack\tsystem-auth\n-password   optional\tpam_gnome_keyring.so use_authtok\n"
                   "password   substack\tpostlogin\n")
-        (root / "etc/pam.d/waylogin").write_text(waylogin)
+        (root / "etc/pam.d/tessel-login").write_text(tessel-login)
         (root / "etc/pam.d/passwd").write_text(passwd)
         before = tree(root, skip=("var",))
         self.assertNotIn("keyring", self.run_system(root, "--check", euid0=False).stdout.split("Not shown")[0]
@@ -935,15 +935,15 @@ class InstallerTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(tree(root, skip=("var",)), before)
         self.run_system(root, "--apply", "--only", "keyring", "--i-am-at-the-keyboard")
-        self.assertEqual((root / "etc/pam.d/waylogin").read_text(),
-                         "#%PAM-1.0\nauth required pam_succeed_if.so user != root quiet\nauth substack waylogin-auth\n"
+        self.assertEqual((root / "etc/pam.d/tessel-login").read_text(),
+                         "#%PAM-1.0\nauth required pam_succeed_if.so user != root quiet\nauth substack tessel-login-auth\n"
                          "-auth optional pam_waykeyring.so\naccount include system-auth\nsession include system-auth\n"
                          "-session optional pam_waykeyring.so\n-session optional pam_gnome_keyring.so auto_start\n")
-        self.assertIn("-password   optional\tpam_waykeyring.so\npassword   substack\tpostlogin",
+        self.assertIn("-password   optional\tpam_tessel-keyring.so\npassword   substack\tpostlogin",
                       (root / "etc/pam.d/passwd").read_text())
         module = root / "usr/lib64/security/pam_waykeyring.so"
         self.assertEqual(module.read_bytes(), sources[1].read_bytes())
-        self.assertTrue((root / install.SYSTEM_LIB / "keyring/waykeyring").exists())
+        self.assertTrue((root / install.SYSTEM_LIB / "keyring/tessel-keyring").exists())
         self.assertIn("nothing to change",
                       self.run_system(root, "--apply", "--only", "keyring", "--i-am-at-the-keyboard").stdout)
         self.run_system(root, "--rollback", "--only", "keyring")
@@ -952,49 +952,49 @@ class InstallerTest(unittest.TestCase):
     def test_archive_manager_is_a_fresh_install_and_rolls_back_to_nothing(self):
         root = self.populate_system()
         before = tree(root, skip=("var",))
-        self.assertFalse((root / install.SYSTEM_LIB / "archive-manager").exists())
-        out = self.run_system(root, "--check", "--only", "archive-manager", euid0=False).stdout
+        self.assertFalse((root / install.SYSTEM_LIB / "tessel-archive").exists())
+        out = self.run_system(root, "--check", "--only", "tessel-archive", euid0=False).stdout
         self.assertIn("create  launcher", out)
         self.assertIn(f"usr/local/share/applications/{install.ARCHIVE_DESKTOP}", out)
         self.assertEqual(tree(root, skip=("var",)), before)
-        self.run_system(root, "--apply", "--only", "archive-manager")
-        directory = root / install.SYSTEM_LIB / "archive-manager"
-        self.assertEqual((directory / "wayarchive").read_text(), (self.prebuilt / "wayarchive").read_text())
-        self.assertEqual(stat.S_IMODE((directory / "wayarchive").stat().st_mode), 0o755)
+        self.run_system(root, "--apply", "--only", "tessel-archive")
+        directory = root / install.SYSTEM_LIB / "tessel-archive"
+        self.assertEqual((directory / "tessel-archive").read_text(), (self.prebuilt / "tessel-archive").read_text())
+        self.assertEqual(stat.S_IMODE((directory / "tessel-archive").stat().st_mode), 0o755)
         self.assertEqual(json.loads((directory / "locale/de.json").read_text()), {"Hello": "de"})
-        launcher = root / install.SYSTEM_BIN / "wayarchive"
+        launcher = root / install.SYSTEM_BIN / "tessel-archive"
         lines = launcher.read_text().splitlines()
         self.assertEqual(lines[:2], ["#!/bin/sh", install.STANDALONE_MARKER])
         self.assertIn(install.SHIM_MARKER, lines[2])
-        self.assertEqual(lines[3], f"exec {directory / 'wayarchive'} \"$@\"")
+        self.assertEqual(lines[3], f"exec {directory / 'tessel-archive'} \"$@\"")
         ran = subprocess.run([str(launcher), "--check"], capture_output=True, text=True, env=self.env())
-        self.assertEqual(ran.stdout.strip(), "rust-wayarchive-v1 --check")
+        self.assertEqual(ran.stdout.strip(), "rust-tessel-archive-v1 --check")
         desktop = root / f"usr/local/share/applications/{install.ARCHIVE_DESKTOP}"
         self.assertEqual(desktop.read_bytes(), (install.REPO / install.ARCHIVE_DESKTOP_SOURCE).read_bytes())
         self.assertEqual(stat.S_IMODE(desktop.stat().st_mode), 0o644)
         self.assertIn("application/x-7z-compressed", install.ARCHIVE_MIMES)
-        status = json.loads(self.run_system(root, "--status", "--json", "--only", "archive-manager", euid0=False).stdout)
+        status = json.loads(self.run_system(root, "--status", "--json", "--only", "tessel-archive", euid0=False).stdout)
         self.assertEqual(status[0]["configured"], "rust")
-        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", "archive-manager").stdout)
-        # Someone else's wayarchive launcher is never replaced.
-        self.run_system(root, "--rollback", "--only", "archive-manager")
+        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", "tessel-archive").stdout)
+        # Someone else's tessel-archive launcher is never replaced.
+        self.run_system(root, "--rollback", "--only", "tessel-archive")
         self.assertEqual(tree(root, skip=("var",)), before)
-        foreign = root / install.SYSTEM_BIN / "wayarchive"
-        foreign.write_text("#!/bin/sh\nexec /opt/other/wayarchive \"$@\"\n")
-        result = self.run_system(root, "--apply", "--only", "archive-manager", check=False)
+        foreign = root / install.SYSTEM_BIN / "tessel-archive"
+        foreign.write_text("#!/bin/sh\nexec /opt/other/tessel-archive \"$@\"\n")
+        result = self.run_system(root, "--apply", "--only", "tessel-archive", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("was not installed by this tool", result.stderr)
-        self.assertFalse((root / install.SYSTEM_LIB / "archive-manager").exists())
+        self.assertFalse((root / install.SYSTEM_LIB / "tessel-archive").exists())
 
     def test_archive_mime_defaults_only_when_named_and_revert_only_our_keys(self):
         mimeapps = self.home / ".config/mimeapps.list"
         mimeapps.parent.mkdir(parents=True, exist_ok=True)
-        original = ("[Default Applications]\ninode/directory=org.waydock.Files.desktop\n"
+        original = ("[Default Applications]\ninode/directory=org.tessel.Files.desktop\n"
                     "application/zip=org.kde.ark.desktop;\napplication/x-tar=org.kde.ark.desktop;\n"
-                    "text/plain=org.waydock.TextEditor.desktop\n\n"
+                    "text/plain=org.tessel.TextEditor.desktop\n\n"
                     "[Added Associations]\napplication/zip=org.kde.ark.desktop;\n")
         mimeapps.write_text(original)
-        self.run_installer("--apply", "--only", "keep-awake")
+        self.run_installer("--apply", "--only", "tessel-keep-awake")
         self.assertEqual(mimeapps.read_text(), original)          # not part of the other user entries
         self.assertNotIn("archive-manager-mime", self.run_installer("--check").stdout)
         self.run_installer("--apply", "--only", "archive-manager-mime")
@@ -1002,8 +1002,8 @@ class InstallerTest(unittest.TestCase):
         defaults = text.split("[Added Associations]")[0]
         for mime in install.ARCHIVE_MIMES:
             self.assertEqual(defaults.count(f"\n{mime}={install.ARCHIVE_DESKTOP};\n"), 1, mime)
-        self.assertIn("inode/directory=org.waydock.Files.desktop\n", text)
-        self.assertIn("text/plain=org.waydock.TextEditor.desktop\n", text)
+        self.assertIn("inode/directory=org.tessel.Files.desktop\n", text)
+        self.assertIn("text/plain=org.tessel.TextEditor.desktop\n", text)
         self.assertTrue(text.endswith("[Added Associations]\napplication/zip=org.kde.ark.desktop;\n"))
         self.assertEqual(self.statuses("archive-manager-mime")["archive-manager-mime"]["configured"], "rust")
         backups = list((self.home / install.BACKUPS).glob("rust-swap-*/.config/mimeapps.list"))
@@ -1015,13 +1015,13 @@ class InstallerTest(unittest.TestCase):
         self.run_installer("--apply", "--only", "archive-manager-mime")
         edited = mimeapps.read_text().replace(f"application/x-tar={install.ARCHIVE_DESKTOP};",
                                               "application/x-tar=org.gnome.FileRoller.desktop;")
-        edited = edited.replace("text/plain=org.waydock.TextEditor.desktop\n", "text/plain=gedit.desktop\n")
+        edited = edited.replace("text/plain=org.tessel.TextEditor.desktop\n", "text/plain=gedit.desktop\n")
         mimeapps.write_text(edited)
         self.assertIn("revert", self.run_installer("--rollback", "--check", "--only", "archive-manager-mime").stdout)
         self.run_installer("--rollback", "--only", "archive-manager-mime")
         self.assertEqual(mimeapps.read_text(), original.replace("application/x-tar=org.kde.ark.desktop;",
                                                                 "application/x-tar=org.gnome.FileRoller.desktop;")
-                         .replace("text/plain=org.waydock.TextEditor.desktop", "text/plain=gedit.desktop"))
+                         .replace("text/plain=org.tessel.TextEditor.desktop", "text/plain=gedit.desktop"))
         # no mimeapps.list at all: created, and removed again
         mimeapps.unlink()
         self.run_installer("--apply", "--only", "archive-manager-mime")
@@ -1039,9 +1039,9 @@ class InstallerTest(unittest.TestCase):
         self.assertEqual(new, "[Other]\nk=v\n\n[Default Applications]\na/b=w.desktop;\n")
 
     def test_desktop_apps_guard_keeps_the_rust_launcher(self):
-        """~/btmanager/desktop-apps/install.py (loaded, never run) skips launchers carrying the swap marker."""
-        source = REAL_HOME / "btmanager/desktop-apps/install.py"
-        if not source.is_file() or b"desktop-suite-rust" not in source.read_bytes():
+        """~/tessel-bluetooth/desktop-apps/install.py (loaded, never run) skips launchers carrying the swap marker."""
+        source = REAL_HOME / "tessel-bluetooth/desktop-apps/install.py"
+        if not source.is_file() or b"tessel-rust" not in source.read_bytes():
             self.skipTest("no guarded desktop-apps/install.py")
         root = self.populate_system()
         self.run_system(root, "--apply", "--only", "calculator")
@@ -1059,25 +1059,25 @@ class InstallerTest(unittest.TestCase):
     def test_login_manager_changes_only_the_session_argument(self):
         root = self.populate_system()
         before = tree(root, skip=("var",))
-        greeter = root / "usr/local/lib/waylogin/start-greeter"
+        greeter = root / "usr/local/lib/tessel-login/start-greeter"
         original = greeter.read_text()
-        result = self.run_system(root, "--apply", "--only", "login-manager", check=False)
+        result = self.run_system(root, "--apply", "--only", "tessel-login", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--i-am-at-the-keyboard", result.stderr)
         self.assertEqual(tree(root, skip=("var",)), before)
-        out = self.run_system(root, "--check", "--only", "login-manager", euid0=False).stdout
+        out = self.run_system(root, "--check", "--only", "tessel-login", euid0=False).stdout
         self.assertIn("BROKEN GREETER BLOCKS GRAPHICAL LOGIN", out)
-        self.assertIn("--system --rollback --only login-manager", out)
-        result = self.run_system(root, "--apply", "--only", "login-manager", "--i-am-at-the-keyboard", "--restart")
+        self.assertIn("--system --rollback --only tessel-login", out)
+        result = self.run_system(root, "--apply", "--only", "tessel-login", "--i-am-at-the-keyboard", "--restart")
         self.assertIn("BROKEN GREETER BLOCKS GRAPHICAL LOGIN", result.stdout)
         self.assertIn("--restart is ignored", result.stdout)
-        lib = root / "usr/local/lib/waylogin"
+        lib = root / "usr/local/lib/tessel-login"
         changed = [(a, b) for a, b in zip(original.splitlines(), greeter.read_text().splitlines()) if a != b]
         self.assertEqual(changed, [(f"    --session '/usr/bin/python3 -I {lib}/login_ui.py'",
-                                    f"    --session '{lib}/login-ui'")])
+                                    f"    --session '{lib}/tessel-login'")])
         self.assertEqual(len(original.splitlines()), len(greeter.read_text().splitlines()))
         self.assertEqual(stat.S_IMODE(greeter.stat().st_mode), 0o755)
-        for name in ("login-ui", "session-transition", "login-settings-helper"):
+        for name in ("tessel-login", "tessel-session-transition", "tessel-login-helper"):
             self.assertEqual((lib / name).read_text(), (self.prebuilt / name).read_text())
         self.assertTrue((lib / "locale/de.json").is_file())
         after = tree(root, skip=("var",))
@@ -1085,16 +1085,16 @@ class InstallerTest(unittest.TestCase):
             if path.startswith("etc/"):
                 self.assertEqual(after[path], before[path], path)       # greetd.toml, PAM, polkit, unit, faillock
         self.assertEqual(self.systemctl_calls(), [])
-        status = json.loads(self.run_system(root, "--status", "--json", "--only", "login-manager", euid0=False).stdout)
+        status = json.loads(self.run_system(root, "--status", "--json", "--only", "tessel-login", euid0=False).stdout)
         self.assertEqual(status[0]["configured"], "rust")
         swapped = tree(root, skip=("var",))
-        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", "login-manager",
+        self.assertIn("nothing to change", self.run_system(root, "--apply", "--only", "tessel-login",
                                                            "--i-am-at-the-keyboard").stdout)
         self.assertEqual(tree(root, skip=("var",)), swapped)
-        self.run_system(root, "--rollback", "--only", "login-manager")
+        self.run_system(root, "--rollback", "--only", "tessel-login")
         self.assertEqual(tree(root, skip=("var",)), before)
         # install_login.py rewrote start-greeter after the swap (here: one more export): only our string goes back.
-        self.run_system(root, "--apply", "--only", "login-manager", "--i-am-at-the-keyboard")
+        self.run_system(root, "--apply", "--only", "tessel-login", "--i-am-at-the-keyboard")
         greeter.write_text(greeter.read_text().replace("umask 077\n", "export X=1\numask 077\n"))
         self.assertIn("revert", self.run_system(root, "--rollback", "--check", euid0=False).stdout)
         self.run_system(root, "--rollback")
@@ -1110,9 +1110,9 @@ class InstallerTest(unittest.TestCase):
         self.assertIn("group/world-writable", result.stderr)
         self.assertEqual(tree(root, skip=("var",)), before)
         directory.chmod(0o755)
-        greeter = root / "usr/local/lib/waylogin/start-greeter"
+        greeter = root / "usr/local/lib/tessel-login/start-greeter"
         greeter.write_text(greeter.read_text().replace("login_ui.py'", "login_ui.py --debug'"))
-        result = self.run_system(root, "--apply", "--only", "login-manager", "--i-am-at-the-keyboard", check=False)
+        result = self.run_system(root, "--apply", "--only", "tessel-login", "--i-am-at-the-keyboard", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("does not contain exactly one", result.stderr)
 
@@ -1193,7 +1193,7 @@ class InstallerTest(unittest.TestCase):
                 self.assertTrue(shim.entry.endswith(".py"))
                 self.assertTrue(all(flag.startswith("--") for flag in shim.flags))
                 self.assertNotIn(shim.entry, component.keeps)
-        self.assertIn("--power-button", install.BY_KEY["power-manager"].shims[0].flags)
+        self.assertIn("--power-button", install.BY_KEY["tessel-power"].shims[0].flags)
 
 
 class CrateTableTest(unittest.TestCase):

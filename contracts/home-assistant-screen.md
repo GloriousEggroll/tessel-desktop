@@ -1,14 +1,14 @@
 # home-assistant-screen (Kasumi idle dashboard) — external contract
 
-Source: `~/btmanager/home-assistant-screen/` (1454 LOC of runtime: `luna_clock.py` 410,
+Source: `~/tessel-bluetooth/home-assistant-screen/` (1454 LOC of runtime: `luna_clock.py` 410,
 `admin_panel.py` 113, `screen_keyboard.py` 104, `screen_levels.py` 124, `level_controls.py` 43,
 `screen_timers.py` 91, `timer_countdowns.py` 45, `screen_alarms.py` 13, `alarm_indicators.py` 22,
 `voice_controls.py` 73; installers `build_bundle.py`, `build_keyboard.py`, `install_remote.py`,
-`install_media.py`, `install_keyboard.py`; `test_dashboard.py` 433) plus the shared lock-screen
+`install_media.py`, `install_keyboard.py`; `test_dashboard.py` 433) plus the shared tessel-lock
 dashboard modules (`lock_config`, `lock_dashboard`, `lock_info`, `lock_weather`, `lock_media*`,
-`lock_visuals`, `lock_palette`, `voice_state` → Rust `crates/suite-lock`), the weather backend
-(`weather_backend.py` → `components/weather-manager`) and the Waykeys widgets
-(`osk_keyboard/backend/config/devices/state` → `components/on-screen-keyboard`).
+`lock_visuals`, `lock_palette`, `voice_state` → Rust `crates/locking`), the weather backend
+(`weather_backend.py` → `components/weather`) and the Tessel Keyboard widgets
+(`osk_keyboard/backend/config/devices/state` → `components/keyboard`).
 
 It runs on the Kasumi Home Assistant device, not on the desktop: an idle display (not a session
 lock) shown by swayidle, plus a WebKit window for the local admin web UI.
@@ -17,7 +17,7 @@ lock) shown by swayidle, plus a WebKit window for the local admin web UI.
 
 | Item | Value | Ref |
 |---|---|---|
-| Installed layout | `~/makima/screensaver/` = bundle `screensaver/*.py` (+ `waykeys-input` 0755, `README-gtk4.md`); `config.json` there is pre-existing and never overwritten (install refuses without it) | install_remote.py:12,21-22,55-60 |
+| Installed layout | `~/makima/screensaver/` = bundle `screensaver/*.py` (+ `tessel-keyboard-input` 0755, `README-gtk4.md`); `config.json` there is pre-existing and never overwritten (install refuses without it) | install_remote.py:12,21-22,55-60 |
 | systemd unit | `luna-clock.service` (user unit, pre-existing on the device, not written by the installers); installers only `stop/start/restart` it and check `MainPID` owns `local.luna.Clock` | install_media.py:57-95 |
 | GApplication id | `local.luna.Clock`, flags `HANDLES_COMMAND_LINE`; `hold()` in startup (never exits on window close) | luna_clock.py:291,309 |
 | Program | `luna_clock.py` (Rust: `luna-clock`); `voice_controls.py` (Rust: `voice-controls`) | |
@@ -72,8 +72,8 @@ Keys read: `wallpaper_directory` (expanduser), `wallpapers` (names in it), `wall
 |---|---|---|
 | MPRIS | `LockMedia(changed)` (not readonly, never pauses on start: `start()`), toggle/previous/next buttons only | luna_clock.py:296,315 |
 | Kasumi scheduler socket | `~/.local/share/kasumi-control/voice.sock` (Path.home()), AF_UNIX stream, timeout 0.7 s, send `json.dumps({"operation": op}).encode() + b"\n"`, read one line ≤ 262145 bytes, `json.loads`; `"error"` key → ValueError. Ops: `countdowns` → `response["timers"]`, `alarms_today` → `response["alarms"]`. Polled each second from a worker; never written to otherwise | timer_countdowns.py:7-21, alarm_indicators.py:6 |
-| Voice log | `config.voice_log` tailed every 150 ms by `VoiceLog` (suite-lock voice_state) | luna_clock.py:295,376 |
-| Weather | `LockWeather` (weather-manager config `~/.config/weather-manager/config.json` + cache), polled every 5 s, `poll(True)` | 297,375 |
+| Voice log | `config.voice_log` tailed every 150 ms by `VoiceLog` (tessel-locking voice_state) | luna_clock.py:295,376 |
+| Weather | `LockWeather` (tessel-weather config `~/.config/tessel-weather/config.json` + cache), polled every 5 s, `poll(True)` | 297,375 |
 | pactl | `pactl get-default-sink`, `pactl --format=json list sinks` (2 s timeouts, stderr discarded), `pactl set-sink-mute <sink> 1|0|toggle`, `pactl set-sink-volume <sink> N%`; read-back verified | level_controls.py |
 | Admin web UI | `http://127.0.0.1:8765/?embedded=1` in WebKitGTK 6.0 | admin_panel.py:8 |
 | Desktop browser | `Gio.AppInfo.launch_default_for_uri(uri)` for allowed external links (§6) | admin_panel.py:73 |
@@ -82,12 +82,12 @@ Keys read: `wallpaper_directory` (expanduser), `wallpapers` (names in it), `wall
 | Path | Format | Ref |
 |---|---|---|
 | `levels_state` (default `~/.config/kasumi-screen/levels.json`) | `{"brightness": N}` + `\n` (json.dumps default), written to `<path>.tmp` (with_suffix) then `replace()`; parent `mkdir -p`; read on start: `max(10, min(100, int(...)))`, any error → 100 | screen_levels.py:31-34,107-110 |
-| `~/.config/on-screen-keyboard/config.json` | Waykeys settings (read only here) | screen_keyboard.py:15 |
-| `~/.config/weather-manager/config.json` + `$XDG_CACHE_HOME/weather-manager/` | weather (read; cache written by the backend) | |
+| `~/.config/tessel-keyboard/config.json` | Tessel Keyboard settings (read only here) | screen_keyboard.py:15 |
+| `~/.config/tessel-weather/config.json` + `$XDG_CACHE_HOME/tessel-weather/` | weather (read; cache written by the backend) | |
 | WebKit data | default WebKit network session: `$XDG_DATA_HOME/webkitgtk/` (storage, mediakeys salts) and `$XDG_CACHE_HOME/webkitgtk/` (WebKitCache, CacheStorage, HSTS) — independent of the program name, so Python and Rust share it | WebKit defaults (observed in the headless run) |
 
 ## 4. UI surfaces
-- `ClockWindow`: `Gtk.ApplicationWindow(title='Kasumi Clock', decorated=False)`, class `lock-screen`,
+- `ClockWindow`: `Gtk.ApplicationWindow(title='Kasumi Clock', decorated=False)`, class `tessel-lock`,
   default 1280×720, `close-request` blocked, fullscreened on reveal. Overlay layers in order:
   Wallpaper (slideshow of `wallpapers`, interval `wallpaper_seconds`, blur 0) → ScrolledWindow
   (NEVER/AUTOMATIC) with WallpaperDashboard(clock `lock-clock`, date `lock-date`, weather,
@@ -122,10 +122,10 @@ Keys read: `wallpaper_directory` (expanduser), `wallpapers` (names in it), `wall
   web-process-terminated → error box), Escape (CAPTURE) → suppress + dismiss, close-request →
   dismiss. `dismiss()` hides, `window.reveal()`, focuses the gear. `reveal()` fullscreen +
   present + focus web view. The page/session is kept while hidden.
-- PanelKeyboard: Waykeys `Keyboard` appended under the web view (viewport shrinks),
+- PanelKeyboard: Tessel Keyboard `Keyboard` appended under the web view (viewport shrinks),
   `keyboard-narrow` when 0 < panel width < 724, toggle `input-keyboard-symbolic` (not focusable,
   tooltip `Show or hide the on-screen keyboard`, `suggested-action` while shown); bridge to
-  `waykeys-input` only while needed; ready → present panel; messages exact (screen_keyboard.py).
+  `tessel-keyboard-input` only while needed; ready → present panel; messages exact (screen_keyboard.py).
 - All CSS strings (`STYLE`, levels, timers, alarms, panel) verbatim.
 
 ## 5. voice_controls.py (CLI: `voice-controls KIND ACTION`)
@@ -181,7 +181,7 @@ port verbatim (`http://user@127.0.0.1:8765/` is *not* allowed).
   fields are used (strings shown as plain GTK labels, never markup). Malformed rows must not
   crash the screen; the socket is never written beyond the fixed request.
 - **Voice log.** Parsed as untrusted text (lossy UTF-8, NUL stripped, fixed substrings only,
-  256 KiB per poll); nothing from it is displayed. Rust hardening (shared suite-lock `VoiceLog`):
+  256 KiB per poll); nothing from it is displayed. Rust hardening (shared tessel-locking `VoiceLog`):
   the log is opened `O_NONBLOCK` and read only when it is a regular file (a FIFO could block the
   GTK thread in Python), the initial partial-line skip is bounded to 256 KiB, and a partial line
   longer than 256 KiB is dropped up to its newline instead of buffering without bound. The screen **never opens the microphone**;
@@ -201,7 +201,7 @@ port verbatim (`http://user@127.0.0.1:8765/` is *not* allowed).
 5. timer countdowns side by side, 30 s urgent threshold, ringing, removal.
 6. compact schedules share space with urgent timers; stale (>3 s) snapshot hides cards.
 7. dashboard location lifecycle (fake weather client) and media row.
-8. (weather tray test belongs to weather-manager.)
+8. (weather tray test belongs to tessel-weather.)
 Plus: navigation policy table, levels file/clamp/resolve_level, pactl read-back, status JSON keys,
 CLI usage/exit codes, voice-controls outputs.
 

@@ -1,0 +1,226 @@
+
+window.tessel-dock-surface { background: transparent; color: #eeeeee; border: none; box-shadow: none; padding: 0; margin: 0; border-radius: 0; }
+.tessel-dock-panel, .tessel-dock-popup {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 7px;
+}
+.tessel-dock-popup { background: rgba(16, 17, 20, 0.97); padding: 12px; }
+.tessel-dock-panel { border: none; box-shadow: none; }
+.tessel-dock-panel button, .tessel-dock-popup button {
+  background: transparent; border: none; box-shadow: none;
+  color: #eeeeee; border-radius: 8px; padding: 5px;
+}
+.tessel-dock-panel button:hover, .tessel-dock-popup button:hover { background: rgba(255,255,255,0.12); }
+.tessel-dock-panel button:active, .tessel-dock-popup button:active { background: rgba(105,167,255,0.24); }
+.tessel-dock-panel button.focused, .tessel-dock-popup button.focused { background: rgba(105,167,255,0.16); }
+.tessel-dock-count { background: #343a45; color: white; border-radius: 9999px; font-size: 7.5pt; font-weight: bold; padding: 0 4px; min-width: 8px; }
+.tessel-dock-indicator { background: #999fa9; border-radius: 2px; min-height: 3px; min-width: 6px; }
+.tessel-dock-indicator.focused { background: #69a7ff; min-width: 20px; }
+.tessel-dock-indicator.vertical { min-height: 6px; min-width: 3px; }
+.tessel-dock-indicator.vertical.focused { min-height: 20px; min-width: 3px; }
+.tessel-dock-separator { background: rgba(255,255,255,0.14); margin: 8px 4px; }
+.tessel-dock-title { font-size: 16pt; font-weight: 600; }
+.tessel-dock-subtitle { color: #a6abb4; font-size: 9pt; }
+.tessel-dock-window-title { font-size: 9pt; }
+.tessel-dock-activities-icon { -gtk-icon-transform: scaleX(-1); }
+.tessel-dock-focused-title { font-size: 10pt; font-weight: 600; padding: 6px; }
+.tessel-dock-panel button.tessel-dock-focused-title-button {
+  min-width: 0; min-height: 0; padding: 0;
+}
+.tessel-dock-panel button.tessel-dock-compact-item {
+  min-width: 24px; min-height: 24px; padding: 3px;
+}
+.tessel-dock-compact-item .tessel-dock-count {
+  font-size: 6pt; padding: 0 2px; min-width: 6px; border-radius: 9999px;
+}
+.tessel-dock-popup button.tessel-dock-window-close {
+  min-width: 18px; min-height: 18px; padding: 1px; border-radius: 8px;
+}
+@define-color tessel-dock_settings_surface mix(@theme_base_color, @theme_bg_color, 0.18);
+@define-color tessel-dock_settings_line alpha(@theme_fg_color, 0.10);
+@define-color tessel-dock_settings_muted alpha(@theme_fg_color, 0.62);
+window.tessel-dock-settings { background: @theme_bg_color; color: @theme_fg_color; }
+.tessel-dock-settings headerbar {
+  background-image: none; background-color: @theme_bg_color;
+  border: none; box-shadow: none; padding: 8px 14px;
+}
+.tessel-dock-settings headerbar .title { font-size: 11pt; font-weight: 600; }
+.tessel-dock-settings .settings-title { font-size: 18pt; font-weight: 700; }
+.tessel-dock-settings .settings-muted { color: @tessel-dock_settings_muted; font-size: 9pt; }
+.tessel-dock-settings .settings-tile {
+  min-width: 50px; min-height: 50px; border-radius: 12px;
+  color: @theme_selected_bg_color; background-color: alpha(@theme_selected_bg_color, 0.10);
+}
+.tessel-dock-settings .settings-card {
+  background-color: @tessel-dock_settings_surface;
+  border: 1px solid @tessel-dock_settings_line; border-radius: 8px; padding: 16px;
+}
+.tessel-dock-settings .settings-section-title { font-size: 10pt; font-weight: 600; color: @tessel-dock_settings_muted; }
+.tessel-dock-settings .settings-section-heading image { color: @theme_selected_bg_color; }
+.tessel-dock-settings .settings-hint { color: @tessel-dock_settings_muted; padding: 1px 4px; }
+.tessel-dock-settings button:not(.titlebutton) {
+  background-image: none; background-color: @tessel-dock_settings_surface;
+  color: @theme_fg_color; border: 1px solid @tessel-dock_settings_line;
+  border-radius: 8px; box-shadow: none; text-shadow: none;
+  min-height: 28px; padding: 4px 12px;
+}
+.tessel-dock-settings button:hover { background-color: mix(@tessel-dock_settings_surface, @theme_fg_color, 0.06); }
+.tessel-dock-settings button.suggested-action {
+  background-color: @theme_selected_bg_color; color: @theme_selected_fg_color; border-color: transparent;
+}
+.tessel-dock-settings button.suggested-action:hover {
+  background-color: shade(@theme_selected_bg_color, 1.10);
+}
+.tessel-dock-settings button:focus {
+  outline: 2px solid alpha(@theme_selected_bg_color, 0.65); outline-offset: -2px;
+}
+.tessel-dock-settings entry:focus-within, .tessel-dock-settings spinbutton:focus-within {
+  outline: 2px solid alpha(@theme_selected_bg_color, 0.65); outline-offset: -2px;
+  border-color: @theme_selected_bg_color;
+}
+.tessel-dock-settings button:disabled { opacity: 0.45; }
+.tessel-dock-settings combobox button { font-weight: normal; }
+.tessel-dock-settings spinbutton {
+  background-color: @tessel-dock_settings_surface; color: @theme_fg_color;
+  border: 1px solid @tessel-dock_settings_line; border-radius: 8px;
+}
+.tessel-dock-settings spinbutton entry { background: transparent; min-width: 28px; padding: 4px 8px; }
+.tessel-dock-settings spinbutton button {
+  min-width: 18px; min-height: 28px; padding: 4px; border: none;
+  border-left: 1px solid @tessel-dock_settings_line; border-radius: 0;
+}
+.tessel-dock-settings spinbutton button:last-child { border-radius: 0 8px 8px 0; }
+.tessel-dock-settings switch {
+  background-image: none; background-color: alpha(@theme_fg_color, 0.14);
+  border: 1px solid @tessel-dock_settings_line;
+  min-width: 44px; min-height: 24px; border-radius: 9999px;
+}
+/* The knob is white in every state, lifted by a soft shadow. */
+.tessel-dock-settings switch slider, .tessel-dock-settings switch:checked slider,
+.tessel-dock-settings switch:disabled slider {
+  background-image: none; background-color: #ffffff;
+  min-width: 20px; min-height: 20px; border-radius: 9999px; border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.tessel-dock-settings switch:checked {
+  background-color: @theme_selected_bg_color; border-color: @theme_selected_bg_color;
+}
+.tessel-dock-settings switch:focus { outline-color: @theme_selected_bg_color; }
+.tessel-dock-settings scale { min-width: 150px; padding: 6px 0; }
+.tessel-dock-settings scale trough {
+  min-height: 5px; border-radius: 9999px; border: none;
+  background: alpha(@theme_fg_color, 0.14);
+}
+.tessel-dock-settings scale highlight { background: @theme_selected_bg_color; border-radius: 9999px; border: none; }
+.tessel-dock-settings scale slider {
+  min-width: 18px; min-height: 18px; margin: -7px 0; padding: 0; border-radius: 9999px; border: none;
+  background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.tessel-dock-settings scale value { color: @theme_fg_color; font-size: 9pt; }
+.tessel-dock-settings .error { color: #ff9494; }
+.tessel-dock-popup entry { background: #292c32; color: white; border-radius: 8px; border: 1px solid #3a3e46; }
+.tessel-dock-popup entry:focus-within { border-color: #69a7ff; outline: 2px solid rgba(105,167,255,0.45); outline-offset: -1px; }
+.tessel-dock-popup list, .tessel-dock-popup row { background: transparent; color: white; }
+.tessel-dock-popup row:hover { background: rgba(255,255,255,0.08); border-radius: 8px; }
+.tessel-dock-app-menu { padding: 16px; border-radius: 12px; }
+.tessel-dock-app-menu-header { padding: 0 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.tessel-dock-app-menu .tessel-dock-app-categories { background: transparent; }
+.tessel-dock-app-menu .tessel-dock-app-categories row { padding: 9px 10px; margin: 2px 0; border-radius: 8px; }
+.tessel-dock-app-menu .tessel-dock-app-categories row:selected { background: rgba(105,167,255,0.18); }
+.tessel-dock-app-menu .tessel-dock-app-categories row:focus-visible { outline: 1px solid #69a7ff; outline-offset: -1px; }
+.tessel-dock-app-menu .tessel-dock-app-categories label { font-size: 10.5pt; }
+.tessel-dock-app-menu .tessel-dock-app-section { font-size: 10pt; font-weight: 600; padding: 3px 8px; }
+.tessel-dock-app-menu separator { background: rgba(255,255,255,0.10); min-width: 1px; }
+.tessel-dock-app-menu flowbox { padding: 0; background: transparent; color: #eeeeee; }
+.tessel-dock-app-menu flowboxchild { padding: 5px 8px; border-radius: 8px; }
+.tessel-dock-app-menu flowboxchild:hover { background: rgba(255,255,255,0.08); }
+.tessel-dock-app-menu flowboxchild:selected { background: rgba(105,167,255,0.18); }
+.tessel-dock-app-menu flowboxchild:focus { outline: 1px solid #69a7ff; outline-offset: -1px; }
+.tessel-dock-app-menu flowboxchild.tessel-dock-empty-cell { background: transparent; outline: none; }
+.tessel-dock-app-menu .tessel-dock-app-name { font-size: 10.5pt; font-weight: 500; }
+.tessel-dock-app-menu button.tessel-dock-app-frequent-tile {
+  padding: 5px 8px; border-radius: 8px; background: transparent; box-shadow: none; border: none;
+}
+.tessel-dock-app-menu button.tessel-dock-app-frequent-tile:hover { background: rgba(127,127,127,0.12); }
+.tessel-dock-app-menu button.tessel-dock-app-pin {
+  color: #929aa7; min-width: 22px; min-height: 22px; padding: 4px;
+}
+.tessel-dock-app-menu button.tessel-dock-app-pin.pinned { color: #8dbbfa; }
+.tessel-dock-app-menu button.tessel-dock-app-pin:hover { color: #eeeeee; }
+.tessel-dock-app-menu button.tessel-dock-app-menu-settings {
+  background: rgba(255,255,255,0.05); min-width: 22px; min-height: 22px; padding: 4px;
+}
+.tessel-dock-app-menu button.tessel-dock-app-menu-settings:hover { background: rgba(255,255,255,0.12); }
+.tessel-dock-app-menu entry {
+  background: rgba(255,255,255,0.055); border-color: rgba(255,255,255,0.10);
+  min-height: 26px; padding: 7px 10px; border-radius: 8px; box-shadow: none;
+}
+.tessel-dock-app-menu entry:focus, .tessel-dock-app-menu entry:focus-within { border-color: #69a7ff; outline-color: #69a7ff; }
+.tessel-dock-app-menu entry.search > text,
+.tessel-dock-app-menu searchentry > text, .tessel-dock-app-menu entry.search > text { margin: 0 8px; }
+.tessel-dock-panel button.tessel-dock-status, .tessel-dock-panel button.tessel-dock-tray-item {
+  min-width: 24px; min-height: 30px; padding: 5px 4px;
+}
+.tessel-dock-media-song { font-family: "Noto Sans", sans-serif; font-size: 10pt; }
+.tessel-dock-panel .tessel-dock-media button.tessel-dock-media-control {
+  min-width: 20px; min-height: 22px; padding: 2px; border-radius: 8px;
+}
+.tessel-dock-panel .tessel-dock-media button:disabled { opacity: .35; }
+/* Glyphs are only a fallback for icon themes without a status icon; their
+   pixel size follows the configured icon size (panel_ui.status_icon_size). */
+.tessel-dock-status-glyph {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "Symbols Nerd Font", "Noto Sans", sans-serif;
+  font-weight: 900;
+}
+.status-capslock .tessel-dock-status-glyph { font-size: 15pt; }
+.status-bluetooth .tessel-dock-status-glyph { font-family: "Font Awesome 6 Brands"; }
+.status-network .tessel-dock-status-glyph {
+  font-family: "Font Awesome 6 Free", "JetBrainsMono Nerd Font Propo", "JetBrainsMonoNL Nerd Font Propo", "Symbols Nerd Font", sans-serif;
+}
+.status-weather .tessel-dock-status-glyph { font-family: "Noto Sans", "Symbols Nerd Font", sans-serif; font-size: 10pt; font-weight: 600; }
+.status-capslock .tessel-dock-status-glyph { font-family: "Noto Sans", sans-serif; }
+.status-showdesktop.regular .tessel-dock-status-glyph { font-weight: 400; }
+.tessel-dock-status.unavailable, .tessel-dock-status.off, .tessel-dock-status.inactive { opacity: 0.45; }
+.tessel-dock-status.recording { color: #f26b6b; }
+.tessel-dock-status.connected, .tessel-dock-status.plugged, .tessel-dock-status.balanced,
+.tessel-dock-status.auto, .tessel-dock-status.active { color: #69a7ff; }
+.tessel-dock-status.power-saver, .tessel-dock-status.full, .tessel-dock-status.vpn { color: #8fd6ab; }
+.tessel-dock-status.performance, .tessel-dock-status.dimmed, .tessel-dock-status.low,
+.tessel-dock-status.limited { color: #e3b66b; }
+.tessel-dock-status.critical, .tessel-dock-status.needs-attention { color: #e05d65; }
+.tessel-dock-panel button.tessel-dock-workspace {
+  padding: 4px; min-width: 18px; min-height: 24px; font-size: 10pt; font-weight: 600;
+}
+.tessel-dock-panel button.tessel-dock-workspace.active { background: rgba(105,167,255,0.35); color: #eeeeee; font-weight: 700; }
+.tessel-dock-panel button.tessel-dock-workspace.urgent { color: #e3b66b; }
+.tessel-dock-panel button.tessel-dock-clock { min-width: 82px; padding: 2px 7px; }
+.tessel-dock-clock-time { font-family: "Noto Sans", sans-serif; font-size: 13pt; font-weight: 600; }
+.tessel-dock-clock-date { font-family: "Noto Sans", sans-serif; font-size: 9pt; font-weight: 400; }
+.tessel-dock-clock.clock-inline .tessel-dock-clock-time,
+.tessel-dock-clock.clock-inline .tessel-dock-clock-date { font-size: 10pt; font-weight: 400; }
+.tessel-dock-panel.tessel-dock-compact-bar { padding: 2px 6px; }
+.tessel-dock-panel.tessel-dock-compact-bar button { padding: 2px 4px; }
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical { padding: 6px 2px; }
+.tessel-dock-compact-bar button.tessel-dock-status,
+.tessel-dock-compact-bar button.tessel-dock-tray-item,
+.tessel-dock-compact-bar button.tessel-dock-tray-expander,
+.tessel-dock-compact-bar button.tessel-dock-compact-item {
+  min-width: 22px; min-height: 22px; padding: 2px 3px; border-radius: 8px;
+}
+.tessel-dock-compact-bar .status-capslock .tessel-dock-status-glyph { font-size: 11pt; }
+.tessel-dock-compact-bar .tessel-dock-media-song { font-size: 10pt; }
+.tessel-dock-compact-bar .status-weather .tessel-dock-status-glyph { font-size: 10pt; }
+.tessel-dock-compact-bar button.tessel-dock-workspace {
+  min-width: 18px; min-height: 22px; padding: 2px 3px; font-size: 10pt;
+}
+.tessel-dock-compact-bar .tessel-dock-focused-title { font-size: 10pt; padding: 2px 4px; }
+.tessel-dock-compact-bar .tessel-dock-count { font-size: 6.5pt; }
+.tessel-dock-compact-bar .tessel-dock-separator { margin: 4px 3px; }
+.tessel-dock-compact-bar button.tessel-dock-clock { min-width: 0; min-height: 0; padding: 0 4px; }
+/* One size and weight for the compact clock, stacked or inline. */
+.tessel-dock-compact-bar .tessel-dock-clock .tessel-dock-clock-time,
+.tessel-dock-compact-bar .tessel-dock-clock .tessel-dock-clock-date { font-size: 8pt; font-weight: 600; line-height: 1; }
+.tessel-dock-compact-bar .tessel-dock-clock.clock-inline .tessel-dock-clock-time,
+.tessel-dock-compact-bar .tessel-dock-clock.clock-inline .tessel-dock-clock-date { font-size: 10pt; font-weight: 600; line-height: 1; }

@@ -1,8 +1,8 @@
 //! Discover Network Devices: the Avahi discovery toggle and device list
-//! (port of btmanager/network-discovery, adapted from NDDT, MIT).
+//! (port of tessel-bluetooth/tessel-network-discovery, adapted from NDDT, MIT).
 //!
 //! `backend` (systemd D-Bus state + pkexec toggle, no GTK) is the library
-//! Waydock embeds; `browse` parses `avahi-browse`; `app` is the GTK popup.
+//! Tessel Dock embeds; `browse` parses `avahi-browse`; `app` is the GTK popup.
 
 pub mod app;
 pub mod backend;

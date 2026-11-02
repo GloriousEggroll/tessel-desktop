@@ -15,8 +15,8 @@ for tool in way-displays wlr-randr kscreen-doctor xrandr hdr-pattern; do
   printf '#!/bin/sh\necho "%s $*" >> %s/calls.log\nexit 1\n' "$tool" "$R" > "$R/bin/$tool"; chmod +x "$R/bin/$tool"
 done
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q -p hdr-calibration --bin hdr-calibration)
-BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p hdr-calibration --test ui_headless --no-run --message-format=json 2>/dev/null \
+(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q -p tessel-hdr-calibration --bin tessel-hdr-calibration)
+BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-hdr-calibration --test ui_headless --no-run --message-format=json 2>/dev/null \
       | python3 -c 'import json,sys
 for line in sys.stdin:
     m=json.loads(line)
@@ -26,7 +26,7 @@ cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 ls -la "\$XDG_RUNTIME_DIR" > "$R/runtime.txt"
-DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" HDR_CALIBRATION_UI_ISOLATED_TEST=1 HDR_CALIBRATION_BIN="$ROOT/target/debug/hdr-calibration" \
+DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" HDR_CALIBRATION_UI_ISOLATED_TEST=1 HDR_CALIBRATION_BIN="$ROOT/target/debug/tessel-hdr-calibration" \
 HDR_CALIBRATION_PATTERN="$R/bin/hdr-pattern" PATH="$R/bin:\$PATH" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo \
 GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0 TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" \
 XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" \

@@ -1,11 +1,11 @@
-# system-monitor — parity with contracts/system-monitor.md
+# tessel-system-monitor — parity with contracts/tessel-system-monitor.md
 
-Crate `components/system-monitor`, binary `system-monitor` (replaces the `/usr/local/bin/system-monitor`
-wrapper target), GApplication `org.waydock.SystemMonitor`. psutil is replaced by direct `/proc` + `/sys`
+Crate `components/system-monitor`, binary `tessel-system-monitor` (replaces the `/usr/local/bin/tessel-system-monitor`
+wrapper target), GApplication `org.tessel.SystemMonitor`. psutil is replaced by direct `/proc` + `/sys`
 reads (`procfs::ProcFs::new(root)`, root `/` live or a fake tree in tests) behind the `source::Source`
 trait that mirrors the psutil calls monitor_backend.py makes.
 
-Tests: `env -u TMPDIR cargo test -p system-monitor` (28 unit tests + 1 ignored live-dump helper),
+Tests: `env -u TMPDIR cargo test -p tessel-system-monitor` (28 unit tests + 1 ignored live-dump helper),
 `tests/run_headless.sh` (15 GTK checks in a private nested headless labwc),
 `tests/measure_headless.sh` (Rust vs Python startup/RSS/PSS + screenshots, same private compositor).
 
@@ -18,7 +18,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 | `--check` JSON line (Python `json.dumps` separators), no GTK | ✅ | manual: identical keys/values to Python on this machine (`{"ready": true, "processes": …, "logical_cores": 16, "memory_total": 64953643008, "gpus": 2}`) |
 | `--page` choices, argparse help/usage/errors (exit 2), prefix abbreviations, `--opt=value` | ✅ | `args::tests::argparse_texts_match_python` (texts byte-equal to Python's with prog `system_monitor.py`) |
 | `show()`: unminimize, present, idle `wlrctl toplevel focus app_id:…` | ☑ | |
-| `attach_application` palette theme | ☑ | (suite-gtk tested) |
+| `attach_application` palette theme | ☑ | (tessel-gtk tested) |
 | .desktop / wrapper / installer | ❌ | installer step (see report) |
 
 ## §4 Sampling (monitor_backend.py)
@@ -73,7 +73,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 2. `isup` uses sysfs `flags`/`operstate` instead of the `SIOCGIFFLAGS` ioctl (same IFF_RUNNING meaning).
 3. Sampling and process actions run on GLib's blocking thread pool (`gio::spawn_blocking`) instead of a 1-thread
    executor; the sampler is behind a mutex and the UI's `worker_pending`/`busy` flags keep calls serialized.
-4. argparse `prog` is the executable's basename (`system-monitor`), as argparse itself does.
+4. argparse `prog` is the executable's basename (`tessel-system-monitor`), as argparse itself does.
 5. Graph colours use `gtk::Widget::color()` (GTK ≥ 4.10) rather than the deprecated style context.
 
 ## Gaps ❌

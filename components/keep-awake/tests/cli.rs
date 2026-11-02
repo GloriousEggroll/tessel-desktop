@@ -7,8 +7,8 @@ mod common;
 
 use common::{settle, wait_for, FakeLogin, PrivateBus, Read};
 use gio::prelude::*;
-use keep_awake::client::KeepAwakeClient;
-use keep_awake::ui::Controls;
+use tessel_keep_awake::client::KeepAwakeClient;
+use tessel_keep_awake::ui::Controls;
 use serde_json::Value;
 use std::cell::RefCell;
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ use std::process::{Child, Command, Stdio};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-const BIN: &str = env!("CARGO_BIN_EXE_keep-awake");
+const BIN: &str = env!("CARGO_BIN_EXE_tessel-keep-awake");
 
 struct Env {
     state: PathBuf,
@@ -62,13 +62,13 @@ impl Env {
     }
 
     fn timer(&self) -> Value {
-        serde_json::from_str(&std::fs::read_to_string(self.state.join("keep-awake/timer.json")).unwrap()).unwrap()
+        serde_json::from_str(&std::fs::read_to_string(self.state.join("tessel-keep-awake/timer.json")).unwrap()).unwrap()
     }
 }
 
 fn has_owner(name: &str) -> bool {
     let connection = gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>).unwrap();
-    suite_core::single_instance::name_has_owner(&connection, name)
+    tessel_core::single_instance::name_has_owner(&connection, name)
 }
 
 fn terminate(child: &mut Child) -> i32 {
@@ -97,8 +97,8 @@ fn cli() {
     // Local argparse errors and help never contact the bus.
     let (code, out, err) = env.run(&["--popup-offset", "x"]);
     assert_eq!((code, out.as_str()), (2, ""));
-    assert!(err.starts_with("usage: keep-awake [-h]"), "{err}");
-    assert!(err.ends_with("keep-awake: error: argument --popup-offset: invalid int value: 'x'\n"), "{err}");
+    assert!(err.starts_with("usage: tessel-keep-awake [-h]"), "{err}");
+    assert!(err.ends_with("tessel-keep-awake: error: argument --popup-offset: invalid int value: 'x'\n"), "{err}");
     let (code, out, _) = env.run(&["-h"]);
     assert_eq!(code, 0);
     assert!(out.contains("Manual Keep Awake controls, explicitly started for the labwc session."));
@@ -109,11 +109,11 @@ fn cli() {
         assert_ne!(code, 0, "{flag} must not become the primary");
         assert_eq!(out, "");
     }
-    assert!(!has_owner("org.waybar.KeepAwake"));
+    assert!(!has_owner("org.tessel.KeepAwake"));
     assert!(login.calls.borrow().is_empty());
-    assert!(!state.join("keep-awake").exists());
+    assert!(!state.join("tessel-keep-awake").exists());
 
-    // The daemon: a client following Changed like Waydock's indicator does.
+    // The daemon: a client following Changed like Tessel Dock's indicator does.
     let updates = Rc::new(RefCell::new(0u32));
     let counter = updates.clone();
     let client = KeepAwakeClient::new(move || *counter.borrow_mut() += 1);
@@ -122,12 +122,12 @@ fn cli() {
     let sink = signals.clone();
     let session = gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>).unwrap();
     #[allow(deprecated)]
-    let _subscription = session.signal_subscribe(None, None, Some("Changed"), Some("/org/waybar/KeepAwake"), None,
+    let _subscription = session.signal_subscribe(None, None, Some("Changed"), Some("/org/tessel/KeepAwake"), None,
         gio::DBusSignalFlags::NONE, move |_, _, _, interface, _, params| {
             sink.borrow_mut().push((interface.into(), params.child_value(0).get::<String>().unwrap()));
         });
     let mut daemon = env.daemon();
-    assert!(wait_for(|| has_owner("org.waybar.KeepAwake"), 5.0), "daemon did not register");
+    assert!(wait_for(|| has_owner("org.tessel.KeepAwake"), 5.0), "daemon did not register");
     assert!(wait_for(|| client.ready(), 5.0), "daemon never saw the fake logind");
     let status = env.status();
     assert_eq!(status["class"], "inactive");
@@ -161,30 +161,30 @@ fn cli() {
     // D-Bus controls (Global Settings path).
     client.set_enabled(false);
     assert!(wait_for(|| !client.active() && login.reader(1) == Read::Eof, 5.0));
-    let reply = session.call_sync(Some("org.waybar.KeepAwake"), "/org/waybar/KeepAwake", "org.waybar.KeepAwake.Duration",
+    let reply = session.call_sync(Some("org.tessel.KeepAwake"), "/org/tessel/KeepAwake", "org.tessel.KeepAwake.Duration",
         "SetDuration", Some(&(45u32,).to_variant()), None, gio::DBusCallFlags::NO_AUTO_START, 15000,
         None::<&gio::Cancellable>);
     let error = reply.unwrap_err();
-    assert_eq!(gio::DBusError::remote_error(&error).as_deref(), Some("org.waybar.KeepAwake.Duration.Error"));
+    assert_eq!(gio::DBusError::remote_error(&error).as_deref(), Some("org.tessel.KeepAwake.Duration.Error"));
     let mut stripped = error.clone();
     gio::DBusError::strip_remote_error(&mut stripped);
     assert_eq!(stripped.message(), "Unsupported Keep Awake duration.");
     signals.borrow_mut().clear();
     assert!(client.request_duration(30));
     assert!(wait_for(|| client.duration() == 30, 5.0));
-    assert!(wait_for(|| signals.borrow().iter().any(|(i, _)| i == "org.waybar.KeepAwake.Duration"), 5.0));
-    assert!(signals.borrow().iter().any(|(i, _)| i == "org.waybar.KeepAwake.Controls"));
-    let reply = session.call_sync(Some("org.waybar.KeepAwake"), "/org/waybar/KeepAwake", "org.waybar.KeepAwake.Controls",
+    assert!(wait_for(|| signals.borrow().iter().any(|(i, _)| i == "org.tessel.KeepAwake.Duration"), 5.0));
+    assert!(signals.borrow().iter().any(|(i, _)| i == "org.tessel.KeepAwake.Controls"));
+    let reply = session.call_sync(Some("org.tessel.KeepAwake"), "/org/tessel/KeepAwake", "org.tessel.KeepAwake.Controls",
         "SetEnabled", Some(&(true,).to_variant()), None, gio::DBusCallFlags::NO_AUTO_START, 15000,
         None::<&gio::Cancellable>).unwrap();
     assert_eq!(reply.get::<(bool, String)>(), Some((true, String::new())));
     assert!(wait_for(|| client.active(), 5.0));
     let until = client.until().expect("a 30 minute timer has an end time");
-    let now = suite_core::timer::now();
+    let now = tessel_core::timer::now();
     assert!((until - now - 1800.0).abs() < 30.0);
     assert_eq!(env.timer()["duration"], 30);
     assert_eq!(env.timer()["until"].as_f64(), Some(until));
-    let get_state = session.call_sync(Some("org.waybar.KeepAwake"), "/org/waybar/KeepAwake", "org.waybar.KeepAwake.Duration",
+    let get_state = session.call_sync(Some("org.tessel.KeepAwake"), "/org/tessel/KeepAwake", "org.tessel.KeepAwake.Duration",
         "GetState", None, None, gio::DBusCallFlags::NO_AUTO_START, 15000, None::<&gio::Cancellable>).unwrap();
     let state_json: Value = serde_json::from_str(&get_state.child_value(0).get::<String>().unwrap()).unwrap();
     assert_eq!(state_json["until"].as_f64(), Some(until));
@@ -203,7 +203,7 @@ fn cli() {
     assert_eq!(terminate(&mut daemon), 0);
     assert!(wait_for(|| login.reader(held) == Read::Eof, 5.0), "shutdown kept the inhibitor");
     assert_eq!(env.timer()["until"].as_f64(), Some(until));
-    assert!(wait_for(|| !has_owner("org.waybar.KeepAwake"), 5.0));
+    assert!(wait_for(|| !has_owner("org.tessel.KeepAwake"), 5.0));
     assert!(wait_for(|| client.error() == "Keep Awake is not running in this session.", 5.0));
     assert!(!client.request_duration(60), "no owner: SetDuration reports unavailable");
 

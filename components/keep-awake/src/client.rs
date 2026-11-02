@@ -6,13 +6,13 @@ use gio::prelude::*;
 use serde_json::Value;
 use std::cell::RefCell;
 use std::rc::Rc;
-use suite_core::service_settings::{truthy, SettingsClient};
-use suite_core::tr;
+use tessel_core::service_settings::{truthy, SettingsClient};
+use tessel_core::tr;
 
-pub const BUS_NAME: &str = "org.waybar.KeepAwake";
-pub const OBJECT_PATH: &str = "/org/waybar/KeepAwake";
-pub const INTERFACE: &str = "org.waybar.KeepAwake.Controls";
-pub const DURATION_INTERFACE: &str = "org.waybar.KeepAwake.Duration";
+pub const BUS_NAME: &str = "org.tessel.KeepAwake";
+pub const OBJECT_PATH: &str = "/org/tessel/KeepAwake";
+pub const INTERFACE: &str = "org.tessel.KeepAwake.Controls";
+pub const DURATION_INTERFACE: &str = "org.tessel.KeepAwake.Duration";
 
 #[derive(Clone)]
 pub struct KeepAwakeClient {

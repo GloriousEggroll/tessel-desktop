@@ -1,4 +1,4 @@
-//! The `org.waydock.NetworkDiscovery` GTK application and its popup
+//! The `org.tessel.NetworkDiscovery` GTK application and its popup
 //! (discovery_manager.py `create_application`).
 
 use crate::backend::{DiscoveryBackend, Done};
@@ -7,13 +7,13 @@ use crate::compat::{prog, ArgSpec, Outcome};
 use serde_json::{Map, Value};
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
-use suite_core::tr;
-use suite_gtk::gtk::prelude::*;
-use suite_gtk::gtk::{self, gio, glib};
-use suite_gtk::popup::{header_button, popup_header, set_popup_width, PopupController, POPUP_PADDING, POPUP_WIDTH};
-use suite_gtk::utils::{accessible, add_css, PRIORITY_APPLICATION};
+use tessel_core::tr;
+use tessel_gtk::gtk::prelude::*;
+use tessel_gtk::gtk::{self, gio, glib};
+use tessel_gtk::popup::{header_button, popup_header, set_popup_width, PopupController, POPUP_PADDING, POPUP_WIDTH};
+use tessel_gtk::utils::{accessible, add_css, PRIORITY_APPLICATION};
 
-pub const APPLICATION_ID: &str = "org.waydock.NetworkDiscovery";
+pub const APPLICATION_ID: &str = "org.tessel.NetworkDiscovery";
 
 pub const SPEC: ArgSpec = ArgSpec {
     description: "Network device discovery controls, using the desktop's GTK4 popup styling.",
@@ -114,7 +114,7 @@ impl Discovery {
     fn release(&self) { drop(self.0.holds.borrow_mut().pop()); }
 
     fn startup(&self, app: &gtk::Application) {
-        suite_gtk::theme::attach_application(app);
+        tessel_gtk::theme::attach_application(app);
         add_css(CSS, None, PRIORITY_APPLICATION);
         let Some(factory) = self.0.backend_factory.take() else { return };
         let weak = self.weak();

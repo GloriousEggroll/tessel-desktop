@@ -5,17 +5,17 @@ mod common;
 
 use common::{settle, wait_for};
 use gio::prelude::*;
-use keep_awake::app::{BackendFactory, KeepAwakeApplication, APPLICATION_ID};
-use keep_awake::timed::Inhibit;
+use tessel_keep_awake::app::{BackendFactory, KeepAwakeApplication, APPLICATION_ID};
+use tessel_keep_awake::timed::Inhibit;
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use suite_gtk::gtk;
-use suite_gtk::gtk::prelude::*;
+use tessel_gtk::gtk;
+use tessel_gtk::gtk::prelude::*;
 
-const BIN: &str = env!("CARGO_BIN_EXE_keep-awake");
+const BIN: &str = env!("CARGO_BIN_EXE_tessel-keep-awake");
 
 #[derive(Default)]
 struct Fake {
@@ -84,7 +84,7 @@ fn singleton_controls_popup_and_closing_popup_preserves_state(state: &PathBuf) {
     assert!(wait_for(|| app.popup().is_some_and(|p| p.window().is_mapped()), 5.0), "popup never mapped");
     let popup = app.popup().unwrap();
     let window = popup.window().clone();
-    for class in ["keep-awake", "tray-popup"] {
+    for class in ["tessel-keep-awake", "tray-popup"] {
         assert!(window.has_css_class(class), "{class}");
     }
     assert_eq!(window.title().as_deref(), Some("Keep Awake"));
@@ -149,8 +149,8 @@ fn launcher_without_primary_never_creates_a_backend() {
         flag.set(true);
         panic!("A launcher-only client started the inhibitor");
     });
-    let app = KeepAwakeApplication::new("org.waybar.KeepAwakeMissingTest", factory, true, None);
-    assert_ne!(app.run_with_args(&["keep-awake", "--toggle"]), glib::ExitCode::SUCCESS);
+    let app = KeepAwakeApplication::new("org.tessel.KeepAwakeMissingTest", factory, true, None);
+    assert_ne!(app.run_with_args(&["tessel-keep-awake", "--toggle"]), glib::ExitCode::SUCCESS);
     assert!(!started.get());
 }
 
@@ -161,7 +161,7 @@ fn main() {
     }
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     assert!(!runtime.is_empty() && runtime != "/run/user/1000", "refusing to run on the live session");
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     gtk::init().unwrap();
     let state = PathBuf::from(std::env::var("TMPDIR").unwrap()).join("keep-awake-state");
     let _ = std::fs::create_dir_all(&state);

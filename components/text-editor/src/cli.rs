@@ -95,7 +95,7 @@ mod tests {
         assert_eq!(p(&["--", "--check", "-"]), Command::Run(vec!["--check".into(), "-".into()]));
         assert_eq!(p(&["-1", "-"]), Command::Run(vec!["-1".into(), "-".into()]));
         assert_eq!(p(&["--bogus", "-x"]), Command::Error("unrecognized arguments: --bogus -x".into()));
-        assert!(help("text-editor").starts_with("usage: text-editor [-h] [--check] [files ...]\n\nEdit text files"));
+        assert!(help("tessel-text-editor").starts_with("usage: tessel-text-editor [-h] [--check] [files ...]\n\nEdit text files"));
         assert_eq!(check_json(), "{\"ready\": true, \"gtk\": 4, \"gtksourceview\": 5, \"tabs\": false}");
     }
 }

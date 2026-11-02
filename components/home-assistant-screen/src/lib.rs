@@ -1,7 +1,7 @@
-//! Rust port of ~/btmanager/home-assistant-screen (see
+//! Rust port of ~/tessel-bluetooth/home-assistant-screen (see
 //! contracts/home-assistant-screen.md): the Kasumi idle dashboard
 //! (`luna_clock.py` → [`clock`]), its WebKit admin panel ([`panel`]) with the
-//! embedded Waykeys keyboard ([`keyboard`]), idle-screen levels
+//! embedded Tessel Keyboard keyboard ([`keyboard`]), idle-screen levels
 //! ([`levels`]), timer/alarm cards ([`schedules`]) and the local voice
 //! command backend ([`voice`]). The dashboard widgets themselves are
 //! `suite_lock`'s (lock_dashboard, lock_info, lock_visuals, …).
@@ -14,7 +14,7 @@ pub mod voice;
 pub mod webkit;
 
 /// Seconds on a monotonic clock (`time.monotonic()`).
-pub fn monotonic() -> f64 { suite_lock::voice_state::monotonic() }
+pub fn monotonic() -> f64 { tessel_locking::voice_state::monotonic() }
 
 /// `logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')` on stderr.
 pub fn log(level: &str, message: &str) {

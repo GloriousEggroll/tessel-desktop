@@ -1,90 +1,90 @@
 
-## Wave 1/2 services (keep-awake, battery, power, notifications, OSK, audio, brightness, polkitman)
+## Wave 1/2 services (tessel-keep-awake, battery, power, notifications, OSK, audio, brightness, polkitman)
 | Component | Contract | Bus name / interface | Unit |
 |---|---|---|---|
-| keep-awake | [keep-awake.md](keep-awake.md) | `org.waybar.KeepAwake` · `.Controls` (GetState/Changed, SetEnabled/SetDuration) | keep-awake.service |
-| battery-manager | [battery-manager.md](battery-manager.md) | GApplication + KAuth charge-limit helper | battery-manager.service |
-| power-manager | [power-manager.md](power-manager.md) | `org.waybar.PowerManager.Controls` (GetState/Changed, SetSettings(s)) | power-manager.service (+ starts power-manager-lock.service) |
-| notification-manager | [notification-manager.md](notification-manager.md) | `org.freedesktop.Notifications` (DO_NOT_QUEUE) + `org.waydock.Notifications1` | notifications.service drop-in (replaces dunst) |
-| on-screen-keyboard | [on-screen-keyboard.md](on-screen-keyboard.md) | `org.waydock.OnScreenKeyboard`; `$XDG_RUNTIME_DIR/waykeys/state.json` | on-screen-keyboard.service |
-| audio-manager | [audio-manager.md](audio-manager.md) | `org.waybar.AudioManager` (GApplication cmdline) | audio-manager-loopbacks.service |
-| brightness-manager | [brightness-manager.md](brightness-manager.md) | `org.waybar.BrightnessManager.Controls` | brightness-manager.service |
-| authentication-manager | [authentication-manager.md](authentication-manager.md) | polkit agent for LABWC_PID session; BlueZ Agent1 at `/org/wayshell/BluetoothAgent` | polkitman.service (Type=notify) |
+| tessel-keep-awake | [tessel-keep-awake.md](tessel-keep-awake.md) | `org.tessel.KeepAwake` · `.Controls` (GetState/Changed, SetEnabled/SetDuration) | tessel-keep-awake.service |
+| tessel-battery | [tessel-battery.md](tessel-battery.md) | GApplication + KAuth charge-limit helper | tessel-battery.service |
+| tessel-power | [tessel-power.md](tessel-power.md) | `org.tessel.PowerManager.Controls` (GetState/Changed, SetSettings(s)) | tessel-power.service (+ starts tessel-lock.service) |
+| tessel-notifications | [tessel-notifications.md](tessel-notifications.md) | `org.freedesktop.Notifications` (DO_NOT_QUEUE) + `org.tessel.Notifications1` | tessel-notifications.service drop-in (replaces dunst) |
+| tessel-keyboard | [tessel-keyboard.md](tessel-keyboard.md) | `org.tessel.OnScreenKeyboard`; `$XDG_RUNTIME_DIR/tessel-keyboard/state.json` | tessel-keyboard.service |
+| tessel-audio | [tessel-audio.md](tessel-audio.md) | `org.tessel.AudioManager` (GApplication cmdline) | tessel-audio-loopbacks.service |
+| tessel-brightness | [tessel-brightness.md](tessel-brightness.md) | `org.tessel.BrightnessManager.Controls` | tessel-brightness.service |
+| tessel-auth | [tessel-auth.md](tessel-auth.md) | polkit agent for LABWC_PID session; BlueZ Agent1 at `/org/tessel/BluetoothAgent` | tessel-auth.service (Type=notify) |
 
 **Cross-component interfaces**
-- waydock (`status_backend.py`, `panel_actions.py`) streams JSON-line `*_status.py` scripts (power, battery, brightness, notifications, osk), reads keep-awake through `SettingsClient`, calls `wpctl` directly for volume, and starts popups with `systemd-run … <app>.py --popup --popup-edge E --popup-offset N` or `--settings` (OSK uses `--toggle`/`--settings`; keep-awake right-click runs `--toggle`).
+- tessel-dock (`status_backend.py`, `panel_actions.py`) streams JSON-line `*_status.py` scripts (power, battery, brightness, notifications, osk), reads tessel-keep-awake through `SettingsClient`, calls `wpctl` directly for volume, and starts popups with `systemd-run … <app>.py --popup --popup-edge E --popup-offset N` or `--settings` (OSK uses `--toggle`/`--settings`; tessel-keep-awake right-click runs `--toggle`).
 - Global Settings imports Python modules from `~/.config/waybar/scripts/<app>/`: audio_ui/audio_backend, battery_ui, power_ui/power_backend/power_client/power_config, keep_awake_ui/client, notification_ui.SettingsPage, osk_settings. **These Python files must stay installed until Global Settings is ported.**
-- Python imports between components: battery-manager imports power_backend, power_battery_ui, power_style and power_charge_limits; brightness-manager imports PowerBackend for its inhibitor check; way-displays-gui loads brightness_client.py.
-- Inhibitors: keep-awake takes a logind `idle:sleep` block inhibitor. power-manager and brightness-manager find it with ListInhibitors and skip dim, lock and sleep.
-- Two separate auto-dim paths can both act: power-manager's overlay and brightness-manager's swayidle. Both use a swayidle token protocol.
-- lock-screen: power-manager starts `power-manager-lock.service` and waits for it to be ready before sleep. lock_settings goes through PowerClient. Lock-screen reads `org.waydock.Notifications1` GetState/StateChanged. OSK watches the lock unit's ActiveState and uses `waykeys-input --labels`.
-- labwc keybinds and `desktop-suite-action` run `audio_manager.py --volume-up/--volume-down/--toggle-mute`, `brightness_manager.py --brightness-up/--brightness-down` and `power_manager.py --power-button`. Suite recognition greps the script path and source, so Rust binaries need shims at the same paths.
-- brightness-manager ↔ way-displays: `$XDG_RUNTIME_DIR/way-displays.sock`. It also reads `~/.cache/waydock/palette.json`.
-- These components send notifications: power alerts, desktop_suite_failed (critical, with a `restart` action), bttransfer, wayshell and capture-manager (hints `x-waydock-output` and `x-waydock-workspace`).
-- polkitman's BlueZ agent serves the Bluetooth app (btmanager).
+- Python imports between components: tessel-battery imports power_backend, power_battery_ui, power_style and power_charge_limits; tessel-brightness imports PowerBackend for its inhibitor check; tessel-displays loads brightness_client.py.
+- Inhibitors: tessel-keep-awake takes a logind `idle:sleep` block inhibitor. tessel-power and tessel-brightness find it with ListInhibitors and skip dim, lock and sleep.
+- Two separate auto-dim paths can both act: tessel-power's overlay and tessel-brightness's swayidle. Both use a swayidle token protocol.
+- tessel-lock: tessel-power starts `tessel-lock.service` and waits for it to be ready before sleep. lock_settings goes through PowerClient. Lock-screen reads `org.tessel.Notifications1` GetState/StateChanged. OSK watches the lock unit's ActiveState and uses `tessel-keyboard-input --labels`.
+- labwc keybinds and `tessel-action` run `audio_manager.py --volume-up/--volume-down/--toggle-mute`, `brightness_manager.py --brightness-up/--brightness-down` and `power_manager.py --power-button`. Suite recognition greps the script path and source, so Rust binaries need shims at the same paths.
+- tessel-brightness ↔ way-displays: `$XDG_RUNTIME_DIR/way-displays.sock`. It also reads `~/.cache/tessel-dock/palette.json`.
+- These components send notifications: power alerts, desktop_suite_failed (critical, with a `restart` action), bttransfer, tessel-shell and tessel-capture (hints `x-tessel-dock-output` and `x-tessel-dock-workspace`).
+- polkitman's BlueZ agent serves the Bluetooth app (tessel-bluetooth).
 
-## Wave 2/3 components (network, calendar, weather, media, discovery, tiling, session, way-displays, language, session-startup, bluetooth, wayshell, waydock)
+## Wave 2/3 components (network, calendar, weather, media, discovery, tiling, session, way-displays, language, tessel-session-startup, bluetooth, tessel-shell, tessel-dock)
 | Component | Contract | Bus name / socket | Unit / launch |
 |---|---|---|---|
-| network-manager (netman) | [network-manager.md](network-manager.md) | GApplication; NM SecretAgent (RegisterWithCapabilities, re-register on NM restart); `--check` probe | netman.service (static, autostart) |
-| calendar-manager | [calendar-manager.md](calendar-manager.md) | GApplication (resident after first launch); timedated | systemd-run popup from waydock |
-| weather-manager | [weather-manager.md](weather-manager.md) | GApplication; `--tray` = SNI + dbusmenu | popup (exits on close); weather-manager.service (HA-screen bundle) |
-| media-manager | [media-manager.md](media-manager.md) | `org.waydock.Media`; MPRIS client | systemd-run popup |
-| network-discovery | [network-discovery.md](network-discovery.md) | `org.waydock.NetworkDiscovery`; systemd/avahi units via D-Bus, pkexec | systemd-run popup |
-| session-manager | [session-manager.md](session-manager.md) | `org.waydock.Session`; logind inhibitors | desktop-suite-action (C-A-Delete, XF86PowerOff) `--menu` |
-| tiling-manager | [tiling-manager.md](tiling-manager.md) | `$XDG_RUNTIME_DIR/waytile-$WAYLAND_DISPLAY.sock` (dgram JSON v1, server in labwc C) | waydock `--toggle`/`--watch` |
-| way-displays | [way-displays.md](way-displays.md) | `$XDG_RUNTIME_DIR/way-displays.sock` (YAML); `org.waybar.BrightnessManager` | way-displays.service |
-| language-manager | [language-manager.md](language-manager.md) | localed; writes `desktop-suite/language.json` | launcher opens Global Settings `--section language` |
-| session-startup | [session-startup.md](session-startup.md) | desktop-suite-action, `desktop-suite-failed@.service`, `labwc-xdg-autostart.target` | labwc autostart |
-| bluetooth | [bluetooth.md](bluetooth.md) | BlueZ, obexd (OBEX transfer + incoming Agent) | waydock popup; embedded in Global Settings |
-| wayshell | [wayshell.md](wayshell.md) | owns `com.nobaraDesktopView`; `$XDG_RUNTIME_DIR/wayshell.sock` (JSON line) | wayshell.service (fix ExecStart in palette.conf drop-in) |
-| waydock | [waydock.md](waydock.md) | `org.waydock.Waydock`; `/org/waydock/Settings` `org.waydock.Settings`; StatusNotifierWatcher + host | waydock.service (Type=notify; READY after tray host) |
+| tessel-network (netman) | [tessel-network.md](tessel-network.md) | GApplication; NM SecretAgent (RegisterWithCapabilities, re-register on NM restart); `--check` probe | tessel-network.service (static, autostart) |
+| tessel-calendar | [tessel-calendar.md](tessel-calendar.md) | GApplication (resident after first launch); timedated | systemd-run popup from tessel-dock |
+| tessel-weather | [tessel-weather.md](tessel-weather.md) | GApplication; `--tray` = SNI + dbusmenu | popup (exits on close); tessel-weather.service (HA-screen bundle) |
+| tessel-media | [tessel-media.md](tessel-media.md) | `org.tessel.Media`; MPRIS client | systemd-run popup |
+| tessel-network-discovery | [tessel-network-discovery.md](tessel-network-discovery.md) | `org.tessel.NetworkDiscovery`; systemd/avahi units via D-Bus, pkexec | systemd-run popup |
+| tessel-session | [tessel-session.md](tessel-session.md) | `org.tessel.Session`; logind inhibitors | tessel-action (C-A-Delete, XF86PowerOff) `--menu` |
+| tessel-tiling | [tessel-tiling.md](tessel-tiling.md) | `$XDG_RUNTIME_DIR/tessel-tiling-$WAYLAND_DISPLAY.sock` (dgram JSON v1, server in labwc C) | tessel-dock `--toggle`/`--watch` |
+| way-displays | [way-displays.md](way-displays.md) | `$XDG_RUNTIME_DIR/way-displays.sock` (YAML); `org.tessel.BrightnessManager` | way-displays.service |
+| tessel-language | [tessel-language.md](tessel-language.md) | localed; writes `tessel/language.json` | launcher opens Global Settings `--section language` |
+| tessel-session-startup | [tessel-session-startup.md](tessel-session-startup.md) | tessel-action, `tessel-failed@.service`, `labwc-xdg-autostart.target` | labwc autostart |
+| bluetooth | [bluetooth.md](bluetooth.md) | BlueZ, obexd (OBEX transfer + incoming Agent) | tessel-dock popup; embedded in Global Settings |
+| tessel-shell | [tessel-shell.md](tessel-shell.md) | owns `com.nobaraDesktopView`; `$XDG_RUNTIME_DIR/tessel-shell.sock` (JSON line) | tessel-shell.service (fix ExecStart in palette.conf drop-in) |
+| tessel-dock | [tessel-dock.md](tessel-dock.md) | `org.tessel.Tessel Dock`; `/org/tessel/Settings` `org.tessel.Settings`; StatusNotifierWatcher + host | tessel-dock.service (Type=notify; READY after tray host) |
 
 **Cross-component interfaces (wave 2/3)**
-- **Popup placement:** every tray popup (netman, calendar, weather, media, discovery, session, bluetooth=`service_apps`) calls `org.waydock.Settings.GetPopupPlacement(ss)→s` (JSON). If that fails, it falls back to `--popup-edge E --popup-offset N`. Port `shared/tray_popup` (PopupController, PointerMonitor) and `popup_placement` once, in suite-gtk.
-- **waydock streams `*_status.py --watch` JSON lines** from network_status, weather_status and tiling `--watch`. The Discovery backend is a byte-identical copy that runs in-process inside waydock.
-- **MPRIS client** `lock-screen/lock_media*.py` is shared by media-manager, waydock media_status/media_controls and lock-screen. Port it once.
-- **Helper `waydock-toplevel`** (foreign-toplevel, JSON stdio) is used by waydock, session-manager (`close <id>`) and wayshell (`--snapshot`).
-- **wayshell.sock** commands (switch-window, switcher-status, show-activities, list-monitors, set, apply-json) are called by Global Settings, waydock hot corners and the labwc Alt+Tab keybinds via `wayshell_cli.py`.
-- **wayshell → waydock:** GetWorkareas and WorkareasChanged. capture-manager → waydock: the `org.gtk.Actions` actions `prepare-capture` and `finish-screenshot`. capture picker → `org.waydock.CaptureSelection`. tiling socket `capture-output` ← wayshell capture_output.
+- **Popup placement:** every tray popup (netman, calendar, weather, media, discovery, session, bluetooth=`service_apps`) calls `org.tessel.Settings.GetPopupPlacement(ss)→s` (JSON). If that fails, it falls back to `--popup-edge E --popup-offset N`. Port `shared/tray_popup` (PopupController, PointerMonitor) and `popup_placement` once, in tessel-gtk.
+- **tessel-dock streams `*_status.py --watch` JSON lines** from network_status, weather_status and tiling `--watch`. The Discovery backend is a byte-identical copy that runs in-process inside tessel-dock.
+- **MPRIS client** `tessel-lock/lock_media*.py` is shared by tessel-media, tessel-dock media_status/media_controls and tessel-lock. Port it once.
+- **Helper `tessel-dock-toplevel`** (foreign-toplevel, JSON stdio) is used by tessel-dock, tessel-session (`close <id>`) and tessel-shell (`--snapshot`).
+- **tessel-shell.sock** commands (switch-window, switcher-status, show-activities, list-monitors, set, apply-json) are called by Global Settings, tessel-dock hot corners and the labwc Alt+Tab keybinds via `wayshell_cli.py`.
+- **tessel-shell → tessel-dock:** GetWorkareas and WorkareasChanged. tessel-capture → tessel-dock: the `org.gtk.Actions` actions `prepare-capture` and `finish-screenshot`. capture picker → `org.tessel.CaptureSelection`. tiling socket `capture-output` ← tessel-shell capture_output.
 - **Shared files:**
-  - `~/.cache/waydock/palette.json` is read by about 20 apps.
-  - `~/.config/waydock/config.json` is also written by Global Settings when waydock is not running.
-  - `~/.config/wayshell/wallpapers.json` is read by waydock, lock-screen and Global Settings.
-  - `~/.config/desktop-suite/{clock,calendar,language}.json`.
-  - `~/.config/weather-manager/config.json` and `~/.cache/weather-manager/*.json` + `fetch.lock` are read by lock-screen, plus night_light for lat/lon.
-  - `labwc/environment` marker blocks are written by way-displays (primary output, which waydock gtk_color_scheme reads) and by language-manager.
-  - labwc `rc.xml` is edited in byte-preserving blocks by session-startup, tiling-manager, way-displays and waydock appearance.
-- **Flag probes:** `desktop-suite-action` greps component source for quoted flag literals (`'--menu'`, `--volume-up`, …). A Rust binary needs a shim, or the probe has to change in the same step.
-- **Embedding:** Global Settings imports the Python UIs of netman, calendar DateSettings, WeatherSettings, TilingControls, WayDisplaysApp, LanguageWizard, btmanager.App and the waydock settings window. Keep the Python modules installed until Global Settings is ported. About 25 components also import waydock Python modules (companion_theme, app_catalog, window_backend, dock_style).
+  - `~/.cache/tessel-dock/palette.json` is read by about 20 apps.
+  - `~/.config/tessel-dock/config.json` is also written by Global Settings when tessel-dock is not running.
+  - `~/.config/tessel-shell/wallpapers.json` is read by tessel-dock, tessel-lock and Global Settings.
+  - `~/.config/tessel/{clock,calendar,language}.json`.
+  - `~/.config/tessel-weather/config.json` and `~/.cache/tessel-weather/*.json` + `fetch.lock` are read by tessel-lock, plus night_light for lat/lon.
+  - `labwc/environment` marker blocks are written by way-displays (primary output, which tessel-dock gtk_color_scheme reads) and by tessel-language.
+  - labwc `rc.xml` is edited in byte-preserving blocks by tessel-session-startup, tessel-tiling, way-displays and tessel-dock appearance.
+- **Flag probes:** `tessel-action` greps component source for quoted flag literals (`'--menu'`, `--volume-up`, …). A Rust binary needs a shim, or the probe has to change in the same step.
+- **Embedding:** Global Settings imports the Python UIs of netman, calendar DateSettings, WeatherSettings, TilingControls, WayDisplaysApp, LanguageWizard, tessel-bluetooth.App and the tessel-dock settings window. Keep the Python modules installed until Global Settings is ported. About 25 components also import tessel-dock Python modules (companion_theme, app_catalog, window_backend, dock_style).
 - **Custom wayland-client bindings needed:**
-  - zwlr_foreign_toplevel_management_v1 (v3), ext-workspace-v1 and zxdg_output_v1 (waydock, wayshell switcher).
-  - ext_foreign_toplevel_list_v1, ext_image_copy_capture_v1, ext_image_capture_source_v1 and wl_shm (wayshell overview).
-  - ext_background_effect_v1 and the private `waydock_blur_manager_v1` (shared/protocols/waydock-blur-v1.xml). These must bind on GTK's own wl_display, in suite-gtk.
+  - zwlr_foreign_toplevel_management_v1 (v3), ext-workspace-v1 and zxdg_output_v1 (tessel-dock, tessel-shell switcher).
+  - ext_foreign_toplevel_list_v1, ext_image_copy_capture_v1, ext_image_capture_source_v1 and wl_shm (tessel-shell overview).
+  - ext_background_effect_v1 and the private `waydock_blur_manager_v1` (shared/protocols/waydock-blur-v1.xml). These must bind on GTK's own wl_display, in tessel-gtk.
   - The X11 fullscreen probe needs x11rb.
   - Layer-shell stays on gtk4-layer-shell.
 
-## Wave 4 apps (calculator, text-editor, picture-viewer, system-monitor, hdr-calibration, capture-manager)
+## Wave 4 apps (calculator, tessel-text-editor, tessel-pictures, tessel-system-monitor, tessel-hdr-calibration, tessel-capture)
 | Component | Contract | Bus name / files | Unit / launch |
 |---|---|---|---|
-| text-editor | [text-editor.md](text-editor.md) | GApplication `org.waydock.TextEditor` (HANDLES_OPEN); `$XDG_STATE_HOME/text-editor/recovery/*.json`; `desktop-suite/text-editor.json` | `/usr/local/bin/text-editor` (desktop-apps/install.py), `org.waydock.TextEditor.desktop` |
-| system-monitor | [system-monitor.md](system-monitor.md) | GApplication `org.waydock.SystemMonitor` (HANDLES_COMMAND_LINE; `--check`/`--page`/`--quit`), no D-Bus service; /proc + /sys | launcher `/usr/local/bin/system-monitor` |
-| hdr-calibration | [hdr-calibration.md](hdr-calibration.md) | GApplication `org.desktop.HDRCalibration` (NON_UNIQUE; `--output`/`--sdr-editing`/`--smoke-test`); SIGHUP to labwc; rc.xml hdr-calibration block, `~/.config/hdr-calibration/` profiles + corrections; C `hdr-pattern` helper kept | launcher `~/.local/bin/hdr-calibration`; shim at `hdr_calibration.py` (way-displays color_controls.py) |
-| calculator | [calculator.md](calculator.md) | GApplication `org.waydock.Calculator` (HANDLES_COMMAND_LINE); state `$XDG_STATE_HOME/waydock-calculator/state.json` | launcher `/usr/local/bin/calculator` |
-| picture-viewer | [picture-viewer.md](picture-viewer.md) | GApplication `org.waydock.Pictures` (HANDLES_COMMAND_LINE); `$XDG_CONFIG_HOME/picture-viewer/settings.json` | launcher `/usr/local/bin/waypictures` |
-| file-manager | [file-manager.md](file-manager.md) | GApplication `org.waydock.Files` (HANDLES_COMMAND_LINE; `--check`/`--new-window`/`--select`/`--split`/`--home`); optional `org.freedesktop.FileManager1` (only while default `inode/directory` handler, never replaces an owner); `desktop-suite/file-manager.json`, `file-manager-actions.json`, `gtk-3.0/bookmarks`, `$XDG_DATA_HOME/desktop-suite/file-metadata.json` + `user.desktop-suite.metadata` xattr | `/usr/local/bin/wayfiles` (desktop-apps/install.py, root), `org.waydock.Files.desktop` |
-| capture-manager | [capture-manager.md](capture-manager.md) | GApplication `org.waydock.Capture` (actions show, stop, lock-shot(d), open/reveal/copy/edit-saved(s)); `/org/waydock/Capture/Status`; CaptureSelection broker; ScreenCast portal client; C `libcapture-pipewire.so` dlopen'ed | `/usr/local/bin/waycapture` (keybinds, waydock, .desktop); Python capture_settings/capture_shortcuts stay installed (Global Settings, install_session.py) |
+| tessel-text-editor | [tessel-text-editor.md](tessel-text-editor.md) | GApplication `org.tessel.TextEditor` (HANDLES_OPEN); `$XDG_STATE_HOME/tessel-text-editor/recovery/*.json`; `tessel/tessel-text-editor.json` | `/usr/local/bin/tessel-text-editor` (desktop-apps/install.py), `org.tessel.TextEditor.desktop` |
+| tessel-system-monitor | [tessel-system-monitor.md](tessel-system-monitor.md) | GApplication `org.tessel.SystemMonitor` (HANDLES_COMMAND_LINE; `--check`/`--page`/`--quit`), no D-Bus service; /proc + /sys | launcher `/usr/local/bin/tessel-system-monitor` |
+| tessel-hdr-calibration | [tessel-hdr-calibration.md](tessel-hdr-calibration.md) | GApplication `org.desktop.HDRCalibration` (NON_UNIQUE; `--output`/`--sdr-editing`/`--smoke-test`); SIGHUP to labwc; rc.xml tessel-hdr-calibration block, `~/.config/tessel-hdr-calibration/` profiles + corrections; C `hdr-pattern` helper kept | launcher `~/.local/bin/tessel-hdr-calibration`; shim at `hdr_calibration.py` (way-displays color_controls.py) |
+| calculator | [calculator.md](calculator.md) | GApplication `org.tessel.Calculator` (HANDLES_COMMAND_LINE); state `$XDG_STATE_HOME/tessel-dock-calculator/state.json` | launcher `/usr/local/bin/calculator` |
+| tessel-pictures | [tessel-pictures.md](tessel-pictures.md) | GApplication `org.tessel.Pictures` (HANDLES_COMMAND_LINE); `$XDG_CONFIG_HOME/tessel-pictures/settings.json` | launcher `/usr/local/bin/tessel-pictures` |
+| tessel-files | [tessel-files.md](tessel-files.md) | GApplication `org.tessel.Files` (HANDLES_COMMAND_LINE; `--check`/`--new-window`/`--select`/`--split`/`--home`); optional `org.freedesktop.FileManager1` (only while default `inode/directory` handler, never replaces an owner); `tessel/tessel-files.json`, `file-manager-actions.json`, `gtk-3.0/bookmarks`, `$XDG_DATA_HOME/tessel/file-metadata.json` + `user.tessel.metadata` xattr | `/usr/local/bin/tessel-files` (desktop-apps/install.py, root), `org.tessel.Files.desktop` |
+| tessel-capture | [tessel-capture.md](tessel-capture.md) | GApplication `org.tessel.Capture` (actions show, stop, lock-shot(d), open/reveal/copy/edit-saved(s)); `/org/tessel/Capture/Status`; CaptureSelection broker; ScreenCast portal client; C `libcapture-pipewire.so` dlopen'ed | `/usr/local/bin/tessel-capture` (keybinds, tessel-dock, .desktop); Python capture_settings/capture_shortcuts stay installed (Global Settings, install_session.py) |
 
 ## Wave 4 (second half): Global Settings and Welcome
 | Component | Contract | Bus name / files | Unit / launch |
 |---|---|---|---|
-| global-settings | [global-settings.md](global-settings.md) | GApplication `org.waydock.GlobalSettings` (HANDLES_COMMAND_LINE; `--section`/`--shortcuts`/`--quit`); embeds every applet's Rust page; rc.xml/environment/mimeapps/night-light/waydock config writers | `~/.local/bin/global-settings`, `~/.local/bin/language-manager` (`--section language`), `org.waydock.GlobalSettings.desktop`; Python modules stay (tiling_config imports workspace_config) |
-| welcome | [welcome.md](welcome.md) | GApplication `org.waydock.Welcome` (`--first-run`, `--page`); `$XDG_STATE_HOME/desktop-suite/setup-done`, reads `install-status.json` | `~/.local/bin/desktop-suite-welcome` (first-login autostart, labwc menu) |
+| tessel-settings | [tessel-settings.md](tessel-settings.md) | GApplication `org.tessel.GlobalSettings` (HANDLES_COMMAND_LINE; `--section`/`--shortcuts`/`--quit`); embeds every applet's Rust page; rc.xml/environment/mimeapps/night-light/tessel-dock config writers | `~/.local/bin/tessel-settings`, `~/.local/bin/tessel-language` (`--section language`), `org.tessel.GlobalSettings.desktop`; Python modules stay (tiling_config imports workspace_config) |
+| welcome | [welcome.md](welcome.md) | GApplication `org.tessel.Welcome` (`--first-run`, `--page`); `$XDG_STATE_HOME/tessel/setup-done`, reads `install-status.json` | `~/.local/bin/tessel-welcome` (first-login autostart, labwc menu) |
 
-## Wave 5: security components (lock-screen, login-manager) and home-assistant-screen
-Each contract has a **Threat model** section. Shared code: `crates/suite-lock` (lock_config, login_model, and with feature `gtk` the lock dashboard widgets used by all three).
+## Wave 5: security components (tessel-lock, tessel-login) and home-assistant-screen
+Each contract has a **Threat model** section. Shared code: `crates/locking` (lock_config, login_model, and with feature `gtk` the lock dashboard widgets used by all three).
 | Component | Contract | Bus name / files | Unit / launch |
 |---|---|---|---|
-| lock-screen | [lock-screen.md](lock-screen.md) | GApplication `org.wayshell.LockScreen` / `org.wayshell.LockPreview` (NON_UNIQUE; `--preview`, `--check`); ext-session-lock-v1 via Gtk4SessionLock; `waylock-pam` helper (pipes: type byte + BE u32 length; PAM services `waylock`, `waylock-password`, `waylock-fingerprint`); reads UPower, `org.waydock.Notifications1`, fprintd, logind, DisplayManager; `$XDG_CONFIG_HOME/desktop-suite/lock-screen.json` | `power-manager-lock.service` (Type=notify, READY after `locked`, exit 75 = already locked); `wayshell-lock`, `screenlock.sh` |
-| login-manager | [login-manager.md](login-manager.md) | greetd IPC over `$GREETD_SOCK` (native-endian u32 + JSON); runs as `greetd`; root `login-settings-helper` (pkexec, writes only `/etc/waylogin/appearance.json` 0644) | `waylogin.service` → greetd `/etc/waylogin/greetd.toml` → `/usr/local/lib/waylogin/start-greeter` (root-owned) |
+| tessel-lock | [tessel-lock.md](tessel-lock.md) | GApplication `org.tessel.LockScreen` / `org.tessel.LockPreview` (NON_UNIQUE; `--preview`, `--check`); ext-session-lock-v1 via Gtk4SessionLock; `tessel-lock-pam` helper (pipes: type byte + BE u32 length; PAM services `tessel-lock`, `tessel-lock-password`, `tessel-lock-fingerprint`); reads UPower, `org.tessel.Notifications1`, fprintd, logind, DisplayManager; `$XDG_CONFIG_HOME/tessel/tessel-lock.json` | `tessel-lock.service` (Type=notify, READY after `locked`, exit 75 = already locked); `tessel-shell-lock`, `screenlock.sh` |
+| tessel-login | [tessel-login.md](tessel-login.md) | greetd IPC over `$GREETD_SOCK` (native-endian u32 + JSON); runs as `greetd`; root `tessel-login-helper` (pkexec, writes only `/etc/tessel-login/appearance.json` 0644) | `tessel-login.service` → greetd `/etc/tessel-login/greetd.toml` → `/usr/local/lib/tessel-login/start-greeter` (root-owned) |
 | home-assistant-screen | [home-assistant-screen.md](home-assistant-screen.md) | GApplication (luna-clock `--show/--hide/--status/--next-wallpaper/--quit/--panel/--close-panel/--volume/--brightness`); admin panel WebKit restricted to `http://127.0.0.1:8765`; Kasumi scheduler socket; `~/.config/kasumi-screen/levels.json`; voice log (read only) | `luna-clock.service` on the Kasumi device (`~/makima/screensaver/`); shims at `luna_clock.py`, `voice_controls.py` |

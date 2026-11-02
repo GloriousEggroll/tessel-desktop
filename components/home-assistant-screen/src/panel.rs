@@ -105,7 +105,7 @@ pub fn launch_default(uri: &str) {
 impl AdminPanel {
     /// `url` is [`URL`] in production; tests pass a fake server's address
     /// (the allowed origin is derived from it).
-    pub fn new(app: &gtk::Application, clock: &gtk::Window, url: &str, load: bool, hooks: Hooks, keyboard_devices: Option<Vec<waykeys::devices::Device>>,
+    pub fn new(app: &gtk::Application, clock: &gtk::Window, url: &str, load: bool, hooks: Hooks, keyboard_devices: Option<Vec<tessel_keyboard::devices::Device>>,
                watch_devices: bool) -> Self {
         let window = gtk::ApplicationWindow::builder().application(app).title("Kasumi Control").decorated(false)
             .transient_for(clock).modal(true).build();

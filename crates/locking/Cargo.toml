@@ -1,0 +1,33 @@
+[package]
+name = "tessel-locking"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Shared tessel-lock / tessel-login model (lock_config.py, login_model.py) and, with feature `gtk`, the lock dashboard widgets shared by tessel-lock, tessel-login and home-assistant-screen."
+
+[lib]
+name = "tessel_locking"
+path = "src/lib.rs"
+
+[features]
+default = []
+# lock_visuals, lock_media*, lock_info, lock_dashboard, lock_weather, lock_palette
+# (voice_state and the palette sampler are plain Rust and always built).
+gtk = ["dep:gtk", "dep:glib", "dep:gio", "dep:tessel-gtk", "dep:tessel-media", "dep:tessel-weather"]
+
+[dependencies]
+tessel-core.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+gtk = { workspace = true, optional = true }
+glib = { workspace = true, optional = true }
+gio = { workspace = true, optional = true }
+tessel-gtk = { workspace = true, optional = true }
+# The MPRIS client, player icons and album art (lock_media*.py) already live in
+# tessel-media's library; the weather backend in tessel-weather's.
+tessel-media = { path = "../../components/media", optional = true }
+tessel-weather = { path = "../../components/weather", optional = true }
+
+# The widgets' headless checks (LoginLayer frame clock, opaque underlay,
+# stationary backdrop pixels) run in components/home-assistant-screen's
+# tests/run_headless.sh (check `tessel_locking_widgets`).

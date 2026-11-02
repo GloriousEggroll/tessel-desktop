@@ -1,0 +1,24 @@
+[package]
+name = "tessel-gtk"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Shared GTK4 helpers of Tessel: widgets, popups, palette theme."
+build = "build.rs"
+
+[dependencies]
+tessel-core.workspace = true
+# Compositor blur (ext-background-effect + waydock_blur_manager_v1) on GTK's wl_display.
+tessel-wayland = { workspace = true, features = ["gtk"] }
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+gtk4-layer-shell.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+libc.workspace = true
+
+
+[[test]]
+name = "gtk_ui"
+harness = false

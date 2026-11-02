@@ -1,6 +1,6 @@
 # calculator — external contract
 
-Source: `~/btmanager/calculator` (`calculator.py` 130 LOC launcher/GApplication, `calculator_backend.py` 366
+Source: `~/tessel-bluetooth/calculator` (`calculator.py` 130 LOC launcher/GApplication, `calculator_backend.py` 366
 parser + store, `calculator_ui.py` 502 window). Standalone app, no background service, no D-Bus API of its own.
 Nothing else in the suite imports its Python modules.
 
@@ -8,23 +8,23 @@ Nothing else in the suite imports its Python modules.
 
 | Item | Value | Ref |
 |---|---|---|
-| Installer | `desktop-apps/install.py --only calculator [--apply]` (pkexec, root): copies `calculator*.py` (not tests) + shared `gtk4_utils.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libwaydock-background-blur.so app_menu.py` + `waydock/companion_theme.py` to `/usr/local/lib/desktop-suite/calculator/`; backup under `/var/backups/desktop-suite/standalone-apps-<stamp>/` + `manifest.json`; runs `update-desktop-database` | desktop-apps/install.py |
-| Launcher | `/usr/local/bin/calculator` = `#!/bin/sh\n# Desktop suite standalone application\nexec /usr/bin/python3 "/usr/local/lib/desktop-suite/calculator/calculator.py" "$@"` (the marker line lets the installer replace it) | install.py:47-50 |
-| .desktop | `/usr/share/applications/org.waydock.Calculator.desktop`: `Name=Calculator`, `Comment=Calculate with standard and scientific functions`, `Exec=/usr/local/bin/calculator` (installer rewrites `Exec=calculator`), `Icon=accessories-calculator`, `Categories=Utility;Calculator;`, `Keywords=math;arithmetic;scientific;calculator;`, `StartupNotify=true`, **`StartupWMClass=org.waydock.Calculator`** | org.waydock.Calculator.desktop |
-| GApplication | id **`org.waydock.Calculator`**, flags `HANDLES_COMMAND_LINE` (unique; `do_local_command_line` returns "not handled" so a second process forwards its argv to the primary). `GLib.set_prgname(id)` → Wayland app_id `org.waydock.Calculator`. | calculator.py:56-84 |
+| Installer | `desktop-apps/install.py --only calculator [--apply]` (pkexec, root): copies `calculator*.py` (not tests) + shared `gtk4_utils.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libwaydock-background-blur.so app_menu.py` + `tessel-dock/companion_theme.py` to `/usr/local/lib/tessel/calculator/`; backup under `/var/backups/tessel/standalone-apps-<stamp>/` + `manifest.json`; runs `update-desktop-database` | desktop-apps/install.py |
+| Launcher | `/usr/local/bin/calculator` = `#!/bin/sh\n# Tessel standalone application\nexec /usr/bin/python3 "/usr/local/lib/tessel/calculator/calculator.py" "$@"` (the marker line lets the installer replace it) | install.py:47-50 |
+| .desktop | `/usr/share/applications/org.tessel.Calculator.desktop`: `Name=Calculator`, `Comment=Calculate with standard and scientific functions`, `Exec=/usr/local/bin/calculator` (installer rewrites `Exec=calculator`), `Icon=accessories-calculator`, `Categories=Utility;Calculator;`, `Keywords=math;arithmetic;scientific;calculator;`, `StartupNotify=true`, **`StartupWMClass=org.tessel.Calculator`** | org.tessel.Calculator.desktop |
+| GApplication | id **`org.tessel.Calculator`**, flags `HANDLES_COMMAND_LINE` (unique; `do_local_command_line` returns "not handled" so a second process forwards its argv to the primary). `GLib.set_prgname(id)` → Wayland app_id `org.tessel.Calculator`. | calculator.py:56-84 |
 | activate | create the window if none/closed, `unminimize()`, `present()`, then idle `wlrctl toplevel focus app_id:<id> title:<title>` retried ≤4× every 100 ms while the window is still current | calculator.py:86-118 |
-| Launched by | desktop menu / waydock app grid via the .desktop file only | |
+| Launched by | desktop menu / tessel-dock app grid via the .desktop file only | |
 
 ## 2. CLI (argparse, prog `calculator.py`)
 `calculator.py [-h] [--scientific] [--check] [expression]`, plus hidden `--quit`.
 - `expression` (optional positional): > `MAX_EXPRESSION` (512) characters → `calculator.py: error: argument expression: the expression is too long`, exit 2. Shown and evaluated in the (possibly existing) window.
 - `--scientific`: switch the window to Scientific mode (persisted).
-- `--check`: prints `{"ready": b, "application_id": "org.waydock.Calculator", "gtk4": b, "layer_shell": b, "calculator": b, "error": "…"}` (json.dumps) without a window; exit 0 if ready else 1. `layer_shell` = `CDLL("libgtk4-layer-shell.so", RTLD_GLOBAL)`, `calculator` = `evaluate("(2+3)^2") == 25`.
+- `--check`: prints `{"ready": b, "application_id": "org.tessel.Calculator", "gtk4": b, "layer_shell": b, "calculator": b, "error": "…"}` (json.dumps) without a window; exit 0 if ready else 1. `layer_shell` = `CDLL("libgtk4-layer-shell.so", RTLD_GLOBAL)`, `calculator` = `evaluate("(2+3)^2") == 25`.
 - `--quit`: close the window and quit the primary.
 - argparse rules: unique `--` prefixes (`--sci`), `-5` is a positional, `--` ends options, `--opt=value` → "ignored explicit argument", extra positionals → `unrecognized arguments: …`; usage/error on stderr, exit 2; `-h` text on stdout, exit 0. The arguments are parsed in the launching process first (errors never reach the primary) and again in the primary's `command-line` handler.
 
 ## 3. Files
-`$XDG_STATE_HOME/waydock-calculator/state.json` (`XDG_STATE_HOME` if non-empty, else `~/.local/state`):
+`$XDG_STATE_HOME/tessel-dock-calculator/state.json` (`XDG_STATE_HOME` if non-empty, else `~/.local/state`):
 `{"version": 1, "scientific": bool, "degrees": bool, "memory": str(Decimal)|null, "history": [{"expression": s, "result": s, "degrees": bool, "timestamp": float}, …]}` — `json.dump(ensure_ascii=False)` + `\n`, newest first, ≤100 entries.
 - Save: `mkdir(parents, mode 0o700)`, `NamedTemporaryFile(prefix=".state-")` (0600) in the same dir, fsync, `os.replace`; the temporary is always removed; errors set `store.error = str(OSError)`.
 - Load: read ≤ 256 KiB+1 (larger → "Saved calculator history is too large."), `json.loads` (Python grammar: NaN/Infinity, big ints, recursion error), non-dict → "Invalid saved calculator history.", `scientific is True`, `degrees is not False`, `history[:100]` (TypeError texts for dict/None/…), per entry skip unless both strings, expr ≤512 / result ≤1200 chars, `bounded(Decimal(result))`, finite `float(timestamp)`, `degrees = bool(…)`; `memory` str ≤1200 → `bounded(Decimal(memory))`. Missing file → defaults; other errors → `store.error` shown as "Could not load saved history: <error>".

@@ -1,11 +1,11 @@
-# network-discovery — parity with contracts/network-discovery.md
+# tessel-network-discovery — parity with contracts/tessel-network-discovery.md
 
-Rust crate `components/network-discovery`: binary `network-discovery`
+Rust crate `components/network-discovery`: binary `tessel-network-discovery`
 (= `discovery_manager.py`), library `network_discovery` (`backend` = the
-systemd D-Bus state + pkexec toggle Waydock embeds, `browse` = avahi-browse
+systemd D-Bus state + pkexec toggle Tessel Dock embeds, `browse` = avahi-browse
 parser/runner, `app` = GTK popup), example `fake_systemd` (measurement fake).
 
-Tests: `cargo test -p network-discovery` (unit + `private_bus`: fake systemd on
+Tests: `cargo test -p tessel-network-discovery` (unit + `private_bus`: fake systemd on
 a private dbus-daemon used as the system bus, recording shell script instead of
 pkexec), `tests/run_headless.sh` (popup in a private nested headless labwc),
 `tests/measure_headless.sh` (Rust vs Python). Avahi/systemd/pkexec are never
@@ -16,8 +16,8 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 ## §1 Entry points / CLI
 | Contract item | | Test |
 |---|---|---|
-| `--toggle|--popup|--settings|--status`, `--popup-edge` choices, `--popup-offset` int, negative → `--popup-offset must be nonnegative`; argparse texts, exit 2 | ✅ | `compat` argparse (shared twin, tested in tiling-manager), ui_headless `toggle_and_command_line` (exit 2 for -1) |
-| GApplication `org.waydock.NetworkDiscovery`, `HANDLES_COMMAND_LINE`; second invocation repositions the popup | ✅ | ui_headless `toggle_and_command_line`, `moving_to_another_edge_*` |
+| `--toggle|--popup|--settings|--status`, `--popup-edge` choices, `--popup-offset` int, negative → `--popup-offset must be nonnegative`; argparse texts, exit 2 | ✅ | `compat` argparse (shared twin, tested in tessel-tiling), ui_headless `toggle_and_command_line` (exit 2 for -1) |
+| GApplication `org.tessel.NetworkDiscovery`, `HANDLES_COMMAND_LINE`; second invocation repositions the popup | ✅ | ui_headless `toggle_and_command_line`, `moving_to_another_edge_*` |
 | `--status`: no GTK, loop until ready, one `json.dumps(snapshot())` line | ✅ | private_bus `status_command_prints_one_json_line`; measure: byte-identical to Python |
 | `--toggle`: hold, wait for ready, flip; failure → popup with message; ignored while pending/busy | ✅ | ui_headless `toggle_and_command_line`, `toggle_without_avahi_shows_the_message` |
 | Snapshot JSON keys/order/labels/classes, `` text | ✅ | `backend::tests::*` (incl. `snapshot_json_matches_python`) |
@@ -43,10 +43,10 @@ argv, 12 s SIGTERM keeping partial output, single flight, error texts, `\DDD` un
 Title, `discovery-manager`/`tray-popup` (added after construction; theme class kept), `.popup-surface`, CSS verbatim, width ≤420, header `network-workgroup-symbolic` + subtitles, explanation, switch + tooltip + accessible label + sensitivity, detail only for problems, `Found on this network`, `Search again` sensitivity, `list.discovered.boxed-list` rows (name, `services · address`), scroll max 260, status messages, footer, browse once on open/enable, browser closed with the popup, re-show on edge change, real dismissal destroys: ✅ ui_headless (4 cases); measure_headless popup screenshot is pixel-identical to Python's.
 
 ## Deviations ⚠
-1. **D-Bus via gio, not zbus** (like power-manager): GDBusProxy gives the same DO_NOT_AUTO_START, cached-property and owner-tracking semantics as the Python code, on the GLib loop.
+1. **D-Bus via gio, not zbus** (like tessel-power): GDBusProxy gives the same DO_NOT_AUTO_START, cached-property and owner-tracking semantics as the Python code, on the GLib loop.
 2. Python shim execs the binary as `[python3, discovery_manager.py, …]`; the binary drops the interpreter argument (argparse prog stays `discovery_manager.py`).
 3. A malformed LoadUnit reply (no object path) reports "Unexpected reply from the system service manager." (Python raised inside the callback).
 
 ## Gaps ❌
-- Waydock imports the **Python** `discovery_backend.py` in-process; it must stay installed (`~/.local/share/waydock/`) until Waydock is ported (the Rust `backend` module is its replacement).
+- Tessel Dock imports the **Python** `discovery_backend.py` in-process; it must stay installed (`~/.local/share/tessel-dock/`) until Tessel Dock is ported (the Rust `backend` module is its replacement).
 - Installer (`install.py`, dock files, health check, rollback) not part of this crate; upstream `LICENSE` must still be installed next to the binary.

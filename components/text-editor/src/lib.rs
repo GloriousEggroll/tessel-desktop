@@ -1,5 +1,5 @@
-//! Text Editor (~/btmanager/text-editor): a standalone GTK4 / GtkSourceView 5
-//! editor with one document per window. See contracts/text-editor.md.
+//! Text Editor (~/tessel-bluetooth/tessel-text-editor): a standalone GTK4 / GtkSourceView 5
+//! editor with one document per window. See contracts/tessel-text-editor.md.
 pub mod app;
 pub mod cli;
 pub mod codec;

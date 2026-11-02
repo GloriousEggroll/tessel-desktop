@@ -1,5 +1,5 @@
 """Runs INSIDE the private headless labwc (run.sh). For each implementation it
-starts wayshell then waydock against a fresh copy of the real-config fake
+starts tessel-shell then tessel-dock against a fresh copy of the real-config fake
 HOME, waits, and records smaps_rollup plus the biggest mappings of both.
 Usage: driver.py <root> <template-home> <impl,...> <idle-seconds>
 Env: RUST_DOCK, RUST_SHELL (binaries); EXTRA_ENV_<IMPL>="K=V K=V" optional;
@@ -15,11 +15,11 @@ if not os.environ.get("XDG_RUNTIME_DIR", "").startswith(str(ROOT)) or os.environ
 if not os.environ.get("WAYLAND_DISPLAY"):
     sys.exit("refusing: unexpected WAYLAND_DISPLAY")
 
-PY_DOCK = "/home/tcrider/.local/share/waydock/waydock.py"
-PY_SHELL = "/home/tcrider/.local/share/wayshell/wayshell"
+PY_DOCK = "/home/tcrider/.local/share/tessel-dock/tessel-dock.py"
+PY_SHELL = "/home/tcrider/.local/share/tessel-shell/tessel-shell"
 ARGV = {
-    "python": {"wayshell": ["/usr/bin/python3", PY_SHELL], "waydock": ["/usr/bin/python3", PY_DOCK]},
-    "rust": {"wayshell": [os.environ["RUST_SHELL"]], "waydock": [os.environ["RUST_DOCK"]]},
+    "python": {"tessel-shell": ["/usr/bin/python3", PY_SHELL], "tessel-dock": ["/usr/bin/python3", PY_DOCK]},
+    "rust": {"tessel-shell": [os.environ["RUST_SHELL"]], "tessel-dock": [os.environ["RUST_DOCK"]]},
 }
 
 
@@ -62,7 +62,7 @@ APP_IDS = ["org.mozilla.firefox", "org.gnome.Nautilus", "com.mitchellh.ghostty",
 
 def activity(impl, env, procs):
     """Open/close the app menu twice and map 8 windows of 4 apps, then idle."""
-    dock = ARGV[impl]["waydock"]
+    dock = ARGV[impl]["tessel-dock"]
     apps = []
     try:
         for app_id in APP_IDS:
@@ -112,7 +112,7 @@ def run(impl):
     procs = {}
     procs_extra = []
     try:
-        for comp in ("wayshell", "waydock"):
+        for comp in ("tessel-shell", "tessel-dock"):
             wrap = os.environ.get("WRAP_%s_%s" % (impl.upper(), comp.upper()), "").split()
             procs[comp] = subprocess.Popen(wrap + ARGV[impl][comp], env=env, start_new_session=True,
                                            stdout=open(ROOT / f"{impl}-{comp}.log", "w"), stderr=subprocess.STDOUT)

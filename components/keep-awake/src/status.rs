@@ -1,7 +1,7 @@
 //! `status()` JSON (keep_awake.py:43-58): `--status`, `GetState`, `Changed`.
 
 use serde_json::{Map, Number, Value};
-use suite_core::tr;
+use tessel_core::tr;
 
 /// The fields `status()` reads from a backend.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -48,7 +48,7 @@ pub fn status(backend: &Snapshot) -> Value {
 
 /// `json.dumps(status(backend))`.
 pub fn status_text(backend: &Snapshot) -> String {
-    suite_core::pyfmt::json_dumps(&status(backend), &suite_core::pyfmt::JsonStyle::DEFAULT)
+    tessel_core::pyfmt::json_dumps(&status(backend), &tessel_core::pyfmt::JsonStyle::DEFAULT)
 }
 
 impl crate::timed::TimedBackend {

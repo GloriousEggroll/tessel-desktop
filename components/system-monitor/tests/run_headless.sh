@@ -3,7 +3,7 @@
 # Never touches the live session: own XDG_RUNTIME_DIR, own D-Bus (also used as the
 # "system" bus), private XDG config/cache/data/state dirs, no input devices.
 # Process actions in the test go to a recording fake; the launcher test only
-# starts/quits the system-monitor binary built here (it samples read-only).
+# starts/quits the tessel-system-monitor binary built here (it samples read-only).
 set -eu
 AGENT=${AGENT:-system-monitor}
 R=/run/user/1000/cbt/rust-$AGENT/n
@@ -12,8 +12,8 @@ printf '<labwc_config/>\n' > "$R/cfg/rc.xml"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q -p system-monitor --bin system-monitor)
-BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p system-monitor --test ui_headless --no-run --message-format=json 2>/dev/null \
+(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q -p tessel-system-monitor --bin tessel-system-monitor)
+BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-system-monitor --test ui_headless --no-run --message-format=json 2>/dev/null \
       | python3 -c 'import json,sys
 for line in sys.stdin:
     m=json.loads(line)
@@ -22,7 +22,7 @@ rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
-DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" WAYDOCK_TEST_ISOLATED=1 SYSTEM_MONITOR_BIN="$ROOT/target/debug/system-monitor" \
+DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" WAYDOCK_TEST_ISOLATED=1 SYSTEM_MONITOR_BIN="$ROOT/target/debug/tessel-system-monitor" \
 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0 \
 TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" \
 XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" ${MONITOR_TEST_SCREENSHOT:+MONITOR_TEST_SCREENSHOT=$MONITOR_TEST_SCREENSHOT} \

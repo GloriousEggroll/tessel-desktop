@@ -2,7 +2,7 @@
 # Measure time-to-ready and RSS/PSS of the Rust luna-clock vs the Python
 # luna_clock.py, both started the same way inside a private headless labwc with
 # a fake HOME and private bus (Python ONLY there; its sources are copied into
-# the private dir with a private config.json — ~/btmanager is only read).
+# the private dir with a private config.json — ~/tessel-bluetooth is only read).
 # Ready = the primary answers `--status` with "visible": true (probed with the
 # Rust client, which forwards over org.gtk.Application to either primary).
 set -eu
@@ -24,8 +24,8 @@ cargo build --release -p home-assistant-screen --bins >"$S/build-release.log" 2>
 cp target/release/luna-clock target/release/voice-controls "$R/app/"
 CONFIG='{"wallpaper_directory": "'"$R"'/home", "wallpapers": [], "wallpaper_seconds": 300, "idle_seconds": 600, "voice_log": "'"$R"'/tmp/agent.log"}'
 echo "$CONFIG" > "$R/app/config.json"
-B=$HOME/btmanager
-for d in shared lock-screen weather-manager on-screen-keyboard home-assistant-screen; do
+B=$HOME/tessel-bluetooth
+for d in shared tessel-lock tessel-weather tessel-keyboard home-assistant-screen; do
   mkdir -p "$R/py/$d"; cp "$B/$d"/*.py "$R/py/$d/"
 done
 echo "$CONFIG" > "$R/py/home-assistant-screen/config.json"

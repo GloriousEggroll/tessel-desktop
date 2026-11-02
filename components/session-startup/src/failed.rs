@@ -1,7 +1,7 @@
-//! Port of `desktop_suite_failed.py`: tell the user a desktop suite service gave up
+//! Port of `desktop_suite_failed.py`: tell the user a Tessel service gave up
 //! restarting, and offer a restart.
 //!
-//! Started by desktop-suite-failed@<unit>.service through the components' OnFailure=
+//! Started by tessel-failed@<unit>.service through the components' OnFailure=
 //! setting, which systemd only triggers once Restart=on-failure has hit the unit's
 //! start limit. The Restart action clears the failed state and starts the unit again.
 
@@ -12,23 +12,23 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use gio::prelude::*;
-use suite_core::tr;
+use tessel_core::tr;
 
 /// Units are named by their component, as on the dock and in Global Settings.
 pub const COMPONENTS: [(&str, &str); 13] = [
-    ("waydock.service", "Dock"),
-    ("wayshell.service", "Desktop shell"),
-    ("netman.service", "Network"),
-    ("power-manager.service", "Power"),
-    ("notifications.service", "Notifications"),
-    ("battery-manager.service", "Battery"),
-    ("brightness-manager.service", "Brightness"),
-    ("polkitman.service", "Authentication agent"),
-    ("keep-awake.service", "Keep Awake"),
-    ("on-screen-keyboard.service", "On-screen keyboard"),
-    ("audio-manager-loopbacks.service", "Audio loopbacks"),
-    ("clipboard-manager.service", "Clipboard"),
-    ("waykeyring.service", "Saved passwords"),
+    ("tessel-dock.service", "Dock"),
+    ("tessel-shell.service", "Desktop shell"),
+    ("tessel-network.service", "Network"),
+    ("tessel-power.service", "Power"),
+    ("tessel-notifications.service", "Notifications"),
+    ("tessel-battery.service", "Battery"),
+    ("tessel-brightness.service", "Brightness"),
+    ("tessel-auth.service", "Authentication agent"),
+    ("tessel-keep-awake.service", "Keep Awake"),
+    ("tessel-keyboard.service", "On-screen keyboard"),
+    ("tessel-audio-loopbacks.service", "Audio loopbacks"),
+    ("tessel-clipboard.service", "Clipboard"),
+    ("tessel-keyring.service", "Saved passwords"),
 ];
 /// Keep the offer while the notification may still be listed; then exit quietly.
 pub const WAIT_MS: u64 = 30 * 60 * 1000;
@@ -64,7 +64,7 @@ pub fn real_systemctl() -> Systemctl {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|error| format!("{}: 'systemctl'", suite_core::pyerr::os_error_text(&error)))?;
+            .map_err(|error| format!("{}: 'systemctl'", tessel_core::pyerr::os_error_text(&error)))?;
         let started = Instant::now();
         loop {
             if let Some(status) = child.try_wait().map_err(|e| e.to_string())? {
@@ -105,12 +105,12 @@ pub fn notify_parameters(unit: &str) -> glib::Variant {
         glib::VariantTy::new("{sv}").unwrap(),
         [
             glib::variant::DictEntry::new("urgency".to_owned(), 2u8.to_variant()).to_variant(),
-            glib::variant::DictEntry::new("desktop-entry".to_owned(), "global-settings".to_variant()).to_variant(),
+            glib::variant::DictEntry::new("desktop-entry".to_owned(), "tessel-settings".to_variant()).to_variant(),
         ],
     );
     let actions = vec!["restart".to_owned(), tr!("Restart")];
     glib::Variant::tuple_from_iter([
-        tr!("Desktop suite").to_variant(),
+        tr!("Tessel").to_variant(),
         0u32.to_variant(),
         "dialog-warning".to_variant(),
         tr!("{name} stopped working", name = name.as_str()).to_variant(),
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn unit_names_follow_python_pattern() {
-        for good in ["waydock.service", "a\\x2db.service", "user@1000.service".replace('@', ":").as_str(), "x.y-z_1.service"] {
+        for good in ["tessel-dock.service", "a\\x2db.service", "user@1000.service".replace('@', ":").as_str(), "x.y-z_1.service"] {
             assert!(valid_unit(good), "{good}");
         }
         for bad in ["../../evil", ".service", "a b.service", "a.socket", "a/b.service", "é.service"] {
@@ -230,19 +230,19 @@ mod tests {
 
     #[test]
     fn component_names() {
-        assert_eq!(component_name("netman.service"), "Network");
+        assert_eq!(component_name("tessel-network.service"), "Network");
         assert_eq!(component_name("other.service"), "other");
     }
 
     #[test]
     fn notification_parameters_match_python() {
-        let parameters = notify_parameters("netman.service");
+        let parameters = notify_parameters("tessel-network.service");
         assert_eq!(parameters.type_().as_str(), "(susssasa{sv}i)");
         assert_eq!(
             parameters.print(true).as_str(),
-            "('Desktop suite', uint32 0, 'dialog-warning', 'Network stopped working', \
+            "('Tessel', uint32 0, 'dialog-warning', 'Network stopped working', \
              'Network stopped repeatedly and was not restarted automatically.', ['restart', 'Restart'], \
-             {'urgency': <byte 0x02>, 'desktop-entry': <'global-settings'>}, 0)"
+             {'urgency': <byte 0x02>, 'desktop-entry': <'tessel_settings'>}, 0)"
         );
     }
 }

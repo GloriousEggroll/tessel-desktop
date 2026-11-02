@@ -389,6 +389,6 @@ fn cli_matches_argparse() {
 #[test]
 fn check_reports_dependencies_as_json() {
     let status = cli::check();
-    assert_eq!(status, "{\"ready\": true, \"application_id\": \"org.waydock.Calculator\", \"gtk4\": true, \"layer_shell\": true, \
+    assert_eq!(status, "{\"ready\": true, \"application_id\": \"org.tessel.Calculator\", \"gtk4\": true, \"layer_shell\": true, \
                         \"calculator\": true, \"error\": \"\"}");
 }

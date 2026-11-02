@@ -12,8 +12,8 @@ use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 use way_displays::color_config::{self, ColorError, Status, Transaction};
 
-pub const BEGIN: &str = "<!-- hdr-calibration begin -->";
-pub const END: &str = "<!-- hdr-calibration end -->";
+pub const BEGIN: &str = "<!-- tessel-hdr-calibration begin -->";
+pub const END: &str = "<!-- tessel-hdr-calibration end -->";
 static BLOCK: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("(?s){}.*?{}", regex::escape(BEGIN), regex::escape(END))).unwrap());
 static CLOSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)</(?:labwc_config|openbox_config)\s*>").unwrap());
 static SELF_CLOSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)/\s*>").unwrap());
@@ -67,7 +67,7 @@ fn value_error(text: &str) -> CalError {
 fn env_dir(name: &str, fallback: &str) -> PathBuf {
     match std::env::var_os(name) {
         Some(value) => PathBuf::from(value),
-        None => suite_core::paths::home().join(fallback),
+        None => tessel_core::paths::home().join(fallback),
     }
 }
 
@@ -229,7 +229,7 @@ pub fn validate(profile: &Profile) -> Result<Profile, CalError> {
 }
 
 pub fn profiles_path() -> PathBuf {
-    config_home().join("hdr-calibration/profiles.json")
+    config_home().join("tessel-hdr-calibration/profiles.json")
 }
 
 pub fn read_profiles() -> Result<Vec<Profile>, CalError> {
@@ -237,7 +237,7 @@ pub fn read_profiles() -> Result<Vec<Profile>, CalError> {
     let data = match std::fs::read_to_string(&path) {
         Ok(data) => data,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(CalError::Os(suite_core::pyerr::os_error_path(&e, &path))),
+        Err(e) => return Err(CalError::Os(tessel_core::pyerr::os_error_path(&e, &path))),
     };
     let data: Value = serde_json::from_str(&data).map_err(|e| CalError::Value(e.to_string()))?;
     let profiles = match (data.get("version"), data.get("profiles")) {
@@ -251,8 +251,8 @@ pub fn read_profiles() -> Result<Vec<Profile>, CalError> {
 }
 
 pub fn json_text(value: &Value) -> String {
-    let style = suite_core::pyfmt::JsonStyle { indent: Some(2), item_separator: ",", ..suite_core::pyfmt::JsonStyle::DEFAULT };
-    suite_core::pyfmt::json_dumps(value, &style) + "\n"
+    let style = tessel_core::pyfmt::JsonStyle { indent: Some(2), item_separator: ",", ..tessel_core::pyfmt::JsonStyle::DEFAULT };
+    tessel_core::pyfmt::json_dumps(value, &style) + "\n"
 }
 
 fn identity_of(profile: &Profile) -> (String, String, String, String) {
@@ -303,13 +303,13 @@ pub fn check_monitor(status: &Status, connector: &str, identity: Option<&str>) -
 fn compositor_pid(status: &Status) -> Result<i64, CalError> {
     let pid = status.get("compositor").and_then(|c| c.get("pid"))
         .ok_or_else(|| CalError::Value("KeyError: 'pid'".into()))?;
-    suite_core::pyjson::py_int(Some(&json!(pid))).ok_or_else(|| CalError::Value(format!("invalid literal for int() with base 10: {}", py_repr(pid))))
+    tessel_core::pyjson::py_int(Some(&json!(pid))).ok_or_else(|| CalError::Value(format!("invalid literal for int() with base 10: {}", py_repr(pid))))
 }
 
 /// The rc.xml labwc was started with (`-c`, `-C`, else `$XDG_CONFIG_HOME/labwc/rc.xml`).
 pub fn config_path(status: &Status, host: &dyn Host) -> Result<PathBuf, CalError> {
     let pid = compositor_pid(status)?;
-    let bytes = host.cmdline(pid).map_err(|e| CalError::Os(suite_core::pyerr::os_error_path(&e, Path::new(&format!("/proc/{pid}/cmdline")))))?;
+    let bytes = host.cmdline(pid).map_err(|e| CalError::Os(tessel_core::pyerr::os_error_path(&e, Path::new(&format!("/proc/{pid}/cmdline")))))?;
     let text = std::str::from_utf8(&bytes).map_err(|e| CalError::Value(e.to_string()))?;
     let args: Vec<&str> = text.split('\0').collect();
     let name = Path::new(args[0]).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
@@ -341,7 +341,7 @@ pub fn config_path(status: &Status, host: &dyn Host) -> Result<PathBuf, CalError
 fn expanduser(path: &Path) -> PathBuf {
     match path.to_str().and_then(|p| p.strip_prefix('~')) {
         Some(rest) if rest.is_empty() || rest.starts_with('/') => {
-            PathBuf::from(format!("{}{rest}", suite_core::paths::home().display()))
+            PathBuf::from(format!("{}{rest}", tessel_core::paths::home().display()))
         }
         _ => path.to_path_buf(),
     }
@@ -365,7 +365,7 @@ fn element_value(node: &etree::Element, name: &str) -> String {
 
 /// `format(value, '.9g')`.
 pub fn g9(value: f64) -> String {
-    suite_core::pyfmt::format_value(&suite_core::pyfmt::Arg::Float(value), ".9g").unwrap_or_else(|_| value.to_string())
+    tessel_core::pyfmt::format_value(&tessel_core::pyfmt::Arg::Float(value), ".9g").unwrap_or_else(|_| value.to_string())
 }
 
 /// Merge one monitor into the managed block, under the colour controls' lock.
@@ -384,12 +384,12 @@ pub fn write_config(path: &Path, connector: &str, profile: Option<&Profile>) -> 
     let _lock = compat::locked(&path).map_err(CalError::Os)?;
     let existed = path.exists();
     let before = if existed {
-        std::fs::read(&path).map_err(|e| CalError::Os(suite_core::pyerr::os_error_path(&e, &path)))?
+        std::fs::read(&path).map_err(|e| CalError::Os(tessel_core::pyerr::os_error_path(&e, &path)))?
     } else {
         b"<labwc_config>\n</labwc_config>\n".to_vec()
     };
     let mode = if existed {
-        std::fs::metadata(&path).map_err(|e| CalError::Os(suite_core::pyerr::os_error_path(&e, &path)))?.permissions().mode() & 0o7777
+        std::fs::metadata(&path).map_err(|e| CalError::Os(tessel_core::pyerr::os_error_path(&e, &path)))?.permissions().mode() & 0o7777
     } else {
         0o600
     };
@@ -455,7 +455,7 @@ pub fn write_config(path: &Path, connector: &str, profile: Option<&Profile>) -> 
     };
     let after = format!("{}{block}{}", &text[..close], &text[close..]).into_bytes();
     color_config::parse_colors(std::str::from_utf8(&after).unwrap())?;
-    let backup = state_home().join("desktop-suite/backups/hdr").join(format!("{}-rc.xml", compat::time_ns()));
+    let backup = state_home().join("tessel/backups/hdr").join(format!("{}-rc.xml", compat::time_ns()));
     color_config::atomic_write(&backup, &before, 0o600)?;
     color_config::atomic_write(&path, &after, mode)?;
     Ok(Transaction { path, before, after, mode, existed, backup })
@@ -534,7 +534,7 @@ pub fn apply(connector: &str, profile: Option<&Profile>, host: &dyn Host) -> Res
     let pid = compositor_pid(&status)?;
     let transaction = write_config(&config_path(&status, host)?, connector, profile.as_ref())?;
     let attempt = || -> Result<PathBuf, CalError> {
-        host.signal(pid as i32, libc::SIGHUP).map_err(|e| CalError::Os(suite_core::pyerr::os_error_text(&e)))?;
+        host.signal(pid as i32, libc::SIGHUP).map_err(|e| CalError::Os(tessel_core::pyerr::os_error_text(&e)))?;
         let deadline = Instant::now() + Duration::from_secs(8);
         while Instant::now() < deadline {
             let current = host.session()?;
@@ -560,7 +560,7 @@ pub fn apply(connector: &str, profile: Option<&Profile>, host: &dyn Host) -> Res
         Err(error) => {
             color_config::rollback(&transaction)?;
             match host.signal(pid as i32, libc::SIGHUP) {
-                Err(e) if e.raw_os_error() != Some(libc::ESRCH) => return Err(CalError::Os(suite_core::pyerr::os_error_text(&e))),
+                Err(e) if e.raw_os_error() != Some(libc::ESRCH) => return Err(CalError::Os(tessel_core::pyerr::os_error_text(&e))),
                 _ => {}
             }
             Err(error)
@@ -594,7 +594,7 @@ pub fn workspace_report(connector: &str, profile: &Profile, host: &dyn Host) -> 
         "application_preview_verification": "not performed", "measured_luminance": null, "measured_color_error": null,
         "physical_color_accuracy": "unverified",
     });
-    let path = state_home().join("hdr-calibration/reports").join(format!("{}.json", compat::time_ns()));
+    let path = state_home().join("tessel-hdr-calibration/reports").join(format!("{}.json", compat::time_ns()));
     color_config::atomic_write(&path, json_text(&report).as_bytes(), 0o600)?;
     Ok(path)
 }

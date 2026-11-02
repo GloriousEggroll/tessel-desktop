@@ -3,7 +3,7 @@ name = "home-assistant-screen"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Kasumi idle dashboard (luna_clock.py), its WebKit admin panel, levels, timers, alarms and the local voice-command backend (port of btmanager/home-assistant-screen)."
+description = "Kasumi idle dashboard (luna_clock.py), its WebKit admin panel, levels, timers, alarms and the local voice-command backend (port of tessel-bluetooth/home-assistant-screen)."
 
 [lib]
 name = "kasumi_screen"
@@ -18,12 +18,12 @@ name = "voice-controls"
 path = "src/bin/voice-controls.rs"
 
 [dependencies]
-suite-core.workspace = true
-suite-gtk.workspace = true
-suite-lock = { workspace = true, features = ["gtk"] }
-on-screen-keyboard = { path = "../on-screen-keyboard" }
-weather-manager = { path = "../weather-manager" }
-media-manager = { path = "../media-manager" }
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+tessel-locking = { workspace = true, features = ["gtk"] }
+tessel-keyboard = { path = "../keyboard" }
+tessel-weather = { path = "../weather" }
+tessel-media = { path = "../media" }
 glib.workspace = true
 gio.workspace = true
 gtk.workspace = true

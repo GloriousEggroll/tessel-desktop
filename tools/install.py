@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Swap desktop suite components between the Python suite (~/btmanager) and their Rust ports.
+"""Swap Tessel components between the Python suite (~/tessel-bluetooth) and their Rust ports.
 
   install.py [--check]                   preview every file and unit change (default)
   install.py --apply [--only a,b]        build, install and switch the components to Rust
@@ -8,58 +8,58 @@
   install.py --list                      the component table
 
 What a swap does, per component:
-  * installs the release binaries (and helpers such as waykeys-input) INSIDE the component's
+  * installs the release binaries (and helpers such as tessel-keyboard-input) INSIDE the component's
     scripts dir, ~/.config/waybar/scripts/<component>/, next to the Python modules: the ports
-    find their helpers relative to the executable (battery: ../btmanager/btmanager.py;
-    notifications: waydock-toplevel, fullscreen_guard.py; OSK: waykeys-input). There is no
-    <exe dir>/locale there, so the Rust i18n reads ~/.local/share/desktop-suite/locale, which
-    this installer fills from ~/btmanager/shared/locale,
-  * adds the drop-in <unit>.d/zz-desktop-suite-rust.conf that resets ExecStart to the binary.
-    The base unit and the other drop-ins (50-desktop-suite-recovery.conf, desktop-suite.conf,
+    find their helpers relative to the executable (battery: ../tessel-bluetooth/tessel-bluetooth.py;
+    notifications: tessel-dock-toplevel, fullscreen_guard.py; OSK: tessel-keyboard-input). There is no
+    <exe dir>/locale there, so the Rust i18n reads ~/.local/share/tessel/locale, which
+    this installer fills from ~/tessel-bluetooth/shared/locale,
+  * adds the drop-in <unit>.d/zz-tessel-rust.conf that resets ExecStart to the binary.
+    The base unit and the other drop-ins (50-tessel-recovery.conf, tessel.conf,
     palette.conf) stay untouched; "zz-" sorts last, so this ExecStart is the one systemd runs,
   * points ~/.local/bin launchers and .desktop Exec lines that ran the Python entry at the binary,
-  * repoints labwc keybinds that ran a Python entry (wayshell: A-Tab / A-S-Tab -> wayshell-cli) in
+  * repoints labwc keybinds that ran a Python entry (tessel-shell: A-Tab / A-S-Tab -> tessel-shell-cli) in
     ~/.config/labwc/rc.xml, changing only those command attributes (every other byte is kept);
     --rollback restores the backup, or, if rc.xml changed since (Global Settings saves there), puts
     back only the original command strings,
-  * replaces only the Python entry scripts (incl. the *_status.py streams waydock runs with
+  * replaces only the Python entry scripts (incl. the *_status.py streams tessel-dock runs with
     `python3 -u`) with shims that exec the binaries with the same argv: the porters' files from
     components/<name>/shim(s)/ where present, generated ones otherwise. Each shim carries the
-    marker "desktop-suite-rust shim" and every flag as a quoted literal, because
-    desktop-suite-action greps the installed source for them ('--power-button', ...). All other
-    modules stay installed: Global Settings, waydock, lock-screen and others import them.
+    marker "tessel-rust shim" and every flag as a quoted literal, because
+    tessel-action greps the installed source for them ('--power-button', ...). All other
+    modules stay installed: Global Settings, tessel-dock, tessel-lock and others import them.
 
-Every changed file is backed up in ~/.local/state/desktop-suite/backups/rust-swap-<time>-*/
+Every changed file is backed up in ~/.local/state/tessel/backups/rust-swap-<time>-*/
 (manifest.json + the original files, like the suite installers), and
-~/.local/state/desktop-suite/rust-swap.json remembers the pre-swap state of each path so that
+~/.local/state/tessel/rust-swap.json remembers the pre-swap state of each path so that
 --rollback restores it exactly, also after several applies. Symlinked targets are refused.
 
 Nothing is started, stopped or restarted unless --restart is given; then only the swapped units
-that are active get `systemctl --user restart` (never labwc; waydock/wayshell also need
---restart-shell), followed by the component's health check (waydock --check, wayshell-cli
+that are active get `systemctl --user restart` (never labwc; tessel-dock/tessel-shell also need
+--restart-shell), followed by the component's health check (tessel-dock --check, tessel-shell-cli
 switcher-status). When rc.xml keybinds changed, `labwc --reconfigure` (a reload, never a restart)
 runs only with --restart --restart-shell inside the labwc session; otherwise run it yourself.
 --apply/--rollback run `systemctl --user daemon-reload` so systemd sees the drop-in change (pass
 --no-reload to skip it).
 
 System-wide entries (--system): the standalone apps desktop-apps/install.py puts in /usr/local
-(calculator, text-editor, picture-viewer, system-monitor, capture-manager, file-manager), the new
-archive-manager (a fresh install: there is no Python twin, it replaces KDE's Ark) and the
-Waylogin greeter (login-manager, /usr/local/lib/waylogin). They are a separate mode:
+(calculator, tessel-text-editor, tessel-pictures, tessel-system-monitor, tessel-capture, tessel-files), the new
+tessel-archive (a fresh install: there is no Python twin, it replaces KDE's Ark) and the
+Tessel Login greeter (tessel-login, /usr/local/lib/tessel-login). They are a separate mode:
   install.py --system [--check] [--only a,b]          preview (works as your user)
   pkexec /usr/bin/python3 install.py --system --apply --only calculator
   pkexec /usr/bin/python3 install.py --system --rollback [--only a,b]
 --system --apply/--rollback refuse unless the process already runs as root; this tool never runs
 sudo/pkexec itself and never runs cargo as root (build as your user first). The binary goes next to
-the Python files in /usr/local/lib/desktop-suite/<app>/ (Files: .../file-manager/wayfiles, a stable
+the Python files in /usr/local/lib/tessel/<app>/ (Files: .../tessel-files/tessel-files, a stable
 path), the catalogs into <that dir>/locale, and only the `exec` line of the /usr/local/bin launcher
-changes (the "# Desktop suite standalone application" marker line stays; a "desktop-suite-rust shim"
-line is added, so desktop-apps/install.py and file-manager/install.py keep the Rust launcher).
-login-manager changes only start-greeter's `--session` argument. State and backups live in
-/var/lib/desktop-suite/rust-swap.json and /var/backups/desktop-suite/rust-swap-*/.
+changes (the "# Tessel standalone application" marker line stays; a "tessel-rust shim"
+line is added, so desktop-apps/install.py and tessel-files/install.py keep the Rust launcher).
+tessel-login changes only start-greeter's `--session` argument. State and backups live in
+/var/lib/tessel/rust-swap.json and /var/backups/tessel/rust-swap-*/.
 
 archive-manager-mime (user scope, only with --only archive-manager-mime) sets the [Default Applications]
-of ~/.config/mimeapps.list for every archive type to org.waydock.ArchiveManager.desktop; --rollback --only
+of ~/.config/mimeapps.list for every archive type to org.tessel.ArchiveManager.desktop; --rollback --only
 archive-manager-mime puts back the previous values of the keys that still point at Archive Manager.
 
 home-assistant-screen targets the Kasumi device (aarch64): it is planned and installed only into an
@@ -91,7 +91,7 @@ REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir)
 
 
 def invoking_home():
-    """The home of the user who ran pkexec/sudo (root's own home is not where ~/btmanager lives)."""
+    """The home of the user who ran pkexec/sudo (root's own home is not where ~/tessel-bluetooth lives)."""
     if os.getuid() == 0:
         for name in ("PKEXEC_UID", "SUDO_UID"):
             value = os.environ.get(name, "")
@@ -104,27 +104,27 @@ def invoking_home():
 
 
 INVOKING_HOME = invoking_home()
-DEFAULT_LOCALE_SOURCE = INVOKING_HOME / "btmanager/shared/locale"
+DEFAULT_LOCALE_SOURCE = INVOKING_HOME / "tessel-bluetooth/shared/locale"
 
 SCRIPTS = ".config/waybar/scripts"
-LOCALE = ".local/share/desktop-suite/locale"
+LOCALE = ".local/share/tessel/locale"
 UNITS = ".config/systemd/user"
-DROPIN = "zz-desktop-suite-rust.conf"
-STATE = ".local/state/desktop-suite/rust-swap.json"
-BACKUPS = ".local/state/desktop-suite/backups"
-SHIM_MARKER = "desktop-suite-rust shim"
+DROPIN = "zz-tessel-rust.conf"
+STATE = ".local/state/tessel/rust-swap.json"
+BACKUPS = ".local/state/tessel/backups"
+SHIM_MARKER = "tessel-rust shim"
 RC_XML = ".config/labwc/rc.xml"
 SHARED = "_shared"            # state group for files shared by every component (locale)
-SHELL_UNITS = {"waydock.service", "wayshell.service"}
-# power-manager-lock.service runs only while the screen is locked: the next lock runs the new binary.
-NEVER_RESTART = {"labwc.service", "graphical-session.target", "power-manager-lock.service"}
+SHELL_UNITS = {"tessel-dock.service", "tessel-shell.service"}
+# tessel-lock.service runs only while the screen is locked: the next lock runs the new binary.
+NEVER_RESTART = {"labwc.service", "graphical-session.target", "tessel-lock.service"}
 PYTHON = re.compile(r"^python3(?:\.\d+)?$")
 # --system: paths relative to the root prefix ("/"; tests inject a private prefix with --root).
-SYSTEM_STATE = "var/lib/desktop-suite/rust-swap.json"
-SYSTEM_BACKUPS = "var/backups/desktop-suite"
-SYSTEM_LIB = "usr/local/lib/desktop-suite"
+SYSTEM_STATE = "var/lib/tessel/rust-swap.json"
+SYSTEM_BACKUPS = "var/backups/tessel"
+SYSTEM_LIB = "usr/local/lib/tessel"
 SYSTEM_BIN = "usr/local/bin"
-STANDALONE_MARKER = "# Desktop suite standalone application"     # desktop-apps/install.py WRAPPER_MARKER
+STANDALONE_MARKER = "# Tessel standalone application"     # desktop-apps/install.py WRAPPER_MARKER
 EM_AARCH64 = 183
 AARCH64_RELEASE = "target/aarch64-unknown-linux-gnu/release"
 
@@ -175,7 +175,7 @@ class Component:
     binaries: tuple           # [[bin]] names of the package (or (cargo name, installed name)), verified by tests
     shims: tuple
     units: tuple = ()
-    helpers: tuple = ()       # non-cargo executables from the crate's build output (waykeys-input)
+    helpers: tuple = ()       # non-cargo executables from the crate's build output (tessel-keyboard-input)
     launchers: tuple = ()     # ~/.local/bin wrappers that exec the Python entry (shims[0])
     desktop: tuple = ()       # .desktop files whose Exec runs the Python entry (shims[0])
     keeps: tuple = ()         # files others import or the binary needs beside it: never touched
@@ -198,14 +198,14 @@ class Component:
     fresh: bool = False                   # no Python original: launcher/files are created, --rollback removes them
     files: tuple = ()                     # (path relative to the base, repo source, mode) installed verbatim
     mime_defaults: tuple = ()             # MimeDefaults: only these keys of [Default Applications] change
-    extra_packages: tuple = ()            # more cargo packages built for `files` (waykeyring-ui, pam-waykeyring)
-    uses_locale: bool = True              # user entries: needs the shared catalogs in ~/.local/share/desktop-suite
+    extra_packages: tuple = ()            # more cargo packages built for `files` (tessel-keyring-ui, pam-tessel-keyring)
+    uses_locale: bool = True              # user entries: needs the shared catalogs in ~/.local/share/tessel
     explicit: bool = False                # only with --only <key> (never part of "every component")
 
 
 POPUP = ("--popup", "--popup-edge", "--popup-offset")
-ARCHIVE_DESKTOP = "org.waydock.ArchiveManager.desktop"
-ARCHIVE_DESKTOP_SOURCE = "components/archive-manager/data/" + ARCHIVE_DESKTOP
+ARCHIVE_DESKTOP = "org.tessel.ArchiveManager.desktop"
+ARCHIVE_DESKTOP_SOURCE = "components/archive/data/" + ARCHIVE_DESKTOP
 
 
 def desktop_mimes(relative):
@@ -220,293 +220,293 @@ ARCHIVE_MIMES = desktop_mimes(ARCHIVE_DESKTOP_SOURCE)
 APPS = ".local/share/applications"
 # Python installers that copy every component *.py back, so they overwrite every shim.
 CLOBBER_ALL = ("shared/install_gtk4.py", "install_all.py")
-# Python installers that recognise a running waydock child by its *_status.py argv: with the Rust
-# status streams they see "an unrelated application" and refuse to restart waydock.service.
-STATUS_GUARD = ("shared/install_gtk4.py recognises waydock's status children and standalone apps by their .py "
+# Python installers that recognise a running tessel-dock child by its *_status.py argv: with the Rust
+# status streams they see "an unrelated application" and refuse to restart tessel-dock.service.
+STATUS_GUARD = ("shared/install_gtk4.py recognises tessel-dock's status children and standalone apps by their .py "
                 "argv or, for swapped components, by RUST_TWINS (script -> binary beside it); without an entry "
-                "there, Python installers that restart waydock.service refuse with 'still owns an unrelated "
+                "there, Python installers that restart tessel-dock.service refuse with 'still owns an unrelated "
                 "application' or miss a running instance.")
 
 COMPONENTS = (
     Component(
-        "keep-awake", "keep-awake", "keep-awake", ("keep-awake",),
-        shims=(Shim("keep_awake.py", "keep-awake",
+        "tessel-keep-awake", "tessel-keep-awake", "tessel-keep-awake", ("tessel-keep-awake",),
+        shims=(Shim("keep_awake.py", "tessel-keep-awake",
                     ("--background", *POPUP, "--status", "--enable", "--disable", "--toggle"),
                     porter="components/keep-awake/shim/keep_awake.py", fallback="keep_awake_python.py"),),
-        units=(Unit("keep-awake.service", "keep-awake", ("--background",)),),
+        units=(Unit("tessel-keep-awake.service", "tessel-keep-awake", ("--background",)),),
         keeps=("keep_awake_ui.py", "keep_awake_client.py", "keep_awake_backend.py"),
-        notes=("idle_inhibit.sh / toggle_idle_inhibit.sh and waydock run keep_awake.py: served by the shim.",
-               "wayshell/install_switcher.py leaves a keep_awake.py that carries the shim marker alone.",
+        notes=("idle_inhibit.sh / toggle_idle_inhibit.sh and tessel-dock run keep_awake.py: served by the shim.",
+               "tessel-shell/install_switcher.py leaves a keep_awake.py that carries the shim marker alone.",
                "The porter shim falls back to keep_awake_python.py (the saved Python entry) if the binary is gone.")),
     Component(
-        "battery-manager", "battery-manager", "battery-manager", ("battery-manager", "battery-status"),
-        shims=(Shim("battery_manager.py", "battery-manager", (*POPUP, "--settings", "--background", "--check"),
-                    porter="components/battery-manager/shims/battery_manager.py"),
-               Shim("battery_status.py", "battery-status",
-                    porter="components/battery-manager/shims/battery_status.py")),
-        units=(Unit("battery-manager.service", "battery-manager", ("--background",)),),
-        desktop=(f"{APPS}/org.waybar.BatteryManager.desktop",),
+        "tessel-battery", "tessel-battery", "tessel-battery", ("tessel-battery", "tessel-battery-status"),
+        shims=(Shim("battery_manager.py", "tessel-battery", (*POPUP, "--settings", "--background", "--check"),
+                    porter="components/battery/shims/battery_manager.py"),
+               Shim("battery_status.py", "tessel-battery-status",
+                    porter="components/battery/shims/battery_status.py")),
+        units=(Unit("tessel-battery.service", "tessel-battery", ("--background",)),),
+        desktop=(f"{APPS}/org.tessel.BatteryManager.desktop",),
         keeps=("battery_ui.py",),
-        clobbered_by=("battery-manager/install_waybar.py",),
-        notes=("The Rust binary opens Bluetooth via ../btmanager/btmanager.py (Python or its shim).", STATUS_GUARD)),
+        clobbered_by=("tessel-battery/install_waybar.py",),
+        notes=("The Rust binary opens Bluetooth via ../tessel-bluetooth/tessel-bluetooth.py (Python or its shim).", STATUS_GUARD)),
     Component(
-        "power-manager", "power-manager", "power-manager", ("power-manager", "power-status"),
-        shims=(Shim("power_manager.py", "power-manager",
+        "tessel-power", "tessel-power", "tessel-power", ("tessel-power", "tessel-power-status"),
+        shims=(Shim("power_manager.py", "tessel-power",
                     ("--background", *POPUP, "--settings", "--check", "--idle-action", "--idle-resume",
-                     "--policy-token", "--power-button"), porter="components/power-manager/shim/power_manager.py"),
-               Shim("power_status.py", "power-status", porter="components/power-manager/shim/power_status.py")),
-        units=(Unit("power-manager.service", "power-manager", ("--background",)),),
-        desktop=(f"{APPS}/org.waybar.PowerManager.desktop",),
+                     "--policy-token", "--power-button"), porter="components/power/shim/power_manager.py"),
+               Shim("power_status.py", "tessel-power-status", porter="components/power/shim/power_status.py")),
+        units=(Unit("tessel-power.service", "tessel-power", ("--background",)),),
+        desktop=(f"{APPS}/org.tessel.PowerManager.desktop",),
         keeps=("power_backend.py", "power_ui.py", "power_client.py", "power_config.py", "power_battery_ui.py",
                "power_charge_limits.py", "power_style.py"),
-        clobbered_by=("power-manager/install_waybar.py",),
-        notes=("desktop-suite-action greps power_manager.py for '--power-button': kept in the shim.",
-               "power-manager-lock.service belongs to lock-screen and is not changed.", STATUS_GUARD)),
+        clobbered_by=("tessel-power/install_waybar.py",),
+        notes=("tessel-action greps power_manager.py for '--power-button': kept in the shim.",
+               "tessel-lock.service belongs to tessel-lock and is not changed.", STATUS_GUARD)),
     Component(
-        "notification-manager", "notification-manager", "notification-manager",
-        ("notification-manager", "notification-status"),
-        shims=(Shim("notification_manager.py", "notification-manager", ("--daemon", "--check", "--settings", *POPUP),
-                    porter="components/notification-manager/shims/notification_manager.py"),
-               Shim("notification_status.py", "notification-status",
-                    porter="components/notification-manager/shims/notification_status.py")),
-        units=(Unit("notifications.service", "notification-manager", ("--daemon",)),),
+        "tessel-notifications", "tessel-notifications", "tessel-notifications",
+        ("tessel-notifications", "tessel-notifications-status"),
+        shims=(Shim("notification_manager.py", "tessel-notifications", ("--daemon", "--check", "--settings", *POPUP),
+                    porter="components/notifications/shims/notification_manager.py"),
+               Shim("notification_status.py", "tessel-notifications-status",
+                    porter="components/notifications/shims/notification_status.py")),
+        units=(Unit("tessel-notifications.service", "tessel-notifications", ("--daemon",)),),
         launchers=(".local/bin/notifications",),
-        keeps=("notification_client.py", "notification_ui.py", "waydock-toplevel", "fullscreen_guard.py"),
-        clobbered_by=("notification-manager/install.py", "shared/install_popup_fixes.py"),
-        notes=("notifications.service.d/desktop-suite.conf (Python ExecStart) is kept; zz- overrides it.",
+        keeps=("notification_client.py", "notification_ui.py", "tessel-dock-toplevel", "fullscreen_guard.py"),
+        clobbered_by=("tessel-notifications/install.py", "shared/install_popup_fixes.py"),
+        notes=("tessel-notifications.service.d/tessel.conf (Python ExecStart) is kept; zz- overrides it.",
                STATUS_GUARD)),
     Component(
-        "on-screen-keyboard", "on-screen-keyboard", "on-screen-keyboard", ("osk-manager", "osk-status"),
-        shims=(Shim("osk_manager.py", "osk-manager",
+        "tessel-keyboard", "tessel-keyboard", "tessel-keyboard", ("tessel-keyboard", "tessel-keyboard-status"),
+        shims=(Shim("osk_manager.py", "tessel-keyboard",
                     ("--background", "--toggle", "--show", "--hide", "--settings", "--quit")),
-               Shim("osk_status.py", "osk-status")),
-        units=(Unit("on-screen-keyboard.service", "osk-manager", ("--background",)),),
-        helpers=("waykeys-input",),
-        launchers=(".local/bin/waykeys",),
+               Shim("osk_status.py", "tessel-keyboard-status")),
+        units=(Unit("tessel-keyboard.service", "tessel-keyboard", ("--background",)),),
+        helpers=("tessel-keyboard-input",),
+        launchers=(".local/bin/tessel-keyboard",),
         keeps=("osk_settings.py",),
-        clobbered_by=("on-screen-keyboard/install.py", "shared/install_popup_fixes.py"),
-        notes=("waykeys-input is replaced by the crate's build (same native/input.c); "
-               "lock-screen's copies in ~/.local/share/lock-screen are not changed.", STATUS_GUARD)),
+        clobbered_by=("tessel-keyboard/install.py", "shared/install_popup_fixes.py"),
+        notes=("tessel-keyboard-input is replaced by the crate's build (same native/input.c); "
+               "tessel-lock's copies in ~/.local/share/tessel-lock are not changed.", STATUS_GUARD)),
     Component(
-        "audio-manager", "audio-manager", "audio-manager", ("audio-manager", "audio-manager-loopbacks"),
-        shims=(Shim("audio_manager.py", "audio-manager",
+        "tessel-audio", "tessel-audio", "tessel-audio", ("tessel-audio", "tessel-audio-loopbacks"),
+        shims=(Shim("audio_manager.py", "tessel-audio",
                     ("--settings", *POPUP, "--volume-up", "--volume-down", "--toggle-mute")),
-               Shim("loopback_service.py", "audio-manager-loopbacks", ("--config",))),
-        units=(Unit("audio-manager-loopbacks.service", "audio-manager-loopbacks"),),
+               Shim("loopback_service.py", "tessel-audio-loopbacks", ("--config",))),
+        units=(Unit("tessel-audio-loopbacks.service", "tessel-audio-loopbacks"),),
         keeps=("audio_ui.py", "audio_backend.py", "audio_popup.py", "volume_keys.py", "loopback_store.py"),
-        clobbered_by=("audio-manager/install_waybar.py", "shared/install_adjustment_osd.py"),
+        clobbered_by=("tessel-audio/install_waybar.py", "shared/install_adjustment_osd.py"),
         notes=("install_adjustment_osd audio_owner and install_waybar --update find a running audio_manager.py "
                "by its argv: they will not see the Rust instance.", STATUS_GUARD)),
     Component(
-        "brightness-manager", "brightness-manager", "brightness-manager", ("brightness-manager", "brightness-status"),
-        shims=(Shim("brightness_manager.py", "brightness-manager",
+        "tessel-brightness", "tessel-brightness", "tessel-brightness", ("tessel-brightness", "tessel-brightness-status"),
+        shims=(Shim("brightness_manager.py", "tessel-brightness",
                     (*POPUP, "--settings", "--background", "--check", "--brightness-up", "--brightness-down",
-                     "--idle-dim", "--idle-restore"), porter="components/brightness-manager/shim/brightness_manager.py"),
-               Shim("brightness_status.py", "brightness-status",
-                    porter="components/brightness-manager/shim/brightness_status.py")),
-        units=(Unit("brightness-manager.service", "brightness-manager", ("--background",)),),
+                     "--idle-dim", "--idle-restore"), porter="components/brightness/shim/brightness_manager.py"),
+               Shim("brightness_status.py", "tessel-brightness-status",
+                    porter="components/brightness/shim/brightness_status.py")),
+        units=(Unit("tessel-brightness.service", "tessel-brightness", ("--background",)),),
         keeps=("brightness_client.py", "brightness_backend.py"),
-        clobbered_by=("brightness-manager/install_waybar.py", "shared/install_adjustment_osd.py",
+        clobbered_by=("tessel-brightness/install_waybar.py", "shared/install_adjustment_osd.py",
                       "shared/install_keyboard_osd.py"),
         notes=("The base unit (TimeoutStopSec=60) is not edited; the drop-in only resets ExecStart.",
-               "way-displays-gui keeps loading brightness_client.py.", STATUS_GUARD)),
+               "tessel-displays keeps loading brightness_client.py.", STATUS_GUARD)),
     Component(
-        "authentication-manager", "authentication-manager", "authentication-manager", ("authentication-manager",),
-        shims=(Shim("authentication_manager.py", "authentication-manager",
-                    porter="components/authentication-manager/shim/authentication_manager.py"),),
-        units=(Unit("polkitman.service", "authentication-manager", ()),),
+        "tessel-auth", "tessel-auth", "tessel-auth", ("tessel-auth",),
+        shims=(Shim("authentication_manager.py", "tessel-auth",
+                    porter="components/auth/shim/authentication_manager.py"),),
+        units=(Unit("tessel-auth.service", "tessel-auth", ()),),
         keeps=("bluetooth_agent.py",),
         base=".local/share", requires_confirmation=True,
         notes=("polkit agent: --apply refuses without --i-am-at-the-keyboard; test a password prompt "
-               "(e.g. pkexec true) right after restarting polkitman.service.",)),
+               "(e.g. pkexec true) right after restarting tessel-auth.service.",)),
     Component(
-        "calendar-manager", "calendar-manager", "calendar-manager", ("calendar-manager",),
-        shims=(Shim("calendar_manager.py", "calendar-manager", (*POPUP, "--settings"),
-                    porter="components/calendar-manager/shim/calendar_manager.py"),),
+        "tessel-calendar", "tessel-calendar", "tessel-calendar", ("tessel-calendar",),
+        shims=(Shim("calendar_manager.py", "tessel-calendar", (*POPUP, "--settings"),
+                    porter="components/calendar/shim/calendar_manager.py"),),
         keeps=("date_settings.py", "date_backend.py"),
-        clobbered_by=("calendar-manager/install_waybar.py",),
+        clobbered_by=("tessel-calendar/install_waybar.py",),
         signal_on_restart=True,
         notes=("No unit; resident after the first popup: --restart SIGTERMs the running instance.", STATUS_GUARD)),
     Component(
-        "weather-manager", "weather-manager", "weather-manager", ("weather-manager", "weather-status"),
-        shims=(Shim("weather_manager.py", "weather-manager", (*POPUP, "--settings", "--tray"),
-                    porter="components/weather-manager/shim/weather_manager.py"),
-               Shim("weather_status.py", "weather-status", ("--watch", "--config", "--cache-dir"),
-                    porter="components/weather-manager/shim/weather_status.py")),
+        "tessel-weather", "tessel-weather", "tessel-weather", ("tessel-weather", "tessel-weather-status"),
+        shims=(Shim("weather_manager.py", "tessel-weather", (*POPUP, "--settings", "--tray"),
+                    porter="components/weather/shim/weather_manager.py"),
+               Shim("weather_status.py", "tessel-weather-status", ("--watch", "--config", "--cache-dir"),
+                    porter="components/weather/shim/weather_status.py")),
         keeps=("weather_settings.py", "weather_backend.py"),
-        notes=("lock-screen's lock_weather.py keeps importing weather_backend.", STATUS_GUARD)),
+        notes=("tessel-lock's lock_weather.py keeps importing weather_backend.", STATUS_GUARD)),
     Component(
-        "weather-manager-ha", "weather-manager", "weather-manager", ("weather-manager",),
-        shims=(Shim("weather_manager.py", "weather-manager", (*POPUP, "--settings", "--tray"),
-                    porter="components/weather-manager/shim/weather_manager.py"),),
-        units=(Unit("weather-manager.service", "weather-manager"),),
+        "weather-manager-ha", "tessel-weather", "tessel-weather", ("tessel-weather",),
+        shims=(Shim("weather_manager.py", "tessel-weather", (*POPUP, "--settings", "--tray"),
+                    porter="components/weather/shim/weather_manager.py"),),
+        units=(Unit("tessel-weather.service", "tessel-weather"),),
         keeps=("weather_backend.py",),
         base=".local/share", optional=True,
         clobbered_by=("home-assistant-screen/install_remote.py",),
-        notes=("Home Assistant tray install; skipped while ~/.local/share/weather-manager does not exist.",)),
+        notes=("Home Assistant tray install; skipped while ~/.local/share/tessel-weather does not exist.",)),
     Component(
-        "media-manager", "media-manager", "media-manager", ("media-manager",),
-        shims=(Shim("media_manager.py", "media-manager", POPUP,
-                    porter="components/media-manager/shim/media_manager.py"),),
-        launchers=((".local/bin/waymedia", "components/media-manager/shim/waymedia"),),
+        "tessel-media", "tessel-media", "tessel-media", ("tessel-media",),
+        shims=(Shim("media_manager.py", "tessel-media", POPUP,
+                    porter="components/media/shim/media_manager.py"),),
+        launchers=((".local/bin/waymedia", "components/media/shim/waymedia"),),
         keeps=("lock_media.py",),
-        clobbered_by=("media-manager/install.py", "shared/install_popup_fixes.py")),
+        clobbered_by=("tessel-media/install.py", "shared/install_popup_fixes.py")),
     Component(
-        "tiling-manager", "tiling-manager", "tiling-manager", ("waytile", "tiling-status"),
-        shims=(Shim("tiling_manager.py", "waytile",
+        "tessel-tiling", "tessel-tiling", "tessel-tiling", ("tessel-tiling", "tessel-tiling-status"),
+        shims=(Shim("tiling_manager.py", "tessel-tiling",
                     ("--toggle", "--enable", "--disable", "--restore", "--status", "--watch", "--settings", *POPUP),
-                    porter="components/tiling-manager/shims/tiling_manager.py", fallback="tiling_manager_python.py"),
-               Shim("tiling_status.py", "tiling-status", porter="components/tiling-manager/shims/tiling_status.py",
+                    porter="components/tiling/shims/tiling_manager.py", fallback="tiling_manager_python.py"),
+               Shim("tiling_status.py", "tessel-tiling-status", porter="components/tiling/shims/tiling_status.py",
                     fallback="tiling_status_python.py")),
-        launchers=(".local/bin/waytile",),
+        launchers=(".local/bin/tessel-tiling",),
         keeps=("tiling_settings.py", "tiling_config.py", "tiling_client.py", "bindings.py"),
-        clobbered_by=("tiling-manager/install.py",),
-        notes=("Global Settings and wayshell keep importing tiling_settings/tiling_config/tiling_client/bindings.",)),
+        clobbered_by=("tessel-tiling/install.py",),
+        notes=("Global Settings and tessel-shell keep importing tiling_settings/tiling_config/tiling_client/bindings.",)),
     Component(
-        "network-discovery", "network-discovery", "network-discovery", ("network-discovery",),
-        shims=(Shim("discovery_manager.py", "network-discovery", ("--toggle", "--status", "--settings", *POPUP),
+        "tessel-network-discovery", "tessel-network-discovery", "tessel-network-discovery", ("tessel-network-discovery",),
+        shims=(Shim("discovery_manager.py", "tessel-network-discovery", ("--toggle", "--status", "--settings", *POPUP),
                     porter="components/network-discovery/shims/discovery_manager.py",
                     fallback="discovery_manager_python.py"),),
-        keeps=("LICENSE", "discovery_backend.py", "~/.local/share/waydock/discovery_backend.py"),
-        clobbered_by=("network-discovery/install.py",),
-        notes=("~/.local/bin/network-discovery is left as is: it runs the shim.",
-               "Waydock runs discovery_backend.py in-process from ~/.local/share/waydock.")),
+        keeps=("LICENSE", "discovery_backend.py", "~/.local/share/tessel-dock/discovery_backend.py"),
+        clobbered_by=("tessel-network-discovery/install.py",),
+        notes=("~/.local/bin/tessel-network-discovery is left as is: it runs the shim.",
+               "Tessel Dock runs discovery_backend.py in-process from ~/.local/share/tessel-dock.")),
     Component(
-        "session-manager", "session-manager", "session-manager", ("session-manager",),
-        shims=(Shim("session_manager.py", "session-manager", ("--popup", "--menu", "--popup-edge", "--popup-offset"),
-                    porter="components/session-manager/shim/session_manager.py"),),
+        "tessel-session", "tessel-session", "tessel-session", ("tessel-session",),
+        shims=(Shim("session_manager.py", "tessel-session", ("--popup", "--menu", "--popup-edge", "--popup-offset"),
+                    porter="components/session/shim/session_manager.py"),),
         keeps=("session_backend.py", "session_end.py"),
         clobbered_by=("shared/install_popup_fixes.py",),
-        notes=("desktop-suite-action enables the centered menu only while session_manager.py contains '--menu'.",)),
+        notes=("tessel-action enables the centered menu only while session_manager.py contains '--menu'.",)),
     Component(
-        "way-displays", "way-displays", "way-displays", (("way-displays-gui", "way-displays-gui-rs"),),
+        "way-displays", "way-displays", "way-displays", (("tessel-displays", "tessel-displays-rs"),),
         shims=(),
-        launchers=((".local/bin/way-displays-gui", "components/way-displays/shim/way-displays-gui-launcher",
-                    ".local/share/way-displays/way-displays-gui"),),
-        keeps=("way-displays-gui", "color_config.py", "color_controls.py"),
+        launchers=((".local/bin/tessel-displays", "components/displays/shim/tessel-displays-launcher",
+                    ".local/share/way-displays/tessel-displays"),),
+        keeps=("tessel-displays", "color_config.py", "color_controls.py"),
         base=".local/share",
-        clobbered_by=("way-displays/install_color.py", "brightness-manager/install_waybar.py", "shared/install_gtk4.py"),
-        notes=("Global Settings embeds the Python way-displays-gui module, which stays installed.",
+        clobbered_by=("way-displays/install_color.py", "tessel-brightness/install_waybar.py", "shared/install_gtk4.py"),
+        notes=("Global Settings embeds the Python tessel-displays module, which stays installed.",
                "way-displays.service runs the system /usr/bin/way-displays daemon and is not changed.")),
     Component(
-        "language-manager", "language-manager", "language-manager", ("language-manager",),
-        shims=(Shim("language_manager.py", "language-manager", ("--status", "--quit"),
-                    porter="components/language-manager/shim/language_manager.py",
+        "tessel-language", "tessel-language", "tessel-language", ("tessel-language",),
+        shims=(Shim("language_manager.py", "tessel-language", ("--status", "--quit"),
+                    porter="components/language/shim/language_manager.py",
                     fallback="language_manager_python.py"),),
         keeps=("language_backend.py", "language_ui.py", "language_style.py"),
         base=".local/share",
-        notes=("~/.local/bin/language-manager opens Global Settings and is not changed.", STATUS_GUARD)),
+        notes=("~/.local/bin/tessel-language opens Global Settings and is not changed.", STATUS_GUARD)),
     Component(
-        "session-startup", "session-startup", "desktop-suite/session", ("desktop-suite-failed", "desktop-suite-icon-theme"),
-        shims=(Shim("desktop_suite_failed.py", "desktop-suite-failed",
+        "tessel-session-startup", "tessel-session-startup", "tessel/session", ("tessel-failed", "tessel-icon-theme"),
+        shims=(Shim("desktop_suite_failed.py", "tessel-failed",
                     porter="components/session-startup/shim/desktop_suite_failed.py"),),
         keeps=("suite_i18n.py", "language_data.py", "suite_catalogs.py"),
         base=".local/share", optional=True,
-        clobbered_by=("session-startup/configure_session.py",),
-        notes=("Crash helper only. desktop-suite-failed@.service keeps running python3 desktop_suite_failed.py %i.",
+        clobbered_by=("tessel-session-startup/configure_session.py",),
+        notes=("Crash helper only. tessel-failed@.service keeps running python3 desktop_suite_failed.py %i.",
                "configure_session.py stays Python (installers import it) and is never touched.",
-               "desktop-suite-icon-theme falls back to Papirus-Dark at login when the configured icon theme is not "
-               "installed; packaging/defaults/etc/xdg/autostart/desktop-suite-icon-theme.desktop runs it.")),
+               "tessel-icon-theme falls back to Papirus-Dark at login when the configured icon theme is not "
+               "installed; packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop runs it.")),
     Component(
-        "bluetooth-manager", "bluetooth-manager", "btmanager", ("btmanager",),
-        shims=(Shim("btmanager.py", "btmanager",
+        "tessel-bluetooth", "tessel-bluetooth", "tessel-bluetooth", ("tessel-bluetooth",),
+        shims=(Shim("tessel-bluetooth.py", "tessel-bluetooth",
                     (*POPUP, "--lang", "--selftest", "--gen-pot", "--gen-mo"),
-                    porter="components/bluetooth-manager/shim/btmanager.py", fallback="btmanager_gtk.py"),),
+                    porter="components/bluetooth/shim/tessel-bluetooth.py", fallback="tessel-bluetooth_gtk.py"),),
         keeps=("btpopup.py", "bttransfer.py", "translations.py"),
-        notes=("btmanager.py stays importable: imported, the shim loads btmanager_gtk.py (the original), "
-               "so Global Settings' embedded Bluetooth page and battery-manager keep working.", STATUS_GUARD)),
+        notes=("tessel-bluetooth.py stays importable: imported, the shim loads tessel-bluetooth_gtk.py (the original), "
+               "so Global Settings' embedded Bluetooth page and tessel-battery keep working.", STATUS_GUARD)),
     Component(
-        "network-manager", "network-manager", "network-manager", ("network-manager", "network-status"),
-        shims=(Shim("network_manager.py", "network-manager", (*POPUP, "--settings", "--background", "--check"),
-                    porter="components/network-manager/shim/network_manager.py", fallback="network_manager_impl.py"),
-               Shim("network_status.py", "network-status",
-                    porter="components/network-manager/shim/network_status.py", fallback="network_status_impl.py")),
-        units=(Unit("netman.service", "network-manager", ("--background",)),),
-        desktop=(f"{APPS}/org.waybar.NetworkManager.desktop",),
+        "tessel-network", "tessel-network", "tessel-network", ("tessel-network", "tessel-network-status"),
+        shims=(Shim("network_manager.py", "tessel-network", (*POPUP, "--settings", "--background", "--check"),
+                    porter="components/network/shim/network_manager.py", fallback="network_manager_impl.py"),
+               Shim("network_status.py", "tessel-network-status",
+                    porter="components/network/shim/network_status.py", fallback="network_status_impl.py")),
+        units=(Unit("tessel-network.service", "tessel-network", ("--background",)),),
+        desktop=(f"{APPS}/org.tessel.NetworkManager.desktop",),
         keeps=("network_backend.py", "network_popup.py", "network_settings.py", "network_preferences.py",
                "network_style.py", "secret_agent.py"),
-        clobbered_by=("network-manager/install_waybar.py",),
+        clobbered_by=("tessel-network/install_waybar.py",),
         requires_confirmation=True, requires_rpms=("NetworkManager-libnm",),
         notes=("NetworkManager secret agent: --apply needs --i-am-at-the-keyboard; check Wi-Fi/VPN prompts "
-               "right after restarting netman.service.",
+               "right after restarting tessel-network.service.",
                "Imported, network_manager.py / network_status.py re-export network_manager_impl / "
                "network_status_impl (the saved originals) for Global Settings.", STATUS_GUARD)),
-    # wayshell.service's own ExecStart (/usr/bin/wayshell) is stale: wayshell.service.d/palette.conf
-    # resets it to %h/.local/share/wayshell/wayshell, and that is what runs. The swap does NOT edit
-    # palette.conf: like every other unit here it adds zz-desktop-suite-rust.conf, which systemd reads
+    # tessel-shell.service's own ExecStart (/usr/bin/tessel-shell) is stale: tessel-shell.service.d/palette.conf
+    # resets it to %h/.local/share/tessel-shell/tessel-shell, and that is what runs. The swap does NOT edit
+    # palette.conf: like every other unit here it adds zz-tessel-rust.conf, which systemd reads
     # after palette.conf ("p" < "z"), so its `ExecStart=` reset + binary is the effective command.
     # That keeps one mechanism for all units, leaves palette.conf byte-identical (nothing to back up
     # or merge on rollback, which just removes our file), and survives anything that rewrites
-    # palette.conf later. The Python daemon `wayshell` stays installed for --rollback, so the binary is
-    # installed as wayshell-rs next to it.
+    # palette.conf later. The Python daemon `tessel-shell` stays installed for --rollback, so the binary is
+    # installed as tessel-shell-rs next to it.
     Component(
-        "wayshell", "wayshell", "wayshell", (("wayshell", "wayshell-rs"), "wayshell-cli"),
-        shims=(Shim("wayshell_cli.py", "wayshell-cli", ("--reverse", "--monitor"),
-                    porter="components/wayshell/shim/wayshell_cli.py"),),
-        units=(Unit("wayshell.service", "wayshell-rs", ()),),
-        keybinds=(Keybind("A-Tab", "wayshell_cli.py", "wayshell-cli", ("switch-window",)),
-                  Keybind("A-S-Tab", "wayshell_cli.py", "wayshell-cli", ("switch-window", "--reverse"))),
-        keeps=("wayshell", "wayshell_switcher.py", "wayshell_switcher_ui.py", "wayshell_theme.py", "switcher_model.py",
-               "overview.py", "wayshell-overview", "wayshell-toplevel", "window_backend.py", "app_catalog.py",
+        "tessel-shell", "tessel-shell", "tessel-shell", (("tessel-shell", "tessel-shell-rs"), "tessel-shell-cli"),
+        shims=(Shim("wayshell_cli.py", "tessel-shell-cli", ("--reverse", "--monitor"),
+                    porter="components/shell/shim/wayshell_cli.py"),),
+        units=(Unit("tessel-shell.service", "tessel-shell-rs", ()),),
+        keybinds=(Keybind("A-Tab", "wayshell_cli.py", "tessel-shell-cli", ("switch-window",)),
+                  Keybind("A-S-Tab", "wayshell_cli.py", "tessel-shell-cli", ("switch-window", "--reverse"))),
+        keeps=("tessel-shell", "tessel-shell_switcher.py", "tessel-shell_switcher_ui.py", "wayshell_theme.py", "switcher_model.py",
+               "overview.py", "tessel-overview", "tessel-shell-toplevel", "window_backend.py", "app_catalog.py",
                "companion_theme.py", "wallpaper_chooser.py", "desktop_file_ops.py"),
-        python_entries=("wayshell",),
-        health=("wayshell-cli", "switcher-status"),
+        python_entries=("tessel-shell",),
+        health=("tessel-shell-cli", "switcher-status"),
         base=".local/share", requires_confirmation=True,
-        notes=("wayshell.service runs palette.conf's ExecStart (the base unit's is stale); zz- sorts after it, "
-               "palette.conf and 50-desktop-suite-recovery.conf stay untouched.",
-               "rc.xml A-Tab / A-S-Tab run ~/.local/share/wayshell/wayshell-cli directly (no Python startup); "
+        notes=("tessel-shell.service runs palette.conf's ExecStart (the base unit's is stale); zz- sorts after it, "
+               "palette.conf and 50-tessel-recovery.conf stay untouched.",
+               "rc.xml A-Tab / A-S-Tab run ~/.local/share/tessel-shell/tessel-shell-cli directly (no Python startup); "
                "labwc reads them after `labwc --reconfigure` (only with --restart --restart-shell).",
-               "wayshell_cli.py becomes the porter shim: waydock hot corners run it, wayshell_switcher.py imports "
-               "monitor_name; desktop-suite-action greps no wayshell file.",
+               "wayshell_cli.py becomes the porter shim: tessel-dock hot corners run it, tessel-shell_switcher.py imports "
+               "monitor_name; tessel-action greps no tessel-shell file.",
                "Restarts the desktop/switcher: --apply needs --i-am-at-the-keyboard.",
-               "btmanager installers skip these entries while the swap is active (install_switcher.py: A-Tab "
-               "keybinds and shims; install_all.py: the prompt / capture picker / waydock steps).")),
+               "tessel-bluetooth installers skip these entries while the swap is active (install_switcher.py: A-Tab "
+               "keybinds and shims; install_all.py: the prompt / capture picker / tessel-dock steps).")),
     Component(
-        "wayshell-prompt", "wayshell-prompt", "wayshell", ("wayshell-prompt",),
+        "tessel-prompt", "tessel-prompt", "tessel-shell", ("tessel-prompt",),
         shims=(),
-        launchers=((".local/bin/wayshell-prompt", None, ".local/share/wayshell/wayshell_prompt.py"),),
+        launchers=((".local/bin/tessel-prompt", None, ".local/share/tessel-shell/wayshell_prompt.py"),),
         keeps=("wayshell_prompt.py", "wayshell_theme.py"),
         base=".local/share",
-        clobbered_by=("wayshell/install_prompts.py",),
-        notes=("rc.xml promptCommand/errorCommand keep calling ~/.local/bin/wayshell-prompt (same here-doc "
+        clobbered_by=("tessel-shell/install_prompts.py",),
+        notes=("rc.xml promptCommand/errorCommand keep calling ~/.local/bin/tessel-prompt (same here-doc "
                "delimiter); only the launcher changes. wayshell_prompt.py stays Python (nothing runs it directly).",)),
     Component(
-        "wayshell-capture-picker", "wayshell-capture-picker", "wayshell", ("wayshell-capture-picker",),
+        "tessel-capture-picker", "tessel-capture-picker", "tessel-shell", ("tessel-capture-picker",),
         shims=(),
-        launchers=((".local/bin/wayshell-capture-picker", None, ".local/share/wayshell/capture_picker.py"),),
+        launchers=((".local/bin/tessel-capture-picker", None, ".local/share/tessel-shell/capture_picker.py"),),
         keeps=("capture_picker.py", "capture_picker_ui.py", "capture_sources.py", "capture_output.py",
                "capture_selection.py"),
         base=".local/share",
-        clobbered_by=("wayshell/install_capture_picker.py",),
-        notes=("xdg-desktop-portal-wlr's chooser_cmd keeps running ~/.local/bin/wayshell-capture-picker; "
-               "the picker finds ~/.local/share/waydock/waydock-toplevel for window icons.",)),
+        clobbered_by=("tessel-shell/install_capture_picker.py",),
+        notes=("xdg-desktop-portal-wlr's chooser_cmd keeps running ~/.local/bin/tessel-capture-picker; "
+               "the picker finds ~/.local/share/tessel-dock/tessel-dock-toplevel for window icons.",)),
     Component(
-        "waydock", "waydock", "waydock", ("waydock",),
+        "tessel-dock", "tessel-dock", "tessel-dock", ("tessel-dock",),
         shims=(),
-        units=(Unit("waydock.service", "waydock", ()),),
-        launchers=((".local/bin/waydock", None, ".local/share/waydock/waydock.py"),),
-        keeps=("waydock.py", "companion_theme.py", "app_catalog.py", "window_backend.py", "waydock-toplevel",
+        units=(Unit("tessel-dock.service", "tessel-dock", ()),),
+        launchers=((".local/bin/tessel-dock", None, ".local/share/tessel-dock/tessel-dock.py"),),
+        keeps=("tessel-dock.py", "companion_theme.py", "app_catalog.py", "window_backend.py", "tessel-dock-toplevel",
                "dock_style.py", "dock_config.py", "settings_api.py", "group_layout_settings.py", "dock_appearance.py",
                "lock_media.py", "application_audio.py", "labwc_titlebar_theme.py",
-               "icons/waydock-app-menu-symbolic.svg"),
-        python_entries=("waydock.py",),
-        health=("waydock", "--check"),
+               "icons/tessel-dock-app-menu-symbolic.svg"),
+        python_entries=("tessel-dock.py",),
+        health=("tessel-dock", "--check"),
         base=".local/share", requires_confirmation=True,
-        clobbered_by=("waydock/install.py",),
+        clobbered_by=("tessel-dock/install.py",),
         notes=("The drop-in changes only ExecStart; Type=notify, NotifyAccess=main (the binary is the main PID), "
                "TimeoutStartSec and Restart stay in the base unit.",
-               "Every Python module stays: Global Settings embeds waydock.py's SettingsWindow, ~25 components "
-               "import waydock modules, and the dock runs app_catalog.py inside each launched app's unit.",
-               "~/.local/bin/waydock execs the binary: keybinds (--menu-hotkey), showdesktop scripts and the "
+               "Every Python module stays: Global Settings embeds tessel-dock.py's SettingsWindow, ~25 components "
+               "import tessel-dock modules, and the dock runs app_catalog.py inside each launched app's unit.",
+               "~/.local/bin/tessel-dock execs the binary: keybinds (--menu-hotkey), showdesktop scripts and the "
                ".desktop --settings entry are unchanged.",
                "Restarts the dock and tray: --apply needs --i-am-at-the-keyboard.")),
     Component(
-        "global-settings", "global-settings", "global-settings", ("global-settings",),
+        "tessel-settings", "tessel-settings", "tessel-settings", ("tessel-settings",),
         shims=(),
-        launchers=((".local/bin/global-settings", "components/global-settings/shim/global-settings-launcher",
-                    ".local/share/global-settings/global_settings.py"),
-                   (".local/bin/language-manager", "components/global-settings/shim/language-manager-launcher",
-                    ".local/share/global-settings/global_settings.py")),
+        launchers=((".local/bin/tessel-settings", "components/settings/shim/global-settings-launcher",
+                    ".local/share/tessel-settings/global_settings.py"),
+                   (".local/bin/tessel-language", "components/settings/shim/language-manager-launcher",
+                    ".local/share/tessel-settings/global_settings.py")),
         keeps=("global_settings.py", "runtime_paths.py", "global_ui.py", "global_style.py", "page_api.py",
                "page_widgets.py", "settings_search.py", "applet_pages.py", "desktop_pages.py", "dock_pages.py",
                "layout_page.py", "layout_presets.py", "lock_page.py", "login_page.py", "language_page.py",
@@ -517,61 +517,61 @@ COMPONENTS = (
                "labwc_settings.py", "workspace_config.py", "workspace_settings.py", "layouts/gnome.layout",
                "layouts/kde.layout", "layouts/mac.layout", "layouts/win.layout"),
         base=".local/share",
-        notes=("Only the launchers change: ~/.local/bin/global-settings and ~/.local/bin/language-manager "
-               "(--section language) exec the binary. The .desktop entry, waydock's gear, applet Settings "
-               "buttons, Super+/ (--shortcuts) and Welcome all go through ~/.local/bin/global-settings.",
-               "Every Python module stays: tiling-manager's tiling_config.py imports workspace_config from "
-               "~/.local/share/global-settings, and the Python Welcome imports global_style, runtime_paths, "
+        notes=("Only the launchers change: ~/.local/bin/tessel-settings and ~/.local/bin/tessel-language "
+               "(--section language) exec the binary. The .desktop entry, tessel-dock's gear, applet Settings "
+               "buttons, Super+/ (--shortcuts) and Welcome all go through ~/.local/bin/tessel-settings.",
+               "Every Python module stays: tessel-tiling's tiling_config.py imports workspace_config from "
+               "~/.local/share/tessel-settings, and the Python Welcome imports global_style, runtime_paths, "
                "desktop_pages, shortcuts_model and the keyboard/layout/language pages.",
-               "The binary embeds the Rust applet pages (audio, bluetooth, network, power, battery, keep-awake, "
+               "The binary embeds the Rust applet pages (audio, bluetooth, network, power, battery, tessel-keep-awake, "
                "notifications, date/time, weather, language, capture, displays, dock, …) directly; the Python "
                "applet modules it used to import are no longer needed by Global Settings itself.",
-               "night-light.service (copied by install_gtk4.py) is unchanged; it runs the Python night_light.py.")),
+               "tessel-night-light.service (copied by install_gtk4.py) is unchanged; it runs the Python night_light.py.")),
     Component(
-        "welcome", "welcome", "desktop-suite-welcome", (("desktop-suite-welcome", "desktop-suite-welcome"),),
+        "welcome", "welcome", "tessel-welcome", (("tessel-welcome", "tessel-welcome"),),
         shims=(),
-        launchers=((".local/bin/desktop-suite-welcome", "components/welcome/shim/desktop-suite-welcome-launcher",
-                    ".local/share/desktop-suite-welcome/welcome.py"),),
+        launchers=((".local/bin/tessel-welcome", "components/welcome/shim/tessel-welcome-launcher",
+                    ".local/share/tessel-welcome/welcome.py"),),
         keeps=("welcome.py", "welcome_ui.py"),
         base=".local/share",
         clobbered_by=("welcome/install.py",),
-        notes=("First-login autostart (install_all.py: `desktop-suite-welcome --first-run` while "
-               "$XDG_STATE_HOME/desktop-suite/setup-done is missing) and the labwc menu item run the launcher; "
+        notes=("First-login autostart (install_all.py: `tessel-welcome --first-run` while "
+               "$XDG_STATE_HOME/tessel/setup-done is missing) and the labwc menu item run the launcher; "
                "the .desktop Exec is the launcher path and does not change.",
                "setup-done is written by the binary exactly as welcome_ui.mark_setup_done did.")),
     # ---- wave 4/5 user-level entries ------------------------------------------------------------
     Component(
-        "hdr-calibration", "hdr-calibration", "hdr-calibration", ("hdr-calibration",),
-        shims=(Shim("hdr_calibration.py", "hdr-calibration", ("--output", "--sdr-editing", "--smoke-test")),),
-        launchers=(".local/bin/hdr-calibration",),
+        "tessel-hdr-calibration", "tessel-hdr-calibration", "tessel-hdr-calibration", ("tessel-hdr-calibration",),
+        shims=(Shim("hdr_calibration.py", "tessel-hdr-calibration", ("--output", "--sdr-editing", "--smoke-test")),),
+        launchers=(".local/bin/tessel-hdr-calibration",),
         keeps=("calibration.py", "correction.py", "app_menu.py", "gtk4_utils.py", "hdr-pattern"),
         base=".local/share",
-        clobbered_by=("hdr-calibration/install.py",),
-        notes=("way-displays' color_controls.py runs `python3 .../hdr-calibration/hdr_calibration.py --output <connector>`:"
-               " served by the shim. Global Settings runs ~/.local/bin/hdr-calibration (now execs the binary).",
+        clobbered_by=("tessel-hdr-calibration/install.py",),
+        notes=("way-displays' color_controls.py runs `python3 .../tessel-hdr-calibration/hdr_calibration.py --output <connector>`:"
+               " served by the shim. Global Settings runs ~/.local/bin/tessel-hdr-calibration (now execs the binary).",
                "hdr-pattern stays the C helper; the binary finds it next to itself. The .desktop Exec is the launcher.")),
     Component(
-        "lock-screen", "lock-screen", "lock-screen", ("lock-screen", "waylock-pam"),
-        shims=(Shim("lock_screen.py", "lock-screen", ("--preview", "--check"),
-                    porter="components/lock-screen/shim/lock_screen.py"),),
-        units=(Unit("power-manager-lock.service", "lock-screen", ()),),
+        "tessel-lock", "tessel-lock", "tessel-lock", ("tessel-lock", "tessel-lock-pam"),
+        shims=(Shim("lock_screen.py", "tessel-lock", ("--preview", "--check"),
+                    porter="components/lock/shim/lock_screen.py"),),
+        units=(Unit("tessel-lock.service", "tessel-lock", ()),),
         keeps=("lock_auth.py", "lock_config.py", "lock_dashboard.py", "lock_fingerprint.py", "lock_info.py",
                "lock_media.py", "lock_media_icons.py", "lock_palette.py", "lock_settings.py", "lock_status.py",
                "lock_visuals.py", "lock_weather.py", "voice_state.py", "weather_backend.py", "osk_config.py",
-               "osk_devices.py", "osk_keyboard.py", "osk_lock.py", "waykeys-input", "suite_i18n.py"),
+               "osk_devices.py", "osk_keyboard.py", "osk_lock.py", "tessel-keyboard-input", "suite_i18n.py"),
         base=".local/share", requires_confirmation=True,
-        refuse_while_active=("power-manager-lock.service",),
-        clobbered_by=("lock-screen/install_lock.py", "on-screen-keyboard/install.py", "capture-manager/install_session.py"),
-        notes=("The drop-in changes only ExecStart (-> lock-screen); Type=notify, NotifyAccess=main, SuccessExitStatus=75, "
+        refuse_while_active=("tessel-lock.service",),
+        clobbered_by=("tessel-lock/install_lock.py", "tessel-keyboard/install.py", "tessel-capture/install_session.py"),
+        notes=("The drop-in changes only ExecStart (-> tessel-lock); Type=notify, NotifyAccess=main, SuccessExitStatus=75, "
                "LimitCORE=0 and Restart stay in the base unit. The unit is never restarted: the next lock runs Rust.",
-               "waylock-pam (the PAM helper next to the locker) becomes the Rust build, mode exactly 0755 (never setuid).",
+               "tessel-lock-pam (the PAM helper next to the locker) becomes the Rust build, mode exactly 0755 (never setuid).",
                "lock_screen.py becomes the porter shim (lock_settings.py runs it with --preview); every Python module stays "
-               "(Global Settings, capture-manager and the greeter import them).",
-               "--apply refuses while power-manager-lock.service is active and needs --i-am-at-the-keyboard."),
-        warning=("lock-screen: right after --apply, at the keyboard: run ~/.local/share/lock-screen/lock-screen --check "
+               "(Global Settings, tessel-capture and the greeter import them).",
+               "--apply refuses while tessel-lock.service is active and needs --i-am-at-the-keyboard."),
+        warning=("tessel-lock: right after --apply, at the keyboard: run ~/.local/share/tessel-lock/tessel-lock --check "
                  "(must print three true values), then lock with Super+L and unlock with your password. If it fails, "
-                 "switch to a TTY (Ctrl+Alt+F3), log in, run tools/install.py --rollback --only lock-screen, then "
-                 "`systemctl --user restart power-manager-lock.service`: the Python locker takes over the still-locked "
+                 "switch to a TTY (Ctrl+Alt+F3), log in, run tools/install.py --rollback --only tessel-lock, then "
+                 "`systemctl --user restart tessel-lock.service`: the Python locker takes over the still-locked "
                  "session (ext-session-lock keeps it locked when the client dies) and unlocks it.")),
     # ---- --system entries (root-owned, /usr/local; see the module docstring) ---------------------
     *(Component(
@@ -579,120 +579,120 @@ COMPONENTS = (
         launchers=((f"{SYSTEM_BIN}/{command}", None, f"{SYSTEM_LIB}/{key}/{entry}"),),
         keeps=keeps, base=SYSTEM_LIB, scope="system", locale_dir="locale", requires_rpms=rpms,
         notes=(f"Only the `exec` line of /{SYSTEM_BIN}/{command} changes (the standalone marker line stays); the .desktop "
-               f"files keep Exec=/{SYSTEM_BIN}/{command}. desktop-apps/install.py (and file-manager/install.py) keep a "
-               "launcher that carries the desktop-suite-rust marker; the Python files stay for --rollback.", *notes))
+               f"files keep Exec=/{SYSTEM_BIN}/{command}. desktop-apps/install.py (and tessel-files/install.py) keep a "
+               "launcher that carries the tessel-rust marker; the Python files stay for --rollback.", *notes))
       for key, binary, command, entry, keeps, rpms, notes in (
         ("calculator", "calculator", "calculator", "calculator.py",
          ("calculator_backend.py", "calculator_ui.py", "gtk4_utils.py", "suite_i18n.py"), (), ()),
-        ("text-editor", "text-editor", "text-editor", "text_editor.py",
+        ("tessel-text-editor", "tessel-text-editor", "tessel-text-editor", "text_editor.py",
          ("document.py", "editor_ui.py", "recovery.py", "gtk4_utils.py", "suite_i18n.py"), ("gtksourceview5",), ()),
-        ("picture-viewer", "waypictures", "waypictures", "picture_viewer.py",
+        ("tessel-pictures", "tessel-pictures", "tessel-pictures", "picture_viewer.py",
          ("picture_ui.py", "picture_canvas.py", "picture_model.py", "picture_files.py", "picture_dialogs.py"), (), ()),
-        ("system-monitor", "system-monitor", "system-monitor", "system_monitor.py",
+        ("tessel-system-monitor", "tessel-system-monitor", "tessel-system-monitor", "system_monitor.py",
          ("monitor_backend.py", "monitor_ui.py", "gtk4_utils.py", "suite_i18n.py"), (), ()),
-        ("capture-manager", "waycapture", "waycapture", "capture.py",
+        ("tessel-capture", "tessel-capture", "tessel-capture", "capture.py",
          ("libcapture-pipewire.so", "capture_settings.py", "capture_shortcuts.py", "capture_selection.py",
           "popup_placement.py", "capture_ui.py"), (),
          ("libcapture-pipewire.so stays where it is (the binary dlopens it from its own directory); Global Settings "
           "imports capture_settings.py / capture_shortcuts.py from this directory.",
           "shared/install_popup_fixes.py keeps rewriting the Python capture modules here; the launcher is not touched.")),
-        ("file-manager", "wayfiles", "wayfiles", "file_manager.py",
+        ("tessel-files", "tessel-files", "tessel-files", "file_manager.py",
          ("files_ui.py", "files_pane.py", "file_operations.py", "file_model.py", "media_chooser.py", "app_catalog.py",
           "dock_appearance.py"), ("gtksourceview5",),
-         ("The binary must stay at /usr/local/lib/desktop-suite/file-manager/wayfiles: the launch helper re-executes "
+         ("The binary must stay at /usr/local/lib/tessel/tessel-files/tessel-files: the launch helper re-executes "
           "current_exe() inside systemd-run --user services.",
-          "Verify: wayfiles --check, open Home, right-click a file near the screen middle, Ctrl+Q.")),
+          "Verify: tessel-files --check, open Home, right-click a file near the screen middle, Ctrl+Q.")),
     )),
     Component(
-        "archive-manager", "archive-manager", "archive-manager", ("wayarchive",), shims=(),
-        launchers=((f"{SYSTEM_BIN}/wayarchive", None, f"{SYSTEM_LIB}/archive-manager/wayarchive"),),
+        "tessel-archive", "tessel-archive", "tessel-archive", ("tessel-archive",), shims=(),
+        launchers=((f"{SYSTEM_BIN}/tessel-archive", None, f"{SYSTEM_LIB}/tessel-archive/tessel-archive"),),
         files=((f"usr/local/share/applications/{ARCHIVE_DESKTOP}", ARCHIVE_DESKTOP_SOURCE, 0o644),),
         base=SYSTEM_LIB, scope="system", locale_dir="locale", fresh=True, requires_rpms=("libarchive",),
         notes=("A fresh install (there is no Python twin, it replaces KDE's Ark): the binary, its catalogs, the "
-               "/usr/local/bin/wayarchive launcher (standalone + desktop-suite-rust markers) and "
+               "/usr/local/bin/tessel-archive launcher (standalone + tessel-rust markers) and "
                f"/usr/local/share/applications/{ARCHIVE_DESKTOP} are created; --system --rollback --only "
-               "archive-manager removes exactly those (and the folders it created, once empty).",
+               "tessel-archive removes exactly those (and the folders it created, once empty).",
                "Optional tools used when present: 7z (7zip-standalone), zip/unzip/zipinfo/zipnote, unar/lsar; lzop, "
                "lrzip and lzip for those tar filters. libarchive.so.13 is linked by soname.",
                "Default handler for archives: user-scope entry archive-manager-mime (only with --only).",
-               "Verify: wayarchive --check, then open an archive and drag an entry into Files.")),
+               "Verify: tessel-archive --check, then open an archive and drag an entry into Files.")),
     Component(
-        "keyring", "waykeyring", "keyring", ("waykeyring",), shims=(),
-        files=(("usr/local/lib/desktop-suite/keyring/waykeyring-prompt", "target/release/waykeyring-prompt", 0o755),
-               ("usr/lib64/security/pam_waykeyring.so", "target/release/libpam_waykeyring.so", 0o755)),
-        edits=(TextEdit("etc/pam.d/waylogin", "auth include waylogin-auth\n",
-                        "auth substack waylogin-auth\n-auth optional pam_waykeyring.so\n"),
-               TextEdit("etc/pam.d/waylogin", "session include system-auth\n",
+        "keyring", "tessel-keyring", "keyring", ("tessel-keyring",), shims=(),
+        files=(("usr/local/lib/tessel/keyring/tessel-keyring-prompt", "target/release/tessel-keyring-prompt", 0o755),
+               ("usr/lib64/security/pam_waykeyring.so", "target/release/libpam_tessel-keyring.so", 0o755)),
+        edits=(TextEdit("etc/pam.d/tessel-login", "auth include tessel-login-auth\n",
+                        "auth substack tessel-login-auth\n-auth optional pam_waykeyring.so\n"),
+               TextEdit("etc/pam.d/tessel-login", "session include system-auth\n",
                         "session include system-auth\n-session optional pam_waykeyring.so\n"),
                TextEdit("etc/pam.d/passwd", "-password   optional\tpam_gnome_keyring.so use_authtok\n",
-                        "-password   optional\tpam_gnome_keyring.so use_authtok\n-password   optional\tpam_waykeyring.so\n")),
-        extra_packages=("waykeyring-ui", "pam-waykeyring"),
+                        "-password   optional\tpam_gnome_keyring.so use_authtok\n-password   optional\tpam_tessel-keyring.so\n")),
+        extra_packages=("tessel-keyring-ui", "pam-tessel-keyring"),
         base=SYSTEM_LIB, scope="system", locale_dir="locale", fresh=True, requires_confirmation=True, explicit=True,
-        notes=("waykeyring, the suite's own Secret Service (org.freedesktop.secrets): /usr/local/lib/desktop-suite/keyring/"
-               "{waykeyring,waykeyring-prompt}, /usr/lib64/security/pam_waykeyring.so, and three PAM lines: Waylogin's auth "
-               "stack runs waylogin-auth as a substack followed by `-auth optional pam_waykeyring.so` (keeps the password "
-               "for the session), `-session optional pam_waykeyring.so` (runs `waykeyring --login` as the user), and "
+        notes=("tessel-keyring, the suite's own Secret Service (org.freedesktop.secrets): /usr/local/lib/tessel/keyring/"
+               "{tessel-keyring,tessel-keyring-prompt}, /usr/lib64/security/pam_waykeyring.so, and three PAM lines: Tessel Login's auth "
+               "stack runs tessel-login-auth as a substack followed by `-auth optional pam_waykeyring.so` (keeps the password "
+               "for the session), `-session optional pam_waykeyring.so` (runs `tessel-keyring --login` as the user), and "
                "passwd's `-password optional pam_waykeyring.so` (re-wraps the keyring when the password changes).",
                "Every pam_waykeyring entry point returns PAM_IGNORE: it never decides a login.",
-               "Then the user entry keyring-session (D-Bus activation + waykeyring.service) and a new login.",
+               "Then the user entry keyring-session (D-Bus activation + tessel-keyring.service) and a new login.",
                "Runs only when named: --system --apply --only keyring --i-am-at-the-keyboard.",
-               "login-manager/install_login.py rewrites /etc/pam.d/waylogin (drops the lines); re-run this entry after it."),
-        warning=("keyring: this edits /etc/pam.d/waylogin (Waylogin's login stack). Only optional lines are added and "
-                 "`auth include waylogin-auth` becomes `auth substack waylogin-auth`; still, if graphical login fails "
+               "tessel-login/install_login.py rewrites /etc/pam.d/tessel-login (drops the lines); re-run this entry after it."),
+        warning=("keyring: this edits /etc/pam.d/tessel-login (Tessel Login's login stack). Only optional lines are added and "
+                 "`auth include tessel-login-auth` becomes `auth substack tessel-login-auth`; still, if graphical login fails "
                  "afterwards, switch to a TTY (Ctrl+Alt+F3), log in there and run: sudo /usr/bin/python3 "
                  + str(Path(__file__).resolve()) + " --system --rollback --only keyring")),
     Component(
-        "login-manager", "login-manager", "waylogin", ("login-ui", "session-transition", "login-settings-helper"),
+        "tessel-login", "tessel-login", "tessel-login", ("tessel-login", "tessel-session-transition", "tessel-login-helper"),
         shims=(),
-        edits=(TextEdit("usr/local/lib/waylogin/start-greeter",
-                        "--session '/usr/bin/python3 -I {base}/usr/local/lib/waylogin/login_ui.py'",
-                        "--session '{base}/usr/local/lib/waylogin/login-ui'"),),
+        edits=(TextEdit("usr/local/lib/tessel-login/start-greeter",
+                        "--session '/usr/bin/python3 -I {base}/usr/local/lib/tessel-login/login_ui.py'",
+                        "--session '{base}/usr/local/lib/tessel-login/tessel-login'"),),
         keeps=("login_ui.py", "login_model.py", "login_protocol.py", "login_transition.py", "login_settings_helper.py",
                "session_transition.py", "start-session", "lock_config.py", "lock_visuals.py", "lock_palette.py",
-               "osk_lock.py", "waykeys-input", "suite_i18n.py"),
+               "osk_lock.py", "tessel-keyboard-input", "suite_i18n.py"),
         base="usr/local/lib", scope="system", locale_dir="locale", requires_confirmation=True,
-        clobbered_by=("login-manager/install_login.py",),
+        clobbered_by=("tessel-login/install_login.py",),
         notes=("Only start-greeter's --session argument changes. greetd.toml, PAM files, faillock, the polkit rule and "
-               "waylogin.service are never read or written; nothing is restarted (greetd runs the new greeter after the "
+               "tessel-login.service are never read or written; nothing is restarted (greetd runs the new greeter after the "
                "next logout).",
                "The greeter still starts sessions with the Python session_transition.py fade and Global Settings still "
-               "runs the Python login_settings_helper.py; the Rust session-transition / login-settings-helper are "
+               "runs the Python login_settings_helper.py; the Rust tessel-session-transition / tessel-login-helper are "
                "installed next to them, unused until those callers switch.",
-               "login-manager/install_login.py rewrites start-greeter (Python again); re-run --system --apply after it."),
-        warning=("login-manager: a BROKEN GREETER BLOCKS GRAPHICAL LOGIN. Nothing is restarted; the Rust greeter runs at "
+               "tessel-login/install_login.py rewrites start-greeter (Python again); re-run --system --apply after it."),
+        warning=("tessel-login: a BROKEN GREETER BLOCKS GRAPHICAL LOGIN. Nothing is restarted; the Rust greeter runs at "
                  "the next logout. Test it at the keyboard before you rely on it. If no login screen appears, switch to a "
                  "TTY (Ctrl+Alt+F3), log in there and roll back: sudo /usr/bin/python3 " + str(Path(__file__).resolve())
-                 + " --system --rollback --only login-manager  (or copy start-greeter back from the backup printed "
-                 "above: /var/backups/desktop-suite/rust-swap-*/usr/local/lib/waylogin/start-greeter), then "
-                 "`sudo systemctl restart waylogin.service` from that TTY to get the Python greeter back.")),
+                 + " --system --rollback --only tessel-login  (or copy start-greeter back from the backup printed "
+                 "above: /var/backups/tessel/rust-swap-*/usr/local/lib/tessel-login/start-greeter), then "
+                 "`sudo systemctl restart tessel-login.service` from that TTY to get the Python greeter back.")),
     # ---- fresh user entries (no Python twin) ----------------------------------------------------
     Component(
-        "clipboard-manager", "clipboard-manager", "clipboard-manager", ("wayclip",), shims=(), fresh=True,
-        uses_locale=False, files=((f"{UNITS}/clipboard-manager.service",
-                                   "components/clipboard-manager/clipboard-manager.service", 0o644),),
-        notes=("A fresh install (there is no Python twin): wayclip and ~/.config/systemd/user/clipboard-manager.service "
-               "(WantedBy=graphical-session.target) are created; --rollback --only clipboard-manager removes them.",
-               "Nothing is enabled or started: run `systemctl --user enable --now clipboard-manager.service` once.",
-               "Settings: ~/.config/desktop-suite/clipboard.json (Global Settings > Clipboard).",
-               "Verify: wayclip --check; copy text, close the application, paste.")),
+        "tessel-clipboard", "tessel-clipboard", "tessel-clipboard", ("tessel-clipboard",), shims=(), fresh=True,
+        uses_locale=False, files=((f"{UNITS}/tessel-clipboard.service",
+                                   "components/clipboard/tessel-clipboard.service", 0o644),),
+        notes=("A fresh install (there is no Python twin): tessel-clipboard and ~/.config/systemd/user/tessel-clipboard.service "
+               "(WantedBy=graphical-session.target) are created; --rollback --only tessel-clipboard removes them.",
+               "Nothing is enabled or started: run `systemctl --user enable --now tessel-clipboard.service` once.",
+               "Settings: ~/.config/tessel/clipboard.json (Global Settings > Clipboard).",
+               "Verify: tessel-clipboard --check; copy text, close the application, paste.")),
     Component(
-        "keyring-session", "waykeyring", "", (), shims=(), fresh=True, uses_locale=False, base=".config", explicit=True,
+        "keyring-session", "tessel-keyring", "", (), shims=(), fresh=True, uses_locale=False, base=".config", explicit=True,
         files=((".local/share/dbus-1/services/org.freedesktop.secrets.service",
-                "components/waykeyring/data/org.freedesktop.secrets.service", 0o644),
-               (f"{UNITS}/waykeyring.service", "components/waykeyring/data/waykeyring.service", 0o644),
-               (f"{APPS}/org.waydock.Passwords.desktop", "components/waykeyring/data/org.waydock.Passwords.desktop", 0o644)),
-        notes=("Makes waykeyring the session's Secret Service: ~/.local/share/dbus-1/services/org.freedesktop.secrets.service "
-               "(takes precedence over gnome-keyring's /usr/share file) activates waykeyring.service. Install the system "
+                "components/keyring/data/org.freedesktop.secrets.service", 0o644),
+               (f"{UNITS}/tessel-keyring.service", "components/keyring/data/tessel-keyring.service", 0o644),
+               (f"{APPS}/org.tessel.Passwords.desktop", "components/keyring/data/org.tessel.Passwords.desktop", 0o644)),
+        notes=("Makes tessel-keyring the session's Secret Service: ~/.local/share/dbus-1/services/org.freedesktop.secrets.service "
+               "(takes precedence over gnome-keyring's /usr/share file) activates tessel-keyring.service. Install the system "
                "entry keyring first. Also adds the Passwords launcher (Global Settings > Passwords) to the app menu. "
                "A Secret Service that is already running (gnome-keyring) keeps the name until you "
-               "sign out; waykeyring takes over at the next login and imports GNOME's unencrypted keyrings.",)),
+               "sign out; tessel-keyring takes over at the next login and imports GNOME's unencrypted keyrings.",)),
     # ---- explicit user entries (never part of a plain --apply) -----------------------------------
     Component(
-        "archive-manager-mime", "archive-manager", "", (), shims=(), base=".config", fresh=True, uses_locale=False,
+        "archive-manager-mime", "tessel-archive", "", (), shims=(), base=".config", fresh=True, uses_locale=False,
         explicit=True, mime_defaults=(MimeDefaults(".config/mimeapps.list", ARCHIVE_DESKTOP, ARCHIVE_MIMES),),
         notes=("Makes Archive Manager the default application for every archive type it opens: only those keys of "
                "[Default Applications] in ~/.config/mimeapps.list change (Ark's [Added Associations] lines and every "
-               "other byte stay). Install the system entry archive-manager first.",
+               "other byte stay). Install the system entry tessel-archive first.",
                "--rollback --only archive-manager-mime restores the previous defaults (keys you changed since are "
                "left alone). Runs only when named: --apply --only archive-manager-mime.")),
     # ---- --target-root entry (the Kasumi device, aarch64) --------------------------------------
@@ -703,7 +703,7 @@ COMPONENTS = (
                Shim("voice_controls.py", "voice-controls")),
         units=(Unit("luna-clock.service", "luna-clock"),),
         keeps=("admin_panel.py", "screen_keyboard.py", "screen_levels.py", "level_controls.py", "screen_timers.py",
-               "screen_alarms.py", "timer_countdowns.py", "alarm_indicators.py", "config.json", "waykeys-input"),
+               "screen_alarms.py", "timer_countdowns.py", "alarm_indicators.py", "config.json", "tessel-keyboard-input"),
         base="makima", scope="remote", arch="aarch64",
         clobbered_by=("home-assistant-screen/install_remote.py", "home-assistant-screen/install_media.py",
                       "home-assistant-screen/install_keyboard.py"),
@@ -721,7 +721,7 @@ BY_KEY = {component.key: component for component in COMPONENTS}
 
 def atomic_write(path, data, mode):
     path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, name = tempfile.mkstemp(prefix=".desktop-suite-rust-", dir=path.parent)
+    descriptor, name = tempfile.mkstemp(prefix=".tessel-rust-", dir=path.parent)
     temporary = Path(name)
     try:
         with os.fdopen(descriptor, "wb") as stream:
@@ -808,7 +808,7 @@ def marker_lines(component, shim):
     lines = [f"# {SHIM_MARKER} for {component.key}: installed by nobara-de-rust/tools/install.py;"
              f" undo with --rollback --only {component.key}\n"]
     if shim.flags:
-        lines.append("# flags (desktop-suite-action greps for them): "
+        lines.append("# flags (tessel-action greps for them): "
                      + ", ".join(repr(flag) for flag in shim.flags) + "\n")
     return lines
 
@@ -852,7 +852,7 @@ def unit_command(home, component, unit):
 
 
 def dropin_text(component, unit, home):
-    return (f"# Desktop suite Rust swap for {component.key}, generated by nobara-de-rust/tools/install.py.\n"
+    return (f"# Tessel Rust swap for {component.key}, generated by nobara-de-rust/tools/install.py.\n"
             f"# Sorts after every other drop-in, so this ExecStart is the one systemd runs.\n"
             f"# Undo: tools/install.py --rollback --only {component.key}\n"
             f"[Service]\nExecStart=\nExecStart={unit_command(home, component, unit)}\n")
@@ -867,7 +867,7 @@ def launcher_text(component, home, porter=None):
         return (f"#!/bin/sh\n{STANDALONE_MARKER}\n# {SHIM_MARKER} for {component.key}: installed by "
                 f"nobara-de-rust/tools/install.py --system; undo with --system --rollback --only {component.key}\n"
                 f"exec {shlex.quote(str(binary))} \"$@\"\n")
-    return (f"#!/bin/sh\n# Desktop suite Rust swap for {component.key} (nobara-de-rust/tools/install.py).\n"
+    return (f"#!/bin/sh\n# Tessel Rust swap for {component.key} (nobara-de-rust/tools/install.py).\n"
             f"exec '{binary}' \"$@\"\n")
 
 
@@ -1958,20 +1958,20 @@ def main(argv=None):
     parser.add_argument("--home", type=Path, default=Path.home(), help=argparse.SUPPRESS)
     place = parser.add_mutually_exclusive_group()
     place.add_argument("--system", action="store_true",
-                       help="the root-owned /usr/local entries (standalone apps, login-manager); --apply/--rollback "
+                       help="the root-owned /usr/local entries (standalone apps, tessel-login); --apply/--rollback "
                             "only when already running as root")
     place.add_argument("--target-root", type=Path,
                        help="home-assistant-screen: the Kasumi user's home as mounted or staged here")
     parser.add_argument("--root", type=Path, default=Path("/"), help=argparse.SUPPRESS)   # tests: private prefix
     parser.add_argument("--restart", action="store_true", help="systemctl --user restart the swapped active units")
     parser.add_argument("--restart-shell", action="store_true",
-                        help="also allow restarting waydock/wayshell and `labwc --reconfigure` (never a labwc restart)")
+                        help="also allow restarting tessel-dock/tessel-shell and `labwc --reconfigure` (never a labwc restart)")
     parser.add_argument("--no-reload", action="store_true", help="skip systemctl --user daemon-reload")
     parser.add_argument("--force", action="store_true", help="rollback: also restore files changed since the swap")
     parser.add_argument("--json", action="store_true", help="--status as JSON")
     parser.add_argument("--i-am-at-the-keyboard", action="store_true", dest="confirmed",
-                        help="allow --apply for components that need a live check (authentication-manager, "
-                             "network-manager, wayshell, waydock, lock-screen, login-manager)")
+                        help="allow --apply for components that need a live check (tessel-auth, "
+                             "tessel-network, tessel-shell, tessel-dock, tessel-lock, tessel-login)")
     args = parser.parse_args(argv)
     if args.list:
         for c in COMPONENTS:

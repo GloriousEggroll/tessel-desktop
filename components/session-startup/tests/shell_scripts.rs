@@ -1,4 +1,4 @@
-//! Shell pieces the port keeps verbatim: the desktop-suite-action dispatcher
+//! Shell pieces the port keeps verbatim: the tessel-action dispatcher
 //! (ActionScriptTests of test_configure_session.py) and the generated ENV/START blocks
 //! (test_configure_xdg_autostart.py). All external commands are logging fakes on PATH.
 
@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use common::*;
-use session_startup::xdg;
+use tessel_session_startup::xdg;
 
 struct Action {
     root: PathBuf,
@@ -36,7 +36,7 @@ impl Action {
     }
 
     fn run(&self, args: &[&str], env: &[(&str, &str)]) -> Output {
-        let script = suite_root().unwrap().join("session-startup/desktop-suite-action");
+        let script = suite_root().unwrap().join("tessel-session-startup/tessel-action");
         let mut command = Command::new("/bin/sh");
         command.arg(script).args(args).env_clear().env("HOME", &self.home).env("PATH", format!("{}:/usr/bin:/bin", self.bin.display()));
         for (key, value) in env {
@@ -77,7 +77,7 @@ fn terminal_honours_configured_terminal_with_arguments() {
 #[test]
 fn session_menu_uses_menu_option_only_when_supported() {
     let Some(t) = action() else { return };
-    let script = t.home.join(".config/waybar/scripts/session-manager/session_manager.py");
+    let script = t.home.join(".config/waybar/scripts/tessel-session/session_manager.py");
     write(&script, &format!("import sys\nopen({:?}, 'a').write(' '.join(sys.argv[1:]) + '\\n')\n", t.log.display().to_string()));
     t.run(&["session-menu"], &[]);
     let text = fs::read_to_string(&script).unwrap() + "# parser.add_argument('--menu')\n";
@@ -92,7 +92,7 @@ fn unknown_action_fails() {
     let Some(t) = action() else { return };
     let output = t.run(&["nonsense"], &[]);
     assert_eq!(output.status.code(), Some(2));
-    assert_eq!(String::from_utf8_lossy(&output.stderr), "usage: desktop-suite-action ACTION\n");
+    assert_eq!(String::from_utf8_lossy(&output.stderr), "usage: tessel-action ACTION\n");
 }
 
 fn stub(bin: &Path, name: &str, body: &str) {
@@ -141,7 +141,7 @@ fn app_autostart_waits_for_dock_start_to_finish() {
         &bin,
         "systemctl",
         &format!(
-            "#!/bin/sh\nfor last; do :; done\nif [ \"$last\" = waydock.service ]; then sleep 0.15; touch \"{r}\"; else [ -e \"{r}\" ] || {{ echo 'Autostart raced the tray' >&2; exit 1; }}; touch \"{s}\"; fi\n",
+            "#!/bin/sh\nfor last; do :; done\nif [ \"$last\" = tessel-dock.service ]; then sleep 0.15; touch \"{r}\"; else [ -e \"{r}\" ] || {{ echo 'Autostart raced the tray' >&2; exit 1; }}; touch \"{s}\"; fi\n",
             r = ready.display(),
             s = started.display()
         ),
@@ -165,7 +165,7 @@ fn xdg_home(root: &Path) -> (PathBuf, PathBuf) {
 }
 
 fn invoke_xdg(home: &Path, system: &Path, bin: &Path, apply: bool) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_configure-xdg-autostart"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_tessel-xdg-autostart"));
     if apply {
         command.arg("--apply");
     }
@@ -225,6 +225,6 @@ fn xdg_failed_validation_restores_files_and_removes_new_target() {
     assert_eq!(output.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&output.stderr).contains("returned non-zero exit status 2."));
     let restored: std::collections::BTreeMap<_, _> =
-        tree(&home).into_iter().filter(|(path, _)| !path.starts_with(".local/state/desktop-suite/backups")).collect();
+        tree(&home).into_iter().filter(|(path, _)| !path.starts_with(".local/state/tessel/backups")).collect();
     assert_eq!(restored, before);
 }

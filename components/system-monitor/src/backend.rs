@@ -12,7 +12,7 @@ use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
-use suite_core::tr;
+use tessel_core::tr;
 
 pub const GPU_TIMEOUT: Duration = Duration::from_millis(750);
 pub const GPU_INTERVAL: f64 = 3.0;
@@ -77,7 +77,7 @@ pub fn run_command(argv: &[String], timeout: Duration) -> Result<RunOutput, Stri
     use std::process::{Command, Stdio};
     let mut child = Command::new(&argv[0]).args(&argv[1..]).stdin(Stdio::null()).stdout(Stdio::piped())
         .stderr(Stdio::piped()).spawn()
-        .map_err(|e| suite_core::pyerr::os_error_path(&e, Path::new(&argv[0])))?;
+        .map_err(|e| tessel_core::pyerr::os_error_path(&e, Path::new(&argv[0])))?;
     let mut stdout = child.stdout.take().unwrap();
     let mut stderr = child.stderr.take().unwrap();
     let out = std::thread::spawn(move || { let mut s = Vec::new(); let _ = stdout.read_to_end(&mut s); s });
@@ -90,10 +90,10 @@ pub fn run_command(argv: &[String], timeout: Duration) -> Result<RunOutput, Stri
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(format!("Command '{}' timed out after {} seconds", python_list_repr(argv),
-                                   suite_core::pyfmt::float_repr(timeout.as_secs_f64())));
+                                   tessel_core::pyfmt::float_repr(timeout.as_secs_f64())));
             }
             Ok(None) => std::thread::sleep(Duration::from_millis(5)),
-            Err(e) => return Err(suite_core::pyerr::os_error_text(&e)),
+            Err(e) => return Err(tessel_core::pyerr::os_error_text(&e)),
         }
     };
     let stdout = String::from_utf8_lossy(&out.join().unwrap_or_default()).into_owned();
@@ -126,7 +126,7 @@ impl Default for Options {
             wall_clock: Box::new(|| std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs_f64()).unwrap_or(0.0)),
             gpu_runner: Box::new(run_command),
-            gpu_command: suite_core::shell::which("nvidia-smi"),
+            gpu_command: tessel_core::shell::which("nvidia-smi"),
             drm_root: Some(PathBuf::from("/sys/class/drm")),
             include_addresses: false,
             system_info: None,
@@ -171,7 +171,7 @@ fn os_name(root: &Path) -> String {
         if let Ok(text) = std::fs::read_to_string(&path) {
             for line in text.lines() {
                 if let Some(value) = line.strip_prefix("PRETTY_NAME=") {
-                    let shell = suite_core::shell::shell_split(value);
+                    let shell = tessel_core::shell::shell_split(value);
                     return shell.into_iter().next().unwrap_or_default();
                 }
             }

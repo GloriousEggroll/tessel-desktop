@@ -1,6 +1,6 @@
 # calculator — parity with contracts/calculator.md
 
-Crate `components/calculator`, binary `calculator` (GApplication `org.waydock.Calculator`).
+Crate `components/calculator`, binary `calculator` (GApplication `org.tessel.Calculator`).
 Tests: `env -u TMPDIR cargo test -p calculator` (24 unit tests), `tests/run_headless.sh` (9 GTK checks = all 9
 Python `CalculatorUITests`, private nested headless labwc + private D-Bus), `tests/measure_headless.sh`
 (Rust vs Python, same compositor; the two idle windows' screenshots are **byte-identical**).
@@ -10,7 +10,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 ## §1 Entry points
 | Item | | Test |
 |---|---|---|
-| App id, HANDLES_COMMAND_LINE, prgname = app_id, one window reused, unminimize/present, idle `wlrctl` raise (≤4 retries) | ✅ | `second_process_reuses_existing_window` (real `calculator` binary as 2nd process on the private bus), measure_headless (`wlrctl … app_id:org.waydock.Calculator`) |
+| App id, HANDLES_COMMAND_LINE, prgname = app_id, one window reused, unminimize/present, idle `wlrctl` raise (≤4 retries) | ✅ | `second_process_reuses_existing_window` (real `calculator` binary as 2nd process on the private bus), measure_headless (`wlrctl … app_id:org.tessel.Calculator`) |
 | Installer / launcher / .desktop | ❌ (installer step, not in crate) | — |
 
 ## §2 CLI

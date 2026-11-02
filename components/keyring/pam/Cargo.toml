@@ -1,0 +1,14 @@
+[package]
+name = "pam-tessel-keyring"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "pam_tessel_keyring.so: unlocks tessel-keyring with the login password (auth + session) and re-wraps it on password change."
+
+[lib]
+name = "pam_tessel_keyring"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+libc.workspace = true

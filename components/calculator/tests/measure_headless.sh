@@ -1,6 +1,6 @@
 #!/bin/sh
 # Rust vs Python calculator: time until the window is mapped (wlrctl sees app_id
-# org.waydock.Calculator) and idle RSS/PSS, in a private nested headless labwc
+# org.tessel.Calculator) and idle RSS/PSS, in a private nested headless labwc
 # with a private D-Bus and private XDG dirs. Never touches the live session.
 set -eu
 AGENT=${AGENT:-calculator}
@@ -23,7 +23,7 @@ rss() { echo "\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) PSS=\$(awk '/^Pss:/
 measure() {
   name=\$1; shift
   t0=\$(ms); "\$@" >"$R/\$name.out" 2>&1 & pid=\$!
-  until wlrctl toplevel find app_id:org.waydock.Calculator >/dev/null 2>&1; do sleep 0.01; [ \$((\$(ms)-t0)) -gt 15000 ] && break; done
+  until wlrctl toplevel find app_id:org.tessel.Calculator >/dev/null 2>&1; do sleep 0.01; [ \$((\$(ms)-t0)) -gt 15000 ] && break; done
   echo "\$name window_ms=\$((\$(ms)-t0))"
   sleep 3; echo "\$name idle_rss_kb=\$(rss \$pid)"
   grim "$R/\$name.png" 2>/dev/null || true
@@ -32,7 +32,7 @@ measure() {
 }
 for i in 1 2; do
   measure rust "$REL/calculator"
-  measure python /usr/bin/python3 /home/tcrider/btmanager/calculator/calculator.py
+  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/calculator/calculator.py
 done
 labwc --exit
 RUN

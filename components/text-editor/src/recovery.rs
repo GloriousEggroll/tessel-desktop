@@ -9,15 +9,15 @@ use serde_json::{json, Value};
 use std::io::Write;
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
-use suite_core::pyfmt::{json_dumps, JsonStyle};
-use suite_core::pyjson::py_float;
+use tessel_core::pyfmt::{json_dumps, JsonStyle};
+use tessel_core::pyjson::py_float;
 
 pub const VERSION: i64 = 1;
 pub const DELAY_SECONDS: f64 = 30.0;
 
-/// `$XDG_STATE_HOME/text-editor/recovery` (default `~/.local/state/...`).
+/// `$XDG_STATE_HOME/tessel-text-editor/recovery` (default `~/.local/state/...`).
 pub fn recovery_dir() -> PathBuf {
-    suite_core::paths::state_home().join("text-editor/recovery")
+    tessel_core::paths::state_home().join("tessel-text-editor/recovery")
 }
 
 pub fn new_identifier() -> String {
@@ -93,7 +93,7 @@ fn alive(pid: Option<&Value>) -> bool {
     }
     let Ok(command) = std::fs::read(format!("/proc/{pid}/cmdline")) else { return false };
     let has = |needle: &[u8]| command.windows(needle.len()).any(|w| w == needle);
-    has(b"text_editor") || has(b"text-editor") || has(b"editor_ui")
+    has(b"text_editor") || has(b"tessel-text-editor") || has(b"editor_ui")
 }
 
 /// `value == 1` in Python (1, 1.0 and True).
@@ -127,7 +127,7 @@ pub fn pending(folder: Option<&Path>) -> Vec<Draft> {
         }
         let saved = match object.get("saved") {
             None => 0.0,
-            Some(value) if !suite_core::pyjson::truthy(value) => 0.0,
+            Some(value) if !tessel_core::pyjson::truthy(value) => 0.0,
             Some(value) => match py_float(value) {
                 Some(saved) => saved,
                 None => continue,

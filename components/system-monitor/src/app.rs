@@ -1,4 +1,4 @@
-//! system_monitor.py: the `org.waydock.SystemMonitor` application.
+//! system_monitor.py: the `org.tessel.SystemMonitor` application.
 
 use crate::args::{self, Outcome};
 use crate::backend::{Options, Sampler};
@@ -8,7 +8,7 @@ use gtk::{gio, glib};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub const APP_ID: &str = "org.waydock.SystemMonitor";
+pub const APP_ID: &str = "org.tessel.SystemMonitor";
 
 /// `--check`: a read-only backend sample as one JSON line.
 pub fn check_text() -> String {
@@ -18,10 +18,10 @@ pub fn check_text() -> String {
         "logical_cores": result["cpu"]["logical_cores"], "memory_total": result["memory"]["total"],
         "gpus": result["gpus"].as_array().map(Vec::len).unwrap_or(0),
     });
-    suite_core::pyfmt::json_dumps(&summary, &suite_core::pyfmt::JsonStyle::DEFAULT)
+    tessel_core::pyfmt::json_dumps(&summary, &tessel_core::pyfmt::JsonStyle::DEFAULT)
 }
 
-/// `wlrctl toplevel focus app_id:org.waydock.SystemMonitor` (output silenced).
+/// `wlrctl toplevel focus app_id:org.tessel.SystemMonitor` (output silenced).
 fn raise_window(window: &glib::WeakRef<MonitorWindowHandle>) {
     let Some(window) = window.upgrade() else { return };
     if !window.get_visible() || glib::find_program_in_path("wlrctl").is_none() {
@@ -38,7 +38,7 @@ type MonitorWindowHandle = gtk::ApplicationWindow;
 
 pub fn run() -> glib::ExitCode {
     let argv: Vec<String> = std::env::args().collect();
-    let prog = args::prog(argv.first().map(String::as_str).unwrap_or("system-monitor"));
+    let prog = args::prog(argv.first().map(String::as_str).unwrap_or("tessel-system-monitor"));
     let parsed = match args::parse(argv.get(1..).unwrap_or(&[])) {
         Outcome::Run(parsed) => parsed,
         Outcome::Help => {
@@ -54,10 +54,10 @@ pub fn run() -> glib::ExitCode {
         println!("{}", check_text());
         return glib::ExitCode::SUCCESS;
     }
-    suite_core::i18n::initialize();
+    tessel_core::i18n::initialize();
     glib::set_prgname(Some(APP_ID));
     let app = gtk::Application::new(Some(APP_ID), gio::ApplicationFlags::HANDLES_COMMAND_LINE);
-    suite_gtk::theme::attach_application(&app);
+    tessel_gtk::theme::attach_application(&app);
     let window: Rc<RefCell<Option<MonitorWindow>>> = Rc::new(RefCell::new(None));
     let show = {
         let window = window.clone();

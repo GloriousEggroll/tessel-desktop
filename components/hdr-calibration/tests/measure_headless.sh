@@ -1,5 +1,5 @@
 #!/bin/sh
-# Rust vs Python hdr-calibration: time until the window is mapped (wlrctl sees
+# Rust vs Python tessel-hdr-calibration: time until the window is mapped (wlrctl sees
 # app_id org.desktop.HDRCalibration) and idle RSS/PSS after 3 s, 2 runs each, in a
 # private nested headless labwc with a private D-Bus and private XDG dirs.
 # Both read only the private compositor's own status file ($R/rt/labwc-color-*.ini,
@@ -17,7 +17,7 @@ for tool in way-displays wlr-randr kscreen-doctor xrandr hdr-pattern; do
   printf '#!/bin/sh\necho "%s $*" >> %s/calls.log\nexit 1\n' "$tool" "$R" > "$R/bin/$tool"; chmod +x "$R/bin/$tool"
 done
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p hdr-calibration)
+(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-hdr-calibration)
 REL="$ROOT/target/release"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
@@ -39,8 +39,8 @@ measure() {
   sleep 0.5
 }
 for i in 1 2; do
-  measure rust "$REL/hdr-calibration"
-  measure python /usr/bin/python3 /home/tcrider/btmanager/hdr-calibration/hdr_calibration.py
+  measure rust "$REL/tessel-hdr-calibration"
+  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-hdr-calibration/hdr_calibration.py
 done
 labwc --exit
 RUN
@@ -50,7 +50,7 @@ env -u WAYLAND_DISPLAY -u DISPLAY -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_
   WLR_HEADLESS_OUTPUTS=1 WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
   dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" > "$R/labwc.log" 2>&1 || true
 grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
-ls -l "$REL/hdr-calibration" | awk '{print $9, $5}'
+ls -l "$REL/tessel-hdr-calibration" | awk '{print $9, $5}'
 grep -E "window_ms|rss" "$R/labwc.log" || { tail -30 "$R/labwc.log"; exit 1; }
 echo "private XDG files written:"; find "$R/xdg" -type f | sed "s|$R/||"
 echo "rc.xml unchanged: $(cat "$R/cfg/rc.xml")"

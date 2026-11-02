@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use gtk::prelude::*;
 use serde_json::{json, Map, Value};
-use suite_core::pyjson::{py_float, py_int, py_str, py_strip};
+use tessel_core::pyjson::{py_float, py_int, py_str, py_strip};
 
 use crate::levels::Worker;
 
@@ -40,7 +40,7 @@ pub const ALARM_CSS: &str = "
 ";
 
 /// `SOCKET = Path.home()/'.local/share/kasumi-control/voice.sock'`.
-pub fn socket_path() -> PathBuf { suite_core::paths::home().join(".local/share/kasumi-control/voice.sock") }
+pub fn socket_path() -> PathBuf { tessel_core::paths::home().join(".local/share/kasumi-control/voice.sock") }
 
 /// `read_snapshot(operation, path)`: one request line, one ≤ 262145-byte reply line, 0.7 s timeout.
 pub fn read_snapshot(operation: &str, path: &Path) -> Result<Map<String, Value>, String> {
@@ -48,7 +48,7 @@ pub fn read_snapshot(operation: &str, path: &Path) -> Result<Map<String, Value>,
     let timeout = Some(Duration::from_millis(700));
     client.set_read_timeout(timeout).map_err(|e| e.to_string())?;
     client.set_write_timeout(timeout).map_err(|e| e.to_string())?;
-    let request = suite_core::pyfmt::json_dumps(&json!({"operation": operation}), &suite_core::pyfmt::JsonStyle::DEFAULT);
+    let request = tessel_core::pyfmt::json_dumps(&json!({"operation": operation}), &tessel_core::pyfmt::JsonStyle::DEFAULT);
     client.write_all(format!("{request}\n").as_bytes()).map_err(|e| e.to_string())?;
     let line = read_line_until(&mut client, 262_145, std::time::Instant::now() + Duration::from_millis(700))?;
     let response: Value = serde_json::from_slice(&line).map_err(|e| e.to_string())?;
@@ -113,7 +113,7 @@ pub fn remaining_text(seconds: f64) -> String {
 
 fn get<'a>(row: &'a Value, key: &str) -> Result<&'a Value, String> { row.get(key).ok_or_else(|| format!("KeyError: '{key}'")) }
 
-fn truthy(row: &Value, key: &str) -> bool { row.get(key).is_some_and(suite_core::pyjson::truthy) }
+fn truthy(row: &Value, key: &str) -> bool { row.get(key).is_some_and(tessel_core::pyjson::truthy) }
 
 /// Python ordering of JSON scalars used in sort keys.
 fn compare(a: &Value, b: &Value) -> Ordering {
@@ -161,7 +161,7 @@ pub fn large_countdowns(rows: &[Value], now: f64) -> Result<Vec<Map<String, Valu
 /// `visible_alarms(rows, now)`: today's (zone-local) alarms, ringing ones
 /// always; sorted by (due, id).
 pub fn visible_alarms(rows: &[Value], now: f64) -> Result<Vec<Map<String, Value>>, String> {
-    use weather_manager::dates::local;
+    use tessel_weather::dates::local;
     let mut visible = Vec::new();
     for row in rows {
         let zone = py_str(get(row, "zone")?);
@@ -254,8 +254,8 @@ impl TimerCards {
             title.set_text(&text("title"));
             title.set_tooltip_text(Some(&text("title")));
             digits.set_text(&text("text"));
-            let ringing = row.get("ringing").is_some_and(suite_core::pyjson::truthy);
-            let given = row.get("caption").filter(|c| suite_core::pyjson::truthy(c)).map(py_str);
+            let ringing = row.get("ringing").is_some_and(tessel_core::pyjson::truthy);
+            let given = row.get("caption").filter(|c| tessel_core::pyjson::truthy(c)).map(py_str);
             caption.set_text(&given.unwrap_or_else(|| (if ringing { "Time’s up" } else { "remaining" }).into()));
             if ringing { card.add_css_class("timer-ringing") } else { card.remove_css_class("timer-ringing") }
         }

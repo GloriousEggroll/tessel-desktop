@@ -1,0 +1,35 @@
+[package]
+name = "tessel-files"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Files (tessel-files, org.tessel.Files): GTK4/GIO file manager with tabs, split panes, Miller columns, previews and safe file operations."
+
+[lib]
+name = "tessel_files"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tessel-files"
+path = "src/main.rs"
+
+[dependencies]
+tessel-files-ops = { path = "ops" }
+tessel-files-model = { path = "model" }
+tessel-files-widgets = { path = "widgets" }
+tessel-dock = { path = "../dock" }
+tessel-core.workspace = true
+tessel-gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+
+[dev-dependencies]
+tessel-files-ops = { path = "ops" }
+
+[[test]]
+name = "ui_headless"
+path = "tests/ui_headless.rs"
+harness = false

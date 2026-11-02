@@ -91,13 +91,13 @@ pub fn read_volume() -> Result<Volume, String> {
     let sink = sinks.as_array().into_iter().flatten().find(|s| s.get("name").and_then(Value::as_str) == Some(name.as_str()))
         .ok_or("StopIteration")?;
     let channels: Vec<f64> = sink.get("volume").and_then(Value::as_object).ok_or("KeyError: 'volume'")?
-        .values().map(|v| v.get("value").and_then(suite_core::pyjson::py_float).ok_or("KeyError: 'value'"))
+        .values().map(|v| v.get("value").and_then(tessel_core::pyjson::py_float).ok_or("KeyError: 'value'"))
         .collect::<Result<_, _>>()?;
     let max = channels.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
     if !max.is_finite() {
         return Err("max() arg is an empty sequence".into());
     }
-    let muted = sink.get("mute").map(suite_core::pyjson::truthy).ok_or("KeyError: 'mute'")?;
+    let muted = sink.get("mute").map(tessel_core::pyjson::truthy).ok_or("KeyError: 'mute'")?;
     Ok(Volume { sink: name, value: (max / 65536.0 * 100.0).round_ties_even() as i64, muted })
 }
 
@@ -145,7 +145,7 @@ impl Worker {
 
 pub fn read_brightness(path: &Path) -> i64 {
     std::fs::read_to_string(path).ok().and_then(|text| serde_json::from_str::<Value>(&text).ok())
-        .and_then(|value| suite_core::pyjson::py_int(value.get("brightness")))
+        .and_then(|value| tessel_core::pyjson::py_int(value.get("brightness")))
         .map(|value| value.clamp(10, 100)).unwrap_or(100)
 }
 
@@ -184,7 +184,7 @@ pub struct ScreenLevels(Rc<Inner>);
 
 impl ScreenLevels {
     pub fn new(overlay: &gtk::Overlay, state_path: &Path) -> Self {
-        let state_path = suite_lock::expanduser(state_path);
+        let state_path = tessel_locking::expanduser(state_path);
         let brightness = read_brightness(&state_path);
         // Added above the dashboard, below the indicator. Does not intercept input.
         let dimmer = gtk::Box::builder().hexpand(true).vexpand(true).can_target(false).css_classes(["screen-dimmer"]).build();
@@ -231,7 +231,7 @@ impl ScreenLevels {
         let text = match error {
             Some(error) => error.to_owned(),
             None if muted => "Muted".into(),
-            None => suite_core::pyjson::py_strip(&format!("{direction} {value}%")).to_owned(),
+            None => tessel_core::pyjson::py_strip(&format!("{direction} {value}%")).to_owned(),
         };
         inner.value.set_text(&text);
         inner.progress.set_fraction(if muted || error.is_some() { 0.0 } else { (value as f64 / 100.0).clamp(0.0, 1.0) });

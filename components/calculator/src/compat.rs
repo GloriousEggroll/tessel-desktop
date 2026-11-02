@@ -1,4 +1,4 @@
-//! Helpers missing from suite-core (upstream candidates).
+//! Helpers missing from tessel-core (upstream candidates).
 //!
 //! `loads`: Python's `json.loads` value model and error texts. serde_json rejects
 //! what Python accepts (`NaN`, `Infinity`, integers beyond f64, nesting beyond 128)

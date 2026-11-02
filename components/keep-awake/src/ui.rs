@@ -4,30 +4,30 @@
 use crate::timed::TimedBackend;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use suite_core::tr;
-use suite_gtk::gtk::prelude::*;
-use suite_gtk::gtk::{self, glib};
-use suite_gtk::popup::{popup_header, set_popup_width, PopupController, POPUP_PADDING, POPUP_WIDTH};
-use suite_gtk::utils::{accessible, append, PRIORITY_APPLICATION};
+use tessel_core::tr;
+use tessel_gtk::gtk::prelude::*;
+use tessel_gtk::gtk::{self, glib};
+use tessel_gtk::popup::{popup_header, set_popup_width, PopupController, POPUP_PADDING, POPUP_WIDTH};
+use tessel_gtk::utils::{accessible, append, PRIORITY_APPLICATION};
 
 /// (minutes, label); 0 keeps the session awake until turned off.
 pub const DURATION_CHOICES: [(u32, &str); 4] =
     [(30, "For 30 minutes"), (60, "For 1 hour"), (120, "For 2 hours"), (0, "Until turned off")];
 
 pub const CSS: &str = "
-window.keep-awake.tray-popup { background: transparent; }
-.keep-awake .popup-surface {
+window.tessel_keep_awake.tray-popup { background: transparent; }
+.tessel_keep_awake .popup-surface {
     background-color: @theme_bg_color; color: @theme_fg_color;
     border: 1px solid alpha(@theme_fg_color, 0.14); border-radius: 12px;
 }
-.keep-awake .muted { color: alpha(@theme_fg_color, 0.65); }
-.keep-awake .card {
+.tessel_keep_awake .muted { color: alpha(@theme_fg_color, 0.65); }
+.tessel_keep_awake .card {
     border-radius: 8px; padding: 12px;
     background-color: alpha(@theme_fg_color, 0.045);
     border: 1px solid alpha(@theme_fg_color, 0.10);
 }
-.keep-awake .status { font-size: 9pt; }
-.keep-awake .error { color: mix(@theme_fg_color, #e05d65, 0.75); }
+.tessel_keep_awake .status { font-size: 9pt; }
+.tessel_keep_awake .error { color: mix(@theme_fg_color, #e05d65, 0.75); }
 ";
 
 /// What the popup drives: the daemon's [`TimedBackend`], or (embedded in
@@ -58,7 +58,7 @@ impl Controls for TimedBackend {
 
 /// The local time Keep Awake ends, following the desktop clock's 12/24-hour choice.
 pub fn end_time_text(until: f64) -> String {
-    let use_24_hour = suite_core::clock::ClockPreferencesStore::default().load().use_24_hour;
+    let use_24_hour = tessel_core::clock::ClockPreferencesStore::default().load().use_24_hour;
     format_end_time(until, use_24_hour)
 }
 
@@ -122,7 +122,7 @@ impl KeepAwakePopup {
     pub fn new(backend: Rc<dyn Controls>, edge: &str, offset: i32, embedded: bool) -> Self {
         let window = gtk::Window::builder().title(tr!("Keep Awake")).build();
         set_popup_width(&window, POPUP_WIDTH);
-        window.add_css_class("keep-awake");
+        window.add_css_class("tessel-keep-awake");
         let css = gtk::CssProvider::new();
         css.load_from_string(CSS);
         let surface = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -201,7 +201,7 @@ impl KeepAwakePopup {
                 }
             }
         });
-        suite_gtk::theme::attach(&window, None);
+        tessel_gtk::theme::attach(&window, None);
         if !embedded {
             let weak = Rc::downgrade(&popup.0);
             let controller = PopupController::new(&window, move || {
