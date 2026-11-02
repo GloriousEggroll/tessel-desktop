@@ -40,6 +40,30 @@ EXPLICIT_SYSTEM_PARTS = ("login",)    # only with --only login (the login screen
 # Native helpers built by build.rs into the build output (not [[bin]] targets).
 HELPERS = ("tessel-keyboard-input", "libcapture-pipewire.so")
 # Native pieces the build may skip (missing -devel packages): an installed copy is kept.
+# The suite's own build of xdg-desktop-portal-wlr, replaced by the distribution package
+# once that carries the chooser-session patch (Nobara 0.8.4-4).
+OLD_PORTAL = "usr/local/libexec/waycapture-portal-wlr"
+PORTAL_DROPIN = ".config/systemd/user/xdg-desktop-portal-wlr.service.d"
+PACKAGED_PORTAL = "usr/libexec/xdg-desktop-portal-wlr"
+
+
+def packaged_portal_ready(root):
+    """The distribution portal has every patch the suite's copy had."""
+    try:
+        data = (Path(root) / PACKAGED_PORTAL).read_bytes()
+    except OSError:
+        return False
+    return all(marker in data for marker in (b"XDPW_CHOOSER_SESSION", b"XDPW_CHOOSER_REMOTE_DESKTOP"))
+
+
+def old_portal_dropins(home):
+    directory = Path(home) / PORTAL_DROPIN
+    if not directory.is_dir():
+        return []
+    return [path for path in sorted(directory.iterdir())
+            if path.suffix == ".conf" and "waycapture-portal-wlr" in path.read_text(errors="replace")]
+
+
 CARRY_OVER = {"libcapture-pipewire.so": ("usr/local/lib/desktop-suite/capture-manager/libcapture-pipewire.so",)}
 # The lock screen's PAM services: (desktop-suite name, Tessel name).
 LOCK_PAM = (("waylock", "tessel-lock"), ("waylock-password", "tessel-lock-password"),
@@ -204,6 +228,19 @@ def user_plan(home, parts, binaries, target_dir):
             for path in sorted(applications.iterdir()):
                 if path.name.startswith(OLD_USER_DESKTOP) or path.name in OLD_USER_DESKTOP:
                     plan.remove(path)
+        dropins = old_portal_dropins(home)
+        if dropins and packaged_portal_ready("/"):
+            for path in dropins:
+                plan.remove(path)
+            if Path(home).resolve() == Path.home().resolve():
+                # Reload unit files only (nothing is started, stopped or restarted), so the user
+                # manager never keeps the removed override if it outlives this session.
+                plan.commands.append((["systemctl", "--user", "daemon-reload"], dict(os.environ)))
+            plan.notes.append("The screen-share portal switches to the distribution's xdg-desktop-portal-wlr at the "
+                              "next login (the running portal is not restarted).")
+        elif dropins:
+            plan.notes.append("Kept the waycapture-portal-wlr override: install xdg-desktop-portal-wlr 0.8.4-4 or "
+                              "newer first (it carries the chooser-session and RemoteDesktop patches).")
     if "session" in parts:
         environment = {k: v for k, v in os.environ.items() if k != "LABWC_PID"}
         environment["HOME"] = str(home)
@@ -313,6 +350,18 @@ def system_plan(root, parts, target_dir):
                 for path in sorted(directory.iterdir()):
                     if path.name.startswith(prefix) and path.suffix == ".desktop":
                         plan.remove(path)
+        old_portal = root / OLD_PORTAL
+        if old_portal.exists():
+            homes = root / "home"
+            users = [h for h in sorted(homes.iterdir()) if old_portal_dropins(h)] if homes.is_dir() else []
+            if not packaged_portal_ready(root):
+                plan.notes.append(f"Kept {old_portal}: the installed xdg-desktop-portal-wlr lacks the chooser-session "
+                                  "patch (needs 0.8.4-4 or newer).")
+            elif users:
+                plan.notes.append(f"Kept {old_portal}: still used by " + ", ".join(str(u) for u in users)
+                                  + " (run the user install with --only retire-old there first).")
+            else:
+                plan.remove(old_portal)
     return plan
 
 

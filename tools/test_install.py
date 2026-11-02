@@ -85,6 +85,22 @@ class UserInstall(unittest.TestCase):
                          "[Desktop Entry]\nName=Old Files\n")
         self.assertFalse((self.home / ".local/share/applications/org.tessel.Files.desktop").exists())
 
+    def test_old_portal_override_waits_for_the_patched_package(self):
+        dropins = self.home / install.PORTAL_DROPIN
+        dropins.mkdir(parents=True)
+        (dropins / "50-waycapture.conf").write_text("[Service]\nExecStart=\nExecStart=/usr/local/libexec/waycapture-portal-wlr\n")
+        (dropins / "60-mine.conf").write_text("[Service]\nEnvironment=XDPW_LOG=1\n")
+        original = install.packaged_portal_ready
+        self.addCleanup(setattr, install, "packaged_portal_ready", original)
+        install.packaged_portal_ready = lambda root: False
+        self.assertIn("Kept the waycapture-portal-wlr override", run(self.args + ["--apply", "--only", "retire-old"]))
+        self.assertTrue((dropins / "50-waycapture.conf").exists())
+        install.packaged_portal_ready = lambda root: True
+        run(self.args + ["--apply", "--only", "retire-old"])
+        self.assertFalse((dropins / "50-waycapture.conf").exists())
+        self.assertTrue((dropins / "60-mine.conf").exists())
+        self.assertFalse(self.log.exists(), "no commands for a home other than the caller's")
+
     def test_only_selects_parts(self):
         run(self.args + ["--apply", "--only", "locale"])
         self.assertTrue((self.home / ".local/share/tessel/locale/en.json").is_file())
@@ -137,6 +153,27 @@ class SystemInstall(unittest.TestCase):
         self.assertEqual((self.root / "usr/share/applications/org.waydock.Files.desktop").read_text(), "old")
         self.assertFalse((self.root / "usr/lib64/security/pam_tessel_keyring.so").exists())
         self.assertIn('"labwc"', (self.root / "etc/waylogin/appearance.json").read_text())
+
+    def test_old_portal_binary_is_removed_only_when_unused_and_replaced(self):
+        old = self.root / install.OLD_PORTAL
+        old.parent.mkdir(parents=True)
+        old.write_bytes(b"old portal")
+        packaged = self.root / install.PACKAGED_PORTAL
+        packaged.parent.mkdir(parents=True)
+        packaged.write_bytes(b"stock 0.8.4-2")
+        user = self.root / "home/alice" / install.PORTAL_DROPIN
+        user.mkdir(parents=True)
+        (user / "50-waycapture.conf").write_text("ExecStart=/usr/local/libexec/waycapture-portal-wlr\n")
+        only = self.args + ["--apply", "--only", "retire-old"]
+        self.assertIn("lacks the chooser-session patch", run(only))
+        packaged.write_bytes(b"XDPW_CHOOSER_SESSION XDPW_CHOOSER_REMOTE_DESKTOP")
+        self.assertIn("still used by", run(only))
+        self.assertTrue(old.exists())
+        (user / "50-waycapture.conf").unlink()
+        run(only)
+        self.assertFalse(old.exists())
+        run(["--system", "--root", str(self.root), "--rollback"])
+        self.assertEqual(old.read_bytes(), b"old portal")
 
     def test_lock_pam_services_are_copied_once(self):
         pam = self.root / "etc/pam.d"
