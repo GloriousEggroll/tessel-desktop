@@ -17,7 +17,7 @@ pub type Exit = (i32, String, String);
 fn choices() -> String { section_keys().join(",") }
 
 pub fn usage() -> String {
-    format!("usage: {PROG} [-h]\n                          [--section {{{}}}]\n                          [--shortcuts]\n", choices())
+    format!("usage: {PROG} [-h]\n                       [--section {{{}}}]\n                       [--shortcuts]\n", choices())
 }
 
 pub fn help() -> String {
@@ -125,7 +125,7 @@ mod tests {
         assert!(parse(&v(&["--sh"])).unwrap().shortcuts);
         let (code, _, err) = parse(&v(&["--s"])).unwrap_err();
         assert_eq!(code, 2);
-        assert!(err.ends_with("global_settings.py: error: ambiguous option: --s could match --section, --shortcuts\n"));
+        assert!(err.ends_with("tessel-settings: error: ambiguous option: --s could match --section, --shortcuts\n"));
         let (_, _, err) = parse(&v(&["extra"])).unwrap_err();
         assert!(err.ends_with("error: unrecognized arguments: extra\n"));
         let (_, _, err) = parse(&v(&["--section"])).unwrap_err();
@@ -134,7 +134,7 @@ mod tests {
         assert!(err.ends_with("error: argument --quit: ignored explicit argument '1'\n"));
         let (code, out, _) = parse(&v(&["--he"])).unwrap_err();
         assert_eq!(code, 0);
-        assert!(out.starts_with("usage: global_settings.py [-h]\n"));
+        assert!(out.starts_with("usage: tessel-settings [-h]\n"));
     }
 
     /// Byte comparison with argparse output captured from the Python app
