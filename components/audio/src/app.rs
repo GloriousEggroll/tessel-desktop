@@ -140,7 +140,7 @@ impl AudioApplication {
         let argv: Vec<String> = command_line.arguments().iter().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();
         let prog = command_line.arguments().first()
             .and_then(|a| std::path::Path::new(a).file_name().map(|n| n.to_string_lossy().into_owned()))
-            .unwrap_or_else(|| "audio_manager.py".into());
+            .unwrap_or_else(|| "tessel-audio".into());
         let args = match app_arguments(&argv, &prog) {
             Ok(args) => args,
             Err(exit) => {
@@ -321,7 +321,7 @@ impl AudioApplication {
 pub fn main(argv: Vec<String>) -> i32 {
     tessel_core::i18n::initialize();
     let prog = argv.first().and_then(|a| std::path::Path::new(a).file_name().map(|n| n.to_string_lossy().into_owned()))
-        .unwrap_or_else(|| "audio_manager.py".into());
+        .unwrap_or_else(|| "tessel-audio".into());
     // Validate local help/options before starting an audio connection.
     if let Err(exit) = app_arguments(argv.get(1..).unwrap_or_default(), &prog) {
         print!("{}", exit.stdout);

@@ -106,7 +106,7 @@ pub fn keyboard_xml(launcher: &Path) -> String {
         .map(|b| format!("<keybind key=\"{}\"><action name=\"Tiling\" command=\"{}\"/></keybind>", b.key, b.command))
         .collect();
     let launcher = launcher.to_string_lossy().into_owned();
-    let lock = tessel_core::paths::home().join(".local/bin/tessel-shell-lock").to_string_lossy().into_owned();
+    let lock = tessel_core::paths::program("tessel-shell-lock").to_string_lossy().into_owned();
     for (key, command) in [("W-k", vec![launcher.as_str(), "--settings"]), ("W-C-l", vec![lock.as_str()])] {
         rows.push(format!("<keybind key=\"{key}\"><action name=\"Execute\" command=\"{}\"/></keybind>",
                           html_escape(&shlex_join(&command))));
@@ -153,33 +153,7 @@ mod tests {
         let block = keyboard_xml(Path::new("/tmp/tessel-tiling"));
         assert!(!block.contains("key=\"W-l\""));
         assert!(!block.contains("C-A-Delete"));
-        assert!(block.contains(".local/bin/tessel-shell-lock"));
+        assert!(block.contains("tessel-shell-lock\"/>"));
         assert!(block.contains("command=\"/tmp/tessel-tiling --settings\""));
-    }
-
-    /// The table is byte-identical to bindings.py (when the Python source is available).
-    #[test]
-    fn table_matches_python_bindings() {
-        let source = Path::new(concat!(env!("HOME"), "/tessel-bluetooth/tessel-tiling"));
-        if !source.join("bindings.py").is_file() {
-            eprintln!("skipped: bindings.py not found");
-            return;
-        }
-        let script = "import json,sys; sys.path.insert(0, sys.argv[1]); import bindings; \
-                      print(json.dumps([list(b) for b in bindings.BINDINGS])); \
-                      print(json.dumps(bindings.keyboard_xml('/tmp/tessel_tiling'))); print(json.dumps(bindings.mouse_xml())); \
-                      print(json.dumps([list(e) for e in bindings.EXTRA_SHORTCUTS]))";
-        let output = std::process::Command::new("python3").args(["-I", "-B", "-c", script]).arg(source)
-            .env("PYTHONDONTWRITEBYTECODE", "1").output().unwrap();
-        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-        let text = String::from_utf8(output.stdout).unwrap();
-        let lines: Vec<&str> = text.lines().collect();
-        assert_eq!(lines[0], bindings_json());
-        let keyboard: String = serde_json::from_str(lines[1]).unwrap();
-        assert_eq!(keyboard, keyboard_xml(Path::new("/tmp/tessel-tiling")));
-        let mouse: String = serde_json::from_str(lines[2]).unwrap();
-        assert_eq!(mouse, mouse_xml());
-        let extras: Vec<(String, String)> = serde_json::from_str(lines[3]).unwrap();
-        assert_eq!(extras, EXTRA_SHORTCUTS.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect::<Vec<_>>());
     }
 }

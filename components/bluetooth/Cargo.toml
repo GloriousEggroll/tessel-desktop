@@ -3,7 +3,7 @@ name = "tessel-bluetooth"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "tessel-bluetooth: GTK4 Bluetooth device manager, tray popup and OBEX file transfers (Rust port of tessel-bluetooth.py, btpopup.py, bttransfer.py)."
+description = "GTK4 Bluetooth device manager, tray popup and OBEX file transfers."
 
 [lib]
 name = "tessel_bluetooth"

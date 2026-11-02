@@ -125,7 +125,7 @@ fn manager_and_status_stream_on_private_bus() {
     let base = std::env::var_os("TMPDIR").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
     let root = base.join(format!("pm-bus-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
-    for dir in ["bin", "log", "config/waybar/scripts", "config/tessel-power", "config/labwc", "runtime"] {
+    for dir in ["bin", "log", "config/tessel/power", "config/labwc", "runtime"] {
         std::fs::create_dir_all(root.join(dir)).unwrap();
     }
     std::fs::set_permissions(root.join("runtime"), std::fs::Permissions::from_mode(0o700)).unwrap();
@@ -134,8 +134,8 @@ fn manager_and_status_stream_on_private_bus() {
     script(&root.join("bin/wlopm"), &format!("echo \"$*\" >> {l}/wlopm.log"));
     script(&root.join("bin/systemctl"), &format!("echo \"$*\" >> {l}/systemctl.log"));
     script(&root.join("bin/systemd-run"), &format!("echo \"$*\" >> {l}/systemd-run.log"));
-    script(&root.join("config/waybar/scripts/screenlock.sh"), "exit 0");
-    std::fs::write(root.join("config/tessel-power/settings.json"),
+    script(&root.join("bin/tessel-lock"), "exit 0");
+    std::fs::write(root.join("config/tessel/power/settings.json"),
                    r#"{"version": 1, "ac": {"display_off": 600, "sleep_after": 900, "sleep_action": "suspend"}, "power_button": "suspend"}"#).unwrap();
     std::fs::write(root.join("config/labwc/rc.xml"), "<labwc_config/>").unwrap();
 
@@ -159,7 +159,6 @@ fn manager_and_status_stream_on_private_bus() {
             ("DBUS_SESSION_BUS_ADDRESS".into(), address.clone()),
             ("DBUS_SYSTEM_BUS_ADDRESS".into(), address.clone()),
             ("POWER_MANAGER_EXECUTABLE".into(), MANAGER.into()),
-            ("POWER_MANAGER_SCRIPTS_DIR".into(), root.join("config/waybar/scripts").display().to_string()),
             ("GSETTINGS_BACKEND".into(), "memory".into()),
             ("GDK_DEBUG".into(), "no-portals".into()), ("GIO_USE_VFS".into(), "local".into()), ("GTK_USE_PORTAL".into(), "0".into()),
             ("LANG".into(), "C.UTF-8".into()),
@@ -249,7 +248,7 @@ fn manager_and_status_stream_on_private_bus() {
     assert_eq!(state["settings"]["ac"]["sleep_after"], 900);
     let reply = controls(&client, "SetSettings", Some(("{\"lock_after\": 120, \"power_button\": \"nothing\"}",).to_variant())).unwrap();
     assert_eq!(reply.get::<(bool, String)>(), Some((true, String::new())));
-    let saved = std::fs::read_to_string(root.join("config/tessel-power/settings.json")).unwrap();
+    let saved = std::fs::read_to_string(root.join("config/tessel/power/settings.json")).unwrap();
     assert!(saved.contains("\"lock_after\": 120") && saved.starts_with("{\n  \"version\": 1,"), "{saved}");
     wait_for("swayidle respawn", Duration::from_secs(5), || env.swayidle_argv().iter().any(|w| w == "120"));
     let rejected = controls(&client, "SetSettings", Some(("{\"lock_after\": -5}",).to_variant())).unwrap();
@@ -317,7 +316,7 @@ fn manager_and_status_stream_on_private_bus() {
         pump(Duration::from_millis(20));
     }
     assert!(gone(), "swayidle child was terminated");
-    assert!(!env.log("systemd-run.log").contains("session_manager"));
+    assert!(!env.log("systemd-run.log").contains("tessel-session"));
     drop(services);
     bus.down();
     let _ = std::fs::remove_dir_all(&root);

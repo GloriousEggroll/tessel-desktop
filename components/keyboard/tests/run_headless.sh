@@ -3,9 +3,9 @@
 # headless labwc with two outputs (tools/headless.md). Never touches the live
 # session: own XDG_RUNTIME_DIR, own D-Bus, own XDG config/cache/data dirs.
 # tessel-keyboard-input (virtual keyboard + input method) only ever connects here.
-#   tests/run_headless.sh [case-filter...]      MEASURE=1 also compares with Python.
+#   tests/run_headless.sh [case-filter...]      MEASURE=1 also measures startup and memory.
 set -eu
-AGENT=${AGENT:-on-screen-keyboard}
+AGENT=${AGENT:-tessel-keyboard}
 R=/run/user/1000/cbt/rust-$AGENT/n
 LABWC=${LABWC:-labwc}
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data" "$R/xdg/state"; chmod 700 "$R/rt"

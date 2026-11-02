@@ -220,10 +220,10 @@ mod tests {
 
     fn run(words: &[&str]) -> Result<Args, Exit> {
         std::env::set_var("COLUMNS", "80");
-        parse("tessel-bluetooth.py", &words.iter().map(|w| w.to_string()).collect::<Vec<_>>())
+        parse("tessel-bluetooth", &words.iter().map(|w| w.to_string()).collect::<Vec<_>>())
     }
 
-    const USAGE: &str = "usage: tessel-bluetooth.py [-h] [--lang LANG] [--popup]\n                    [--popup-edge {top,bottom,left,right}]\n                    [--popup-offset POPUP_OFFSET]\n";
+    const USAGE: &str = "usage: tessel-bluetooth [-h] [--lang LANG] [--popup]\n                        [--popup-edge {top,bottom,left,right}]\n                        [--popup-offset POPUP_OFFSET]\n";
 
     fn err(words: &[&str]) -> String {
         let (code, text, stdout) = run(words).unwrap_err();
@@ -245,18 +245,18 @@ mod tests {
     #[test]
     fn matches_python_errors_and_help() {
         assert_eq!(err(&["--popup-edge", "x"]),
-                   "tessel-bluetooth.py: error: argument --popup-edge: invalid choice: 'x' (choose from 'top', 'bottom', 'left', 'right')\n");
-        assert_eq!(err(&["--popup-offset", "-1"]), "tessel-bluetooth.py: error: --popup-offset must be a nonnegative number\n");
-        assert_eq!(err(&["--popup-offset=-5"]), "tessel-bluetooth.py: error: --popup-offset must be a nonnegative number\n");
-        assert_eq!(err(&["--popup-offset", "x"]), "tessel-bluetooth.py: error: argument --popup-offset: invalid int value: 'x'\n");
-        assert_eq!(err(&["--bogus"]), "tessel-bluetooth.py: error: unrecognized arguments: --bogus\n");
-        assert_eq!(err(&["-x"]), "tessel-bluetooth.py: error: unrecognized arguments: -x\n");
-        assert_eq!(err(&["positional"]), "tessel-bluetooth.py: error: unrecognized arguments: positional\n");
+                   "tessel-bluetooth: error: argument --popup-edge: invalid choice: 'x' (choose from 'top', 'bottom', 'left', 'right')\n");
+        assert_eq!(err(&["--popup-offset", "-1"]), "tessel-bluetooth: error: --popup-offset must be a nonnegative number\n");
+        assert_eq!(err(&["--popup-offset=-5"]), "tessel-bluetooth: error: --popup-offset must be a nonnegative number\n");
+        assert_eq!(err(&["--popup-offset", "x"]), "tessel-bluetooth: error: argument --popup-offset: invalid int value: 'x'\n");
+        assert_eq!(err(&["--bogus"]), "tessel-bluetooth: error: unrecognized arguments: --bogus\n");
+        assert_eq!(err(&["-x"]), "tessel-bluetooth: error: unrecognized arguments: -x\n");
+        assert_eq!(err(&["positional"]), "tessel-bluetooth: error: unrecognized arguments: positional\n");
         assert_eq!(err(&["--popup-o", "5", "--pop"]),
-                   "tessel-bluetooth.py: error: ambiguous option: --pop could match --popup, --popup-edge, --popup-offset\n");
-        assert_eq!(err(&["--lang"]), "tessel-bluetooth.py: error: argument --lang: expected one argument\n");
-        assert_eq!(err(&["--popup-edge"]), "tessel-bluetooth.py: error: argument --popup-edge: expected one argument\n");
-        assert_eq!(err(&["--popup=1"]), "tessel-bluetooth.py: error: argument --popup: ignored explicit argument '1'\n");
+                   "tessel-bluetooth: error: ambiguous option: --pop could match --popup, --popup-edge, --popup-offset\n");
+        assert_eq!(err(&["--lang"]), "tessel-bluetooth: error: argument --lang: expected one argument\n");
+        assert_eq!(err(&["--popup-edge"]), "tessel-bluetooth: error: argument --popup-edge: expected one argument\n");
+        assert_eq!(err(&["--popup=1"]), "tessel-bluetooth: error: argument --popup: ignored explicit argument '1'\n");
         let (code, text, stdout) = run(&["-h"]).unwrap_err();
         assert_eq!((code, stdout), (0, true));
         assert_eq!(text, format!("{USAGE}\nBluetooth device manager\n\noptions:\n  -h, --help            show this help message and exit\n  --lang LANG\n  --popup\n  --popup-edge {{top,bottom,left,right}}\n  --popup-offset POPUP_OFFSET\n"));
@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn usage_fits_on_one_line_when_wide() {
-        assert_eq!(usage_with_width("tessel-bluetooth.py", 200),
-                   "usage: tessel-bluetooth.py [-h] [--lang LANG] [--popup] [--popup-edge {top,bottom,left,right}] [--popup-offset POPUP_OFFSET]\n");
+        assert_eq!(usage_with_width("tessel-bluetooth", 200),
+                   "usage: tessel-bluetooth [-h] [--lang LANG] [--popup] [--popup-edge {top,bottom,left,right}] [--popup-offset POPUP_OFFSET]\n");
     }
 }

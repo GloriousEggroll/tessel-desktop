@@ -94,7 +94,7 @@ pub fn self_command() -> Vec<String> {
             return vec![path];
         }
     }
-    let exe = std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| "tessel-brightness".into());
+    let exe = tessel_core::paths::program("tessel-brightness").to_string_lossy().into_owned();
     vec![exe.strip_suffix(" (deleted)").unwrap_or(&exe).to_owned()]
 }
 

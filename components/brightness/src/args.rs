@@ -4,7 +4,7 @@
 use tessel_core::tr;
 
 pub const EDGES: [&str; 4] = ["top", "bottom", "left", "right"];
-const DESCRIPTION: &str = "Shared monitor controls for Waybar and way-displays.";
+const DESCRIPTION: &str = "Shared monitor controls for Tessel and way-displays.";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Args {
@@ -232,7 +232,7 @@ mod tests {
 
     #[test]
     fn help_matches_python_layout() {
-        let expected = "usage: brightness_manager.py [-h] [--popup | --settings | --background |\n                             --check | --brightness-up | --brightness-down |\n                             --idle-dim TOKEN | --idle-restore TOKEN]\n                             [--popup-edge {top,bottom,left,right}]\n                             [--popup-offset POPUP_OFFSET]\n\nShared monitor controls for Waybar and way-displays.\n\noptions:\n  -h, --help            show this help message and exit\n";
+        let expected = "usage: brightness_manager.py [-h] [--popup | --settings | --background |\n                             --check | --brightness-up | --brightness-down |\n                             --idle-dim TOKEN | --idle-restore TOKEN]\n                             [--popup-edge {top,bottom,left,right}]\n                             [--popup-offset POPUP_OFFSET]\n\nShared monitor controls for Tessel and way-displays.\n\noptions:\n  -h, --help            show this help message and exit\n";
         assert!(help("brightness_manager.py").starts_with(expected));
     }
 }

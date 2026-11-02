@@ -57,8 +57,8 @@ pub fn validate(data: &Value) -> Result<Settings, String> {
     Ok(Settings { automatic, layout, size, ignore_keyboards })
 }
 
-/// `$XDG_CONFIG_HOME/tessel-keyboard/config.json`.
-pub fn default_path() -> PathBuf { tessel_core::paths::config_home().join("tessel-keyboard/config.json") }
+/// `~/.config/tessel/keyboard/config.json`.
+pub fn default_path() -> PathBuf { tessel_core::paths::component_config_dir("keyboard").join("config.json") }
 
 #[derive(Clone, Debug)]
 pub struct Config {

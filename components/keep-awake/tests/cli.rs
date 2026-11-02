@@ -62,7 +62,7 @@ impl Env {
     }
 
     fn timer(&self) -> Value {
-        serde_json::from_str(&std::fs::read_to_string(self.state.join("tessel-keep-awake/timer.json")).unwrap()).unwrap()
+        serde_json::from_str(&std::fs::read_to_string(self.state.join("tessel/keep-awake/timer.json")).unwrap()).unwrap()
     }
 }
 

@@ -35,7 +35,7 @@ pub struct Exit {
     pub stderr: String,
 }
 
-pub const DESCRIPTION: &str = "Independent battery status and charging controls for Waybar.";
+pub const DESCRIPTION: &str = "Independent battery status and charging controls for Tessel.";
 const EDGES: [&str; 4] = ["top", "bottom", "left", "right"];
 const OPTIONS: [&str; 7] = ["--help", "--popup", "--settings", "--background", "--check", "--popup-edge", "--popup-offset"];
 
@@ -222,7 +222,7 @@ mod tests {
                           [--popup-edge {top,bottom,left,right}]
                           [--popup-offset POPUP_OFFSET]
 
-Independent battery status and charging controls for Waybar.
+Independent battery status and charging controls for Tessel.
 
 options:
   -h, --help            show this help message and exit

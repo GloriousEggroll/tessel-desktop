@@ -1,4 +1,4 @@
-//! Tessel Keyboard (tessel-keyboard): Rust port of ~/tessel-bluetooth/tessel-keyboard.
+//! Tessel Keyboard (tessel-keyboard): the automatic touch keyboard for the labwc session.
 //!
 //! The GTK process never binds virtual-keyboard / input-method protocols; the
 //! unchanged native helper `tessel-keyboard-input` (native/input.c) does, over a line

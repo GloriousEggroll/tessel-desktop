@@ -193,14 +193,6 @@ pub struct WeatherSnapshot {
     pub error: Option<String>,
 }
 
-/// `XDG_*` only when it is an absolute path (weather_backend._xdg_directory).
-pub fn xdg_directory(variable: &str, fallback: &str) -> PathBuf {
-    match std::env::var_os(variable) {
-        Some(value) if Path::new(&value).is_absolute() => PathBuf::from(value),
-        _ => tessel_core::paths::home().join(fallback),
-    }
-}
-
 /// `_number`: finite int/float (never bool), else None.
 pub fn number(value: &Value) -> Option<f64> {
     value.as_number().and_then(|n| n.as_f64()).filter(|v| v.is_finite())
@@ -316,7 +308,7 @@ pub struct ConfigStore {
 
 impl ConfigStore {
     pub fn new(path: Option<PathBuf>) -> Self {
-        let path = path.unwrap_or_else(|| xdg_directory("XDG_CONFIG_HOME", ".config").join("tessel-weather/config.json"));
+        let path = path.unwrap_or_else(|| tessel_core::paths::component_config_dir("weather").join("config.json"));
         Self { path, error: Mutex::new(None) }
     }
 
@@ -582,7 +574,7 @@ fn entry_error(entry: &Map<String, Value>) -> Option<String> {
 
 impl WeatherClient {
     pub fn new(store: Arc<ConfigStore>, cache_dir: Option<PathBuf>, fetch: Option<Fetch>, clock: Option<Clock>) -> Self {
-        Self { store, cache_dir: cache_dir.unwrap_or_else(|| xdg_directory("XDG_CACHE_HOME", ".cache").join("tessel-weather")),
+        Self { store, cache_dir: cache_dir.unwrap_or_else(|| tessel_core::paths::component_cache_dir("weather")),
                fetch: fetch.unwrap_or_else(real_fetch), clock: clock.unwrap_or_else(|| Arc::new(system_clock)) }
     }
 

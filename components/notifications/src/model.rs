@@ -406,14 +406,14 @@ pub struct NotificationModel {
 }
 
 impl NotificationModel {
-    /// `directory` defaults to `$XDG_STATE_HOME/tessel-notifications`.
+    /// `directory` defaults to `~/.local/state/tessel/notifications`.
     pub fn new(directory: Option<&Path>) -> Self {
         Self::with_clocks(directory, Box::new(wall_clock), Box::new(monotonic))
     }
 
     pub fn with_clocks(directory: Option<&Path>, clock: Box<dyn Fn() -> f64>, monotonic: Box<dyn Fn() -> f64>) -> Self {
         let directory = directory.map(Path::to_path_buf)
-            .unwrap_or_else(|| tessel_core::paths::state_home().join("tessel-notifications"));
+            .unwrap_or_else(|| tessel_core::paths::component_state_dir("notifications"));
         let mut model = Self {
             directory, settings: default_settings(), items: IndexMap::new(), next_id: 1, storage_error: String::new(),
             presentation: (false, false), clock, monotonic, events: Vec::new(),

@@ -125,7 +125,7 @@ impl LoopbackService {
 /// `loopback_service.main(argv)`; returns the exit status.
 pub fn main(argv: Vec<String>) -> i32 {
     let prog = argv.first().map(|a| std::path::Path::new(a).file_name().map_or(a.clone(), |n| n.to_string_lossy().into_owned()))
-        .unwrap_or_else(|| "loopback_service.py".into());
+        .unwrap_or_else(|| "tessel-audio-loopbacks".into());
     let config = match crate::cli::service_arguments(&argv[1.min(argv.len())..], &prog) {
         Ok(config) => config,
         Err(exit) => {

@@ -19,7 +19,7 @@ pub const MAX_PERIODS: i128 = 20000;
 pub const USER_AGENT: &str = "tessel-calendar/1";
 
 pub fn cache_directory() -> PathBuf {
-    tessel_core::paths::cache_home().join("tessel/calendar")
+    tessel_core::paths::component_cache_dir("calendar")
 }
 
 /// A parsed DTSTART/DTEND/EXDATE/RECURRENCE-ID/UNTIL value.

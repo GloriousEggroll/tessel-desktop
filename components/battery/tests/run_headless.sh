@@ -3,7 +3,6 @@
 # Never touches the live session: own XDG_RUNTIME_DIR, own D-Bus (also used as the
 # "system" bus for the fake UPower), no input devices.
 # RELEASE=1 builds optimized binaries (for measurements).
-# BATTERY_PYTHON_SOURCE=~/tessel-bluetooth/tessel-battery additionally measures the Python twin.
 set -eu
 AGENT=${AGENT:-battery-manager}
 R=/run/user/1000/cbt/rust-$AGENT/n
@@ -20,7 +19,7 @@ rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
-BATTERY_UI_HEADLESS=1 BATTERY_PYTHON_SOURCE="${BATTERY_PYTHON_SOURCE:-}" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo \
+BATTERY_UI_HEADLESS=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo \
   timeout 240 "$BIN" > "$R/log" 2>&1; echo \$? > "$R/result"
 labwc --exit
 RUN

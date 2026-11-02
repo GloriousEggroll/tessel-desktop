@@ -129,7 +129,7 @@ impl Discovery {
 
     fn command_line(&self, command: &gio::ApplicationCommandLine) -> i32 {
         let argv: Vec<String> = command.arguments().iter().map(|a| a.to_string_lossy().into_owned()).collect();
-        let name = prog(argv.first().map(String::as_str).unwrap_or("discovery_manager.py"));
+        let name = prog(argv.first().map(String::as_str).unwrap_or("tessel-network-discovery"));
         let args = match SPEC.parse(argv.get(1..).unwrap_or(&[]), true) {
             Outcome::Run(args) => args,
             Outcome::Help => {

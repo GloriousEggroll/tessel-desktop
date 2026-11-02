@@ -37,7 +37,7 @@ pub fn supported(display: &Value) -> bool {
 }
 
 fn palette_path() -> PathBuf {
-    tessel_core::paths::cache_home().join("tessel-dock/palette.json")
+    tessel_core::paths::component_cache_dir("dock").join("palette.json")
 }
 
 fn palette_match(path: &Path, rectangle: &[i64; 4]) -> Option<String> {

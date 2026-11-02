@@ -1,2 +1,0 @@
-#!/bin/sh
-exec "$HOME/.config/waybar/scripts/tessel-media/tessel-media" "$@"

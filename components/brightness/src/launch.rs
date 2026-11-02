@@ -1,10 +1,10 @@
 //! `--settings`: launch `tessel-displays.desktop` the way Tessel Dock's
-//! `app_catalog.AppCatalog().launch(id, context, callback)` does: a separate
-//! systemd user service running Tessel Dock's Gio launch helper, so the display
+//! `AppCatalog::launch` does: a separate systemd user service running the Gio
+//! launch helper (`tessel-files --launch-helper --app-catalog`), so the display
 //! manager survives this service restarting and is never tied to it.
 
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub const SETTINGS_DESKTOP_ID: &str = "tessel-displays.desktop";
 
@@ -41,15 +41,15 @@ pub fn unit_name() -> String {
     format!("app-tessel-dock-{}.service", bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
 }
 
-/// Tessel Dock's launch helper: `../tessel-dock/app_catalog.py` next to this
-/// install's scripts directory, else `~/.local/share/tessel-dock/app_catalog.py`.
-pub fn helper_script(executable_dir: Option<&Path>) -> Option<PathBuf> {
-    let source = executable_dir.and_then(Path::parent).map(|p| p.join("tessel-dock/app_catalog.py"));
-    if let Some(source) = source.filter(|p| p.is_file()) {
-        return Some(source);
-    }
-    let installed = tessel_core::paths::data_home().join("tessel-dock/app_catalog.py");
-    installed.is_file().then_some(installed)
+/// The launch helper argv before `<mode> <target>`, if `tessel-files` (which
+/// carries Tessel Dock's Gio launch helper) is installed.
+pub fn helper_command(program: PathBuf) -> Option<Vec<String>> {
+    let program = if program.is_absolute() {
+        tessel_core::shell::is_executable(&program).then_some(program)?
+    } else {
+        tessel_core::shell::which(&program.to_string_lossy())?
+    };
+    Some(vec![program.to_string_lossy().into_owned(), "--launch-helper".into(), "--app-catalog".into()])
 }
 
 /// The environment handed to the app service (launch context minus service metadata).
@@ -70,13 +70,20 @@ mod tests {
         let environment: BTreeMap<String, String> = launch_environment(
             [("WAYLAND_DISPLAY".into(), "wayland-1".into()), ("INVOCATION_ID".into(), "x".into()), ("BAD-NAME".into(), "y".into())],
             Some("token".into()));
-        let helper = vec!["/usr/bin/python3".to_owned(), "/w/app_catalog.py".into(), "--launch-desktop".into(), SETTINGS_DESKTOP_ID.into()];
+        let helper = vec!["/w/tessel-files".to_owned(), "--launch-helper".into(), "--app-catalog".into(), "--launch-desktop".into(),
+                          SETTINGS_DESKTOP_ID.into()];
         let command = launch_command(&helper, &environment, "app-tessel-dock-0.service");
         assert_eq!(command[..11].join(" "), "/usr/bin/systemd-run --user --collect --quiet --service-type=forking --property=GuessMainPID=no --property=ExitType=cgroup --property=TimeoutStartSec=90s --slice=app.slice --expand-environment=no --unit=app-tessel-dock-0.service");
         assert_eq!(&command[11..13], ["--setenv=WAYDOCK_LAUNCH_STARTUP_ID", "--setenv=WAYLAND_DISPLAY"]);
         assert!(!command.iter().any(|w| w.contains("INVOCATION_ID") || w.contains("BAD-NAME")));
-        assert_eq!(&command[13..], ["--", "/usr/bin/python3", "/w/app_catalog.py", "--launch-desktop", "tessel-displays.desktop"]);
+        assert_eq!(&command[13..], ["--", "/w/tessel-files", "--launch-helper", "--app-catalog", "--launch-desktop", "tessel-displays.desktop"]);
         let unit = unit_name();
         assert!(unit.starts_with("app-tessel-dock-") && unit.ends_with(".service") && unit.len() == "app-tessel-dock-.service".len() + 32);
+    }
+
+    #[test]
+    fn helper_needs_an_installed_program() {
+        assert_eq!(helper_command(PathBuf::from("/nonexistent/tessel-files")), None);
+        assert_eq!(helper_command(PathBuf::from("/bin/sh")).unwrap(), ["/bin/sh", "--launch-helper", "--app-catalog"]);
     }
 }

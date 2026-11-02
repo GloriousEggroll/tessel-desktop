@@ -130,7 +130,7 @@ fn popup_style_state_and_dismissal_before_authentication() {
     assert!(!popup.detail().is_visible(), "Only problems use the detail line");
     // The palette theme adds its own window class; ours must not replace it.
     let theme = window.css_classes().iter().any(|c| c.starts_with("tessel-dock-companion-"));
-    let palette = tessel_core::paths::cache_home().join("tessel-dock/palette.json");
+    let palette = tessel_core::paths::component_cache_dir("dock").join("palette.json");
     assert!(theme || !palette.exists() || !window.is_realized(), "theme class missing");
     assert!(window.width() <= 420, "width {}", window.width());
     assert_eq!(STARTED.with(Cell::get), 1, "Opening the popup lists discovered devices");
@@ -228,7 +228,7 @@ fn toggle_without_avahi_shows_the_message() {
 
 fn main() {
     if let Ok(args) = std::env::var("DISCOVERY_REMOTE") {
-        let mut argv = vec!["discovery_manager.py".to_owned()];
+        let mut argv = vec!["tessel-network-discovery".to_owned()];
         argv.extend(args.split('\x1f').map(String::from));
         let app = gio::Application::new(Some(APPLICATION_ID), tessel_core::single_instance::application_flags(true));
         std::process::exit(i32::from(app.run_with_args(&argv)));

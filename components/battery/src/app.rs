@@ -169,7 +169,7 @@ impl AppHooks for Hooks {
     }
 
     fn bluetooth_available(&self) -> bool {
-        bluetooth::bluetooth_script(&bluetooth::script_roots()).is_some() && tessel_core::shell::which("systemd-run").is_some()
+        bluetooth::bluetooth_program().is_some() && tessel_core::shell::which("systemd-run").is_some()
     }
 
     fn open_bluetooth(&self) -> bool {
@@ -309,12 +309,12 @@ impl BatteryApplication {
     }
 
     pub fn open_bluetooth(&self) -> bool {
-        let script = bluetooth::bluetooth_script(&bluetooth::script_roots());
+        let script = bluetooth::bluetooth_program();
         let (Some(script), Some(launcher)) = (script, tessel_core::shell::which("systemd-run")) else {
             self.set_error(tr!("Bluetooth settings are not installed."));
             return false;
         };
-        let command = bluetooth::command(&launcher, &bluetooth::python(), &script, |name| std::env::var_os(name).is_some());
+        let command = bluetooth::command(&launcher, &script, |name| std::env::var_os(name).is_some());
         let argv: Vec<&std::ffi::OsStr> = command.iter().map(|w| w.as_os_str()).collect();
         match gio::Subprocess::newv(&argv, gio::SubprocessFlags::STDOUT_SILENCE | gio::SubprocessFlags::STDERR_SILENCE) {
             Err(error) => {
@@ -326,7 +326,7 @@ impl BatteryApplication {
                 process.wait_check_async(None::<&gio::Cancellable>, move |result| {
                     if result.is_err() {
                         if let Some(app) = weak.upgrade() {
-                            app.set_error(tr!("Could not open Bluetooth settings. Try the Bluetooth icon in Waybar."));
+                            app.set_error(tr!("Could not open Bluetooth settings. Try the Bluetooth icon in the dock."));
                         }
                     }
                 });

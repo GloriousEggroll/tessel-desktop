@@ -5,7 +5,7 @@
 # input devices. The daemon owns org.freedesktop.Notifications only on that
 # private bus.
 set -eu
-AGENT=${AGENT:-notification-manager}
+AGENT=${AGENT:-tessel-notifications}
 BASE=/run/user/1000/cbt/rust-$AGENT
 R=$BASE/n
 rm -rf "$R"
@@ -24,22 +24,20 @@ OUT=$(artifacts)
 BIN=$(echo "$OUT" | awk '$1=="headless"{print $2}')
 NM_BIN=$(echo "$OUT" | awk '$1=="tessel-notifications"{print $2}')
 [ -n "$BIN" ] && [ -n "$NM_BIN" ] || { echo "build failed"; exit 1; }
-# The compositor helper from Tessel Dock (read-only use) and a fake X11 probe.
-HELPER=${WAYDOCK_TOPLEVEL:-$HOME/tessel-bluetooth/tessel-dock/tessel-dock-toplevel}
-ln -sf "$HELPER" "$R/helpers/tessel-dock-toplevel"
-cat > "$R/helpers/fullscreen_guard.py" <<'PY'
-import json, os, time
-config = os.environ.get("NM_FAKE_PROBE", "")
-with open(config + ".log", "a") as log:
-    log.write("probe\n")
-try:
-    with open(config) as stream:
-        data = json.load(stream)
-except (OSError, ValueError):
-    data = {}
-time.sleep(float(data.get("delay", 0)))
-print(json.dumps(data.get("snapshot")))
-PY
+# The compositor helper (read-only use) and a fake X11 probe.
+if [ -z "${TESSEL_DOCK_TOPLEVEL:-}" ]; then
+  (cd "$ROOT" && TMPDIR=$BASE cargo build -q -p tessel-wayland --bin tessel-dock-toplevel)
+  TESSEL_DOCK_TOPLEVEL=$ROOT/target/debug/tessel-dock-toplevel
+fi
+ln -sf "$TESSEL_DOCK_TOPLEVEL" "$R/helpers/tessel-dock-toplevel"
+cat > "$R/helpers/tessel-notifications" <<'SH'
+#!/bin/sh
+[ "$*" = --x11-probe ] || exit 2
+echo probe >> "$NM_FAKE_PROBE.log"
+[ -f "$NM_FAKE_PROBE.delay" ] && sleep "$(cat "$NM_FAKE_PROBE.delay")"
+cat "$NM_FAKE_PROBE.snapshot" 2>/dev/null || echo null
+SH
+chmod +x "$R/helpers/tessel-notifications"
 rm -f "$R/result-ui" "$R/result-daemon"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh

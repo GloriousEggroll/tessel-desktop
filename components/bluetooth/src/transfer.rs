@@ -1,6 +1,6 @@
 //! bttransfer.py: outgoing BlueZ OBEX Object Push (`ObexSender`), the
 //! incoming-file agent (`ObexReceiver`, `ReceiveRequest`, `org.bluez.obex.Agent1`
-//! at `/org/tessel-bluetooth/obex/agent`) and a small `org.freedesktop.Notifications`
+//! at `/org/tessel/Bluetooth/obex/agent`) and a small `org.freedesktop.Notifications`
 //! client (`Notifier`). All callbacks run on the GLib main loop.
 //!
 //! No bus is opened until `start`. The source adapter address is always
@@ -28,7 +28,7 @@ pub const OBJECT_MANAGER: &str = "org.freedesktop.DBus.ObjectManager";
 pub const AGENT_MANAGER: &str = "org.bluez.obex.AgentManager1";
 pub const AGENT: &str = "org.bluez.obex.Agent1";
 pub const SESSION: &str = "org.bluez.obex.Session1";
-pub const AGENT_PATH: &str = "/org/tessel-bluetooth/obex/agent";
+pub const AGENT_PATH: &str = "/org/tessel/Bluetooth/obex/agent";
 pub const REJECTED: &str = "org.bluez.obex.Error.Rejected";
 pub const CANCELED: &str = "org.bluez.obex.Error.Canceled";
 pub const DBUS: &str = "org.freedesktop.DBus";

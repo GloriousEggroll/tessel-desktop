@@ -1,11 +1,9 @@
 #!/bin/sh
-# Measure time-to-ready, idle RSS and the popup of the Rust tessel-brightness
-# vs the Python one in a private nested headless labwc with a private D-Bus
-# (also the "system" bus; no logind there, so auto-dim guards stay blocked).
-# wlr-randr/ddcutil/swayidle are fakes first on PATH (ddcutil only reads/writes
-# a state file); Rust uses a fake sysfs, Python only *reads* the real
-# /sys/class/drm (which cannot match the fake output). No --settings launch,
-# no hardware writes, never touches the live session.
+# Measure time-to-ready, idle RSS and the popup of tessel-brightness in a
+# private nested headless labwc with a private D-Bus (also the "system" bus;
+# no logind there, so auto-dim guards stay blocked). wlr-randr/ddcutil/swayidle
+# are fakes first on PATH (ddcutil only reads/writes a state file) and sysfs is
+# fake. No --settings launch, no hardware writes, never touches the live session.
 set -eu
 AGENT=${AGENT:-brightness-manager}
 S=/run/user/1000/cbt/rust-$AGENT
@@ -17,9 +15,8 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=$S cargo build -q --release -p tessel-brightness --bins)
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-brightness
 echo connected > "$R/sys/drm/card1-DP-TEST/status"
-python3 -c 'import sys; open(sys.argv[1],"wb").write(b"\x00\xff\xff\xff\xff\xff\xff\x00"+bytes([5])*120)' "$R/sys/drm/card1-DP-TEST/edid"
+{ printf '\000\377\377\377\377\377\377\000'; head -c 120 /dev/zero | tr '\000' '\005'; } > "$R/sys/drm/card1-DP-TEST/edid"
 echo "75 100" > "$R/vcp/12/10"; echo "50 100" > "$R/vcp/12/12"
 echo '[{"name": "DP-TEST", "description": "Synthetic display", "enabled": true, "position": {"x": 0, "y": 0}, "scale": 1.0, "modes": [{"width": 1920, "height": 1080, "current": true}]}]' > "$R/outputs.json"
 printf '#!/bin/sh\nexec cat %s/outputs.json\n' "$R" > "$R/bin/wlr-randr"
@@ -43,7 +40,7 @@ cat > "$R/run.sh" <<RUN
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" PATH="$R/bin:\$PATH" XDG_CONFIG_HOME="$R/xdg/config" XDG_STATE_HOME="$R/xdg/state"
 export XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" GSETTINGS_BACKEND=memory NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo
-export GDK_BACKEND=wayland BRIGHTNESS_MANAGER_SYSFS="$R/sys" PYTHONDONTWRITEBYTECODE=1
+export GDK_BACKEND=wayland BRIGHTNESS_MANAGER_SYSFS="$R/sys"
 unset XDG_SESSION_ID
 ms() { date +%s%3N; }
 rss() { echo "\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) PSS=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
@@ -60,7 +57,6 @@ measure() { # name command
   sleep 0.5
 }
 measure rust "$REL/tessel-brightness"
-measure python "/usr/bin/python3 $PY/brightness_manager.py"
 stream() { name=\$1; svc=\$2; shift 2; \$svc --background >/dev/null 2>&1 & spid=\$!
   until \$svc --check >/dev/null 2>&1; do sleep 0.02; done
   t0=\$(ms); "\$@" > "$R/\$name-stream.out" 2>/dev/null & pid=\$!
@@ -68,7 +64,6 @@ stream() { name=\$1; svc=\$2; shift 2; \$svc --background >/dev/null 2>&1 & spid
   echo "\$name-status first_state_line_ms=\$((\$(ms)-t0))"; sleep 2; echo "\$name-status idle_rss_kb=\$(rss \$pid)"
   kill -TERM \$pid; wait \$pid 2>/dev/null; kill -TERM \$spid; wait \$spid 2>/dev/null; sleep 0.5; }
 stream rust "$REL/tessel-brightness" "$REL/tessel-brightness-status"
-stream python "/usr/bin/python3 $PY/brightness_manager.py" /usr/bin/python3 "$PY/brightness_status.py"
 labwc --exit
 RUN
 chmod +x "$R/run.sh"

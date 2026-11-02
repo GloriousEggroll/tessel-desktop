@@ -1,4 +1,4 @@
-//! `class BluetoothApplication`: the unique `org.tessel-bluetooth.Bluetooth`
+//! `class BluetoothApplication`: the unique `org.tessel.Bluetooth`
 //! GtkApplication (`HANDLES_COMMAND_LINE`). Every launch forwards its full
 //! argv to the primary, which re-parses it, updates the popup placement and
 //! activates: first activation builds the UI and the OBEX receiver; later
@@ -15,7 +15,7 @@ use gtk::{gio, glib};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub const APPLICATION_ID: &str = "org.tessel-bluetooth.Bluetooth";
+pub const APPLICATION_ID: &str = "org.tessel.Bluetooth";
 
 /// Test seams (Python tests patch `BT`, `ObexSender`, `ObexReceiver`, `Notifier`).
 #[derive(Clone)]

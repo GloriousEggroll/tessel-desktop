@@ -133,7 +133,7 @@ pub fn self_command() -> Vec<String> {
             return vec![path];
         }
     }
-    let exe = std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| "tessel-power".into());
+    let exe = tessel_core::paths::program("tessel-power").to_string_lossy().into_owned();
     vec![exe.strip_suffix(" (deleted)").unwrap_or(&exe).to_owned()]
 }
 
@@ -145,7 +145,7 @@ impl IdleController {
             error: RefCell::new(String::new()), settings: RefCell::new(None), signature: RefCell::new(None),
             token: RefCell::new(String::new()), process: Cell::new(None), watches: RefCell::new(HashSet::new()),
             kill_timers: RefCell::new(HashMap::new()), enabled: Cell::new(false),
-            lock_script: RefCell::new(tessel_core::paths::config_home().join("waybar/scripts/screenlock.sh")),
+            lock_script: RefCell::new(tessel_core::paths::program("tessel-lock")),
         }))
     }
 
@@ -153,7 +153,7 @@ impl IdleController {
     pub fn error(&self) -> String { self.0.error.borrow().clone() }
     pub fn token(&self) -> String { self.0.token.borrow().clone() }
     pub fn process(&self) -> Option<u32> { self.0.process.get() }
-    /// `$XDG_CONFIG_HOME/waybar/scripts/screenlock.sh` (exists/executable check only).
+    /// The `tessel-lock` program (exists/executable check only: `tessel-lock.service` runs it).
     pub fn set_lock_script(&self, path: PathBuf) { self.0.lock_script.replace(path); }
     #[cfg(test)]
     pub fn set_token(&self, token: &str) { self.0.token.replace(token.into()); }
@@ -261,7 +261,10 @@ impl Inner {
         let (Some(swayidle), Some(wlopm), Some(systemctl)) = (swayidle, wlopm, systemctl) else {
             return self.fail("Idle power management requires swayidle and wlopm, plus a systemd user session.");
         };
-        let lock_script = self.lock_script.borrow().clone();
+        let mut lock_script = self.lock_script.borrow().clone();
+        if lock_script.is_relative() {
+            lock_script = self.processes.which(&lock_script.to_string_lossy()).unwrap_or(lock_script);
+        }
         if !is_executable(&lock_script) {
             return self.fail(&format!("The screen lock command is missing or not executable: {}", lock_script.display()));
         }

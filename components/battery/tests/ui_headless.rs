@@ -644,36 +644,6 @@ fn application_and_measurements() {
     stop(status_child);
     println!("measure rust tessel-battery --background: ready {ready_ms} ms, RSS {rss} (after popup+settings {rss_after_windows})");
     println!("measure rust tessel-battery-status: first device line {stream_ready} ms, RSS {stream_rss}");
-
-    // Python twins, run the same way (read-only, private buses), if requested.
-    if let Some(source) = std::env::var("BATTERY_PYTHON_SOURCE").ok().filter(|source| !source.is_empty()) {
-        let script = format!("{source}/battery_manager.py");
-        let check = || Command::new("python3").args([script.as_str(), "--check"]).output().unwrap();
-        let (child, rss, ready_ms) = measure_service("python3", &[script.as_str(), "--background"], &check);
-        for args in [&["--popup"][..], &["--settings"]] {
-            Command::new("python3").arg(&script).args(args).status().unwrap();
-            settle(Duration::from_millis(500));
-        }
-        let rss_after = rss_kb(child.id());
-        stop(child);
-        let start = Instant::now();
-        let mut python_stream = Command::new("python3").args(["-u", &format!("{source}/battery_status.py")])
-            .stdout(Stdio::piped()).stderr(Stdio::null()).spawn().unwrap();
-        let (sender, receiver) = std::sync::mpsc::channel();
-        let stdout = python_stream.stdout.take().unwrap();
-        std::thread::spawn(move || for line in BufReader::new(stdout).lines().map_while(Result::ok) { let _ = sender.send(line); });
-        let mut lines = Vec::new();
-        wait_until(20 * SECOND, || { while let Ok(line) = receiver.try_recv() { lines.push(line) } lines.len() >= 2 });
-        let python_ready = start.elapsed().as_millis();
-        settle(Duration::from_millis(1000));
-        let python_rss = rss_kb(python_stream.id());
-        stop(python_stream);
-        println!("measure python battery_manager.py --background: ready {ready_ms} ms, RSS {rss} (after popup+settings {rss_after})");
-        println!("measure python battery_status.py: first device line {python_ready} ms, RSS {python_rss}");
-        if lines.len() >= 2 {
-            println!("python stream line: {}", lines[1]);
-        }
-    }
     println!("ok application_and_measurements");
 }
 

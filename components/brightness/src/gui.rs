@@ -183,9 +183,8 @@ impl Surfaces for GtkSurfaces {
     fn launch_settings(&self, done: Box<dyn FnOnce(Option<String>)>) -> Result<(), String> {
         let info = tessel_core::glib_compat::desktop_app_info(launch::SETTINGS_DESKTOP_ID)
             .ok_or_else(|| "That application is no longer installed.".to_owned())?;
-        let executable = std::env::current_exe().ok();
-        let helper = launch::helper_script(executable.as_deref().and_then(|p| p.parent()))
-            .ok_or_else(|| "No module named 'app_catalog'".to_owned())?;
+        let mut helper = launch::helper_command(tessel_core::paths::program("tessel-files"))
+            .ok_or_else(|| "The application launcher (tessel-files) is not installed.".to_owned())?;
         let context = gdk::Display::default().map(|d| d.app_launch_context());
         let base: Vec<(String, String)> = match &context {
             Some(context) => context.environment().iter().filter_map(|item| {
@@ -198,9 +197,7 @@ impl Surfaces for GtkSurfaces {
             _ => None,
         };
         let environment = launch::launch_environment(base, token.clone());
-        let python = tessel_core::shell::which("python3").map(|p| p.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "/usr/bin/python3".into());
-        let helper = vec![python, helper.to_string_lossy().into_owned(), "--launch-desktop".into(), launch::SETTINGS_DESKTOP_ID.into()];
+        helper.extend(["--launch-desktop".into(), launch::SETTINGS_DESKTOP_ID.into()]);
         let command = launch::launch_command(&helper, &environment, &launch::unit_name());
         let launcher = gio::SubprocessLauncher::new(gio::SubprocessFlags::STDOUT_SILENCE | gio::SubprocessFlags::STDERR_PIPE);
         let environ: Vec<std::ffi::OsString> = environment.iter().map(|(k, v)| format!("{k}={v}").into()).collect();

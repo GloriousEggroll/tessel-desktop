@@ -3,7 +3,7 @@ name = "tessel-tiling"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Tessel Tiling: labwc native tiling client, status stream, rc.xml overlay and shortcut popup (port of tessel-bluetooth/tessel-tiling)."
+description = "Tessel Tiling: labwc native tiling client, status stream, rc.xml overlay and shortcut popup."
 
 [lib]
 name = "tessel_tiling"
@@ -35,7 +35,3 @@ path = "tests/cli.rs"
 name = "ui_headless"
 path = "tests/ui_headless.rs"
 harness = false
-
-[[test]]
-name = "python_parity"
-path = "tests/python_parity.rs"

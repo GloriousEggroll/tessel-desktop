@@ -1,5 +1,5 @@
 #!/bin/sh
-# Rust vs Python tessel-network-discovery: release size, `--status` time, popup
+# tessel-network-discovery: release size, `--status` time, popup
 # time-to-registered and RSS, in a private nested headless labwc whose private
 # D-Bus also serves as the "system" bus with examples/fake_systemd. Avahi is
 # never queried or changed (avahi-browse cannot reach a daemon on that bus).
@@ -12,7 +12,6 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-network-discovery --bins --examples)
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-network-discovery/discovery_manager.py
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
@@ -28,9 +27,7 @@ popup() { name=\$1; shift; t0=\$(ms); "\$@" --popup >/dev/null 2>&1 & pid=\$!
   echo "\$name popup_registered_ms=\$((\$(ms)-t0))"; sleep 2.5; grim "$R/\$name-popup.png" 2>/dev/null || true
   echo "\$name popup_rss_kb=\$(rss \$pid)"; kill -TERM \$pid; wait \$pid 2>/dev/null || true; sleep 0.5; }
 status rust "$REL/tessel-network-discovery"
-status python /usr/bin/python3 -B "$PY"
 popup rust "$REL/tessel-network-discovery"
-popup python /usr/bin/python3 -B "$PY"
 kill -TERM \$FAKE; wait \$FAKE 2>/dev/null || true
 labwc --exit
 RUN

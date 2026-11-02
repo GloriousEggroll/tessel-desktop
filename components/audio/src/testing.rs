@@ -1,4 +1,4 @@
-//! Compare Rust models with the Python `dataclasses.asdict` reference.
+//! Compare Rust models with the recorded `dataclasses.asdict`-shaped reference (tests/fixtures/reference.json).
 
 use crate::graph::{Defaults, Devices, Nodes};
 use crate::model::Choice;

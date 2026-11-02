@@ -16,18 +16,13 @@ pub const LINE_LIMIT: usize = 32768;
 pub const CLOSED_MESSAGE: &str = "The keyboard input connection closed. Hide and reopen the keyboard to reconnect.";
 pub const UNAVAILABLE_MESSAGE: &str = "The keyboard input connection is unavailable.";
 
-/// Where the helper lives: `$WAYKEYS_INPUT`, next to this executable, then the
-/// Python component's install directory (`~/.config/waybar/scripts/tessel-keyboard`).
+/// Where the helper lives: `$WAYKEYS_INPUT` (tests), else the installed
+/// `tessel-keyboard-input` program.
 pub fn helper_path() -> PathBuf {
     if let Some(path) = std::env::var_os("WAYKEYS_INPUT").filter(|p| !p.is_empty()) {
         return PathBuf::from(path);
     }
-    if let Some(sibling) = std::env::current_exe().ok().and_then(|exe| exe.parent().map(|d| d.join("tessel-keyboard-input"))) {
-        if sibling.is_file() {
-            return sibling;
-        }
-    }
-    tessel_core::paths::config_home().join("waybar/scripts/tessel-keyboard/tessel-keyboard-input")
+    tessel_core::paths::program("tessel-keyboard-input")
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

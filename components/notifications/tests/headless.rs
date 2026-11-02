@@ -596,11 +596,18 @@ impl Drop for DaemonCase {
     }
 }
 
+/// The fake `tessel-notifications --x11-probe` (run_headless.sh) sleeps
+/// `<NM_FAKE_PROBE>.delay` seconds and prints `<NM_FAKE_PROBE>.snapshot`.
 fn probe_config(value: Option<Value>) {
     let path = std::env::var("NM_FAKE_PROBE").unwrap();
-    match value {
-        Some(value) => std::fs::write(&path, value.to_string()).unwrap(),
-        None => { let _ = std::fs::remove_file(&path); }
+    let value = value.unwrap_or(Value::Null);
+    match value.get("delay") {
+        Some(delay) => std::fs::write(format!("{path}.delay"), delay.to_string()).unwrap(),
+        None => { let _ = std::fs::remove_file(format!("{path}.delay")); }
+    }
+    match value.get("snapshot") {
+        Some(snapshot) => std::fs::write(format!("{path}.snapshot"), snapshot.to_string()).unwrap(),
+        None => { let _ = std::fs::remove_file(format!("{path}.snapshot")); }
     }
 }
 
@@ -713,8 +720,8 @@ fn fullscreen_history_no_backlog_timeout_center_and_headless_cli(case: &DaemonCa
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
     let parsed: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(parsed["ready"], json!(true));
-    assert_eq!(model.with(|m| m.directory.parent().map(|p| p.to_path_buf())),
-               Some(std::path::PathBuf::from(std::env::var("XDG_STATE_HOME").unwrap())));
+    assert_eq!(model.with(|m| m.directory.clone()),
+               std::path::PathBuf::from(std::env::var("XDG_STATE_HOME").unwrap()).join("tessel/notifications"));
 }
 
 fn borderless_probe_holds_replacement_and_preserves_history(case: &DaemonCase) {

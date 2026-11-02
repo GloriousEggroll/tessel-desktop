@@ -47,9 +47,9 @@ pub fn workspace_monitor<M: MonitorLike>(monitors: &[M], edge: &str) -> Option<M
     Some(best.clone())
 }
 
-/// Tessel Dock's dock edge from `~/.config/tessel-dock/config.json` (default bottom).
+/// Tessel Dock's dock edge from `~/.config/tessel/dock/config.json` (default bottom).
 pub fn dock_edge() -> String {
-    let path = tessel_core::paths::home().join(".config/tessel-dock/config.json");
+    let path = tessel_core::paths::component_config_dir("dock").join("config.json");
     std::fs::read_to_string(path).ok().and_then(|text| serde_json::from_str::<Value>(&text).ok())
         .and_then(|value| value.as_object().map(|map| map.get("edge").cloned()))
         .map(|edge| match edge {

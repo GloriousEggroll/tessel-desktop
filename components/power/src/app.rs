@@ -84,19 +84,16 @@ pub struct Services {
     pub scheduler: Rc<dyn Scheduler>,
     pub monotonic: Box<dyn Fn() -> f64>,
     pub saver: Box<dyn Fn(&Value) -> Result<(), ConfigError>>,
-    /// `~/.config/waybar/scripts` (the Python scripts root, `Path(__file__).parent.parent`).
-    pub scripts_root: PathBuf,
-    pub python: String,
+    /// Where another Tessel program is (`tessel_core::paths::program`).
+    pub program: Box<dyn Fn(&str) -> PathBuf>,
 }
 
 impl Default for Services {
     fn default() -> Self {
-        let scripts_root = std::env::var_os("POWER_MANAGER_SCRIPTS_DIR").map(PathBuf::from)
-            .unwrap_or_else(|| tessel_core::paths::config_home().join("waybar/scripts"));
-        let python = tessel_core::shell::which("python3").map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| "/usr/bin/python3".into());
         Self { runner: Rc::new(GioRunner), scheduler: Rc::new(tessel_core::scheduler::GlibScheduler::default()),
                monotonic: Box::new(|| glib::monotonic_time() as f64 / 1e6),
-               saver: Box::new(|settings| config::save_settings(settings, None)), scripts_root, python }
+               saver: Box::new(|settings| config::save_settings(settings, None)),
+               program: Box::new(tessel_core::paths::program) }
     }
 }
 
@@ -487,17 +484,25 @@ impl App {
                                         "--slice=app.slice", "--expand-environment=no"].map(String::from).to_vec();
         command.extend(LAUNCH_ENVIRONMENT.iter().filter(|n| std::env::var_os(n).is_some()).map(|n| format!("--setenv={n}")));
         command.push("--".into());
-        command.push(self.0.services.python.clone());
         command
     }
 
-    pub fn session_menu_script(&self) -> Option<PathBuf> {
-        let path = self.0.services.scripts_root.join("tessel-session/session_manager.py");
-        path.is_file().then_some(path)
+    /// An installed Tessel program: found by `program()`, else on `PATH`.
+    fn find_program(&self, name: &str) -> Option<PathBuf> {
+        let path = (self.0.services.program)(name);
+        if path.is_absolute() {
+            tessel_core::shell::is_executable(&path).then_some(path)
+        } else {
+            self.0.services.runner.which(name)
+        }
+    }
+
+    pub fn session_menu_program(&self) -> Option<PathBuf> {
+        self.find_program("tessel-session")
     }
 
     pub fn open_session_menu(&self) -> bool {
-        let script = self.session_menu_script();
+        let script = self.session_menu_program();
         let launcher = self.0.services.runner.which("systemd-run");
         let (Some(script), Some(launcher)) = (script, launcher) else {
             self.idle_error(&tr!("The power menu is not installed."));
@@ -512,17 +517,16 @@ impl App {
         true
     }
 
-    pub fn bluetooth_script(&self) -> Option<PathBuf> {
-        let root = &self.0.services.scripts_root;
-        [root.join("tessel-bluetooth/tessel-bluetooth.py"), root.join("tessel-bluetooth.py")].into_iter().find(|p| p.is_file())
+    pub fn bluetooth_program(&self) -> Option<PathBuf> {
+        self.find_program("tessel-bluetooth")
     }
 
     pub fn bluetooth_available(&self) -> bool {
-        self.bluetooth_script().is_some() && self.0.services.runner.which("systemd-run").is_some()
+        self.bluetooth_program().is_some() && self.0.services.runner.which("systemd-run").is_some()
     }
 
     pub fn open_bluetooth(&self) -> bool {
-        let script = self.bluetooth_script();
+        let script = self.bluetooth_program();
         let launcher = self.0.services.runner.which("systemd-run");
         let (Some(script), Some(launcher)) = (script, launcher) else {
             self.0.error.replace(tr!("Bluetooth settings are not installed."));
@@ -535,7 +539,7 @@ impl App {
         let started = self.0.services.runner.run(&command, false, Box::new(move |exit| {
             if exit != Exit::Success {
                 if let Some(this) = weak.upgrade().map(App) {
-                    this.0.error.replace(tr!("Could not open Bluetooth settings. Try the Bluetooth icon in Waybar."));
+                    this.0.error.replace(tr!("Could not open Bluetooth settings. Try the Bluetooth icon in the dock."));
                     this.changed();
                 }
             }

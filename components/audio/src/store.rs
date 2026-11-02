@@ -157,9 +157,9 @@ impl Default for LoopbackStore {
 }
 
 impl LoopbackStore {
-    /// Default `${XDG_CONFIG_HOME:-~/.config}/tessel-audio/loopbacks.json`.
+    /// Default `~/.config/tessel/audio/loopbacks.json`.
     pub fn new(path: Option<PathBuf>) -> Self {
-        let path = path.unwrap_or_else(|| tessel_core::paths::config_home().join("tessel-audio").join("loopbacks.json"));
+        let path = path.unwrap_or_else(|| tessel_core::paths::component_config_dir("audio").join("loopbacks.json"));
         Self { path, replace: |a, b| fs::rename(a, b) }
     }
 
@@ -384,7 +384,7 @@ mod tests {
 
     fn store(tag: &str) -> (PathBuf, LoopbackStore) {
         let dir = temp_dir(tag);
-        let store = LoopbackStore::new(Some(dir.join("tessel-audio").join("loopbacks.json")));
+        let store = LoopbackStore::new(Some(dir.join("audio").join("loopbacks.json")));
         (dir, store)
     }
 

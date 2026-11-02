@@ -9,12 +9,10 @@ description = "Audio Settings, the volume popup/keys OSD and the persistent Pipe
 name = "tessel_audio"
 path = "src/lib.rs"
 
-# Python: tessel_audio.py (GTK app: --settings/--popup/--volume-*)
 [[bin]]
 name = "tessel-audio"
 path = "src/bin/audio_manager.rs"
 
-# Python: loopback_service.py (tessel-audio-loopbacks.service)
 [[bin]]
 name = "tessel-audio-loopbacks"
 path = "src/bin/loopback_service.rs"

@@ -1,5 +1,5 @@
 //! Audio Settings, the Waybar/dock volume popup, volume-key OSD and the
-//! persistent PipeWire loopback service — Rust port of ~/tessel-bluetooth/tessel-audio.
+//! persistent PipeWire loopback service.
 
 pub mod api;
 pub mod app;

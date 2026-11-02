@@ -1,11 +1,11 @@
 #!/bin/sh
-# Rust vs Python Tessel Tiling: release size, `--status` time, the resident
+# Tessel Tiling: release size, `--status` time, the resident
 # `--watch` stream's RSS (Tessel Dock runs it) and the shortcut popup's
 # time-to-registered and RSS, in a private nested headless labwc. The tiling
 # socket is examples/fake_compositor in the private runtime dir; rc.xml is
 # never written (no mutating flags are run).
 set -eu
-AGENT=tessel-tiling
+AGENT=${AGENT:-tessel-tiling}
 R=/run/user/1000/cbt/rust-$AGENT/m
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/state"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
@@ -13,7 +13,6 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-tiling --bins --examples)
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-tiling
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
@@ -32,13 +31,8 @@ popup() { name=\$1; shift; t0=\$(ms); "\$@" --settings >/dev/null 2>&1 & pid=\$!
   echo "\$name popup_registered_ms=\$((\$(ms)-t0))"; sleep 3; grim "$R/\$name-popup.png" 2>/dev/null || true
   echo "\$name popup_rss_kb=\$(rss \$pid)"; kill -TERM \$pid; wait \$pid 2>/dev/null || true; sleep 0.5; }
 status rust "$REL/tessel-tiling"
-status python /usr/bin/python3 -B "$PY/tiling_manager.py"
-cmp "$R/rust.status" "$R/python.status" && echo "status_output identical"
 watch rust "$REL/tessel-tiling-status"
-watch python /usr/bin/python3 -B "$PY/tiling_status.py"
-cmp "$R/rust.watch" "$R/python.watch" && echo "watch_output identical"
 popup rust "$REL/tessel-tiling"
-popup python /usr/bin/python3 -B "$PY/tiling_manager.py"
 kill -TERM \$FAKE; wait \$FAKE 2>/dev/null || true
 labwc --exit
 RUN
@@ -49,4 +43,4 @@ env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
   > "$R/labwc.log" 2>&1 || true
 grep "Activating service" "$R/labwc.log" && { echo "UNEXPECTED D-Bus activation on the private bus"; exit 1; }
 ls -l "$REL/tessel-tiling" "$REL/tessel-tiling-status" | awk '{print $9, $5}'
-grep -E "_ms=|rss_kb|identical|differ" "$R/labwc.log" || { tail -30 "$R/labwc.log"; exit 1; }
+grep -E "_ms=|rss_kb" "$R/labwc.log" || { tail -30 "$R/labwc.log"; exit 1; }

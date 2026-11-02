@@ -5,7 +5,7 @@ use tessel_core::tr;
 
 pub const ACTIONS: [&str; 7] = ["dim", "lock", "display-off", "display-on", "suspend", "hibernate", "suspend-then-hibernate"];
 pub const EDGES: [&str; 4] = ["top", "bottom", "left", "right"];
-const DESCRIPTION: &str = "Waybar power profiles and persistent session idle management.";
+const DESCRIPTION: &str = "Tessel power profiles and persistent session idle management.";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Args {

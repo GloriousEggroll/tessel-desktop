@@ -99,7 +99,7 @@ impl LanguageApplication {
 
     fn on_command_line(&self, command_line: &gio::ApplicationCommandLine) -> i32 {
         let argv: Vec<String> = command_line.arguments().iter().map(|a| a.to_string_lossy().into_owned()).collect();
-        let prog = args::prog(argv.first().map(String::as_str).unwrap_or("language_manager.py"));
+        let prog = args::prog(argv.first().map(String::as_str).unwrap_or("tessel-language"));
         let parsed = match args::parse(argv.get(1..).unwrap_or(&[])) {
             Outcome::Run(parsed) => parsed,
             Outcome::Help => {

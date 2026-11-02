@@ -79,7 +79,7 @@ impl Fx {
         let errors: Rc<RefCell<Vec<String>>> = Rc::default();
         let e = errors.clone();
         let controller = IdleController::new(move |m| e.borrow_mut().push(m.into()), spawner.clone(), Rc::new(FakeScheduler::default()),
-                                              vec!["/opt/scripts/brightness_manager.py".into()]);
+                                              vec!["/opt/tessel/tessel-brightness".into()]);
         controller.set_watching(false);
         Self { spawner, errors, controller }
     }
@@ -113,7 +113,7 @@ fn listener_only_dims_and_restores_without_touching_sleep_or_lock_policy() {
     assert_eq!(command[..6], ["/usr/bin/swayidle", "-w", "-C", "/dev/null", "timeout", "120"]);
     assert_eq!(command.iter().filter(|w| *w == "timeout").count(), 1);
     let dim = shell_split(&command[6]);
-    assert!(dim[0].ends_with("/brightness_manager.py"));
+    assert!(dim[0].ends_with("/tessel-brightness"));
     assert_eq!(dim[1..], ["--idle-dim".to_owned(), fx.controller.token()]);
     for event in ["resume", "before-sleep", "after-resume"] {
         let restore = &command[command.iter().position(|w| w == event).unwrap() + 1];
@@ -122,7 +122,7 @@ fn listener_only_dims_and_restores_without_touching_sleep_or_lock_policy() {
         assert_eq!(args[..1], dim[..1]);
         assert_eq!(args[1..], ["--idle-restore".to_owned(), fx.controller.token()]);
     }
-    for forbidden in ["power_manager.py", "wlopm", "wlr-randr", "screenlock", "suspend", "hibernate"] {
+    for forbidden in ["tessel-power", "wlopm", "wlr-randr", "screenlock", "suspend", "hibernate"] {
         assert!(!command.join(" ").contains(forbidden));
     }
 }
@@ -258,17 +258,20 @@ fn cannot_launch_duplicate_if_owned_listener_cannot_be_stopped() {
 #[test]
 fn restore_callback_quotes_arguments_closes_streams_and_returns_while_pending() {
     let root = temp_root("brightness restore '$ ");
-    let script = root.join("brightness_manager.py");
-    std::fs::write(&script, "import json, pathlib, sys, time\n\
-        root = pathlib.Path(__file__).parent\n\
-        (root / 'started').write_text(json.dumps([sys.argv[1:], sys.stdin.read()]))\n\
-        print('discarded output', flush=True)\n\
-        print('discarded error', file=sys.stderr, flush=True)\n\
-        deadline = time.monotonic() + 3\n\
-        while not (root / 'release').exists() and time.monotonic() < deadline:\n    time.sleep(.01)\n\
-        (root / 'done').touch()\n").unwrap();
+    // Execute only a synthetic helper, never the installed manager.
+    let script = root.join("tessel-brightness");
+    std::fs::write(&script, "#!/bin/sh\nroot=$(dirname \"$0\")\n\
+        { for a in \"$@\"; do printf '%s\\n' \"$a\"; done; printf 'stdin:'; cat; } > \"$root/started.tmp\"\n\
+        mv \"$root/started.tmp\" \"$root/started\"\n\
+        echo 'discarded output'\necho 'discarded error' >&2\n\
+        i=0; while [ ! -e \"$root/release\" ] && [ $i -lt 300 ]; do sleep 0.01; i=$((i+1)); done\n\
+        touch \"$root/done\"\n").unwrap();
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
     let controller = IdleController::new(|_| {}, Rc::new(FakeSpawner::default()), Rc::new(FakeScheduler::default()),
-                                         vec!["/usr/bin/python3".into(), "-I".into(), script.to_string_lossy().into_owned()]);
+                                         vec![script.to_string_lossy().into_owned()]);
     controller.set_token("policy with spaces ' $(false)");
     let command = controller.command("--idle-restore", true);
     let output = std::process::Command::new("/bin/sh").args(["-c", &command]).stdin(std::process::Stdio::null()).output().unwrap();
@@ -278,8 +281,8 @@ fn restore_callback_quotes_arguments_closes_streams_and_returns_while_pending() 
     while !root.join("started").exists() && std::time::Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(10));
     }
-    let started: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(root.join("started")).unwrap()).unwrap();
-    assert_eq!(started, serde_json::json!([["--idle-restore", "policy with spaces ' $(false)"], ""]));
+    let started = std::fs::read_to_string(root.join("started")).unwrap();
+    assert_eq!(started, "--idle-restore\npolicy with spaces ' $(false)\nstdin:");
     assert!(!root.join("done").exists());
     std::fs::write(root.join("release"), "").unwrap();
     let deadline = std::time::Instant::now() + Duration::from_secs(2);

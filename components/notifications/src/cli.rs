@@ -1,15 +1,15 @@
-//! Command line of notification_manager.py, including argparse's error text,
+//! Command line of tessel-notifications, including argparse's error text,
 //! `=` values and unambiguous long-option prefixes.
 
 use crate::client::request;
 use glib::prelude::*;
 use serde_json::{json, Value};
 
-pub const PROG: &str = "notification_manager.py";
-pub const USAGE: &str = "usage: notification_manager.py [-h] [--daemon | --check | --settings | --popup]\n\
-                         \x20                              [--popup-edge {top,bottom,left,right}]\n\
-                         \x20                              [--popup-offset POPUP_OFFSET]";
-const HELP: &str = "\n\nNotification daemon, history popup and settings for the labwc Tessel.\n\n\
+pub const PROG: &str = "tessel-notifications";
+pub const USAGE: &str = "usage: tessel-notifications [-h] [--daemon | --check | --settings | --popup]\n\
+                         \x20                           [--popup-edge {top,bottom,left,right}]\n\
+                         \x20                           [--popup-offset POPUP_OFFSET]";
+const HELP: &str = "\n\nNotification daemon, history popup and settings for Tessel.\n\n\
 options:\n  -h, --help            show this help message and exit\n  --daemon\n  --check\n  --settings\n  --popup\n  \
 --popup-edge {top,bottom,left,right}\n  --popup-offset POPUP_OFFSET\n";
 const MODES: [&str; 4] = ["--daemon", "--check", "--settings", "--popup"];
@@ -118,6 +118,11 @@ pub fn glib_error_text(error: &glib::Error) -> String {
 }
 
 pub fn main(argv: Vec<String>) -> i32 {
+    if argv.get(1).map(String::as_str) == Some(crate::policy::X11_PROBE_FLAG) && argv.len() == 2 {
+        let snapshot = tessel_dock::wl::fullscreen_guard::x11_snapshot().unwrap_or(serde_json::Value::Null);
+        println!("{}", tessel_core::pyfmt::json_dumps(&snapshot, &tessel_core::pyfmt::JsonStyle::DEFAULT));
+        return 0;
+    }
     let args = match parse(&argv[1.min(argv.len())..]) {
         Ok(args) => args,
         Err((text, code)) => {

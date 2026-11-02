@@ -3,7 +3,7 @@
 # one process per case (each registers the real application id on the private bus).
 # Never touches the live session: own XDG_RUNTIME_DIR, own D-Bus, no input devices.
 set -eu
-AGENT=tessel-network-discovery
+AGENT=${AGENT:-tessel-network-discovery}
 R=/run/user/1000/cbt/rust-$AGENT/n
 mkdir -p "$R/rt" "$R/cfg"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
