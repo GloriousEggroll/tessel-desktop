@@ -23,42 +23,42 @@ use tessel_gtk::utils::{accessible, add_css, children, headerbar, image, remove_
 pub const DND_CHOICES: [(&str, &str); 3] = [("hour", "For 1 hour"), ("tomorrow", "Until tomorrow"), ("off", "Until turned off")];
 
 pub const STYLE: &str = "
-window.tessel_notifications.tray-popup { background: transparent; }
-.tessel_notifications .popup-surface {
+window.tessel-notifications.tray-popup { background: transparent; }
+.tessel-notifications .popup-surface {
     background: @theme_bg_color; color: @theme_fg_color;
     border: 1px solid alpha(@theme_fg_color, .15); border-radius: 12px;
 }
-.tessel_notifications .notification-card {
+.tessel-notifications .notification-card {
     padding: 12px; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, .12);
 }
-.tessel_notifications .notification-card.popup-surface { border-radius: 12px; }
-.tessel_notifications .notification-avatar { border-radius: 8px; }
-.tessel_notifications .notification-card.critical {
+.tessel-notifications .notification-card.popup-surface { border-radius: 12px; }
+.tessel-notifications .notification-avatar { border-radius: 8px; }
+.tessel-notifications .notification-card.critical {
     border-color: alpha(@theme_selected_bg_color, .7);
 }
-.tessel_notifications .notification-heading { font-size: 16pt; font-weight: 600; }
-.tessel_notifications .notification-summary { font-size: 10.5pt; font-weight: 650; }
-.tessel_notifications .notification-app { font-size: 9pt; font-weight: 600; }
-.tessel_notifications .notification-time { font-size: 8pt; }
-.tessel_notifications .muted { opacity: .76; }
-.tessel_notifications .section-title { font-size: 10pt; font-weight: 600; }
-.tessel_notifications button { border-radius: 8px; padding: 5px 10px; }
-.tessel_notifications button.icon-button { min-width: 22px; min-height: 22px; padding: 3px; }
-.tessel_notifications .notification-unread { color: @theme_selected_bg_color; }
-.tessel_notifications .count-badge { border-radius: 8px; padding: 2px 6px; }
-.tessel_notifications progressbar trough, .tessel_notifications progressbar progress {
+.tessel-notifications .notification-heading { font-size: 16pt; font-weight: 600; }
+.tessel-notifications .notification-summary { font-size: 10.5pt; font-weight: 650; }
+.tessel-notifications .notification-app { font-size: 9pt; font-weight: 600; }
+.tessel-notifications .notification-time { font-size: 8pt; }
+.tessel-notifications .muted { opacity: .76; }
+.tessel-notifications .section-title { font-size: 10pt; font-weight: 600; }
+.tessel-notifications button { border-radius: 8px; padding: 5px 10px; }
+.tessel-notifications button.icon-button { min-width: 22px; min-height: 22px; padding: 3px; }
+.tessel-notifications .notification-unread { color: @theme_selected_bg_color; }
+.tessel-notifications .count-badge { border-radius: 8px; padding: 2px 6px; }
+.tessel-notifications progressbar trough, .tessel-notifications progressbar progress {
     min-height: 5px; border-radius: 4px;
 }
-.tessel_notifications .settings-card {
+.tessel-notifications .settings-card {
     border-radius: 8px; padding: 12px; border: 1px solid alpha(@theme_fg_color, .12);
 }
-.tessel_notifications .settings-description { font-size: 9pt; }
-.tessel_notifications .group-header { padding: 2px 0; }
-.tessel_notifications .group-header button.group-toggle { padding: 2px 6px; }
-.tessel_notifications .group-cards { margin-top: 8px; }
-.tessel_notifications .dnd-options button { padding: 4px 8px; font-size: 9pt; }
-.tessel_notifications .notification-center-title { font-size: 10.5pt; }
+.tessel-notifications .settings-description { font-size: 9pt; }
+.tessel-notifications .group-header { padding: 2px 0; }
+.tessel-notifications .group-header button.group-toggle { padding: 2px 6px; }
+.tessel-notifications .group-cards { margin-top: 8px; }
+.tessel-notifications .dnd-options button { padding: 4px 8px; font-size: 9pt; }
+.tessel-notifications .notification-center-title { font-size: 10.5pt; }
 ";
 
 /// What the views need from the service: the daemon's in-process model or
@@ -465,7 +465,8 @@ impl NotificationCard {
         action_box.set_max_children_per_line(3);
         action_box.set_column_spacing(6);
         action_box.set_row_spacing(6);
-        action_box.set_homogeneous(true);
+        // Buttons sit at the card's right edge, at their natural width.
+        action_box.set_halign(gtk::Align::End);
         root.append(&action_box);
         let card = Self(Rc::new(CardInner {
             root: root.clone(), history, dismiss, activate, hover, hovered: Cell::new(false),
@@ -594,7 +595,7 @@ impl NotificationCard {
             }
             inner.action_buttons.borrow_mut().clear();
             for (key, title) in &actions {
-                let button = gtk::Button::builder().label(title).hexpand(true).build();
+                let button = gtk::Button::builder().label(title).build();
                 if let Some(label) = button.child().and_downcast::<gtk::Label>() {
                     label.set_ellipsize(pango::EllipsizeMode::End);
                     label.set_max_width_chars(18);

@@ -15,19 +15,19 @@ pub const DURATION_CHOICES: [(u32, &str); 4] =
     [(30, "For 30 minutes"), (60, "For 1 hour"), (120, "For 2 hours"), (0, "Until turned off")];
 
 pub const CSS: &str = "
-window.tessel_keep_awake.tray-popup { background: transparent; }
-.tessel_keep_awake .popup-surface {
+window.tessel-keep-awake.tray-popup { background: transparent; }
+.tessel-keep-awake .popup-surface {
     background-color: @theme_bg_color; color: @theme_fg_color;
     border: 1px solid alpha(@theme_fg_color, 0.14); border-radius: 12px;
 }
-.tessel_keep_awake .muted { color: alpha(@theme_fg_color, 0.65); }
-.tessel_keep_awake .card {
+.tessel-keep-awake .muted { color: alpha(@theme_fg_color, 0.65); }
+.tessel-keep-awake .card {
     border-radius: 8px; padding: 12px;
     background-color: alpha(@theme_fg_color, 0.045);
     border: 1px solid alpha(@theme_fg_color, 0.10);
 }
-.tessel_keep_awake .status { font-size: 9pt; }
-.tessel_keep_awake .error { color: mix(@theme_fg_color, #e05d65, 0.75); }
+.tessel-keep-awake .status { font-size: 9pt; }
+.tessel-keep-awake .error { color: mix(@theme_fg_color, #e05d65, 0.75); }
 ";
 
 /// What the popup drives: the daemon's [`TimedBackend`], or (embedded in

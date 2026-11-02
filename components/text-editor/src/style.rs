@@ -6,16 +6,16 @@ use tessel_core::tr;
 use tessel_gtk::app_menu::{Shortcut, ShortcutSection};
 
 pub const CSS: &str = "
-.tessel_text_editor button { border-radius: 8px; }
-.tessel_text_editor .editor-toolbar { padding: 8px 12px; }
-.tessel_text_editor .editor-status { padding: 7px 14px; font-size: 9pt; }
-.tessel_text_editor .search-panel { padding: 10px 14px; }
-.tessel_text_editor .error-banner { padding: 10px 14px; }
-.tessel_text_editor .muted { opacity: .7; }
-.tessel_text_editor .editor-title { font-weight: 650; }
-.tessel_text_editor .editor-subtitle { font-size: 9pt; }
-.tessel_text_editor .settings-card { padding: 12px; border-radius: 12px; }
-.tessel_text_editor textview { padding: 8px; }
+.tessel-text-editor button { border-radius: 8px; }
+.tessel-text-editor .editor-toolbar { padding: 8px 12px; }
+.tessel-text-editor .editor-status { padding: 7px 14px; font-size: 9pt; }
+.tessel-text-editor .search-panel { padding: 10px 14px; }
+.tessel-text-editor .error-banner { padding: 10px 14px; }
+.tessel-text-editor .muted { opacity: .7; }
+.tessel-text-editor .editor-title { font-weight: 650; }
+.tessel-text-editor .editor-subtitle { font-size: 9pt; }
+.tessel-text-editor .settings-card { padding: 12px; border-radius: 12px; }
+.tessel-text-editor textview { padding: 8px; }
 ";
 
 /// `SHORTCUTS` for the standard Keyboard Shortcuts window (English; translated there).

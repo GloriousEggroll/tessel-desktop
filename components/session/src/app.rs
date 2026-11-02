@@ -42,15 +42,15 @@ pub const REMAINING: [(&str, &str); 3] = [
 ];
 
 pub const CSS: &str = "
-window.tessel_session.tray-popup { background: transparent; }
-.tessel_session .popup-surface { background: @theme_bg_color; border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
-.tessel_session .title { font-size: 16pt; font-weight: 600; }
-.tessel_session .subtitle { color: alpha(@theme_fg_color,.66); font-size: 9pt; }
-.tessel_session .session-title { font-size: 10.5pt; font-weight: 600; }
-.tessel_session .session-action { padding: 10px 12px; border-radius: 8px; background: transparent; border: none; box-shadow: none; }
-.tessel_session .session-action:hover { background: alpha(@theme_fg_color,.08); }
-.tessel_session .session-blocker { padding: 6px 4px; }
-.tessel_session .session-tile { min-width: 40px; min-height: 40px; border-radius: 8px; background: alpha(@theme_selected_bg_color,.13); color: @theme_selected_bg_color; }
+window.tessel-session.tray-popup { background: transparent; }
+.tessel-session .popup-surface { background: @theme_bg_color; border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
+.tessel-session .title { font-size: 16pt; font-weight: 600; }
+.tessel-session .subtitle { color: alpha(@theme_fg_color,.66); font-size: 9pt; }
+.tessel-session .session-title { font-size: 10.5pt; font-weight: 600; }
+.tessel-session .session-action { padding: 10px 12px; border-radius: 8px; background: transparent; border: none; box-shadow: none; }
+.tessel-session .session-action:hover { background: alpha(@theme_fg_color,.08); }
+.tessel-session .session-blocker { padding: 6px 4px; }
+.tessel-session .session-tile { min-width: 40px; min-height: 40px; border-radius: 8px; background: alpha(@theme_selected_bg_color,.13); color: @theme_selected_bg_color; }
 ";
 
 fn confirmation(action: &str) -> Option<(&'static str, &'static str)> {

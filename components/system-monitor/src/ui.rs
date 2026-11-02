@@ -16,7 +16,7 @@ use tessel_gtk::app_menu::{install_app_menu, AboutDetails, MenuTarget, Shortcut,
 use tessel_gtk::utils::{accessible, add_css, headerbar, set_margins};
 
 pub const STYLE: &str = r#"
-window.tessel_system_monitor { font-size: 10pt; }
+window.tessel-system-monitor { font-size: 10pt; }
 .monitor-nav { padding: 12px 8px; border-right: 1px solid alpha(currentColor,.12); }
 .monitor-page { padding: 20px; }
 .monitor-heading { font-size: 16pt; font-weight: 600; }

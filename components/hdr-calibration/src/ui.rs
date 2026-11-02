@@ -14,13 +14,13 @@ use tessel_core::tr;
 use way_displays::color_config::Status;
 
 pub const STYLE: &str = r#"
-.tessel_hdr_calibration .hdr-section { padding: 16px; border-radius: 12px; }
-.tessel_hdr_calibration .hdr-section-title { font-size: 10pt; font-weight: 600; opacity: .7; }
-.tessel_hdr_calibration .hdr-field-title { font-size: 10.5pt; font-weight: 600; }
-.tessel_hdr_calibration .hdr-detail { font-size: 9pt; opacity: .7; }
-.tessel_hdr_calibration .hdr-empty { padding: 48px 24px; }
-.tessel_hdr_calibration .hdr-empty-title { font-size: 16pt; font-weight: 600; }
-.tessel_hdr_calibration .hdr-empty-icon { opacity: .5; }
+.tessel-hdr-calibration .hdr-section { padding: 16px; border-radius: 12px; }
+.tessel-hdr-calibration .hdr-section-title { font-size: 10pt; font-weight: 600; opacity: .7; }
+.tessel-hdr-calibration .hdr-field-title { font-size: 10.5pt; font-weight: 600; }
+.tessel-hdr-calibration .hdr-detail { font-size: 9pt; opacity: .7; }
+.tessel-hdr-calibration .hdr-empty { padding: 48px 24px; }
+.tessel-hdr-calibration .hdr-empty-title { font-size: 16pt; font-weight: 600; }
+.tessel-hdr-calibration .hdr-empty-icon { opacity: .5; }
 "#;
 
 /// `(key, label, lower, upper, step, digits, help)`.

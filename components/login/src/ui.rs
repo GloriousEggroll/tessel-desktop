@@ -22,32 +22,32 @@ use crate::transition::Fade;
 
 pub const APPLICATION_ID: &str = "org.tessel.Login";
 pub const STYLE: &str = "
-window.tessel_login { background: #161820; color: white; }
-.tessel_login .caption { font-size: 10pt; text-shadow: 0 1px 3px #000; }
-.tessel_login entry { min-height: 34px; padding: 12px 18px; border-radius: 9999px; font-size: 13.5pt; }
-.tessel_login button:focus-visible, .tessel_login entry:focus-within { outline: 2px solid @accent_color; outline-offset: 2px; }
-.tessel_login popover contents { background: #23252d; color: white; padding: 12px; }
-.tessel_login .confirmation { padding: 12px; border-radius: 12px; background: rgba(20,22,30,.85); }
-.tessel_login .session-fade { background: black; }
+window.tessel-login { background: #161820; color: white; }
+.tessel-login .caption { font-size: 10pt; text-shadow: 0 1px 3px #000; }
+.tessel-login entry { min-height: 34px; padding: 12px 18px; border-radius: 9999px; font-size: 13.5pt; }
+.tessel-login button:focus-visible, .tessel-login entry:focus-within { outline: 2px solid @accent_color; outline-offset: 2px; }
+.tessel-login popover contents { background: #23252d; color: white; padding: 12px; }
+.tessel-login .confirmation { padding: 12px; border-radius: 12px; background: rgba(20,22,30,.85); }
+.tessel-login .session-fade { background: black; }
 ";
 /// Accessibility menu styles; added above each window's palette provider.
 pub const LARGE_TEXT: &str = "
-.tessel_login .clock { font-size: 120pt; }
-.tessel_login .date { font-size: 30pt; }
-.tessel_login .user-name, .tessel_login dropdown.family-user-choice > button { font-size: 30pt; }
-.tessel_login .caption, .tessel_login label { font-size: 15pt; }
-.tessel_login entry { font-size: 18pt; min-height: 44px; }
-.tessel_login dropdown button, .tessel_login popover label { font-size: 15pt; }
+.tessel-login .clock { font-size: 120pt; }
+.tessel-login .date { font-size: 30pt; }
+.tessel-login .user-name, .tessel-login dropdown.family-user-choice > button { font-size: 30pt; }
+.tessel-login .caption, .tessel-login label { font-size: 15pt; }
+.tessel-login entry { font-size: 18pt; min-height: 44px; }
+.tessel-login dropdown button, .tessel-login popover label { font-size: 15pt; }
 ";
 pub const HIGH_CONTRAST: &str = "
-.tessel_login button, .tessel_login entry, .tessel_login dropdown button { background: black; color: white;
+.tessel-login button, .tessel-login entry, .tessel-login dropdown button { background: black; color: white;
   border: 2px solid white; box-shadow: none; }
-.tessel_login button.suggested-action { background: white; color: black; }
-.tessel_login button:focus-visible, .tessel_login entry:focus-within { outline: 3px solid #ffd800; outline-offset: 2px; }
-.tessel_login .clock, .tessel_login .date, .tessel_login .user-name, .tessel_login .caption, .tessel_login label { color: white;
+.tessel-login button.suggested-action { background: white; color: black; }
+.tessel-login button:focus-visible, .tessel-login entry:focus-within { outline: 3px solid #ffd800; outline-offset: 2px; }
+.tessel-login .clock, .tessel-login .date, .tessel-login .user-name, .tessel-login .caption, .tessel-login label { color: white;
   text-shadow: 0 0 4px black, 0 0 2px black; }
-.tessel_login popover contents { background: black; color: white; border: 2px solid white; }
-.tessel_login .confirmation { background: black; border: 2px solid white; }
+.tessel-login popover contents { background: black; color: white; border: 2px solid white; }
+.tessel-login .confirmation { background: black; border: 2px solid white; }
 ";
 pub const SCREEN_READER: &str = "orca";
 const APPLICATION_PRIORITY: u32 = gtk::STYLE_PROVIDER_PRIORITY_APPLICATION;

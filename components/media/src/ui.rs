@@ -11,23 +11,23 @@ use tessel_gtk::popup::{header_button, popup_header, set_popup_width, HeaderActi
 use tessel_gtk::utils::{accessible, add_css, image, PRIORITY_APPLICATION};
 
 pub const CSS: &str = r#"
-window.tessel_media.tray-popup { background: transparent; }
-.tessel_media .popup-surface { background: @theme_bg_color; color: @theme_fg_color;
+window.tessel-media.tray-popup { background: transparent; }
+.tessel-media .popup-surface { background: @theme_bg_color; color: @theme_fg_color;
   border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
-.tessel_media .media-title { font-size: 12pt; font-weight: 600; }
-.tessel_media .album-cover { border-radius: 8px; }
-.tessel_media .media-control { min-width: 46px; min-height: 46px; padding: 0;
+.tessel-media .media-title { font-size: 12pt; font-weight: 600; }
+.tessel-media .album-cover { border-radius: 8px; }
+.tessel-media .media-control { min-width: 46px; min-height: 46px; padding: 0;
   border-radius: 50%; border: 1px solid alpha(@theme_fg_color,.12);
   background: alpha(@theme_fg_color,.06); box-shadow: none; }
-.tessel_media .media-control:hover { background: alpha(@theme_selected_bg_color,.22); }
-.tessel_media .media-control.suggested-action { background: @theme_selected_bg_color; color: @theme_selected_fg_color; }
-.tessel_media .media-control:disabled { opacity: .35; }
-.tessel_media .mode-toggle { min-width: 34px; min-height: 34px; padding: 0; border-radius: 50%;
+.tessel-media .media-control:hover { background: alpha(@theme_selected_bg_color,.22); }
+.tessel-media .media-control.suggested-action { background: @theme_selected_bg_color; color: @theme_selected_fg_color; }
+.tessel-media .media-control:disabled { opacity: .35; }
+.tessel-media .mode-toggle { min-width: 34px; min-height: 34px; padding: 0; border-radius: 50%;
   background: transparent; border: none; box-shadow: none; }
-.tessel_media .mode-toggle:checked { background: alpha(@theme_selected_bg_color,.22); color: @theme_selected_bg_color; }
-.tessel_media .mode-toggle:disabled { opacity: .35; }
-.tessel_media .seek-time { font-size: 9pt; opacity: .72; font-feature-settings: "tnum"; }
-.tessel_media scale.seek trough { min-height: 4px; border-radius: 4px; }
+.tessel-media .mode-toggle:checked { background: alpha(@theme_selected_bg_color,.22); color: @theme_selected_bg_color; }
+.tessel-media .mode-toggle:disabled { opacity: .35; }
+.tessel-media .seek-time { font-size: 9pt; opacity: .72; font-feature-settings: "tnum"; }
+.tessel-media scale.seek trough { min-height: 4px; border-radius: 4px; }
 "#;
 
 /// `M:SS` or `H:MM:SS`.

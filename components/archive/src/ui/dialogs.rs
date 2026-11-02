@@ -14,11 +14,11 @@ pub const CSS: &str = "
 .archive-dialog .dialog-buttons { margin: 0 18px 18px 18px; }
 .archive-dialog .dialog-heading { font-weight: 700; font-size: 12pt; }
 .archive-dialog .dim-label, .archive-window .dim-label { opacity: .7; }
-.tessel_archive_settings .gs-section-title { font-size: 11pt; font-weight: 700; }
-.tessel_archive_settings .gs-card { padding: 4px 12px; border-radius: 12px; background: alpha(@theme_fg_color, .04); }
-.tessel_archive_settings .gs-row { min-height: 46px; padding-top: 6px; padding-bottom: 6px; }
-.tessel_archive_settings .gs-row + .gs-row { border-top: 1px solid alpha(@theme_fg_color, .08); }
-.tessel_archive_settings .gs-row-subtitle { opacity: .7; font-size: 9.5pt; }
+.tessel-archive-settings .gs-section-title { font-size: 11pt; font-weight: 700; }
+.tessel-archive-settings .gs-card { padding: 4px 12px; border-radius: 12px; background: alpha(@theme_fg_color, .04); }
+.tessel-archive-settings .gs-row { min-height: 46px; padding-top: 6px; padding-bottom: 6px; }
+.tessel-archive-settings .gs-row + .gs-row { border-top: 1px solid alpha(@theme_fg_color, .08); }
+.tessel-archive-settings .gs-row-subtitle { opacity: .7; font-size: 9.5pt; }
 .archive-window .info-panel { padding: 14px; }
 .archive-window .info-panel:dir(ltr) { border-left: 1px solid alpha(@theme_fg_color, .1); }
 .archive-window .info-panel:dir(rtl) { border-right: 1px solid alpha(@theme_fg_color, .1); }

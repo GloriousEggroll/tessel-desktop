@@ -159,54 +159,54 @@ list.card > row + row, list.gs-card > row + row { border-top: 1px solid alpha(@t
 ";
 
 pub const CSS: &str = "
-window.tessel_settings { background: @theme_bg_color; color: @theme_fg_color; }
-.tessel_settings headerbar {
+window.tessel-settings { background: @theme_bg_color; color: @theme_fg_color; }
+.tessel-settings headerbar {
   background-image: none; background-color: @theme_bg_color;
   box-shadow: none; border-bottom: 1px solid alpha(@theme_fg_color, .1); padding: 6px 10px;
 }
-.tessel_settings .settings-navigation {
+.tessel-settings .settings-navigation {
   background-color: alpha(@theme_fg_color, .025);
   border-right: 1px solid alpha(@theme_fg_color, .10);
 }
-.tessel_settings .settings-navigation list { background: transparent; }
-.tessel_settings .settings-navigation row { border-radius: 8px; margin: 2px 9px; padding: 0; }
-.tessel_settings .settings-navigation row:selected {
+.tessel-settings .settings-navigation list { background: transparent; }
+.tessel-settings .settings-navigation row { border-radius: 8px; margin: 2px 9px; padding: 0; }
+.tessel-settings .settings-navigation row:selected {
   background-color: alpha(@theme_selected_bg_color, .17); color: @theme_fg_color;
 }
-.tessel_settings .settings-navigation row:hover { background-color: alpha(@theme_fg_color, .07); }
-.tessel_settings .settings-navigation row image { color: @theme_fg_color; }
-.tessel_settings .settings-navigation row:selected image { color: @theme_selected_bg_color; }
-.tessel_settings .navigation-title { font-size: 16pt; font-weight: 700; margin: 22px 18px 18px; }
-.tessel_settings .navigation-item { padding: 10px 12px; font-size: 10.5pt; }
-.tessel_settings .settings-search { margin: 0 12px 12px; }
-.tessel_settings .settings-search image { margin-right: 8px; }
-.tessel_settings .settings-search-page { padding: 24px; }
-.tessel_settings .settings-search-results { background: transparent; }
-.tessel_settings .settings-search-results row {
+.tessel-settings .settings-navigation row:hover { background-color: alpha(@theme_fg_color, .07); }
+.tessel-settings .settings-navigation row image { color: @theme_fg_color; }
+.tessel-settings .settings-navigation row:selected image { color: @theme_selected_bg_color; }
+.tessel-settings .navigation-title { font-size: 16pt; font-weight: 700; margin: 22px 18px 18px; }
+.tessel-settings .navigation-item { padding: 10px 12px; font-size: 10.5pt; }
+.tessel-settings .settings-search { margin: 0 12px 12px; }
+.tessel-settings .settings-search image { margin-right: 8px; }
+.tessel-settings .settings-search-page { padding: 24px; }
+.tessel-settings .settings-search-results { background: transparent; }
+.tessel-settings .settings-search-results row {
   padding: 12px; margin: 3px 0; border-radius: 12px;
   border: 1px solid alpha(@theme_fg_color, .10);
 }
-.tessel_settings .settings-search-results row:hover { background: alpha(@theme_fg_color, .06); }
-.tessel_settings .settings-search-results row:selected { background: alpha(@theme_selected_bg_color, .15); }
-.tessel_settings .search-setting-title { font-size: 10.5pt; font-weight: 600; }
-.tessel_settings .search-section { font-size: 9pt; font-weight: 600; color: alpha(@theme_fg_color, .7); }
-.tessel_settings .search-detail { font-size: 9.5pt; color: alpha(@theme_fg_color, .7); }
-.tessel_settings .settings-search-target { outline: 2px solid currentColor; outline-offset: -2px; border-radius: 8px; }
+.tessel-settings .settings-search-results row:hover { background: alpha(@theme_fg_color, .06); }
+.tessel-settings .settings-search-results row:selected { background: alpha(@theme_selected_bg_color, .15); }
+.tessel-settings .search-setting-title { font-size: 10.5pt; font-weight: 600; }
+.tessel-settings .search-section { font-size: 9pt; font-weight: 600; color: alpha(@theme_fg_color, .7); }
+.tessel-settings .search-detail { font-size: 9.5pt; color: alpha(@theme_fg_color, .7); }
+.tessel-settings .settings-search-target { outline: 2px solid currentColor; outline-offset: -2px; border-radius: 8px; }
 /* Explicit, non-negative slider boxes: some GTK themes (Nobara) pair negative
    margins with borders that add up to a negative size (\"GtkGizmo slider
    reported min width -2\"). */
-.tessel_settings scrollbar slider, .tessel_settings scrollbar.horizontal slider {
+.tessel-settings scrollbar slider, .tessel-settings scrollbar.horizontal slider {
   min-width: 6px; min-height: 6px; margin: 0; padding: 0;
   border: 2px solid transparent; border-radius: 8px; background-clip: padding-box;
 }
-.tessel_settings scrollbar.vertical slider { min-height: 30px; }
-.tessel_settings scrollbar.horizontal slider { min-width: 30px; }
-.tessel_settings .tessel_dock-settings scale highlight { margin: 0; }
+.tessel-settings scrollbar.vertical slider { min-height: 30px; }
+.tessel-settings scrollbar.horizontal slider { min-width: 30px; }
+.tessel-settings .tessel-dock-settings scale highlight { margin: 0; }
 /* Cards and headers of pages that other suite components build. */
-window.tessel_settings .card, window.tessel_settings .settings-card, window.tessel_settings .power-card {
+window.tessel-settings .card, window.tessel-settings .settings-card, window.tessel-settings .power-card {
   border-radius: 12px; border: 1px solid alpha(@theme_fg_color, .12); background-color: alpha(@theme_fg_color, .035);
 }
-window.tessel_settings .settings-section-title { font-size: 11pt; font-weight: 700; }
+window.tessel-settings .settings-section-title { font-size: 11pt; font-weight: 700; }
 ";
 
 /// `install(window)`: class, CSS + PAGE_CSS, companion palette. Returns the

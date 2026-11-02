@@ -10,19 +10,19 @@ use tessel_gtk::gtk;
 use tessel_gtk::utils::{accessible, add_css, image, remove_children, remove_css, PRIORITY_APPLICATION};
 
 pub const STYLE: &str = "
-.tessel_keyboard { padding: 12px; border-radius: 16px; background: @theme_bg_color; color: @theme_fg_color; }
-.tessel_keyboard .keyboard-heading { font-weight: 600; font-size: 15px; }
-.tessel_keyboard .keyboard-key { min-height: 42px; min-width: 22px; padding: 4px 5px;
+.tessel-keyboard { padding: 12px; border-radius: 16px; background: @theme_bg_color; color: @theme_fg_color; }
+.tessel-keyboard .keyboard-heading { font-weight: 600; font-size: 15px; }
+.tessel-keyboard .keyboard-key { min-height: 42px; min-width: 22px; padding: 4px 5px;
     border-radius: 9px; border: 1px solid alpha(@theme_fg_color,.13);
     background: alpha(@theme_fg_color,.065); box-shadow: 0 2px 0 alpha(black,.12); font-size: 18px; }
-.tessel_keyboard .keyboard-key:hover { background: alpha(@theme_fg_color,.12); }
-.tessel_keyboard .keyboard-key:active, .tessel_keyboard .keyboard-key.latched { background: alpha(@accent_bg_color,.35); }
-.tessel_keyboard .keyboard-utility { min-height: 30px; padding: 4px 9px; border-radius: 8px; }
-.tessel_keyboard .keyboard-status { opacity: .72; font-size: 12px; }
-.tessel_keyboard.keyboard-small .keyboard-key { min-height: 34px; font-size: 16px; }
-.tessel_keyboard.keyboard-large .keyboard-key { min-height: 54px; font-size: 21px; }
-.tessel_keyboard.keyboard-narrow { padding: 6px; }
-.tessel_keyboard.keyboard-narrow .keyboard-key { min-width: 0; padding: 3px 1px; font-size: 15px; }
+.tessel-keyboard .keyboard-key:hover { background: alpha(@theme_fg_color,.12); }
+.tessel-keyboard .keyboard-key:active, .tessel-keyboard .keyboard-key.latched { background: alpha(@accent_bg_color,.35); }
+.tessel-keyboard .keyboard-utility { min-height: 30px; padding: 4px 9px; border-radius: 8px; }
+.tessel-keyboard .keyboard-status { opacity: .72; font-size: 12px; }
+.tessel-keyboard.keyboard-small .keyboard-key { min-height: 34px; font-size: 16px; }
+.tessel-keyboard.keyboard-large .keyboard-key { min-height: 54px; font-size: 21px; }
+.tessel-keyboard.keyboard-narrow { padding: 6px; }
+.tessel-keyboard.keyboard-narrow .keyboard-key { min-width: 0; padding: 3px 1px; font-size: 15px; }
 ";
 
 /// Evdev codes of the four character rows.

@@ -39,24 +39,24 @@ pub const PREVIEW_ID: &str = "org.tessel.LockPreview";
 pub const LOCK_FAILED: i32 = 75;
 
 pub const STYLE: &str = "
-window.tessel_lock { background: #161820; border-radius: 0; }
-.tessel_lock .lock-name { font-size: 13.5pt; font-weight: 600; letter-spacing: 5px; color: white; }
-.tessel_lock .lock-panel { background: transparent; border: none; box-shadow: none; }
-.tessel_lock entry { padding: 10px 14px; border-radius: 9999px; min-height: 22px; }
-.tessel_lock .lock-caption { font-size: 10pt; }
-.tessel_lock .lock-information { font-size: 15pt; }
-.tessel_lock .lock-location { font-size: 18pt; font-weight: 600; }
-.tessel_lock .lock-current-weather { font-size: 24pt; }
-.tessel_lock .lock-forecast-heading { font-size: 15pt; }
-.tessel_lock .lock-forecast-day { font-size: 15pt; }
-.tessel_lock .lock-forecast-high { font-size: 18pt; font-weight: 600; }
-.tessel_lock .lock-information .lock-caption { font-size: 13.5pt; }
-.tessel_lock .lock-media-title { font-size: 19.5pt; font-weight: 600; }
-.tessel_lock .lock-information label { text-shadow: 0 2px 6px #000; }
-.tessel_lock .lock-group-heading { font-size: 13.5pt; font-weight: 500; letter-spacing: 1px; }
-.tessel_lock .lock-temperature { font-size: 36pt; font-weight: 600; }
-.tessel_lock .lock-condition { font-size: 16.5pt; }
-.tessel_lock .lock-status { font-size: 13.5pt; }
+window.tessel-lock { background: #161820; border-radius: 0; }
+.tessel-lock .lock-name { font-size: 13.5pt; font-weight: 600; letter-spacing: 5px; color: white; }
+.tessel-lock .lock-panel { background: transparent; border: none; box-shadow: none; }
+.tessel-lock entry { padding: 10px 14px; border-radius: 9999px; min-height: 22px; }
+.tessel-lock .lock-caption { font-size: 10pt; }
+.tessel-lock .lock-information { font-size: 15pt; }
+.tessel-lock .lock-location { font-size: 18pt; font-weight: 600; }
+.tessel-lock .lock-current-weather { font-size: 24pt; }
+.tessel-lock .lock-forecast-heading { font-size: 15pt; }
+.tessel-lock .lock-forecast-day { font-size: 15pt; }
+.tessel-lock .lock-forecast-high { font-size: 18pt; font-weight: 600; }
+.tessel-lock .lock-information .lock-caption { font-size: 13.5pt; }
+.tessel-lock .lock-media-title { font-size: 19.5pt; font-weight: 600; }
+.tessel-lock .lock-information label { text-shadow: 0 2px 6px #000; }
+.tessel-lock .lock-group-heading { font-size: 13.5pt; font-weight: 500; letter-spacing: 1px; }
+.tessel-lock .lock-temperature { font-size: 36pt; font-weight: 600; }
+.tessel-lock .lock-condition { font-size: 16.5pt; }
+.tessel-lock .lock-status { font-size: 13.5pt; }
 ";
 
 /// Construction options (Python keyword arguments and test patches).

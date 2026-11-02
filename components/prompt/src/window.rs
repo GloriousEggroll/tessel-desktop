@@ -11,15 +11,15 @@ use tessel_core::tr;
 use tessel_gtk::utils::{add_css, headerbar, image, key_controller, set_margins, PRIORITY_APPLICATION};
 
 pub const CSS: &str = "
-                .tessel_prompt .prompt-heading { font-size: 13pt; font-weight: 700; }
-                .tessel_prompt .prompt-body { font-size: 10.5pt; }
-                .tessel_prompt .prompt-icon { -gtk-icon-style: symbolic; }
-                .tessel_prompt .prompt-actions button { min-height: 28px; padding: 6px 18px;
+                .tessel-prompt .prompt-heading { font-size: 13pt; font-weight: 700; }
+                .tessel-prompt .prompt-body { font-size: 10.5pt; }
+                .tessel-prompt .prompt-icon { -gtk-icon-style: symbolic; }
+                .tessel-prompt .prompt-actions button { min-height: 28px; padding: 6px 18px;
                     border-radius: 8px; box-shadow: none; text-shadow: none; }
-                .tessel_prompt textview { padding: 12px; border-radius: 8px; }
-                .tessel_prompt textview, .tessel_prompt textview text {
+                .tessel-prompt textview { padding: 12px; border-radius: 8px; }
+                .tessel-prompt textview, .tessel-prompt textview text {
                     background-color: transparent; color: inherit; }
-                .tessel_prompt headerbar { box-shadow: none; }
+                .tessel-prompt headerbar { box-shadow: none; }
             ";
 
 pub struct PromptWindow {

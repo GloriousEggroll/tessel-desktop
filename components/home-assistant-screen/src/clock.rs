@@ -28,35 +28,35 @@ pub const APPLICATION_ID: &str = "local.luna.Clock";
 pub const USAGE: &str = "Usage: luna_clock.py [--show|--hide|--status|--next-wallpaper|--quit|--volume up/down/mute/0–100|--brightness up/down/10–100]\n";
 
 pub const STYLE: &str = "
-window.tessel_lock { background: #161820; color: white; }
-.tessel_lock .lock-clock { font-size: 144px; font-weight: 600; color: white; text-shadow: 0 2px 8px #000; }
-.tessel_lock .lock-date { font-size: 38px; color: white; text-shadow: 0 2px 5px #000; }
-.tessel_lock .lock-name { font-size: 18px; font-weight: 600; letter-spacing: 5px; color: white; text-shadow: 0 2px 5px #000; }
-.tessel_lock.lock-compact .lock-clock, .tessel_lock.lock-narrow .lock-clock { font-size: 104px; }
-.tessel_lock.lock-compact .lock-date, .tessel_lock.lock-narrow .lock-date { font-size: 30px; }
-.tessel_lock.lock-compact .lock-forecast-day { font-size: 18px; }
-.tessel_lock.lock-compact .lock-forecast-high { font-size: 22px; }
-.tessel_lock.lock-compact .lock-information .lock-caption { font-size: 16px; }
-.tessel_lock.lock-compact .lock-temperature { font-size: 40px; }
-.tessel_lock .lock-information { font-size: 20px; color: white; }
-.tessel_lock .lock-location { font-size: 24px; font-weight: 600; }
-.tessel_lock .lock-forecast-day { font-size: 20px; }
-.tessel_lock .lock-forecast-high { font-size: 24px; font-weight: 600; }
-.tessel_lock .lock-information .lock-caption { font-size: 18px; }
-.tessel_lock .lock-media-title { font-size: 26px; font-weight: 600; }
-.tessel_lock .album-cover { border-radius: 12px; }
-.tessel_lock .album-player { padding: 4px; border-radius: 50%; background: rgba(20,24,30,.85); }
-.tessel_lock .lock-information label { color: white; text-shadow: 0 2px 6px #000; }
-.tessel_lock .lock-group-heading { font-size: 18px; font-weight: 500; letter-spacing: 1px; }
-.tessel_lock .lock-temperature { font-size: 48px; font-weight: 600; }
-.tessel_lock .lock-condition { font-size: 22px; }
-.tessel_lock .lock-media-action { border-radius: 50%; padding: 0; min-width: 58px; min-height: 58px;
+window.tessel-lock { background: #161820; color: white; }
+.tessel-lock .lock-clock { font-size: 144px; font-weight: 600; color: white; text-shadow: 0 2px 8px #000; }
+.tessel-lock .lock-date { font-size: 38px; color: white; text-shadow: 0 2px 5px #000; }
+.tessel-lock .lock-name { font-size: 18px; font-weight: 600; letter-spacing: 5px; color: white; text-shadow: 0 2px 5px #000; }
+.tessel-lock.lock-compact .lock-clock, .tessel-lock.lock-narrow .lock-clock { font-size: 104px; }
+.tessel-lock.lock-compact .lock-date, .tessel-lock.lock-narrow .lock-date { font-size: 30px; }
+.tessel-lock.lock-compact .lock-forecast-day { font-size: 18px; }
+.tessel-lock.lock-compact .lock-forecast-high { font-size: 22px; }
+.tessel-lock.lock-compact .lock-information .lock-caption { font-size: 16px; }
+.tessel-lock.lock-compact .lock-temperature { font-size: 40px; }
+.tessel-lock .lock-information { font-size: 20px; color: white; }
+.tessel-lock .lock-location { font-size: 24px; font-weight: 600; }
+.tessel-lock .lock-forecast-day { font-size: 20px; }
+.tessel-lock .lock-forecast-high { font-size: 24px; font-weight: 600; }
+.tessel-lock .lock-information .lock-caption { font-size: 18px; }
+.tessel-lock .lock-media-title { font-size: 26px; font-weight: 600; }
+.tessel-lock .album-cover { border-radius: 12px; }
+.tessel-lock .album-player { padding: 4px; border-radius: 50%; background: rgba(20,24,30,.85); }
+.tessel-lock .lock-information label { color: white; text-shadow: 0 2px 6px #000; }
+.tessel-lock .lock-group-heading { font-size: 18px; font-weight: 500; letter-spacing: 1px; }
+.tessel-lock .lock-temperature { font-size: 48px; font-weight: 600; }
+.tessel-lock .lock-condition { font-size: 22px; }
+.tessel-lock .lock-media-action { border-radius: 50%; padding: 0; min-width: 58px; min-height: 58px;
     color: white; background: rgba(25,28,34,.45); border: 1px solid rgba(255,255,255,.25); }
-.tessel_lock .lock-media-action:hover { background: rgba(255,255,255,.25); }
-.tessel_lock .lock-media-action:disabled { opacity: .5; }
-.tessel_lock .settings-gear { min-width: 64px; min-height: 64px; border-radius: 20px;
+.tessel-lock .lock-media-action:hover { background: rgba(255,255,255,.25); }
+.tessel-lock .lock-media-action:disabled { opacity: .5; }
+.tessel-lock .settings-gear { min-width: 64px; min-height: 64px; border-radius: 20px;
   padding: 4px; color: white; background: rgba(20,32,37,.85); border: 1px solid rgba(255,255,255,.5); }
-.tessel_lock .settings-gear:hover { background: rgba(50,73,70,.95); }
+.tessel-lock .settings-gear:hover { background: rgba(50,73,70,.95); }
 ";
 
 /// `config.json` next to the program (`ROOT / 'config.json'`).
