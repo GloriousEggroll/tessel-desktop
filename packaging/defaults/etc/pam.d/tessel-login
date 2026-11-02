@@ -2,7 +2,7 @@
 # The GUI has no privileged operations. greetd owns this PAM transaction.
 auth required pam_succeed_if.so user != root quiet
 auth substack tessel-login-auth
--auth optional pam_waykeyring.so
+-auth optional pam_tessel_keyring.so
 account required pam_sepermit.so
 account required pam_nologin.so
 account required pam_faillock.so conf=/etc/security/tessel-login-faillock.conf
@@ -14,7 +14,7 @@ session required pam_selinux.so open
 session optional pam_keyinit.so force revoke
 session required pam_namespace.so
 session include system-auth
--session optional pam_waykeyring.so
+-session optional pam_tessel_keyring.so
 -session optional pam_gnome_keyring.so auto_start
 -session optional pam_kwallet5.so auto_start
 -session optional pam_kwallet.so auto_start
