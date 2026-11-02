@@ -1,6 +1,6 @@
 //! `tessel-files-model`: the GTK-widget-free model of Files (`tessel-files`).
 //!
-//! One module per Python file (`~/tessel-bluetooth/tessel-files`, read-only source
+//! One module per file of the retired Python Files (the original source
 //! of truth). Names follow Python: classes are structs with the same name,
 //! functions/methods/constants keep their snake_case / UPPER names; a leading
 //! underscore is dropped for helpers other crates need.

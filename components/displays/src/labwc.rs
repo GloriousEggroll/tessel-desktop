@@ -11,6 +11,15 @@ use std::time::Duration;
 
 pub const LABWC_HDR_BEGIN: &str = "<!-- tessel-displays HDR overrides begin -->";
 pub const LABWC_HDR_END: &str = "<!-- tessel-displays HDR overrides end -->";
+/// The markers written before the Tessel rename; read as the current ones.
+const LEGACY_MARKERS: [(&str, &str); 2] = [
+    ("<!-- way-displays-gui HDR overrides begin -->", LABWC_HDR_BEGIN),
+    ("<!-- way-displays-gui HDR overrides end -->", LABWC_HDR_END),
+];
+
+fn read_rc(path: &Path) -> std::io::Result<String> {
+    fsx::read_text(path).map(|text| crate::color_config::upgrade_markers(text, &LEGACY_MARKERS))
+}
 static HDR_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&format!("(?s){}.*?{}", regex::escape(LABWC_HDR_BEGIN), regex::escape(LABWC_HDR_END))).unwrap()
 });
@@ -153,7 +162,7 @@ pub struct HdrConfig {
 }
 
 pub fn read_labwc_hdr_config(path: &Path) -> HdrConfig {
-    let Ok(text) = fsx::read_text(path) else {
+    let Ok(text) = read_rc(path) else {
         return HdrConfig { global: false, overrides: BTreeMap::new(), managed: BTreeMap::new(), text: String::new() };
     };
     let (global, overrides) = parse_labwc_hdr_xml(&text);
@@ -174,7 +183,7 @@ pub fn write_labwc_hdr_overrides(path: &Path, overrides: &BTreeMap<String, bool>
 
 /// Atomically replace only the HDR block managed by this application.
 pub fn write_labwc_hdr_overrides_with(path: &Path, overrides: &BTreeMap<String, bool>, replace: Replace) -> (bool, Option<String>) {
-    let (text, mode) = match fsx::read_text(path) {
+    let (text, mode) = match read_rc(path) {
         Ok(text) => match fsx::mode_of(path) {
             Ok(mode) => (text, mode),
             Err(error) => return (false, Some(fsx::read_error(&error, path))),

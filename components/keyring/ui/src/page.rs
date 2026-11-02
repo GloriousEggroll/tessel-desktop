@@ -431,7 +431,7 @@ impl PasswordsPage {
         filter.add_pattern("*.keyring");
         let filters = gio::ListStore::new::<gtk::FileFilter>();
         filters.append(&filter);
-        let start = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default().join(".local/share");
+        let start = tessel_core::paths::data_home();
         let dialog = gtk::FileDialog::builder().title(tr!("Import Saved Passwords")).modal(true).filters(&filters)
             .initial_folder(&gio::File::for_path(start)).build();
         let window = button.root().and_downcast::<gtk::Window>();

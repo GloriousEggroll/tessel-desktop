@@ -1,11 +1,11 @@
-//! `$XDG_CONFIG_HOME/tessel/tessel-text-editor.json` (editor_ui.Preferences).
+//! `~/.config/tessel/text-editor.json`: the editor preferences.
 
 use serde_json::{json, Map, Value};
 use std::path::PathBuf;
 use tessel_core::pyfmt::{json_dumps, JsonStyle};
 
 pub fn config_path() -> PathBuf {
-    tessel_core::paths::config_home().join("tessel/tessel-text-editor.json")
+    tessel_core::paths::suite_config_dir().join("text-editor.json")
 }
 
 #[derive(Clone, Debug, PartialEq)]

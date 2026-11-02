@@ -27,10 +27,9 @@ fn fixture() -> Fixture {
 #[test]
 fn test_read_only_defaults_create_no_files_and_use_xdg() {
     let f = fixture();
-    assert_eq!(config_home_from(Some(f.root.clone().into_os_string()), Path::new("/home/x")), f.root);
-    assert_eq!(config_home_from(Some("relative".into()), Path::new("/home/x")), PathBuf::from("/home/x/.config"));
-    assert_eq!(config_home_from(None, Path::new("/home/x")), PathBuf::from("/home/x/.config"));
-    let prefs = FilePreferences::new(Some(f.root.join("tessel/tessel-files.json")));
+    assert!(default_preferences_path().ends_with("tessel/file-manager.json"));
+    assert!(default_bookmarks_path().ends_with("gtk-3.0/bookmarks"));
+    let prefs = FilePreferences::new(Some(f.root.join("tessel/file-manager.json")));
     assert_eq!(prefs.data, *DEFAULTS);
     assert!(GTKBookmarks::new(Some(f.root.join("gtk-3.0/bookmarks"))).list().is_empty());
     assert!(names(&f.root).is_empty());

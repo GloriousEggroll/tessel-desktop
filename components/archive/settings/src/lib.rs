@@ -1,4 +1,4 @@
-//! Archive Manager preferences: `~/.config/tessel/tessel-archive.json`
+//! Archive Manager preferences: `~/.config/tessel/archive-manager.json`
 //! (Ark's Configure dialog: General, Extraction, Plugins, Previews), the
 //! plugin table, and the GTK settings page that both the app's Settings
 //! dialog and Global Settings embed (they edit the same file; each reloads
@@ -18,10 +18,10 @@ macro_rules! n_ {
     };
 }
 
-pub const FILE_NAME: &str = "tessel-archive.json";
+pub const FILE_NAME: &str = "archive-manager.json";
 pub const MAX_RECENT: usize = 12;
 
-/// `$XDG_CONFIG_HOME/tessel/tessel-archive.json`.
+/// `~/.config/tessel/archive-manager.json`.
 pub fn default_path() -> PathBuf {
     tessel_core::paths::suite_config_dir().join(FILE_NAME)
 }

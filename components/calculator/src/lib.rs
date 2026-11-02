@@ -1,5 +1,5 @@
-//! Rust port of ~/tessel-bluetooth/calculator (calculator.py, calculator_backend.py,
-//! calculator_ui.py). See contracts/calculator.md.
+//! Calculator: the decimal backend, the GTK4 window and the command line.
+//! See contracts/calculator.md.
 
 pub mod app;
 pub mod backend;

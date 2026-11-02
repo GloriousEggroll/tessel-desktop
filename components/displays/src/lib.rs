@@ -1,5 +1,5 @@
-//! Rust port of `~/tessel-bluetooth/way-displays` (the "Displays" GUI
-//! `tessel-displays` and its colour helpers). The upstream way-displays
+//! Displays: the `tessel-displays` GUI for the way-displays daemon and its
+//! colour helpers. The upstream way-displays
 //! daemon is not part of this crate.
 pub mod brightness;
 pub mod color_config;

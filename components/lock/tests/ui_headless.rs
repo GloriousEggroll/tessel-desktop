@@ -377,7 +377,7 @@ fn touch_keyboard_edits_the_selected_lock_field_without_ipc() {
 }
 
 fn touch_keyboard_dead_keys_remain_inside_lock_form() {
-    let config = tessel_core::paths::config_home().join("tessel-keyboard/config.json");
+    let config = tessel_keyboard::config::default_path();
     std::fs::create_dir_all(config.parent().unwrap()).unwrap();
     tessel_keyboard::config::Config::new(&config).save(&json!({"layout": "fr"})).unwrap();
     let f = setup("deadkeys");
@@ -722,7 +722,7 @@ fn palette_follows_each_lockscreen_wallpaper_and_slideshow() {
     solid_png(&red, [230, 20, 30]);
     solid_png(&green, [15, 210, 50]);
     let windows = app.window_list();
-    let wallpapers = tessel_core::paths::config_home().join("tessel-shell/wallpapers.json");
+    let wallpapers = tessel_core::paths::component_config_dir("shell").join("wallpapers.json");
     std::fs::create_dir_all(wallpapers.parent().unwrap()).unwrap();
     let mut map = serde_json::Map::new();
     for (window, path) in windows.iter().zip([&red, &green]) {
@@ -1026,9 +1026,6 @@ fn real_locker_survives_wrong_password_signals_and_crashes() {
     assert!(c.wait_exit(5.0).is_some());
     settle(0.5);
     assert_eq!(red_pixels("04-sigkill"), 0, "SIGKILL leaves the session locked");
-    if std::env::var("LOCK_MEASURE_PYTHON").as_deref() == Ok("1") {
-        measure_python();
-    }
     // (c) only fake-PAM success unlocks.
     let mut d = spawn_locker(&rust, "d", &[]);
     assert!(d.ready().is_some());
@@ -1038,27 +1035,6 @@ fn real_locker_survives_wrong_password_signals_and_crashes() {
     assert!(red_pixels("06-unlocked") > 10_000, "desktop visible again after PAM success");
     window.destroy();
     settle(0.1);
-}
-
-/// Python lock_screen.py run the same way (private env only, fake HOME); its
-/// helper is never started because nothing is typed. Killed afterwards.
-fn measure_python() {
-    let script = PathBuf::from(std::env::var("LOCK_PYTHON_SOURCE").expect("LOCK_PYTHON_SOURCE"));
-    let python = vec!["/usr/bin/python3".to_string(), script.to_string_lossy().into_owned()];
-    let mut p = spawn_locker(&python, "py", &[("PYTHONDONTWRITEBYTECODE", "1")]);
-    match p.ready() {
-        Some(ready) => {
-            println!("measure python time_to_locked_ms={}", ready.as_millis());
-            settle(1.0);
-            let (rss, anon) = p.rss();
-            println!("measure python locked_rss_kb={rss} rss_anon_kb={anon}");
-        }
-        None => println!("measure python: no READY=1"),
-    }
-    p.signal(libc::SIGKILL);
-    let _ = p.wait_exit(5.0);
-    settle(0.5);
-    assert_eq!(red_pixels("py-killed"), 0);
 }
 
 fn check_reports_without_locking() {

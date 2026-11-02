@@ -1,5 +1,5 @@
-python_reference.json is generated from the Python originals in ~/tessel-bluetooth
-(tessel-dock/dock_style.py background_css/popup_css, gtk_color_scheme.color_css,
-companion_theme.theme_css/window_glyph_svg/window_light_svg) with the exact
-argument sets used in tests/python_parity.rs. Regenerate it whenever the Python
-theme changes, so the Rust port is re-checked byte for byte.
+css_reference.json is a frozen reference of the dock palette CSS (background_css,
+popup_css, color_css) and the companion theme (theme_css, window_glyph_svg,
+window_light_svg) for the exact argument sets used in tests/css_reference.rs.
+It was captured from the original theme code; update it only for a deliberate
+change to the generated CSS or SVG.

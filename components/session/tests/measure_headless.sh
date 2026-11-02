@@ -1,6 +1,6 @@
 #!/bin/sh
-# Time-to-popup, idle RSS and screenshots of the Rust tessel-session vs the
-# Python one in a private nested headless labwc with a private D-Bus that also
+# Time-to-popup, idle RSS and screenshots of tessel-session in a private
+# nested headless labwc with a private D-Bus that also
 # serves as the "system" bus (no logind/DisplayManager on it, so every action
 # is unavailable). Nothing is clicked: no action can run. systemctl/labwc
 # lookups are not reached. Never touches the live session.
@@ -13,7 +13,6 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-session)
 REL="$ROOT/target/release"
-PY=/home/tcrider/tessel-bluetooth/tessel-session
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
@@ -43,7 +42,6 @@ measure() { # name argv...
   sleep 0.5
 }
 measure rust env -u LABWC_PID "$REL/tessel-session"
-measure python env -u LABWC_PID /usr/bin/python3 "$PY/session_manager.py"
 labwc --exit
 RUN
 chmod +x "$R/run.sh"

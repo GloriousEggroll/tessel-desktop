@@ -432,10 +432,10 @@ fn e2e(authority: &Service, program: &str, args: &[&str], label: &str) -> (Call,
     (register[0].clone(), ready, rss)
 }
 
-fn test_e2e_binary_registers_then_ready_and_parity_with_python() {
+fn test_e2e_binary_registers_then_ready() {
     let authority = fake_authority(&std::env::var("DBUS_SYSTEM_BUS_ADDRESS").unwrap());
     let (rust, ready, rss) = e2e(&authority, BINARY, &[], "rust-debug");
-    let (kind, details) = subject(&rust.params.child_value(0));
+    let (kind, _) = subject(&rust.params.child_value(0));
     assert_eq!(kind, "unix-session");
     assert_eq!(rust.params.child_value(2).str(), Some(OBJECT_PATH));
     println!("MEASURE rust-debug ready_ms={} rss_kb={rss}", ready.as_millis());
@@ -443,18 +443,6 @@ fn test_e2e_binary_registers_then_ready_and_parity_with_python() {
         for _ in 0..3 {
             let (_, ready, rss) = e2e(&authority, &release, &[], "rust-release");
             println!("MEASURE rust-release ready_ms={} rss_kb={rss}", ready.as_millis());
-        }
-    }
-    if let Ok(script) = std::env::var("AUTH_PYTHON_SCRIPT") {
-        for _ in 0..3 {
-            let (python, ready, rss) = e2e(&authority, "/usr/bin/python3", &[&script], "python");
-            println!("MEASURE python ready_ms={} rss_kb={rss}", ready.as_millis());
-            let (pkind, pdetails) = subject(&python.params.child_value(0));
-            assert_eq!((pkind.as_str(), pdetails.get("session-id").map(|v| v.str().map(str::to_owned))),
-                       (kind.as_str(), details.get("session-id").map(|v| v.str().map(str::to_owned))),
-                       "same subject as Python");
-            assert_eq!(python.params.child_value(1).str(), rust.params.child_value(1).str(), "same locale");
-            assert_eq!(python.params.child_value(2).str(), rust.params.child_value(2).str(), "same object path");
         }
     }
 }
@@ -494,7 +482,7 @@ fn main() {
         ("pairing_window_validation_and_answers", test_pairing_window_validation_and_answers),
         ("pairing_agent_display_passkey_updates_real_window", test_pairing_agent_display_passkey_updates_real_window),
         ("e2e_registration_failure_quits_without_ready", test_e2e_registration_failure_quits_without_ready),
-        ("e2e_binary_registers_then_ready_and_parity_with_python", test_e2e_binary_registers_then_ready_and_parity_with_python),
+        ("e2e_binary_registers_then_ready", test_e2e_binary_registers_then_ready),
     ];
     let mut failed = 0;
     for (name, test) in tests {

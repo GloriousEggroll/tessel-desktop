@@ -22,6 +22,53 @@ pub fn default_dir() -> PathBuf {
     tessel_core::paths::suite_data_dir().join("keyring")
 }
 
+/// Where the keyring lived before Tessel (`~/.local/share/desktop-suite/keyring`).
+pub fn legacy_dir() -> PathBuf {
+    tessel_core::paths::data_home().join("desktop-suite/keyring")
+}
+
+/// Copy the pre-Tessel keyring into `dir` when `dir` does not exist yet. The PAM
+/// login runs before tessel-session-startup's migration, so the store moves
+/// itself: copied into a temporary sibling (modes kept), then renamed into place.
+/// The old directory is never changed. Errors leave `dir` missing (a fresh keyring).
+pub fn migrate_legacy(legacy: &Path, dir: &Path) -> Result<bool, String> {
+    if std::fs::symlink_metadata(dir).is_ok() || !legacy.is_dir() {
+        return Ok(false);
+    }
+    let parent = dir.parent().ok_or("keyring directory has no parent")?;
+    std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+    let name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let temporary = parent.join(format!(".{name}.migrating-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&temporary);
+    let result = copy_tree(legacy, &temporary).and_then(|()| match std::fs::rename(&temporary, dir) {
+        Ok(()) => Ok(true),
+        // Another process finished first: keep its copy.
+        Err(_) if dir.exists() => Ok(false),
+        Err(e) => Err(format!("{}: {e}", dir.display())),
+    });
+    let _ = std::fs::remove_dir_all(&temporary);
+    result
+}
+
+fn copy_tree(from: &Path, to: &Path) -> Result<(), String> {
+    let error = |path: &Path, e: std::io::Error| format!("{}: {e}", path.display());
+    let mode = std::fs::metadata(from).map_err(|e| error(from, e))?.permissions().mode() & 0o7777;
+    std::fs::create_dir(to).map_err(|e| error(to, e))?;
+    std::fs::set_permissions(to, std::fs::Permissions::from_mode(0o700)).map_err(|e| error(to, e))?;
+    for entry in std::fs::read_dir(from).map_err(|e| error(from, e))? {
+        let entry = entry.map_err(|e| error(from, e))?;
+        let (source, target) = (entry.path(), to.join(entry.file_name()));
+        let kind = entry.file_type().map_err(|e| error(&source, e))?;
+        if kind.is_dir() {
+            copy_tree(&source, &target)?;
+        } else if kind.is_file() {
+            // std::fs::copy keeps the permission bits (0600).
+            std::fs::copy(&source, &target).map_err(|e| error(&source, e))?;
+        }
+    }
+    std::fs::set_permissions(to, std::fs::Permissions::from_mode(mode)).map_err(|e| error(to, e))
+}
+
 pub fn now() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
@@ -87,7 +134,8 @@ pub struct Collection {
 }
 
 fn collection_aad(id: &str) -> Vec<u8> {
-    format!("tessel-keyring v1 collection {id}").into_bytes()
+    // On-disk format constant: keeps the pre-Tessel name (existing keyrings).
+    format!("waykeyring v1 collection {id}").into_bytes()
 }
 
 impl Collection {
@@ -278,7 +326,13 @@ pub struct Keyring {
 
 impl Keyring {
     /// Read the keyring (locked). A missing directory is an empty, not set up keyring.
+    /// The default directory first takes over a pre-Tessel keyring ([`migrate_legacy`]).
     pub fn open(dir: PathBuf) -> Self {
+        if dir == default_dir() {
+            if let Err(message) = migrate_legacy(&legacy_dir(), &dir) {
+                eprintln!("tessel-keyring: cannot copy the old keyring: {message}");
+            }
+        }
         let wrapped = std::fs::read(dir.join("master.json")).ok()
             .and_then(|d| serde_json::from_slice::<Value>(&d).ok()).and_then(|v| Wrapped::from_json(&v));
         let mut collections = Vec::new();
@@ -524,5 +578,46 @@ mod tests {
         assert_eq!(collection_id("Login", &["login"]), "login2");
         assert_eq!(collection_id("Session", &[]), "session2");
         assert_eq!(collection_id("..", &[]), "collection");
+    }
+
+    #[test]
+    fn on_disk_associated_data_keeps_the_pre_tessel_names() {
+        assert_eq!(collection_aad("login"), b"waykeyring v1 collection login");
+    }
+
+    #[test]
+    fn legacy_keyring_is_copied_once_with_its_modes() {
+        // Under the target directory (next to this test binary), not TMPDIR.
+        let root = std::env::current_exe().unwrap().parent().unwrap()
+            .join(format!("tessel-keyring-migrate-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let (legacy, dir) = (root.join("desktop-suite/keyring"), root.join("tessel/keyring"));
+        let mut old = Keyring::open(legacy.clone());
+        old.set_up_with(b"pw", Kdf::for_tests()).unwrap();
+        let id = old.collection_mut(LOGIN).unwrap().store("GitHub", attrs(&[("service", "github")]),
+                                                           Zeroizing::new(b"token".to_vec()), "text/plain", false).unwrap();
+        old.save(LOGIN).unwrap();
+        assert_eq!(std::fs::metadata(&legacy).unwrap().permissions().mode() & 0o777, 0o700);
+
+        assert_eq!(migrate_legacy(&legacy, &dir), Ok(true));
+        let mode = |path: &Path| std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode(&dir), 0o700);
+        assert_eq!(mode(&dir.join("collections")), 0o700);
+        assert_eq!(mode(&dir.join("master.json")), 0o600);
+        assert_eq!(mode(&dir.join("collections/login.json")), 0o600);
+        assert!(legacy.join("master.json").is_file(), "the old keyring is kept");
+        assert!(std::fs::read_dir(&root.join("tessel")).unwrap().flatten().all(|e| e.file_name() == "keyring"),
+                "no temporary directory left");
+        let mut new = Keyring::open(dir.clone());
+        assert!(new.unlock_with_password(b"pw").unwrap());
+        assert_eq!(new.collection(LOGIN).unwrap().item(id).unwrap().secret.as_slice(), b"token");
+
+        // An existing new keyring is never replaced; no old keyring is no copy.
+        std::fs::remove_file(dir.join("master.json")).unwrap();
+        assert_eq!(migrate_legacy(&legacy, &dir), Ok(false));
+        assert!(!dir.join("master.json").exists());
+        assert_eq!(migrate_legacy(&root.join("none"), &root.join("other")), Ok(false));
+        assert!(!root.join("other").exists());
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

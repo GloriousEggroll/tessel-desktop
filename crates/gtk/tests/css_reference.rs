@@ -1,13 +1,12 @@
-//! Byte-for-byte parity with CSS/SVG produced by the Python modules
-//! (fixtures generated from tessel-dock/dock_style.py, gtk_color_scheme.py and
-//! companion_theme.py; see tests/fixtures/README).
+//! Byte-for-byte checks of the generated dock palette CSS, companion theme CSS
+//! and window-button SVGs against a frozen reference (tests/fixtures/README).
 
 use serde_json::Value;
 use tessel_gtk::palette::{background_css, color_css, color_palette, parse_hex, popup_css, PanelStyle};
 use tessel_gtk::theme::{theme_css, window_glyph_svg, window_light_svg, MonitorPalette, ThemeOptions};
 
 fn fixture() -> Value {
-    serde_json::from_str(include_str!("fixtures/python_reference.json")).unwrap()
+    serde_json::from_str(include_str!("fixtures/css_reference.json")).unwrap()
 }
 
 fn rgb(value: &Value) -> [u8; 3] {
@@ -15,7 +14,7 @@ fn rgb(value: &Value) -> [u8; 3] {
 }
 
 #[test]
-fn dock_palette_css_matches_python() {
+fn dock_palette_css_matches_reference() {
     let reference = fixture();
     let expected = reference["palette"].as_array().unwrap();
     let a = background_css(true, &PanelStyle { border_sides: &["top"], shine: true, ..Default::default() }).unwrap();
@@ -32,7 +31,7 @@ fn dock_palette_css_matches_python() {
 }
 
 #[test]
-fn companion_theme_css_and_glyphs_match_python() {
+fn companion_theme_css_and_glyphs_match_reference() {
     let reference = fixture();
     for case in reference["theme"].as_array().unwrap() {
         let entry = &case["entry"];

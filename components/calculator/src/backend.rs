@@ -417,11 +417,9 @@ pub struct CalculatorStore {
 
 fn default_replace(from: &Path, to: &Path) -> std::io::Result<()> { fs::rename(from, to) }
 
-/// `$XDG_STATE_HOME/tessel-dock-calculator/state.json` (Python: `os.environ.get(...) or ~/.local/state`).
+/// `~/.local/state/tessel/calculator/state.json`.
 pub fn default_state_path() -> PathBuf {
-    let base = std::env::var_os("XDG_STATE_HOME").filter(|v| !v.is_empty()).map(PathBuf::from)
-        .unwrap_or_else(|| tessel_core::paths::home().join(".local/state"));
-    base.join("tessel-dock-calculator/state.json")
+    tessel_core::paths::component_state_dir("calculator").join("state.json")
 }
 
 fn os_error(error: &std::io::Error, path: &Path) -> String { tessel_core::pyerr::os_error_path(error, path) }

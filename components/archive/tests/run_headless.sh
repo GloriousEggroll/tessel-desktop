@@ -8,7 +8,7 @@
 # only). Every archive fixture lives under $R. Extra arguments filter checks.
 # WAYARCHIVE_UI_SHOTS=<dir> saves screenshots there.
 set -eu
-AGENT=tessel-archive
+AGENT=${AGENT:-archive}
 BASE=/run/user/1000/cbt/rust-$AGENT
 R=$BASE/n
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/tmp" "$R/home" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data" "$R/xdg/state" "$R/bin"; chmod 700 "$R/rt"
@@ -38,10 +38,7 @@ ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 export TMPDIR=$BASE
 (cd "$ROOT" && cargo build -q -p tessel-archive --bin tessel-archive && cargo build -q -p tessel-files --bin tessel-files) || { echo "build failed"; exit 1; }
 BIN=$(cd "$ROOT" && cargo test -p tessel-archive --test ui_headless --no-run --message-format=json 2>/dev/null \
-      | python3 -I -c 'import json,sys
-for line in sys.stdin:
-    m=json.loads(line)
-    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
+      | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable) | .executable')
 [ -n "$BIN" ] || { echo "build failed"; exit 1; }
 WAYFILES="$ROOT/target/debug/tessel-files"
 WAYARCHIVE="$ROOT/target/debug/tessel-archive"

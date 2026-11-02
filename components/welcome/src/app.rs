@@ -1,4 +1,4 @@
-//! `welcome.py`: the GApplication (`org.tessel.Welcome`, HANDLES_COMMAND_LINE).
+//! The GApplication (`org.tessel.Welcome`, HANDLES_COMMAND_LINE).
 use std::cell::RefCell;
 use std::rc::Rc;
 

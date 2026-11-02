@@ -1,4 +1,4 @@
-//! tessel-login/login_model.py: system-wide greeter appearance and the
+//! Tessel Login's model (ported from login_model.py): system-wide greeter appearance and the
 //! installed Wayland desktop sessions. Shared by tessel-login and Global
 //! Settings (moved from gs-desktop).
 use std::path::{Path, PathBuf};
@@ -6,7 +6,11 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value};
 use tessel_core::pyjson::casefold;
 
-pub const CONFIG: &str = "/etc/tessel-login/appearance.json";
+/// Tessel Login's system-wide configuration directory (root-owned).
+pub const CONFIG_DIR: &str = "/etc/tessel/login";
+/// The greeter appearance, written only by `tessel-login-helper`.
+pub const CONFIG: &str = "/etc/tessel/login/appearance.json";
+
 pub const PLACEMENTS: [&str; 4] = ["fill", "fit", "stretch", "center"];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -261,10 +265,12 @@ fn session_from(path: &Path, stem: &str) -> Result<Option<Session>, String> {
     Ok(Some(Session { ident: stem.into(), name: get("name").unwrap_or_else(|| stem.into()), argv, desktops }))
 }
 
-/// The post-PAM launcher greetd runs for every session.
-pub const START_SESSION: &str = "/usr/local/lib/tessel-login/start-session";
-/// labwc's one-shot desktop fade (`--startup` command), as login_model.py writes it.
-pub const SESSION_TRANSITION: &str = "/usr/bin/python3 -I /usr/local/lib/tessel-login/session_transition.py";
+/// The post-PAM launcher greetd runs for every session. The greeter's programs
+/// are fixed system-scope paths (not `tessel_core::paths::program`): greetd and
+/// the greeter run as other users than the one logging in.
+pub const START_SESSION: &str = "/usr/local/lib/tessel/tessel-start-session";
+/// labwc's one-shot desktop fade (`--startup` command).
+pub const SESSION_TRANSITION: &str = "/usr/local/lib/tessel/tessel-session-transition";
 
 impl Session {
     /// `Session.request()`: greetd's `start_session` request. greetd joins `cmd`
@@ -499,13 +505,13 @@ mod tests {
             argv: ["/bin/echo", "a b", "$(touch /tmp/NEVER)", ";false", "it's literal"].map(String::from).to_vec(), desktops: "Test".into() };
         let request = session.request();
         let cmd = request["cmd"][0].as_str().unwrap();
-        assert_eq!(cmd, r#"/usr/local/lib/tessel-login/start-session /bin/echo 'a b' '$(touch /tmp/NEVER)' ';false' 'it'"'"'s literal'"#);
+        assert_eq!(cmd, r#"/usr/local/lib/tessel/tessel-start-session /bin/echo 'a b' '$(touch /tmp/NEVER)' ';false' 'it'"'"'s literal'"#);
         assert_eq!(shlex_split(cmd).unwrap()[1..], session.argv[..]);
         assert_eq!(request["env"], serde_json::json!(["XDG_SESSION_TYPE=wayland", "XDG_SESSION_DESKTOP=test",
                                                       "XDG_CURRENT_DESKTOP=Test", "DESKTOP_SESSION=test"]));
         assert_eq!(request.keys().collect::<Vec<_>>(), ["type", "cmd", "env"]);
         let labwc = Session { ident: "labwc".into(), name: "labwc".into(), argv: vec!["labwc".into()], desktops: "labwc".into() };
-        assert_eq!(labwc.request()["cmd"][0], "/usr/local/lib/tessel-login/start-session labwc --startup '/usr/bin/python3 -I /usr/local/lib/tessel-login/session_transition.py'");
+        assert_eq!(labwc.request()["cmd"][0], "/usr/local/lib/tessel/tessel-start-session labwc --startup /usr/local/lib/tessel/tessel-session-transition");
         for argv in [vec!["/usr/bin/labwc", "--startup", "existing command"], vec!["labwc", "-s", "x"], vec!["labwc", "--startup=x"],
                      vec!["startplasma-wayland"]] {
             let session = Session { ident: "t".into(), name: "T".into(), argv: argv.iter().map(|s| s.to_string()).collect(), desktops: "T".into() };

@@ -17,6 +17,26 @@ pub const PRIMARY_CALLBACK_END: &str = "# tessel-displays primary output end";
 pub const PRIMARY_CALLBACK_OUTPUT: &str = "# output: ";
 pub const LABWC_PRIMARY_ENV_BEGIN: &str = "# tessel-displays primary output environment begin";
 pub const LABWC_PRIMARY_ENV_END: &str = "# tessel-displays primary output environment end";
+/// The markers written before the Tessel rename; read as the current ones.
+const LEGACY_MARKERS: [(&str, &str); 4] = [
+    ("# way-displays-gui primary output environment begin", LABWC_PRIMARY_ENV_BEGIN),
+    ("# way-displays-gui primary output environment end", LABWC_PRIMARY_ENV_END),
+    ("# way-displays-gui primary output begin", PRIMARY_CALLBACK_BEGIN),
+    ("# way-displays-gui primary output end", PRIMARY_CALLBACK_END),
+];
+
+fn upgrade(text: &str) -> std::borrow::Cow<'_, str> {
+    if text.contains("# way-displays-gui primary output") {
+        crate::color_config::upgrade_markers(text.to_owned(), &LEGACY_MARKERS).into()
+    } else {
+        text.into()
+    }
+}
+
+fn read_managed(path: &Path) -> std::io::Result<String> {
+    fsx::read_text(path).map(|text| upgrade(&text).into_owned())
+}
+
 pub const LABWC_PRIMARY_ENV_VARS: [&str; 3] = ["SDL_VIDEO_DISPLAY_PRIORITY", "WAYLANDDRV_PRIMARY_MONITOR", "PROTON_WAYLAND_MONITOR"];
 
 /// `(?m)^BEGIN\r?\n.*?^END[ \t]*(?:\r?\n|$)` with DOTALL.
@@ -44,7 +64,8 @@ pub fn labwc_environment_path() -> PathBuf {
 
 /// The primary output stored in our managed environment block.
 pub fn parse_labwc_primary_environment(text: &str) -> Option<String> {
-    let found = ENV_PATTERN.find(text)?;
+    let text = upgrade(text);
+    let found = ENV_PATTERN.find(&text)?;
     let mut values = std::collections::HashMap::new();
     for line in fsx::splitlines(found.as_str()) {
         let Some((name, value)) = line.split_once('=') else { continue };
@@ -82,7 +103,7 @@ pub fn write_labwc_primary_environment(path: &Path, primary_output: Option<&str>
 }
 
 pub fn write_labwc_primary_environment_with(path: &Path, primary_output: Option<&str>, replace: Replace) -> WriteResult {
-    let (text, mode) = match fsx::read_text(path) {
+    let (text, mode) = match read_managed(path) {
         Ok(text) => match fsx::mode_of(path) {
             Ok(mode) => (text, mode),
             Err(error) => return (false, Some(fsx::read_error(&error, path)), false),
@@ -118,6 +139,7 @@ pub fn write_labwc_primary_environment_with(path: &Path, primary_output: Option<
 
 /// `(user command, persisted primary output)` of a `CALLBACK_CMD`.
 pub fn split_primary_callback(command: &str) -> (String, Option<String>) {
+    let command = &*upgrade(command);
     let mut primary = None;
     for found in CALLBACK_PATTERN.captures_iter(command) {
         for line in fsx::splitlines(&found["body"]) {
@@ -156,7 +178,7 @@ pub fn write_labwc_primary_xinitrc(path: &Path, primary_output: Option<&str>) ->
 
 pub fn write_labwc_primary_xinitrc_with(path: &Path, primary_output: Option<&str>, replace: Replace) -> WriteResult {
     let primary_output = primary_output.filter(|o| !o.is_empty());
-    let (text, mode) = match fsx::read_text(path) {
+    let (text, mode) = match read_managed(path) {
         Ok(text) => match fsx::mode_of(path) {
             Ok(mode) => (text, mode),
             Err(error) => return (false, Some(fsx::read_error(&error, path)), false),

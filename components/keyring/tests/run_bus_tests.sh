@@ -6,7 +6,7 @@ set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../../.." && pwd)
 (cd "$ROOT" && cargo build -q -p tessel-keyring)
-R=/run/user/1000/cbt/rust-keyring
+R=/run/user/1000/cbt/rust-${AGENT:-keyring}
 rm -rf "$R"; mkdir -p "$R/rt" "$R/data" "$R/config"; chmod 700 "$R/rt"
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" \
     /usr/share/dbus-1/session.conf > "$R/d.conf"

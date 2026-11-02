@@ -412,7 +412,7 @@ fn report_records_pending_measurements_and_mismatch() {
     let f = Fixture::new("report");
     let host = FakeHost::always(status(&[("hdr_correction_supported", "true")], monitor()), &f.path);
     let path = c::workspace_report("DP-1", &profile(), &host).unwrap();
-    assert!(path.starts_with(f.root.join("state/tessel-hdr-calibration/reports")));
+    assert!(path.starts_with(f.root.join("state/tessel/hdr-calibration/reports")));
     let report: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
     assert_eq!(report["software_configuration_matches"], json!(false));
     assert_eq!(report["meter_verification"], json!("not performed"));

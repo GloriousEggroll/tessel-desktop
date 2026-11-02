@@ -1,4 +1,4 @@
-//! Rust port of ~/tessel-bluetooth/tessel-pictures (picture_viewer.py, picture_model.py,
+//! Rust port of the retired Python Pictures (picture_viewer.py, picture_model.py,
 //! picture_canvas.py, picture_dialogs.py, picture_files.py, picture_ui.py).
 //! See contracts/tessel-pictures.md.
 

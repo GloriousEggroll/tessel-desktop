@@ -3,7 +3,7 @@ name = "tessel-hdr-calibration"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "HDR Calibration (port of tessel-bluetooth/tessel-hdr-calibration): per-monitor HDR limits and SDR white via labwc's managed rc.xml block. Uses the C hdr-pattern helper."
+description = "HDR Calibration: per-monitor HDR limits and SDR white via labwc's managed rc.xml block. Uses the C hdr-pattern helper."
 
 [lib]
 name = "tessel_hdr_calibration"

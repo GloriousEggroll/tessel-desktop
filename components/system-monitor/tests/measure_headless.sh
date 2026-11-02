@@ -1,8 +1,8 @@
 #!/bin/sh
-# Rust vs Python tessel-system-monitor: time until the window is mapped (wlrctl sees
+# tessel-system-monitor: time until the window is mapped (wlrctl sees
 # app_id org.tessel.SystemMonitor) and idle RSS/PSS after 3 s, 2 runs each, in a
 # private nested headless labwc with a private D-Bus and private XDG dirs.
-# Both only sample /proc and /sys read-only; no process action is taken.
+# It only samples /proc and /sys read-only; no process action is taken.
 set -eu
 AGENT=${AGENT:-system-monitor}
 R=/run/user/1000/cbt/rust-$AGENT/m
@@ -18,7 +18,7 @@ cat > "$R/run.sh" <<RUN
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config"
 export XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" GSETTINGS_BACKEND=memory
-export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0 PYTHONDONTWRITEBYTECODE=1
+export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0
 ms() { date +%s%3N; }
 rss() { echo "\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) PSS=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
 measure() {
@@ -33,7 +33,6 @@ measure() {
 }
 for i in 1 2; do
   measure rust "$REL/tessel-system-monitor" --page performance
-  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-system-monitor/system_monitor.py --page performance
 done
 labwc --exit
 RUN

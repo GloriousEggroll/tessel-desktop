@@ -20,10 +20,7 @@ printf '[Desktop Entry]\nType=Application\nName=Private Text Viewer\nExec=/usr/b
   > "$R/apps/applications/fw-private-viewer.desktop"
 ROOT=$(cd "$(dirname "$0")/../../../.." && pwd)
 BIN=$(cd "$ROOT" && TMPDIR=$S cargo test -p tessel-files-widgets --test ui_headless --no-run --message-format=json 2>/dev/null \
-      | python3 -I -c 'import json,sys
-for line in sys.stdin:
-    m=json.loads(line)
-    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
+      | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable) | .executable')
 [ -n "$BIN" ] || { echo "could not build ui_headless"; exit 1; }
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN

@@ -1,5 +1,5 @@
 //! `tessel-files-ops`: the GTK-free backend of Files (tessel-files), ported from
-//! `~/tessel-bluetooth/tessel-files/{file_operations,file_tools,file_extras,file_preferences}.py`.
+//! the retired Python Files (`{file_operations,file_tools,file_extras,file_preferences}.py`).
 //! Contract: `contracts/tessel-files.md` §3. Python class → struct of the same
 //! name, function/method → same snake_case name, constants keep their names.
 //!

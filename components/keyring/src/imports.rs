@@ -11,7 +11,8 @@ use std::path::{Path, PathBuf};
 use zeroize::Zeroizing;
 
 const RECORD: &str = "imported.json";
-const PENDING_AAD: &[u8] = b"tessel-keyring v1 pending import";
+/// On-disk format constant (keeps the pre-Tessel name, like the other AADs).
+const PENDING_AAD: &[u8] = b"waykeyring v1 pending import";
 
 pub fn record(dir: &Path) -> Value {
     std::fs::read(dir.join(RECORD)).ok().and_then(|d| serde_json::from_slice(&d).ok())

@@ -513,7 +513,7 @@ impl WelcomeWindow {
     fn settings_button(&self, section: &'static str, text: &str) -> gtk::Button {
         let button = gtk::Button::builder().label(text).halign(gtk::Align::Start).build();
         let launch = self.launch.clone();
-        button.connect_clicked(move |_| launch(state::settings_command(&["--section", section], None)));
+        button.connect_clicked(move |_| launch(state::settings_command(&["--section", section])));
         button
     }
 
@@ -540,7 +540,7 @@ impl WelcomeWindow {
             warning.append(&label(&tr!("Some parts of the desktop could not be set up"), Some("gs-section-title"), true));
             warning.append(&label(&tr!("Not installed: {names}", names = status.failed.join(", ")), Some("gs-muted"), true));
             let log = state::state_directory().join("first-login.log");
-            let details = label(&tr!("Details are in {path}. Your administrator can run the installation again with install_all.py --apply.",
+            let details = label(&tr!("Details are in {path}. Your administrator can run the installation again.",
                                      path = log.to_string_lossy().into_owned()), Some("gs-muted"), true);
             details.set_selectable(true);
             warning.append(&details);
@@ -654,7 +654,7 @@ impl WelcomeWindow {
         let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         let show = gtk::Button::with_label(&tr!("Show All Shortcuts"));
         let launch = self.launch.clone();
-        show.connect_clicked(move |_| launch(state::settings_command(&["--shortcuts"], None)));
+        show.connect_clicked(move |_| launch(state::settings_command(&["--shortcuts"])));
         buttons.append(&show);
         buttons.append(&self.settings_button("shortcuts", &tr!("Change Shortcuts")));
         body.append(&buttons);

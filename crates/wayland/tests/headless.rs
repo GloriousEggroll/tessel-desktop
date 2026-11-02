@@ -1,7 +1,7 @@
 //! Integration checks against a real compositor: GTK windows observed and
 //! driven through foreign-toplevel, captured with ext-image-copy-capture,
 //! workspaces/outputs listed, blur on GTK's display, and the compat binaries
-//! compared with the original C helpers.
+//! (tessel-dock-toplevel, tessel-dock-workspaces, tessel-overview) exercised.
 //!
 //! Runs only inside a private headless labwc (tests/run_headless.sh sets
 //! SUITE_WAYLAND_HEADLESS=1); anywhere else — in particular the live session
@@ -306,12 +306,6 @@ fn run_helper(program: &str, args: &[&str], stdin: &[u8]) -> (String, i32) {
     (reader.join().unwrap(), code)
 }
 
-fn c_helper(name: &str) -> Option<String> {
-    let dir = std::env::var("SUITE_WAYLAND_C_HELPERS").ok()?;
-    let path = format!("{dir}/{name}");
-    std::path::Path::new(&path).is_file().then_some(path)
-}
-
 const RUST_TOPLEVEL: &str = env!("CARGO_BIN_EXE_tessel-dock-toplevel");
 const RUST_WAYSHELL_TOPLEVEL: &str = env!("CARGO_BIN_EXE_tessel-shell-toplevel");
 const RUST_WORKSPACES: &str = env!("CARGO_BIN_EXE_tessel-dock-workspaces");
@@ -325,23 +319,11 @@ fn compat_snapshots(_: &World) -> Result<(), String> {
     ensure!(run_helper(RUST_TOPLEVEL, &["--bogus"], b"").1 == 2, "bad argument accepted");
     let (workspaces, code) = run_helper(RUST_WORKSPACES, &["--snapshot"], b"");
     ensure!(code == 0 && workspaces.ends_with("{\"event\":\"ready\",\"protocol_version\":1}\n"), "workspaces {workspaces}");
-    let Some(c_toplevel) = c_helper("tessel-dock-toplevel") else { return Err("C helpers not built (SUITE_WAYLAND_C_HELPERS)".into()) };
-    let (c, code) = run_helper(&c_toplevel, &["--snapshot"], b"");
-    ensure!(code == 0 && c == rust, "toplevel snapshot differs\nC:\n{c}\nRust:\n{rust}");
-    let (c, _) = run_helper(&c_helper("tessel-dock-workspaces").unwrap(), &["--snapshot"], b"");
-    ensure!(c == workspaces, "workspace snapshot differs\nC:\n{c}\nRust:\n{workspaces}");
-    // Request validation and error text, byte for byte (no compositor-visible effect).
+    // Request validation and error text (no compositor-visible effect).
     let mut requests: Vec<u8> = b"\n bogus 1\nactivate 999\nclose\nclose 5 6\nactivate -3\nminimize 18446744073709551616\n".to_vec();
     requests.extend(std::iter::repeat_n(b'x', 5000));
-    let (c, c_code) = run_helper(&c_toplevel, &[], &requests);
-    let (r, r_code) = run_helper(RUST_TOPLEVEL, &[], &requests);
-    ensure!(c == r && c_code == r_code, "toplevel requests differ\nC({c_code}):\n{c}\nRust({r_code}):\n{r}");
+    let (r, _) = run_helper(RUST_TOPLEVEL, &[], &requests);
     ensure!(r.ends_with("{\"event\":\"error\",\"message\":\"Window request is too long.\"}\n"), "too-long {r}");
-    let mut requests = b"activate 0\nactivate 9999\nactivate 1\nactivate x\nnope\n".to_vec();
-    requests.extend(b"activate 2\0\n");
-    let (c, c_code) = run_helper(&c_helper("tessel-dock-workspaces").unwrap(), &[], &requests);
-    let (r, r_code) = run_helper(RUST_WORKSPACES, &[], &requests);
-    ensure!(c == r && c_code == r_code, "workspace requests differ\nC({c_code}):\n{c}\nRust({r_code}):\n{r}");
     Ok(())
 }
 
@@ -400,21 +382,6 @@ fn compat_overview(_: &World) -> Result<(), String> {
         ensure!(png.starts_with(b"\x89PNG"), "not a PNG");
         let width = u32::from_be_bytes(png[16..20].try_into().unwrap());
         ensure!((420..=640).contains(&width), "thumbnail width {width}");
-    }
-    if let Some(c_overview) = c_helper("tessel-overview") {
-        let (c, _) = run_helper(&c_overview, &["HEADLESS-1"], b"");
-        let shape = |text: &str| -> Vec<String> {
-            text.lines().map(|l| {
-                let mut v: serde_json::Value = serde_json::from_str(l).unwrap();
-                if let Some(image) = v.get_mut("image") {
-                    let png = decode_base64(image.as_str().unwrap());
-                    *image = serde_json::Value::String(format!("{}x{}", u32::from_be_bytes(png[16..20].try_into().unwrap()),
-                                                                u32::from_be_bytes(png[20..24].try_into().unwrap())));
-                }
-                v.to_string()
-            }).collect()
-        };
-        ensure!(shape(&c) == shape(&rust), "overview differs\nC: {:?}\nRust: {:?}", shape(&c), shape(&rust));
     }
     ensure!(run_helper(RUST_OVERVIEW, &["NOPE-9"], b"").0.starts_with("{\"kind\":\"identities\""), "unknown connector");
     Ok(())

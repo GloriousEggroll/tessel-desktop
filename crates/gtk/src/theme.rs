@@ -1,7 +1,6 @@
-//! Live, per-monitor Tessel Dock colors for the suite's GTK4 windows
-//! (tessel-dock/companion_theme.py).
+//! Live, per-monitor Tessel Dock colors for Tessel's GTK4 windows.
 //!
-//! Tessel Dock publishes `~/.cache/tessel-dock/palette.json`; [`attach`] follows it for
+//! Tessel Dock publishes `~/.cache/tessel/dock/palette.json`; [`attach`] follows it for
 //! a window (and [`attach_application`] for every window of an app) with a
 //! uniquely scoped stylesheet at APPLICATION+30. Without a published palette
 //! the application's original GTK styling is left in place.
@@ -21,7 +20,7 @@ use std::time::Duration;
 pub const MAX_PALETTE_BYTES: usize = 256 * 1024;
 
 pub fn palette_path() -> PathBuf {
-    tessel_core::paths::cache_home().join("tessel-dock/palette.json")
+    tessel_core::paths::component_cache_dir("dock").join("palette.json")
 }
 
 /// One monitor of the published palette.

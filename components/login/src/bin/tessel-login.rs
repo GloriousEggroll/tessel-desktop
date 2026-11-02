@@ -16,7 +16,7 @@ fn main() {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "-h" | "--help" => {
-                println!("usage: {prog} {USAGE}\n\nWaylogin — Rust Wayland login greeter\n\noptions:\n  -h, --help       show this help message and exit\n  --preview        Windowed preview; no login or power actions\n  --config CONFIG");
+                println!("usage: {prog} {USAGE}\n\nTessel Login — Wayland login greeter\n\noptions:\n  -h, --help       show this help message and exit\n  --preview        Windowed preview; no login or power actions\n  --config CONFIG");
                 return;
             }
             "--preview" => preview = true,

@@ -111,7 +111,9 @@ pub fn open(key: &[u8], aad: &[u8], nonce: &[u8], sealed: &[u8]) -> Option<Zeroi
     cipher.decrypt(XNonce::from_slice(nonce), Payload { msg: sealed, aad }).ok().map(Zeroizing::new)
 }
 
-const WRAP_AAD: &[u8] = b"tessel-keyring v1 master key";
+/// Associated data of the sealed master key. An on-disk format constant: it keeps
+/// the pre-Tessel name, or existing keyrings could no longer be opened.
+const WRAP_AAD: &[u8] = b"waykeyring v1 master key";
 
 /// The master key wrapped with a password.
 #[derive(Clone, Debug, PartialEq, Eq)]

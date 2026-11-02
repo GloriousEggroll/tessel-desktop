@@ -224,13 +224,9 @@ pub fn pref_bool(preferences: &Map<String, Value>, key: &str, default: bool) -> 
     preferences.get(key).map(tessel_core::pyjson::truthy).unwrap_or(default)
 }
 
-/// `Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'tessel-pictures/settings.json'`.
+/// `~/.config/tessel/pictures/settings.json`.
 pub fn config_path() -> PathBuf {
-    let base = match std::env::var_os("XDG_CONFIG_HOME") {
-        Some(value) => PathBuf::from(value),
-        None => tessel_core::paths::home().join(".config"),
-    };
-    base.join("tessel-pictures/settings.json")
+    tessel_core::paths::component_config_dir("pictures").join("settings.json")
 }
 
 fn button(container: Option<&gtk::Box>, icon: &str, tooltip: &str, callback: impl Fn() + 'static) -> gtk::Button {

@@ -1,5 +1,0 @@
-#!/bin/sh
-# ~/.local/bin/tessel-displays after the swap: exec the Rust binary installed
-# next to the (still installed) Python module. Rollback restores
-#   exec /usr/bin/python3 ~/.local/share/way-displays/tessel-displays "$@"
-exec "$HOME/.local/share/way-displays/tessel-displays-rs" "$@"

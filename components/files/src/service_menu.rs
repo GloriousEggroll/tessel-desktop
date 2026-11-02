@@ -1,12 +1,12 @@
 //! Ark-style Dolphin "service menu" archive actions: when the suite's archive
-//! manager (`tessel-archive`, org.tessel.ArchiveManager) is on PATH, the file
+//! manager (`tessel-archive`, org.tessel.ArchiveManager) is installed, the file
 //! context menu offers an "Extract" submenu for archives and a "Compress"
 //! submenu for any local selection, each running `tessel-archive` with the same
 //! command line Ark's service menus run `ark` with. Without `tessel-archive` the
 //! window keeps its internal Compress…/Extract… items.
 //!
 //! Everything here is pure (argv building, mime matching, menu planning)
-//! except [`archive_manager`], a cached PATH lookup.
+//! except [`archive_manager`], a cached program lookup.
 
 use gtk::gio;
 use std::cell::RefCell;
@@ -220,10 +220,17 @@ thread_local! {
     static CACHED: RefCell<Option<Option<String>>> = const { RefCell::new(None) };
 }
 
-/// The absolute path of `tessel-archive` on PATH, looked up once per process.
+/// The absolute path of `tessel-archive` (Tessel's program directories, then
+/// PATH), looked up once per process.
 pub fn archive_manager() -> Option<String> {
     CACHED.with(|cached| {
-        cached.borrow_mut().get_or_insert_with(|| tessel_files_model::util::which(ARCHIVE_MANAGER, None)).clone()
+        cached.borrow_mut().get_or_insert_with(|| {
+            let program = tessel_core::paths::program(ARCHIVE_MANAGER);
+            match program.is_absolute() {
+                true => Some(program.to_string_lossy().into_owned()),
+                false => tessel_files_model::util::which(ARCHIVE_MANAGER, None),
+            }
+        }).clone()
     })
 }
 

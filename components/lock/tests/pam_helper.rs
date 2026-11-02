@@ -33,12 +33,6 @@ fn fake_dir() -> &'static Path {
 
 fn rust_helper() -> PathBuf { PathBuf::from(env!("CARGO_BIN_EXE_tessel-lock-pam")) }
 
-/// The Python installation's C helper, for differential checks (optional).
-fn c_helper() -> Option<PathBuf> {
-    let path = PathBuf::from(std::env::var_os("HOME")?).join("tessel-bluetooth/tessel-lock/tessel-lock-pam");
-    path.is_file().then_some(path)
-}
-
 fn command(binary: &Path, env: &[(&str, &str)]) -> Command {
     let mut command = Command::new(binary);
     command.env_clear().env("LD_LIBRARY_PATH", fake_dir()).env("PATH", "/usr/bin:/bin");
@@ -143,9 +137,7 @@ fn password_only_and_fingerprint_use_fixed_policies_and_reject_other_arguments()
 fn closed_stdout_kills_the_helper_with_sigpipe_like_c() {
     use std::os::fd::{FromRawFd, OwnedFd};
     use std::os::unix::process::ExitStatusExt;
-    let mut helpers = vec![rust_helper()];
-    helpers.extend(c_helper());
-    for helper in helpers {
+    for helper in [rust_helper()] {
         assert_fake_loaded(&helper);
         let mut fds = [0; 2];
         // SAFETY: pipe(2) into a 2-element array.
@@ -264,33 +256,6 @@ fn dumpable_flag_is_cleared() {
     assert!(environ.is_err(), "environment of the helper must not be readable");
 }
 
-/// Differential check against the Python installation's C helper (same fake).
-#[test]
-fn byte_identical_to_the_c_helper() {
-    let Some(c) = c_helper() else { eprintln!("C helper not present; skipped"); return };
-    let big = vec![b'x'; 4097];
-    let cases: Vec<(Vec<&[u8]>, Vec<&str>, Vec<(&str, &str)>)> = vec![
-        (vec![b"fixture password", b"123456"], vec![], vec![]),
-        (vec![b"wrong"], vec![], vec![]),
-        (vec![b"fixture password\0x"], vec![], vec![]),
-        (vec![&big], vec![], vec![]),
-        (vec![b"fixture password", b"123456"], vec!["--password-only"], vec![("FIXTURE_SERVICE", "tessel-lock-password")]),
-        (vec![b"fixture password", b"123456"], vec!["--fingerprint"], vec![("FIXTURE_SERVICE", "tessel-lock-fingerprint")]),
-        (vec![b"fixture password", b"123456"], vec![], vec![("FIXTURE_ACCOUNT_DENIED", "1")]),
-        (vec![], vec!["--bogus"], vec![]),
-        (vec![], vec![], vec![("FIXTURE_MODE", "too-many")]),
-        (vec![], vec![], vec![("FIXTURE_MODE", "max")]),
-        (vec![], vec![], vec![("FIXTURE_MODE", "bad-style")]),
-        (vec![], vec![], vec![("FIXTURE_MODE", "long")]),
-    ];
-    for (responses, args, env) in cases {
-        let input = frame(&responses);
-        let rust = run_raw(&rust_helper(), &input, &args, &env);
-        let python = run_raw(&c, &input, &args, &env);
-        assert_eq!(rust, python, "args {args:?} env {env:?}");
-    }
-}
-
 /// Every executable script is written once inside the serialized fixture
 /// init: writing an exec'd file while another test thread forks causes ETXTBSY.
 fn write_scripts(dir: &Path) {
@@ -300,10 +265,7 @@ fn write_scripts(dir: &Path) {
         let exports: String = env.iter().map(|(k, v)| format!("export {k}='{v}'\n")).collect();
         format!("#!/bin/sh\nexport LD_LIBRARY_PATH='{}'\n{exports}exec '{}' \"$@\"\n", dir.display(), binary.display())
     };
-    let mut helpers = vec![("rust", rust_helper())];
-    if let Some(c) = c_helper() {
-        helpers.push(("c", c));
-    }
+    let helpers = [("rust", rust_helper())];
     for (name, binary) in &helpers {
         scripts.push((format!("{name}-plain"), wrap(binary, &[])));
         scripts.push((format!("{name}-denied"), wrap(binary, &[("FIXTURE_ACCOUNT_DENIED", "1")])));
@@ -369,11 +331,8 @@ fn wrong(_: &str, _: bool) -> &'static str { "wrong" }
 fn nul(_: &str, _: bool) -> &'static str { "fixture\0password" }
 
 #[test]
-fn rust_client_completes_real_native_conversation_with_both_helpers() {
-    let mut helpers = vec![("rust", rust_helper())];
-    if let Some(c) = c_helper() {
-        helpers.push(("c", c));
-    }
+fn rust_client_completes_real_native_conversation() {
+    let helpers = [("rust", rust_helper())];
     for (name, binary) in helpers {
         assert_fake_loaded(&binary);
         let (results, prompts, messages) = drive(script(&format!("{name}-plain")), right, |_| {});

@@ -238,7 +238,7 @@ fn app_menu_checks(app: &gtk::Application) {
 }
 
 fn live_theme(cache: &std::path::Path) {
-    let path = cache.join("tessel-dock/palette.json");
+    let path = cache.join("tessel/dock/palette.json");
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     let display = gdk::Display::default().unwrap();
     let monitor = display.monitors().item(0).and_downcast::<gdk::Monitor>().unwrap();

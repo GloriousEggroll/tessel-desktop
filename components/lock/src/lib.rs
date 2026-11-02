@@ -1,4 +1,4 @@
-//! Tessel Shell secure session lock (Rust port of ~/tessel-bluetooth/tessel-lock).
+//! Tessel secure session lock.
 //! See contracts/tessel-lock.md, in particular §9 Threat model.
 pub mod app;
 pub mod auth;

@@ -23,6 +23,9 @@ use tessel_core::pyjson::{casefold, py_strip};
 use tessel_core::tr;
 
 pub const METADATA_ATTRIBUTE: &str = "user.tessel.metadata";
+/// The name used before the Tessel rename: still read when a file has no
+/// [`METADATA_ATTRIBUTE`], and replaced by it on the next edit.
+pub const LEGACY_METADATA_ATTRIBUTE: &str = "user.desktop-suite.metadata";
 /// Values larger than this stored in the xattr are ignored on read.
 pub const MAX_METADATA_BYTES: usize = 65536;
 /// Default `status_for_directory` timeout (Python `timeout=4`).
@@ -30,13 +33,6 @@ pub const GIT_TIMEOUT: Duration = Duration::from_secs(4);
 
 const UNSUPPORTED: [i32; 5] = [libc::ENOTSUP, libc::EOPNOTSUPP, libc::ENOSYS, libc::E2BIG, libc::ENOSPC];
 const ABSENT: [i32; 1] = [libc::ENODATA];
-
-fn xdg(name: &str, fallback: &str) -> PathBuf {
-    match std::env::var_os(name) {
-        Some(value) if Path::new(&value).is_absolute() => PathBuf::from(value),
-        _ => tessel_core::paths::home().join(fallback),
-    }
-}
 
 /// Minimal `urllib.parse.urlsplit` for `scheme://netloc/path?query#fragment`.
 struct SplitUri<'a> {
@@ -183,7 +179,7 @@ pub struct MetadataStore {
 impl MetadataStore {
     pub fn new(path: Option<PathBuf>) -> Self {
         MetadataStore {
-            path: path.unwrap_or_else(|| xdg("XDG_DATA_HOME", ".local/share").join("tessel/file-metadata.json")),
+            path: path.unwrap_or_else(|| tessel_core::paths::suite_data_dir().join("file-metadata.json")),
             #[cfg(test)]
             fail_get: None,
             #[cfg(test)]
@@ -213,7 +209,14 @@ impl MetadataStore {
         if let Some(errno) = self.fail_get {
             return Err(errno);
         }
-        let name = std::ffi::CString::new(METADATA_ATTRIBUTE).unwrap();
+        match Self::read_xattr(fd, METADATA_ATTRIBUTE) {
+            Err(libc::ENODATA) => Self::read_xattr(fd, LEGACY_METADATA_ATTRIBUTE),
+            result => result,
+        }
+    }
+
+    fn read_xattr(fd: &OwnedFd, attribute: &str) -> std::result::Result<Vec<u8>, i32> {
+        let name = std::ffi::CString::new(attribute).unwrap();
         loop {
             let size = unsafe { libc::fgetxattr(fd.as_raw_fd(), name.as_ptr(), std::ptr::null_mut(), 0) };
             if size < 0 {
@@ -469,7 +472,7 @@ pub struct CustomActions {
 
 impl CustomActions {
     pub fn new(path: Option<PathBuf>) -> Self {
-        CustomActions { path: path.unwrap_or_else(|| xdg("XDG_CONFIG_HOME", ".config").join("tessel/file-manager-actions.json")) }
+        CustomActions { path: path.unwrap_or_else(|| tessel_core::paths::suite_config_dir().join("file-manager-actions.json")) }
     }
 
     pub fn list(&self) -> Vec<CustomAction> {

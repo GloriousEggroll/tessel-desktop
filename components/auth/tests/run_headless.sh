@@ -3,10 +3,11 @@
 # Never touches the live session: own XDG_RUNTIME_DIR, own dbus-daemon (also used as
 # the "system" bus, where the test serves a FAKE PolicyKit1 Authority), private XDG
 # dirs, no input devices. No PAM helper / polkitd / real credentials are involved.
-# MEASURE=1 also times the release binary and the Python agent the same way.
+# MEASURE=1 also times the release binary the same way.
 # CARGO (default: cargo) may point at a wrapper (e.g. a private overlay workspace).
 set -eu
-AGENT=tessel-auth
+AGENT=${AGENT:-auth}
+PACKAGE=tessel-auth
 S=/run/user/1000/cbt/rust-$AGENT
 R=$S/n
 mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data"; chmod 700 "$R/rt"
@@ -14,15 +15,12 @@ mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data"; chmod 70
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 CARGO=${CARGO:-cargo}
-BIN=$(cd "$ROOT" && TMPDIR=$S $CARGO test -p $AGENT --test ui_headless --no-run --message-format=json 2>/dev/null \
-      | python3 -c 'import json,sys
-for line in sys.stdin:
-    m=json.loads(line)
-    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
+BIN=$(cd "$ROOT" && TMPDIR=$S $CARGO test -p $PACKAGE --test ui_headless --no-run --message-format=json 2>/dev/null \
+      | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable != null) | .executable')
 EXTRA=""
 if [ "${MEASURE:-0}" = 1 ]; then
-  (cd "$ROOT" && TMPDIR=$S $CARGO build --release -p $AGENT >/dev/null 2>&1)
-  EXTRA="AUTH_RELEASE_BIN=$ROOT/target/release/tessel-auth AUTH_PYTHON_SCRIPT=$HOME/tessel-bluetooth/tessel-auth/authentication_manager.py"
+  (cd "$ROOT" && TMPDIR=$S $CARGO build --release -p $PACKAGE >/dev/null 2>&1)
+  EXTRA="AUTH_RELEASE_BIN=$ROOT/target/release/tessel-auth"
 fi
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
