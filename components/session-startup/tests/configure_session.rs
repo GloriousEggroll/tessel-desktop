@@ -28,7 +28,7 @@ fn live() -> Option<Live> {
 
 impl Live {
     fn install(&self) -> Vec<String> {
-        let (files, notes) = session::plan(&self.home, &source()).unwrap();
+        let (files, notes) = session::plan(&self.home).unwrap();
         for (path, data, mode) in files {
             fsops::atomic_write(&path, &data, mode).unwrap();
         }
@@ -106,7 +106,7 @@ fn reinstall_is_idempotent_and_keeps_local_files() {
     let env_local = t.labwc.join(session::LOCAL_ENVIRONMENT);
     fs::write(&env_local, t.read(&env_local) + "MY_VARIABLE=1\n").unwrap();
     let snapshot = tree(&t.home);
-    let (changes, _) = session::changes_for(&t.home, &source()).unwrap();
+    let (changes, _) = session::changes_for(&t.home).unwrap();
     assert!(changes.is_empty(), "{:?}", changes.iter().map(|c| &c.path).collect::<Vec<_>>());
     assert_eq!(tree(&t.home), snapshot);
 }
@@ -164,46 +164,6 @@ fn menu_opens_configured_terminal() {
     assert!(text.contains("command=\"~/.local/bin/tessel-action terminal\""));
     assert!(text.contains("command=\"~/.local/bin/tessel-dock --menu\""));
     assert!(!text.contains("ghostty"));
-}
-
-#[test]
-fn units_use_home_specifier_and_recover_from_crashes() {
-    let Some(t) = live() else { return };
-    t.install();
-    let network = t.read(&t.units.join("tessel-network.service"));
-    assert!(network.contains("ExecStart=/usr/bin/python3 %h/.config/waybar/scripts/tessel-network/network_manager.py"));
-    for (unit, environment) in [("tessel-network.service", false), ("tessel-power.service", true), ("tessel-notifications.service", true)] {
-        let dropin = t.read(&t.units.join(format!("{unit}.d")).join(session::RECOVERY_DROPIN));
-        assert!(dropin.contains("OnFailure=tessel-failed@%n.service\n"));
-        assert!(dropin.contains("RestartSec=1\n"));
-        assert!(dropin.contains("StartLimitBurst=5\n"));
-        assert_eq!(dropin.contains("90-local.env"), environment, "{unit}");
-    }
-    assert!(!t.units.join("tessel-lock.service.d").exists());
-    assert!(!t.units.join("tessel-dock.service.d").exists());
-    let template = t.read(&t.units.join("tessel-failed@.service"));
-    assert!(template.contains("%h/.local/share/tessel/session/desktop_suite_failed.py %i"));
-    assert!(!template.contains("[Install]"));
-    for (path, _, _) in session::runtime_files(&t.home, &source()).unwrap() {
-        assert!(path.is_file(), "{}", path.display());
-    }
-}
-
-#[test]
-fn missing_base_units_are_created_and_existing_units_kept() {
-    let Some(t) = live() else { return };
-    write(&t.units.join("tessel-shell.service"), "[Service]\nExecStart=/usr/bin/my-shell\n");
-    t.install();
-    assert_eq!(t.read(&t.units.join("tessel-shell.service")), "[Service]\nExecStart=/usr/bin/my-shell\n");
-    for name in ["tessel-notifications.service", "way-displays.service"] {
-        let text = t.read(&t.units.join(name));
-        assert_eq!(text, fs::read_to_string(source().session.join("units").join(name)).unwrap());
-        assert!(!text.contains("[Install]"));
-    }
-    let dropin = t.read(&t.units.join("tessel-notifications.service.d").join(session::RECOVERY_DROPIN));
-    assert!(dropin.contains("90-local.env"));
-    assert!(session::changes_for(&t.home, &source()).unwrap().0.is_empty());
-    assert!(session::base_units(&t.home, &source()).unwrap().is_empty());
 }
 
 // ---- KeybindingTests ------------------------------------------------------------
@@ -336,13 +296,6 @@ fn statements_follow_shell_nesting_and_marked_blocks() {
     assert_eq!(statements, ["a \\\n  b\n", "if x; then\n  y\nfi\n", "# Begin Foo\nz\n# End Foo\n", "echo 'if' \"fi\" # case\n", "case $x in\n *) ;;\nesac\n", "my-if-tool\n"]);
     assert_eq!(session::nesting("for i in 1; do $if -fi done_x"), 1);
     assert_eq!(session::statement_key("systemctl --user  restart  a@b.service >/dev/null &\n"), session::Key::Service("a@b.service".into()));
-}
-
-#[test]
-fn units_are_portable_unless_home_has_a_percent() {
-    let text = "[Service]\nExecStart=/home/u/bin/x /home/u/y\nDescription=/home/u/z\nWorkingDirectory=/home/u/w\n";
-    assert_eq!(session::portable_unit(text, Path::new("/home/u")), "[Service]\nExecStart=%h/bin/x %h/y\nDescription=/home/u/z\nWorkingDirectory=%h/w\n");
-    assert_eq!(session::portable_unit("ExecStart=/home/a%b/x\n", Path::new("/home/a%b")), "ExecStart=/home/a%b/x\n");
 }
 
 // ---- CommandLineTests -----------------------------------------------------------

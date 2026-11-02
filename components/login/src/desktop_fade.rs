@@ -12,7 +12,7 @@ use crate::transition::Fade;
 
 pub const APPLICATION_ID: &str = "org.tessel.LoginTransition";
 pub const CSS: &str = "window.login-transition { background: black; border-radius: 0; box-shadow: none; }";
-pub const WATCHED: [&str; 2] = ["org.tessel.Tessel Dock", "com.nobaraDesktopView"];
+pub const WATCHED: [&str; 2] = ["org.tessel.Dock", "com.nobaraDesktopView"];
 
 struct Inner {
     app: gtk::Application,

@@ -1,6 +1,6 @@
 //! settings_api.py: validated settings access for Global Settings without
 //! launching another dock — `org.tessel.Settings` at `/org/tessel/Settings`
-//! on the application's connection (the app owns `org.tessel.Tessel Dock`).
+//! on the application's connection (the app owns `org.tessel.Dock`).
 //!
 //! Methods: `Read() -> s`, `Apply(s) -> s`, `Preview(s)`, `Restore()`,
 //! `GetWorkareas() -> s`, `GetPopupPlacement(ss) -> s`, `GetTrayApps() -> s`,
@@ -26,7 +26,7 @@ use std::collections::BTreeSet;
 use std::rc::{Rc, Weak};
 use tessel_core::pyfmt::{json_dumps, JsonStyle};
 
-pub const BUS_NAME: &str = "org.tessel.Tessel Dock";
+pub const BUS_NAME: &str = "org.tessel.Dock";
 pub const OBJECT_PATH: &str = "/org/tessel/Settings";
 pub const INTERFACE: &str = "org.tessel.Settings";
 pub const ERROR: &str = "org.tessel.Settings.Error";

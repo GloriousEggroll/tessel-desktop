@@ -1,5 +1,5 @@
 //! The Tessel Dock application (tessel-dock.py `class Tessel Dock`, contract §1, §2.1,
-//! §5): `Gtk.Application` `org.tessel.Tessel Dock` with `HANDLES_COMMAND_LINE`
+//! §5): `Gtk.Application` `org.tessel.Dock` with `HANDLES_COMMAND_LINE`
 //! (`IS_LAUNCHER` for probe/shortcut options, see [`crate::cli`]), startup
 //! wiring of every backend, sd_notify readiness after startup AND the tray
 //! host handshake, `org.tessel.Settings` (B's `SettingsApi`) with
@@ -53,7 +53,7 @@ use crate::wl::show_desktop::{self, ShowDesktop};
 use crate::wl::{Window, WindowBackend, WorkspaceBackend};
 use tessel_core::tr;
 
-pub const APPLICATION_ID: &str = "org.tessel.Tessel Dock";
+pub const APPLICATION_ID: &str = "org.tessel.Dock";
 
 /// `_appearance_preview` & co.
 #[derive(Clone, Debug, Default)]

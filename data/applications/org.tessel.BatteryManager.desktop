@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Battery Settings
+Comment=Device battery levels and supported charging controls
+Exec=@LIBDIR@/tessel-battery --settings
+Icon=battery-good-symbolic
+Terminal=false
+Categories=Settings;HardwareSettings;

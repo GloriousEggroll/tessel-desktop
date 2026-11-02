@@ -1,0 +1,3 @@
+#!/bin/sh
+# Lock the Tessel session now (Super+L).
+exec /usr/bin/systemctl --user start tessel-lock.service

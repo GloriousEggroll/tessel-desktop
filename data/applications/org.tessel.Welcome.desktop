@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome
+Comment=Set up language, keyboard, desktop layout and colors
+Exec=@LIBDIR@/tessel-welcome
+Icon=user-home
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupNotify=true
+StartupWMClass=org.tessel.Welcome
+Keywords=Setup;First run;Getting started;Tour;

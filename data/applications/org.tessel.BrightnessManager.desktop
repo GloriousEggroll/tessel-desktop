@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Displays
+Comment=Monitor scaling, brightness, contrast and automatic dimming
+Exec=@LIBDIR@/tessel-displays
+Icon=video-display-symbolic
+Terminal=false
+NoDisplay=true
+Categories=Settings;HardwareSettings;

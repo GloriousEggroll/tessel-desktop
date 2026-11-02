@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Network Settings
+Comment=Manage network, Wi-Fi, and VPN connections
+Exec=@LIBDIR@/tessel-network --settings
+Icon=network-workgroup
+Terminal=false
+Categories=Settings;Network;

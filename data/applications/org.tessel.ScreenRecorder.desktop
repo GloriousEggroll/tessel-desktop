@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Screen Recorder
+Comment=Record portal sources in H.264, H.265, or AV1 with SDR or HDR
+Exec=@LIBDIR@/tessel-capture --record
+Icon=media-record-symbolic
+Terminal=false
+StartupNotify=true
+StartupWMClass=org.tessel.Capture
+Categories=AudioVideo;Recorder;
+Keywords=Recording;Capture;Video;Screen;HDR;
+Actions=Stop;
+
+[Desktop Action Stop]
+Name=Stop and Save Recording
+Exec=@LIBDIR@/tessel-capture --stop
+Icon=media-playback-stop-symbolic

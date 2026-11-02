@@ -36,7 +36,7 @@ impl Action {
     }
 
     fn run(&self, args: &[&str], env: &[(&str, &str)]) -> Output {
-        let script = suite_root().unwrap().join("tessel-session-startup/tessel-action");
+        let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/bin/tessel-action");
         let mut command = Command::new("/bin/sh");
         command.arg(script).args(args).env_clear().env("HOME", &self.home).env("PATH", format!("{}:/usr/bin:/bin", self.bin.display()));
         for (key, value) in env {
@@ -75,16 +75,27 @@ fn terminal_honours_configured_terminal_with_arguments() {
 }
 
 #[test]
-fn session_menu_uses_menu_option_only_when_supported() {
+fn actions_run_the_installed_tessel_program() {
     let Some(t) = action() else { return };
-    let script = t.home.join(".config/waybar/scripts/tessel-session/session_manager.py");
-    write(&script, &format!("import sys\nopen({:?}, 'a').write(' '.join(sys.argv[1:]) + '\\n')\n", t.log.display().to_string()));
+    let lib = t.home.join(".local/lib/tessel");
+    for name in ["tessel-session", "tessel-settings"] {
+        write(&lib.join(name), &format!("#!/bin/sh\necho \"{name} $*\" >> \"{}\"\n", t.log.display()));
+        chmod(&lib.join(name), 0o755);
+    }
     t.run(&["session-menu"], &[]);
-    let text = fs::read_to_string(&script).unwrap() + "# parser.add_argument('--menu')\n";
-    fs::write(&script, text).unwrap();
-    t.run(&["session-menu"], &[]);
-    assert_eq!(t.log(), "--popup\n--menu\n");
+    t.run(&["shortcuts"], &[]);
+    assert_eq!(t.log(), "tessel-session --menu\ntessel-settings --shortcuts\n");
     let _ = &t.root;
+}
+
+#[test]
+fn lock_starts_the_lock_unit() {
+    let Some(t) = action() else { return };
+    let output = t.run(&["lock"], &[]);
+    // systemctl is called by absolute path in the lock launcher only; the action uses PATH.
+    t.tool("systemctl");
+    t.run(&["lock"], &[]);
+    assert_eq!(t.log(), "systemctl --user start tessel-lock.service\n", "{output:?}");
 }
 
 #[test]

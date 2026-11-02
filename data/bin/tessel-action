@@ -1,0 +1,84 @@
+#!/bin/sh
+# Tessel shortcut actions for labwc keybindings and menus.
+# labwc runs commands without a shell and without ~/.local/bin on PATH, so
+# rc.xml calls this script as ~/.local/bin/tessel-action <action>.
+# Each action uses the Tessel program and falls back to a standard tool.
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# The first installed copy of a Tessel program (user, then system).
+program() {
+    for dir in "$HOME/.local/lib/tessel" /usr/local/lib/tessel /usr/lib/tessel /usr/libexec/tessel; do
+        if [ -x "$dir/$1" ]; then printf '%s\n' "$dir/$1"; return 0; fi
+    done
+    return 1
+}
+
+run() {
+    name=$1
+    shift
+    path=$(program "$name") || return 1
+    exec "$path" "$@"
+}
+
+terminal() {
+    if have xdg-terminal-exec; then exec xdg-terminal-exec; fi
+    if [ -n "${TERMINAL:-}" ]; then
+        # TERMINAL may carry arguments, as in lab-sensible-terminal; a stale
+        # value naming a removed terminal falls through to the next choice.
+        set -- ${TERMINAL}
+        if have "$1"; then exec "$@"; fi
+    fi
+    for candidate in x-terminal-emulator ptyxis kgx gnome-terminal konsole foot alacritty \
+                     kitty wezterm ghostty xfce4-terminal tilix terminator xterm; do
+        if have "$candidate"; then exec "$candidate"; fi
+    done
+    exec lab-sensible-terminal
+}
+
+media() {
+    if have playerctl; then exec playerctl "$1"; fi
+    # Without playerctl, call the first MPRIS player directly.
+    case "$1" in
+        play-pause) method=PlayPause ;; pause) method=Pause ;; next) method=Next ;;
+        previous) method=Previous ;; stop) method=Stop ;; *) exit 2 ;;
+    esac
+    player=$(gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
+        --method org.freedesktop.DBus.ListNames 2>/dev/null | tr ',' '\n' \
+        | sed -n "s/.*'\(org\.mpris\.MediaPlayer2\.[^']*\)'.*/\1/p" | head -n 1)
+    [ -n "$player" ] || exit 0
+    exec gdbus call --session --dest "$player" --object-path /org/mpris/MediaPlayer2 \
+        --method "org.mpris.MediaPlayer2.Player.$method" >/dev/null
+}
+
+volume() {
+    run tessel-audio "--$1"
+    have wpctl || exit 1
+    case "$1" in
+        volume-up) exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+        volume-down) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+        toggle-mute) exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+    esac
+}
+
+brightness() {
+    run tessel-brightness "--$1"
+    have brightnessctl || exit 1
+    case "$1" in
+        brightness-up) exec brightnessctl set 5%+ ;;
+        brightness-down) exec brightnessctl set 5%- ;;
+    esac
+}
+
+case "${1:-}" in
+    terminal) terminal ;;
+    lock) exec systemctl --user start tessel-lock.service ;;
+    session-menu) run tessel-session --menu ;;
+    power-button) run tessel-power --power-button; run tessel-session --menu ;;
+    shortcuts) run tessel-settings --shortcuts ;;
+    play-pause|pause|next|previous|stop) media "$1" ;;
+    volume-up|volume-down|toggle-mute) volume "$1" ;;
+    brightness-up|brightness-down) brightness "$1" ;;
+    *) echo "usage: tessel-action ACTION" >&2; exit 2 ;;
+esac
+exit 1

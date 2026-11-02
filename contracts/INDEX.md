@@ -38,7 +38,7 @@
 | tessel-session-startup | [tessel-session-startup.md](tessel-session-startup.md) | tessel-action, `tessel-failed@.service`, `labwc-xdg-autostart.target` | labwc autostart |
 | bluetooth | [bluetooth.md](bluetooth.md) | BlueZ, obexd (OBEX transfer + incoming Agent) | tessel-dock popup; embedded in Global Settings |
 | tessel-shell | [tessel-shell.md](tessel-shell.md) | owns `com.nobaraDesktopView`; `$XDG_RUNTIME_DIR/tessel-shell.sock` (JSON line) | tessel-shell.service (fix ExecStart in palette.conf drop-in) |
-| tessel-dock | [tessel-dock.md](tessel-dock.md) | `org.tessel.Tessel Dock`; `/org/tessel/Settings` `org.tessel.Settings`; StatusNotifierWatcher + host | tessel-dock.service (Type=notify; READY after tray host) |
+| tessel-dock | [tessel-dock.md](tessel-dock.md) | `org.tessel.Dock`; `/org/tessel/Settings` `org.tessel.Settings`; StatusNotifierWatcher + host | tessel-dock.service (Type=notify; READY after tray host) |
 
 **Cross-component interfaces (wave 2/3)**
 - **Popup placement:** every tray popup (netman, calendar, weather, media, discovery, session, bluetooth=`service_apps`) calls `org.tessel.Settings.GetPopupPlacement(ss)→s` (JSON). If that fails, it falls back to `--popup-edge E --popup-offset N`. Port `shared/tray_popup` (PopupController, PointerMonitor) and `popup_placement` once, in tessel-gtk.

@@ -8,22 +8,13 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use tessel_session_startup::session::Source;
-
-/// The Python suite tree (read only): `$DESKTOP_SUITE_SOURCE` or `~/tessel-bluetooth`.
+/// Sample files from a desktop-suite (pre-Tessel) machine, read only.
 pub fn suite_root() -> Option<PathBuf> {
-    let root = std::env::var_os("DESKTOP_SUITE_SOURCE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(std::env::var_os("HOME").unwrap()).join("tessel-bluetooth"));
-    root.join("tessel-session-startup/configure_session.py").is_file().then_some(root)
-}
-
-pub fn source() -> Source {
-    Source::from_root(&suite_root().expect("tessel-bluetooth source tree"))
+    Some(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data"))
 }
 
 pub fn data(name: &str) -> String {
-    fs::read_to_string(suite_root().unwrap().join("tessel-session-startup/testdata").join(name)).unwrap()
+    fs::read_to_string(suite_root().unwrap().join(name)).unwrap()
 }
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);

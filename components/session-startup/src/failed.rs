@@ -1,4 +1,4 @@
-//! Port of `desktop_suite_failed.py`: tell the user a Tessel service gave up
+//! `tessel-failed`: tell the user a Tessel service gave up
 //! restarting, and offer a restart.
 //!
 //! Started by tessel-failed@<unit>.service through the components' OnFailure=
@@ -32,7 +32,7 @@ pub const COMPONENTS: [(&str, &str); 13] = [
 ];
 /// Keep the offer while the notification may still be listed; then exit quietly.
 pub const WAIT_MS: u64 = 30 * 60 * 1000;
-pub const USAGE: &str = "usage: desktop_suite_failed.py UNIT.service";
+pub const USAGE: &str = "usage: tessel-failed UNIT.service";
 
 const NAME: &str = "org.freedesktop.Notifications";
 const PATH: &str = "/org/freedesktop/Notifications";
@@ -105,7 +105,7 @@ pub fn notify_parameters(unit: &str) -> glib::Variant {
         glib::VariantTy::new("{sv}").unwrap(),
         [
             glib::variant::DictEntry::new("urgency".to_owned(), 2u8.to_variant()).to_variant(),
-            glib::variant::DictEntry::new("desktop-entry".to_owned(), "tessel-settings".to_variant()).to_variant(),
+            glib::variant::DictEntry::new("desktop-entry".to_owned(), "org.tessel.GlobalSettings".to_variant()).to_variant(),
         ],
     );
     let actions = vec!["restart".to_owned(), tr!("Restart")];
@@ -199,7 +199,7 @@ pub fn main(args: &[String]) -> i32 {
             return 1;
         }
     }
-    let wait = std::env::var("DESKTOP_SUITE_FAILED_WAIT_MS")
+    let wait = std::env::var("TESSEL_FAILED_WAIT_MS")
         .ok()
         .and_then(|v| v.parse().ok())
         .map(Duration::from_millis)
@@ -219,7 +219,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unit_names_follow_python_pattern() {
+    fn unit_names() {
         for good in ["tessel-dock.service", "a\\x2db.service", "user@1000.service".replace('@', ":").as_str(), "x.y-z_1.service"] {
             assert!(valid_unit(good), "{good}");
         }
@@ -235,14 +235,14 @@ mod tests {
     }
 
     #[test]
-    fn notification_parameters_match_python() {
+    fn notification_parameters() {
         let parameters = notify_parameters("tessel-network.service");
         assert_eq!(parameters.type_().as_str(), "(susssasa{sv}i)");
         assert_eq!(
             parameters.print(true).as_str(),
             "('Tessel', uint32 0, 'dialog-warning', 'Network stopped working', \
              'Network stopped repeatedly and was not restarted automatically.', ['restart', 'Restart'], \
-             {'urgency': <byte 0x02>, 'desktop-entry': <'tessel_settings'>}, 0)"
+             {'urgency': <byte 0x02>, 'desktop-entry': <'org.tessel.GlobalSettings'>}, 0)"
         );
     }
 }

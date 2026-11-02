@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Tessel
+Comment=A simple, flexible, lightweight desktop
+Exec=labwc
+Icon=tessel
+Type=Application
+DesktopNames=labwc;wlroots

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=System Monitor
+Comment=View running processes and system performance
+Exec=@LIBDIR@/tessel-system-monitor
+Icon=utilities-system-monitor
+Terminal=false
+StartupNotify=true
+StartupWMClass=org.tessel.SystemMonitor
+Categories=System;Monitor;
+Keywords=Task Manager;Processes;CPU;Memory;RAM;Performance;GPU;

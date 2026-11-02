@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!--
+  This is a very simple config file with many options missing. For a complete
+  set of options with comments, see docs/rc.xml.all
+-->
+<labwc_config>
+  <core>
+	  
+	  <adaptiveSync>yes</adaptiveSync>
+	  <reuseOutputMode>no</reuseOutputMode>
+	  <hdr>yes</hdr>
+    <promptCommand>exec @HOME@/.local/bin/tessel-prompt --message-stdin &lt;&lt;'WAYSHELL_PROMPT_b6af68215ef6420d42d164f1f27eac0afdbe41d5846a9a2c68ff9cc1503d9a9f'
+%m
+WAYSHELL_PROMPT_b6af68215ef6420d42d164f1f27eac0afdbe41d5846a9a2c68ff9cc1503d9a9f</promptCommand>
+    <errorCommand>@HOME@/.local/bin/tessel-prompt --error</errorCommand>
+  <gap>0</gap></core>
+<desktops>
+  <names>
+    <name>1</name>
+    <name>2</name>
+    <name>3</name>
+    <name>4</name>
+  </names>
+</desktops>
+  <theme>
+    <name>GTK</name>
+    <cornerRadius>10</cornerRadius>
+  <titleLayout>NLIMC</titleLayout>
+  <font place="ActiveWindow">
+    <name>Sans</name>
+    <size>10</size>
+    <weight>Bold</weight>
+  </font>
+  <active>
+    <titlebar color="#282a36" text="#f8f8f2"/>
+    <border color="#6272a4"/>
+  </active>
+  <inactive>
+    <titlebar color="#44475a" text="#6272a4"/>
+    <border color="#282a36"/>
+  </inactive>
+    <titlebar><layout>icon:iconify,max,close</layout></titlebar>
+    <dropShadows>yes</dropShadows>
+  </theme>
+  <keyboard>
+    <default/>
+    <keybind key="A-Tab">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.local/share/tessel-shell/wayshell_cli.py switch-window"/>
+    </keybind>
+    <keybind key="A-S-Tab">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.local/share/tessel-shell/wayshell_cli.py switch-window --reverse"/>
+    </keybind>
+    <keybind key="XF86AudioLowerVolume">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.config/waybar/scripts/tessel-audio/audio_manager.py --volume-down"/>
+    </keybind>
+    <keybind key="XF86AudioRaiseVolume">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.config/waybar/scripts/tessel-audio/audio_manager.py --volume-up"/>
+    </keybind>
+    <keybind key="XF86AudioMute">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.config/waybar/scripts/tessel-audio/audio_manager.py --toggle-mute"/>
+    </keybind>
+    <keybind key="XF86MonBrightnessUp">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.config/waybar/scripts/tessel-brightness/brightness_manager.py --brightness-up"/>
+    </keybind>
+    <keybind key="XF86MonBrightnessDown">
+      <action name="Execute" command="/usr/bin/python3 @HOME@/.config/waybar/scripts/tessel-brightness/brightness_manager.py --brightness-down"/>
+    </keybind>
+    <!--
+      Remove a previously defined keybind
+      A shorter alternative is <keybind key="W-F4" />
+    -->
+    <keybind key="Super_L" onRelease="yes">
+      <action name="Execute" command="@HOME@/.local/bin/tessel-dock --menu-hotkey"/>
+    </keybind>
+    <keybind key="W-F4">
+      <action name="None"/>
+    </keybind>
+    <keybind key="W-d">
+      <action name="ToggleShowDesktop"/>
+    </keybind>
+  
+    <keybind key="W-l"><action name="Execute"><command>@HOME@/.local/bin/tessel-shell-lock</command></action></keybind>
+    <keybind key="A-F9"><action name="Execute"><command>/usr/local/bin/tessel-capture --toggle-recording</command></action></keybind>
+    <keybind key="Print"><action name="Execute"><command>/usr/local/bin/tessel-capture --capture screen</command></action></keybind>
+    <keybind key="C-Delete"><action name="Execute"><command>/usr/local/bin/tessel-capture --capture area</command></action></keybind>
+    <keybind key="S-Delete"><action name="Execute"><command>/usr/local/bin/tessel-capture --capture window</command></action></keybind>
+    <keybind key="A-Delete"><action name="Execute"><command>/usr/local/bin/tessel-capture --capture workspace</command></action></keybind>
+  </keyboard>
+  <mouse>
+    <default/>
+    <!-- Move any window, including fullscreen windows, with Alt+left-drag. -->
+    <context name="Frame">
+      <mousebind button="A-Left" action="Press">
+        <action name="Focus"/>
+        <action name="Raise"/>
+      </mousebind>
+      <mousebind button="A-Left" action="Drag">
+        <action name="Move"/>
+      </mousebind>
+    </context>
+    <!-- Show a custom menu on desktop right click -->
+    <context name="Root">
+      <mousebind button="Right" action="Press">
+        <action name="ShowMenu" menu="right-click-menu"/>
+      </mousebind>
+      <mousebind button="Left" action="Press">
+      </mousebind>
+    </context>
+  </mouse>
+  <libinput>
+    <device category="non-touch">
+	    	<naturalScroll>no</naturalScroll>
+	        <pointerSpeed>0.0</pointerSpeed>
+    		<accelProfile>flat</accelProfile>
+    </device>
+  </libinput>
+
+  <!-- tessel-displays HDR overrides begin -->
+  <hdrOutputs>
+    <output name="DP-2" enabled="yes" />
+    <output name="HDMI-A-1" enabled="yes" />
+  </hdrOutputs>
+  <!-- tessel-displays HDR overrides end -->
+
+<!-- tessel-hdr-calibration begin -->
+<hdrCalibration>
+  <output name="HDMI-A-1" displayId="e368142346797fbd" black="0" peak="380" fullFrame="253.8" white="203" pictureMode="Current HDR mode" />
+  <output name="DP-2" displayId="3310a822cb1fbea9" black="0" peak="426.9" fullFrame="265" white="203" pictureMode="Current HDR mode" />
+</hdrCalibration>
+<!-- tessel-hdr-calibration end -->
+</labwc_config>

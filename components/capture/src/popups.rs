@@ -4,8 +4,8 @@
 
 use gio::prelude::*;
 
-pub const NAME: &str = "org.tessel.Tessel Dock";
-pub const PATH: &str = "/org/tessel/Tessel Dock";
+pub const NAME: &str = "org.tessel.Dock";
+pub const PATH: &str = "/org/tessel/Dock";
 
 pub fn prepare_dock_popup(done: impl FnOnce() + 'static, bus: Option<gio::DBusConnection>, recording: bool) {
     call_action(bus, "prepare-capture", vec![recording.to_variant()], done);

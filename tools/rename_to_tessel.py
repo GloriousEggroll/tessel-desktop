@@ -55,16 +55,10 @@ DIRS = {
     "crates/suite-wayland": "crates/wayland",
 }
 
-# Exact D-Bus names that do not follow the plain namespace swap (checked first).
+# Exact D-Bus names that do not follow the plain namespace swap (applied before it).
 DBUS = {
-    "org.waydock.GlobalSettings": "org.tessel.Settings",
-    "/org/waydock/GlobalSettings": "/org/tessel/Settings",
-    "org/waydock/GlobalSettings": "org/tessel/Settings",
-    "org.waydock.Settings": "org.tessel.Dock.Settings",
-    "/org/waydock/Settings": "/org/tessel/Dock/Settings",
     "org.waydock.Waydock": "org.tessel.Dock",
     "/org/waydock/Waydock": "/org/tessel/Dock",
-    "org.waydock.globalsettings": "org.tessel.settings",
 }
 
 # systemd user units.
@@ -226,7 +220,7 @@ def build():
         table[f"components/{old}"] = (f"components/{old}", "plain")
     for old, new in DIRS.items():
         table[old] = (new, "plain")
-    for old, new in {**DBUS, **UNITS}.items():
+    for old, new in UNITS.items():
         table[old] = (new, "plain")
     for old, new in KEBAB.items():
         table[old] = (new, "strict" if old in STRICT else "loose")
@@ -242,7 +236,7 @@ def build():
 
 TABLE, PATTERN = build()
 # D-Bus namespaces: prefixes, so they are matched without a right boundary (first pass).
-PREFIXES = {}
+PREFIXES = dict(DBUS)
 for _ns in ("waydock", "waybar", "wayshell"):
     PREFIXES.update({f"org.{_ns}.": "org.tessel.", f"/org/{_ns}/": "/org/tessel/", f"org/{_ns}/": "org/tessel/",
                      f"org_{_ns}_": "org_tessel_"})

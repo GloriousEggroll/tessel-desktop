@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Screenshot
+Comment=Capture a workspace, screen, window, or area with HDR to SDR conversion
+Exec=@LIBDIR@/tessel-capture --screenshot
+Icon=camera-photo-symbolic
+Terminal=false
+StartupNotify=true
+StartupWMClass=org.tessel.Capture
+Categories=Graphics;
+Keywords=Screenshot;Capture;Print;Screen;HDR;
+Actions=Record;
+
+[Desktop Action Record]
+Name=Screen Recorder
+Exec=@LIBDIR@/tessel-capture --record
+Icon=media-record-symbolic

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Discover Network Devices
+Comment=Enable or disable Avahi network discovery
+Exec=@LIBDIR@/tessel-network-discovery --popup
+Icon=network-workgroup
+Terminal=false
+Categories=Settings;Network;
+Keywords=Avahi;Discovery;mDNS;Zeroconf;Network;

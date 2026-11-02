@@ -1,0 +1,7 @@
+[Unit]
+Description=labwc XDG application autostart
+Documentation=man:systemd-xdg-autostart-generator(8)
+Requires=graphical-session.target
+After=graphical-session.target
+Wants=xdg-desktop-autostart.target
+PartOf=graphical-session.target

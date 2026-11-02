@@ -1,0 +1,63 @@
+# Example environment file
+
+# This allows xdg-desktop-portal-wlr to function (e.g. for screen-recording)
+XDG_CURRENT_DESKTOP=wlroots:labwc
+XDPW_FORCE_PRIMARIES=bt2020
+XDPW_FORCE_XFER=pq
+XDPW_FORCE_RANGE=full
+
+# Set keyboard layout to Swedish
+XKB_DEFAULT_LAYOUT=us
+
+# Set two keyboard layouts and toggle between them using alt+shift
+XKB_DEFAULT_LAYOUT=us
+XKB_DEFAULT_OPTIONS=grp:alt_shift_toggle
+
+# Force firefox to use wayland backend
+MOZ_ENABLE_WAYLAND=1
+
+# Set cursor theme.
+# Find icons themes with the command below or similar:
+#     find /usr/share/icons/ -type d -name "cursors"
+
+# Disable hardware cursors. Most users wouldn't want to do this, but if you
+# are experiencing issues with disappearing cursors, this might fix it.
+WLR_NO_HARDWARE_CURSORS=1
+
+# For Java applications such as JetBrains/Intellij Idea, set this variable
+# to avoid menus with incorrect offset and blank windows
+# See https://github.com/swaywm/sway/issues/595
+_JAVA_AWT_WM_NONREPARENTING=1
+XCURSOR_THEME=Adwaita:dark
+XCURSOR_SIZE=24
+WLR_RENDERER=vulkan
+QT_QPA_PLATFORMTHEME=qt5ct
+#MESA_LOADER_DRIVER_OVERRIDE=zink
+OBS_VKCAPTURE=1
+OBS_VKCAPTURE_QUIET=1
+
+
+TERMINAL=ghostty
+
+# tessel-displays primary output environment begin
+SDL_VIDEO_DISPLAY_PRIORITY=HDMI-A-1
+WAYLANDDRV_PRIMARY_MONITOR=HDMI-A-1
+PROTON_WAYLAND_MONITOR=HDMI-A-1
+# tessel-displays primary output environment end
+
+# Tessel language — managed by Language Settings
+LC_NUMERIC=en_US.utf8
+LC_TIME=en_US.utf8
+LC_COLLATE=en_US.utf8
+LC_MONETARY=en_US.utf8
+LC_PAPER=en_US.utf8
+LC_NAME=en_US.utf8
+LC_ADDRESS=en_US.utf8
+LC_TELEPHONE=en_US.utf8
+LC_MEASUREMENT=en_US.utf8
+LC_IDENTIFICATION=en_US.utf8
+LANG=en_US.UTF-8
+LANGUAGE=en
+LC_MESSAGES=en_US.UTF-8
+LC_ALL=
+# End Tessel language

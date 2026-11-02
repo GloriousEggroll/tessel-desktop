@@ -1163,7 +1163,7 @@ fn main() {
     let notifications = FakeNotifications::new(&connection);
     let dock = Rc::new(RefCell::new(Vec::new()));
     let sink = dock.clone();
-    connection.register_object("/org/tessel/Tessel Dock", &interface(ACTIONS_XML, "org.gtk.Actions"))
+    connection.register_object("/org/tessel/Dock", &interface(ACTIONS_XML, "org.gtk.Actions"))
         .method_call(move |_, _, _, _, _, parameters, invocation| {
             let name = parameters.child_value(0).str().unwrap().to_string();
             let list = parameters.child_value(1);
@@ -1171,7 +1171,7 @@ fn main() {
             sink.borrow_mut().push((name, values));
             invocation.return_value(None);
         }).build().unwrap();
-    own(&connection, "org.tessel.Tessel Dock");
+    own(&connection, "org.tessel.Dock");
     let shown = Rc::new(RefCell::new(Vec::new()));
     let sink = shown.clone();
     connection.register_object("/org/freedesktop/FileManager1", &interface(FILE_MANAGER_XML, "org.freedesktop.FileManager1"))

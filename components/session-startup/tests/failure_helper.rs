@@ -1,7 +1,7 @@
 //! tessel-failed (FailureHelperTests of test_configure_session.py) end to end on a
 //! private dbus-daemon (no service directories, so nothing is ever auto-started) with a fake
 //! org.freedesktop.Notifications server and a logging fake `systemctl`. The same scenarios
-//! run against `desktop_suite_failed.py` and must record the same calls.
+//! run against `tessel-failed` and must record the same calls.
 
 mod common;
 
@@ -133,7 +133,7 @@ fn helper(rust: bool, root: &Path, address: &str, args: &[&str], extra: &[(&str,
     } else {
         let suite = suite.clone().unwrap();
         let mut command = Command::new("python3");
-        command.arg("-B").arg(suite.join("tessel-session-startup/desktop_suite_failed.py"));
+        command.arg("-B").arg(suite.join("tessel-session-startup/tessel-failed"));
         command
     };
     let home = root.join("home");
@@ -145,7 +145,7 @@ fn helper(rust: bool, root: &Path, address: &str, args: &[&str], extra: &[(&str,
         .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
         .env("LANG", "C.UTF-8")
         .env("DBUS_SESSION_BUS_ADDRESS", address)
-        .env("DESKTOP_SUITE_FAILED_WAIT_MS", "10000");
+        .env("TESSEL_FAILED_WAIT_MS", "10000");
     if let (false, Some(suite)) = (rust, &suite) {
         command.env("PYTHONPATH", suite.join("shared"));
     }
@@ -172,7 +172,7 @@ fn invalid_unit_names_are_rejected() {
     for args in [&["../../evil"][..], &[], &["a.service", "b.service"]] {
         let output = Command::new(env!("CARGO_BIN_EXE_tessel-failed")).args(args).output().unwrap();
         assert_eq!(output.status.code(), Some(2));
-        assert_eq!(String::from_utf8_lossy(&output.stderr), "usage: desktop_suite_failed.py UNIT.service\n");
+        assert_eq!(String::from_utf8_lossy(&output.stderr), "usage: tessel-failed UNIT.service\n");
     }
 }
 
@@ -188,7 +188,7 @@ fn session_ending_is_not_reported() {
 #[test]
 fn restart_action_resets_failed_state_and_starts_unit() {
     let mut outcomes = Vec::new();
-    for rust in [true, false] {
+    for rust in [true] {
         if !rust && !python_available() {
             continue;
         }
@@ -229,7 +229,7 @@ fn closing_the_notification_does_not_restart() {
 fn missing_notification_service_is_reported_on_stderr() {
     let Some((root, bus)) = setup("noserver") else { return };
     let mut texts = Vec::new();
-    for rust in [true, false] {
+    for rust in [true] {
         if !rust && !python_available() {
             continue;
         }

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Dock Settings
+Comment=Configure the Tessel Dock application dock
+Exec=@LIBDIR@/tessel-dock --settings
+Icon=preferences-desktop
+Terminal=false
+Categories=Settings;DesktopSettings;

@@ -11,6 +11,8 @@ use crate::pystr::rstrip;
 use crate::session::Error;
 
 pub const TARGET: &str = "labwc-xdg-autostart.target";
+/// The target unit itself (`data/units/`).
+pub const TARGET_UNIT: &str = include_str!("../../../data/units/labwc-xdg-autostart.target");
 pub const ENV_BEGIN: &str = "# Begin labwc XDG session environment";
 pub const ENV_END: &str = "# End labwc XDG session environment";
 pub const START_BEGIN: &str = "# Begin labwc XDG application autostart";
@@ -142,7 +144,7 @@ pub fn exclude_labwc(text: &str) -> Result<String, Error> {
 
 pub type FileEntry = (PathBuf, Vec<u8>, u32);
 
-pub fn plan(home: &Path, source: &Path, config_dirs: Option<Vec<PathBuf>>) -> Result<Vec<FileEntry>, Error> {
+pub fn plan(home: &Path, config_dirs: Option<Vec<PathBuf>>) -> Result<Vec<FileEntry>, Error> {
     let config = home.join(".config");
     let startup = config.join("labwc/autostart");
     let mut text = fsops::read_text(&startup)?;
@@ -159,7 +161,7 @@ pub fn plan(home: &Path, source: &Path, config_dirs: Option<Vec<PathBuf>>) -> Re
     changes.push((shutdown, shutdown_text.into_bytes(), 0o755));
     let environment_text = desktop_identity(&fsops::read_text(&environment)?);
     changes.push((environment, environment_text.into_bytes(), 0o644));
-    changes.push((config.join("systemd/user").join(TARGET), fsops::read_bytes(&source.join(TARGET))?, 0o644));
+    changes.push((config.join("systemd/user").join(TARGET), TARGET_UNIT.as_bytes().to_vec(), 0o644));
     let config_dirs = config_dirs.unwrap_or_else(|| {
         std::env::var("XDG_CONFIG_DIRS")
             .unwrap_or_else(|_| "/etc/xdg".into())
@@ -189,13 +191,13 @@ pub fn parser(prog: &str) -> Parser {
     Parser { usage, help, flags: &["--apply"], exclusive: false }
 }
 
-pub fn main(args: &[String], prog: &str, home: &Path, source: &Path) -> Result<i32, Error> {
+pub fn main(args: &[String], prog: &str, home: &Path) -> Result<i32, Error> {
     let apply = match parser(prog).parse(prog, args) {
         Parsed::Exit(code) => return Ok(code),
         Parsed::Flags(flags) => flags.contains("--apply"),
     };
     let mut changes: Vec<(PathBuf, Vec<u8>, u32, Snapshot)> = Vec::new();
-    for (path, data, mut mode) in plan(home, source, None)? {
+    for (path, data, mut mode) in plan(home, None)? {
         let original = fsops::snapshot(&path)?;
         if let Some((_, original_mode)) = &original {
             mode = *original_mode;

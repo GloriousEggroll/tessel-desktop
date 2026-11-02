@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Calculator
+Comment=Calculate with standard and scientific functions
+Exec=@LIBDIR@/tessel-calculator
+Icon=accessories-calculator
+Terminal=false
+Categories=Utility;Calculator;
+Keywords=math;arithmetic;scientific;calculator;
+StartupNotify=true
+StartupWMClass=org.tessel.Calculator

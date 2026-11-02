@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+Comment=Configure your desktop, devices, and system language
+Exec=@LIBDIR@/tessel-settings
+Icon=preferences-system
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupNotify=true
+StartupWMClass=org.tessel.GlobalSettings
+Keywords=Audio;Bluetooth;Network;Displays;Power;Battery;Wallpaper;Dock;Language;

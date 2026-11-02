@@ -1,0 +1,15 @@
+[Unit]
+Description=Tessel Shell: desktop, window switcher, overview and prompts
+After=graphical-session.target
+PartOf=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+OnFailure=tessel-failed@%n.service
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/labwc/environment
+EnvironmentFile=-%h/.config/labwc/environment.d/90-local.env
+ExecStart=%h/.local/lib/tessel/tessel-shell
+Restart=on-failure
+RestartSec=1

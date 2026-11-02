@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=On-screen Keyboard
+Comment=Touch keyboard and automatic keyboard settings
+Exec=@LIBDIR@/tessel-keyboard --settings
+Icon=input-keyboard
+Terminal=false
+Categories=Settings;Accessibility;
+Keywords=Keyboard;Touchscreen;Touch;Typing;

@@ -1,0 +1,9 @@
+[Unit]
+Description=Report that %i stopped working
+# Started by OnFailure= from Tessel's services; never enabled.
+CollectMode=inactive-or-failed
+
+[Service]
+Type=simple
+ExecStart=%h/.local/lib/tessel/tessel-failed %i
+TimeoutStopSec=5

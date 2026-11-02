@@ -1,0 +1,16 @@
+[Unit]
+Description=Tessel night light (warmer screen colors with wlsunset)
+Documentation=man:wlsunset(1)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=exec
+EnvironmentFile=-%h/.config/labwc/environment
+EnvironmentFile=-%h/.config/labwc/environment.d/90-local.env
+ExecStart=%h/.local/lib/tessel/tessel-night-light
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

@@ -229,7 +229,7 @@ size 16), `accessible(widget, label)`, `append(box, child, expand, end)`,
 `PointerMonitor::new(FnOnce(Option<Monitor>))` (1×1 input-transparent probe,
 namespace `suite-output-probe`, 1 s timeout; `.cancel()`),
 `dock_placement(monitor, group, FnOnce(Option<Placement>))` — D-Bus
-`org.tessel.Tessel Dock /org/tessel/Settings org.tessel.Settings.GetPopupPlacement(ss) -> s`,
+`org.tessel.Dock /org/tessel/Settings org.tessel.Settings.GetPopupPlacement(ss) -> s`,
 500 ms, no auto-start; `Placement {edge, align, offset}` / `Placement::from_json`,
 `anchor_popup(&window, edge, offset, align)` (12 px side margin unless center),
 `edge_from_name`, `pass_input(&native)` (empty input region).

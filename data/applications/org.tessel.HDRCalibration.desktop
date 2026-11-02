@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=HDR Calibration
+Comment=Set up HDR highlight limits and SDR reference white for each monitor
+Exec=@LIBDIR@/tessel-hdr-calibration
+Icon=video-display
+Categories=Settings;HardwareSettings;GTK;
+Keywords=HDR;calibration;display;monitor;luminance;nits;color;
+StartupNotify=true
+Terminal=false

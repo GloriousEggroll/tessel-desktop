@@ -1,4 +1,4 @@
-//! WorkareaClient against a FAKE org.tessel.Tessel Dock on a private
+//! WorkareaClient against a FAKE org.tessel.Dock on a private
 //! dbus-daemon (gio::TestDBus): initial GetWorkareas, owner-only signals,
 //! malformed payloads ignored, owner loss clears, a new owner is re-queried.
 #![cfg(feature = "desktop")]

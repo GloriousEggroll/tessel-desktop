@@ -15,7 +15,7 @@ Runs:
 
 | Item | Done | Test |
 |---|---|---|
-| §1 GApplication `org.tessel.Tessel Dock`, `HANDLES_COMMAND_LINE`, argv forwarded to the primary | yes | e_headless `launcher_options_never_start_a_dock_and_singleton_health_shutdown` (second plain start exits 0) |
+| §1 GApplication `org.tessel.Dock`, `HANDLES_COMMAND_LINE`, argv forwarded to the primary | yes | e_headless `launcher_options_never_start_a_dock_and_singleton_health_shutdown` (second plain start exits 0) |
 | §1 `IS_LAUNCHER` for `--check --quit --menu --menu-hotkey --toggle-desktop --desktop-status` (any argv item, as `in sys.argv`) — never starts a dock | yes | `cli::tests::launcher_options_never_start_a_dock`, e_headless (NameHasOwner stays false) |
 | §1 dispatch order, `Unknown option: X\n` on stderr, exit 2 | yes | `cli::tests::dispatch_follows_python_order`, e_headless |
 | §1 `--check` JSON: keys/order/separators identical (`json.dumps` defaults), exit 0 iff ready && docks | yes | e_headless key-order assertions; compare harness check_rc 0 both; `--check` output diffed by hand vs Python (same keys/values except environment-dependent strings) |

@@ -1,0 +1,95 @@
+# Import /etc/profile(.d) settings
+# Source system-wide profiles
+test -f /etc/profile && . /etc/profile
+
+# Source user-specific profiles
+test -f "$HOME/.profile" && . "$HOME/.profile"
+
+# Begin labwc XDG session environment
+# Keep the existing desktop first so portal backend selection is preserved.
+case ":${XDG_CURRENT_DESKTOP:-}:" in
+    *:labwc:*) ;;
+    *) XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:+$XDG_CURRENT_DESKTOP:}labwc" ;;
+esac
+export XDG_CURRENT_DESKTOP
+# Import the actual compositor session before regenerating autostart units.
+dbus-update-activation-environment --systemd \
+    DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE PATH LABWC_PID \
+    ${XDG_CONFIG_HOME+XDG_CONFIG_HOME} ${XDG_CONFIG_DIRS+XDG_CONFIG_DIRS}
+systemctl --user daemon-reload
+# End labwc XDG session environment
+
+# Keep systemd's graphical session active for desktop portals. The portal
+# service has Requisite=graphical-session.target, but labwc is launched
+# directly rather than through a desktop-specific systemd target.
+systemd-run --user --quiet --collect \
+  --unit=labwc-graphical-session-anchor.service \
+  --property=Type=oneshot \
+  --property=RemainAfterExit=yes \
+  --property=Requires=graphical-session.target \
+  --property=Before=graphical-session.target \
+  --property=PartOf=graphical-session.target \
+  /usr/bin/true >/dev/null 2>&1
+
+# Required for PipeWire screen/window capture (OBS, browsers, and similar).
+systemctl --user start \
+  xdg-desktop-portal-wlr.service \
+  xdg-desktop-portal.service >/dev/null 2>&1
+
+# Configure monitors
+#~/.config/way-displays/scripts/start-way-displays >/dev/null 2>&1 &
+systemctl --user start way-displays.service  >/dev/null 2>&1 &
+
+# network and bluetooth managers
+systemctl --user start tessel-network.service  >/dev/null 2>&1 &
+
+# Enable notifications. Typically GNOME/KDE application notifications go
+# through the org.freedesktop.Notifications D-Bus API and require a client such
+# as mako to function correctly. Thunderbird is an example of this.
+systemctl --user start tessel-notifications.service  >/dev/null 2>&1 &
+
+# Power settings owns screen locking, display-off and automatic sleep timers.
+#
+# Note that in the context of idle system power management, it is *NOT* a good
+# idea to turn off displays by 'disabling outputs' for example by
+# `wlr-randr --output <whatever> --off` because this re-arranges views
+# (since a837fef). Instead use a wlr-output-power-management client such as
+# https://git.sr.ht/~leon_plickat/wlopm
+systemctl --user start tessel-power.service >/dev/null 2>&1 &
+systemctl --user start tessel-battery.service >/dev/null 2>&1 &
+systemctl --user start tessel-brightness.service >/dev/null 2>&1 &
+
+# dock/bar
+#systemctl --user start dock.service >/dev/null 2>&1 &
+
+# Desktop shell
+systemctl --user start tessel-shell.service  >/dev/null 2>&1 &
+
+# password manager
+systemctl --user start nordpass.service >/dev/null 2>&1 &
+
+# start polkit manager
+#/usr/libexec/xfce-polkit >/dev/null 2>&1 &
+systemctl --user restart tessel-auth.service  >/dev/null 2>&1 &
+
+# audio manager
+systemctl --user start tessel-audio-loopbacks.service >/dev/null 2>&1 &
+
+# Manual session idle inhibitor
+systemctl --user start tessel-keep-awake.service >/dev/null 2>&1 &
+
+# Begin labwc XDG application autostart
+# Wait for Tessel Dock's tray host before starting applications which only try
+# to register their tray icon once. Type=notify makes this a readiness wait,
+# even if Tessel Dock's start was already requested in the background above.
+systemctl --user start tessel-dock.service
+# The installed generator handles user overrides, Hidden, desktop filters,
+# TryExec and Exec argument parsing. Active services are not launched twice.
+systemctl --user --no-block start labwc-xdg-autostart.target
+# End labwc XDG application autostart
+
+# Restore optional window tiling only in the labwc session.
+"$HOME/.local/bin/tessel-tiling" --restore >/dev/null 2>&1 &
+
+# Start the automatic touch keyboard only in the labwc session.
+systemctl --user start tessel-keyboard.service >/dev/null 2>&1 &

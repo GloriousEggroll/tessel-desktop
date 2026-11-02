@@ -68,7 +68,7 @@ pub fn dock_placement(monitor: Option<&gdk::Monitor>, group: &str, callback: imp
     let group = group.to_owned();
     gio::bus_get(gio::BusType::Session, None::<&gio::Cancellable>, move |bus| {
         let Ok(bus) = bus else { return callback(None) };
-        bus.call(Some("org.tessel.Tessel Dock"), "/org/tessel/Settings", "org.tessel.Settings", "GetPopupPlacement",
+        bus.call(Some("org.tessel.Dock"), "/org/tessel/Settings", "org.tessel.Settings", "GetPopupPlacement",
                  Some(&(connector, group).to_variant()), Some(glib::VariantTy::new("(s)").unwrap()),
                  gio::DBusCallFlags::NO_AUTO_START, 500, None::<&gio::Cancellable>, move |reply| {
                      let text = reply.ok().and_then(|v| v.get::<(String,)>()).map(|v| v.0);

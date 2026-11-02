@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Power Settings
+Comment=Power profiles, display-off and sleep behavior
+Exec=@LIBDIR@/tessel-power --settings
+Icon=preferences-system-power-management
+Terminal=false
+Categories=Settings;HardwareSettings;

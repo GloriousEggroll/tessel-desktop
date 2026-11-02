@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Categories=GTK;Settings;DesktopSettings;HardwareSettings;
+Exec=@LIBDIR@/tessel-displays
+Icon=wdisplays
+
+Name=Display Configuration
+GenericName=Displays Configuration
+Comment=way-display-gui displays configuration
+Terminal=false

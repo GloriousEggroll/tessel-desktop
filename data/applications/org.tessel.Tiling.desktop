@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Window Tiling
+Comment=Window tiling shortcuts
+Exec=@LIBDIR@/tessel-tiling --settings
+Icon=view-grid-symbolic
+Terminal=false
+Categories=Settings;DesktopSettings;

@@ -1,11 +1,10 @@
-//! `configure_xdg_autostart.py`: preview or `--apply` labwc's XDG application autostart.
+//! `tessel-xdg-autostart`: preview or `--apply` labwc's XDG application autostart.
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let prog = tessel_session_startup::cli::prog("configure_xdg_autostart.py");
-    let source = tessel_session_startup::session::Source::locate();
+    let prog = tessel_session_startup::cli::prog("tessel-xdg-autostart");
     let home = tessel_session_startup::fsops::home();
-    match tessel_session_startup::xdg::main(&args, &prog, &home, &source.session) {
+    match tessel_session_startup::xdg::main(&args, &prog, &home) {
         Ok(code) => std::process::exit(code),
         Err(error) => {
             eprintln!("{error}");

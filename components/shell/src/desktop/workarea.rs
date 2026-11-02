@@ -1,7 +1,7 @@
 //! Port of `desktop_workarea.py`: live Tessel Dock reservations — no service
 //! activation, polling, or saved geometry.
 //!
-//! `org.tessel.Tessel Dock /org/tessel/Settings org.tessel.Settings`:
+//! `org.tessel.Dock /org/tessel/Settings org.tessel.Settings`:
 //! `GetWorkareas() -> s` (2000 ms, NO_AUTO_START) and `WorkareasChanged(s)`.
 
 use super::icon_layout::Rect;
@@ -11,7 +11,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::rc::{Rc, Weak};
 
-pub const BUS_NAME: &str = "org.tessel.Tessel Dock";
+pub const BUS_NAME: &str = "org.tessel.Dock";
 pub const OBJECT_PATH: &str = "/org/tessel/Settings";
 pub const INTERFACE: &str = "org.tessel.Settings";
 

@@ -175,7 +175,7 @@ impl Drop for Dock {
 fn bus() -> gio::DBusConnection { gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>).expect("private bus") }
 
 fn settings_call(method: &str, args: Option<&glib::Variant>) -> Result<glib::Variant, String> {
-    bus().call_sync(Some("org.tessel.Tessel Dock"), "/org/tessel/Settings", "org.tessel.Settings", method, args, None,
+    bus().call_sync(Some("org.tessel.Dock"), "/org/tessel/Settings", "org.tessel.Settings", method, args, None,
                     gio::DBusCallFlags::NONE, 5000, None::<&gio::Cancellable>).map_err(|e| e.to_string())
 }
 
@@ -256,7 +256,7 @@ fn launcher_options_never_start_a_dock_and_singleton_health_shutdown() -> Result
         ensure!(code != 0, "{option} without a dock succeeded");
     }
     let owner = bus().call_sync(Some("org.freedesktop.DBus"), "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner",
-                                Some(&("org.tessel.Tessel Dock",).to_variant()), None, gio::DBusCallFlags::NONE, 2000,
+                                Some(&("org.tessel.Dock",).to_variant()), None, gio::DBusCallFlags::NONE, 2000,
                                 None::<&gio::Cancellable>).map_err(|e| e.to_string())?;
     ensure!(owner.get::<(bool,)>() == Some((false,)), "a launcher option started a dock");
     let dock = Dock::start("health", serde_json::json!({"mode": "dock"}))?;
