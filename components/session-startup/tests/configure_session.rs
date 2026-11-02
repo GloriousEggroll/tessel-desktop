@@ -68,7 +68,7 @@ fn personal_startup_moves_to_local_file_and_still_runs() {
     let combined = format!("{startup}{local}");
     let keys: Vec<_> = session::shell_statements(&combined).into_iter().filter(|(k, _)| *k == Kind::Code).map(|(_, t)| session::statement_key(&t)).collect();
     for (kind, text) in session::shell_statements(&before) {
-        if kind == Kind::Code {
+        if kind == Kind::Code && !session::is_legacy_statement(&text) {
             assert!(keys.contains(&session::statement_key(&text)), "{text}");
         }
     }
@@ -76,6 +76,26 @@ fn personal_startup_moves_to_local_file_and_still_runs() {
         assert!(Command::new("sh").arg("-n").arg(t.labwc.join(name)).status().unwrap().success());
     }
     assert_eq!(fsops::mode(&t.labwc.join("autostart")).unwrap(), 0o755);
+}
+
+#[test]
+fn pre_tessel_suite_services_never_become_personal() {
+    // An install before this fix copied the old suite's services into autostart.local,
+    // so they started beside their tessel-* replacements.
+    let old = "# Personal labwc startup commands. labwc's autostart sources this file last;\n\
+# desktop suite installers never overwrite it.\n\n# password manager\n\
+systemctl --user start nordpass.service >/dev/null 2>&1 &\n\n# Network and Bluetooth managers\n\
+systemctl --user start netman.service >/dev/null 2>&1 &\n\n# Desktop notifications (org.freedesktop.Notifications)\n\
+systemctl --user start notifications.service >/dev/null 2>&1 &\n\n# Authentication agent\n\
+systemctl --user restart polkitman.service >/dev/null 2>&1 &\n\n\
+\"$HOME/.local/bin/waytile\" --restore >/dev/null 2>&1 &\n\nmy-extra-command &\n";
+    let cleaned = session::clean_local_autostart(old);
+    assert_eq!(cleaned, "# Personal labwc startup commands. labwc's autostart sources this file last;\n\
+# desktop suite installers never overwrite it.\n\n# password manager\n\
+systemctl --user start nordpass.service >/dev/null 2>&1 &\n\nmy-extra-command &\n");
+    assert_eq!(session::clean_local_autostart(&cleaned), cleaned);
+    let (_, additions) = session::split_autostart("systemctl --user start wayshell.service >/dev/null 2>&1 &\n", "");
+    assert_eq!(additions, "");
 }
 
 #[test]

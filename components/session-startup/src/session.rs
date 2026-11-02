@@ -692,6 +692,58 @@ pub fn statement_key(statement: &str) -> Key {
     }
 }
 
+/// Units and programs the desktop suite started before Tessel. Their statements are
+/// the suite's, never personal: the template starts the tessel-* replacements.
+pub const LEGACY_UNITS: [&str; 18] = [
+    "netman.service", "notifications.service", "power-manager.service", "power-manager-lock.service",
+    "battery-manager.service", "brightness-manager.service", "wayshell.service", "polkitman.service",
+    "audio-manager-loopbacks.service", "keep-awake.service", "on-screen-keyboard.service", "waydock.service",
+    "dock.service", "clipboard-manager.service", "night-light.service", "waykeyring.service",
+    "network-manager.service", "authentication-manager.service",
+];
+pub const LEGACY_PROGRAMS: [&str; 3] = ["/.local/bin/waytile", "/.local/bin/waydock", "/waybar/scripts/"];
+
+pub fn is_legacy_statement(statement: &str) -> bool {
+    match statement_key(statement) {
+        Key::Service(name) => LEGACY_UNITS.contains(&name.as_str()),
+        Key::Code(text) => LEGACY_PROGRAMS.iter().any(|program| text.contains(program)),
+        Key::Block(_) => false,
+    }
+}
+
+/// `local` without the suite's pre-Tessel statements (and the comments directly above
+/// them), which earlier installs copied there because they were not in the template.
+pub fn clean_local_autostart(local: &str) -> String {
+    let mut out = String::new();
+    let mut comments = String::new();
+    for (kind, text) in shell_statements(local) {
+        match kind {
+            Kind::Comment => {
+                comments.push_str(&text);
+                continue;
+            }
+            Kind::Code if is_legacy_statement(&text) => {}
+            _ => {
+                out.push_str(&comments);
+                out.push_str(&text);
+            }
+        }
+        comments.clear();
+    }
+    out.push_str(&comments);
+    // A removed statement leaves its blank separator behind: collapse runs of blank lines.
+    let mut cleaned = String::new();
+    let mut blank = false;
+    for line in out.split_inclusive('\n') {
+        let is_blank = line.trim().is_empty();
+        if !(is_blank && blank) {
+            cleaned.push_str(line);
+        }
+        blank = is_blank;
+    }
+    cleaned.trim_end_matches(['\n', ' ', '\t']).to_owned() + if cleaned.is_empty() { "" } else { "\n" }
+}
+
 /// (generic autostart, text to append to autostart.local).
 pub fn split_autostart(current: &str, local: &str) -> (String, String) {
     let template = AUTOSTART_TEMPLATE.as_str();
@@ -716,7 +768,7 @@ pub fn split_autostart(current: &str, local: &str) -> (String, String) {
             Kind::Code => {}
         }
         let key = statement_key(&text);
-        if !known.contains(&key) {
+        if !known.contains(&key) && !is_legacy_statement(&text) {
             known.insert(key);
             personal.push(comments.concat() + &text);
         }
@@ -900,10 +952,11 @@ pub fn plan(home: &Path) -> Result<(Vec<FileEntry>, Vec<String>), Error> {
         }
     };
     let (startup, startup_local) = (labwc.join("autostart"), labwc.join(LOCAL_AUTOSTART));
-    let local = read_if_exists(&startup_local)?;
+    let original_local = read_if_exists(&startup_local)?;
+    let local = clean_local_autostart(&original_local);
     let (template, additions) = split_autostart(&read_if_exists(&startup)?, &local);
     files.push((startup.clone(), template.into_bytes(), fsops::mode_or(&startup, 0o755)?));
-    if !additions.is_empty() {
+    if !additions.is_empty() || local != original_local {
         files.push((startup_local.clone(), (local + &additions).into_bytes(), fsops::mode_or(&startup_local, 0o644)?));
     }
     let (environment, environment_local) = (labwc.join("environment"), labwc.join(LOCAL_ENVIRONMENT));
