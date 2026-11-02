@@ -2402,6 +2402,7 @@ name = "tessel-capture"
 version = "0.1.0"
 dependencies = [
  "cairo-rs",
+ "cc",
  "gio",
  "gio-unix",
  "glib",

@@ -114,7 +114,7 @@ fn missing_helper_reports_start_failure() {
                                          Rc::new(move |m| e.borrow_mut().push(m)));
         backend.start();
         timer::settle(context, Duration::from_millis(50));
-        assert_eq!(errors.borrow()[0], "Tessel Dock's window helper could not start. Build or reinstall it.");
+        assert_eq!(errors.borrow()[0], "The dock's window helper could not start. Build or reinstall it.");
         backend.close();
     });
 }

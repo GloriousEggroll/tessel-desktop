@@ -165,7 +165,7 @@ impl WindowBackend {
                                                    | gio::SubprocessFlags::STDERR_SILENCE) {
             Ok(process) => process,
             Err(_) => {
-                self.lost(session, "Tessel Dock's window helper could not start. Build or reinstall it.");
+                self.lost(session, "The dock's window helper could not start. Build or reinstall it.");
                 return;
             }
         };

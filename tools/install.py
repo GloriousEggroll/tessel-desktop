@@ -38,7 +38,9 @@ USER_PARTS = ("programs", "locale", "icons", "units", "applications", "dbus", "s
 SYSTEM_PARTS = ("keyring", "lock-pam", "session-entry", "retire-old")
 EXPLICIT_SYSTEM_PARTS = ("login",)    # only with --only login (the login screen; takes effect at the next boot)
 # Native helpers built by build.rs into the build output (not [[bin]] targets).
-HELPERS = ("tessel-keyboard-input",)
+HELPERS = ("tessel-keyboard-input", "libcapture-pipewire.so")
+# Native pieces the build may skip (missing -devel packages): an installed copy is kept.
+CARRY_OVER = {"libcapture-pipewire.so": ("usr/local/lib/desktop-suite/capture-manager/libcapture-pipewire.so",)}
 # The lock screen's PAM services: (desktop-suite name, Tessel name).
 LOCK_PAM = (("waylock", "tessel-lock"), ("waylock-password", "tessel-lock-password"),
             ("waylock-fingerprint", "tessel-lock-fingerprint"))
@@ -163,6 +165,13 @@ def user_plan(home, parts, binaries, target_dir):
     bindir = home / ".local/bin"
     if "programs" in parts:
         found, missing = built_files(target_dir, list(binaries) + list(HELPERS))
+        for name in [m for m in missing if m in CARRY_OVER]:
+            installed = [Path("/") / old for old in CARRY_OVER[name]] + [libdir / name]
+            source = next((path for path in installed if path.is_file()), None)
+            if source:
+                found[name] = source
+                missing.remove(name)
+                plan.notes.append(f"{name} was not built (install pipewire-devel to build it); keeping {source}.")
         if missing:
             plan.notes.append("Not built (run without --no-build): " + ", ".join(missing))
         for name, path in sorted(found.items()):

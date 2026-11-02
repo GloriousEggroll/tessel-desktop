@@ -70,11 +70,13 @@ pub fn program_dirs() -> Vec<PathBuf> {
 }
 
 /// Find another Tessel program (`tessel-power-status`, `tessel-dock-toplevel`):
-/// beside the running executable, then in [`program_dirs`], else the bare name
-/// for a `PATH` lookup.
+/// in `$TESSEL_PROGRAM_DIR` (tests), beside the running executable, then in
+/// [`program_dirs`], else the bare name for a `PATH` lookup.
 pub fn program(name: &str) -> PathBuf {
+    // Tests point this at a directory of fakes, ahead of everything else.
+    let overridden = env::var_os("TESSEL_PROGRAM_DIR").filter(|dir| !dir.is_empty()).map(|dir| PathBuf::from(dir).join(name));
     let beside = env::current_exe().ok().and_then(|exe| exe.parent().map(|dir| dir.join(name)));
-    beside.into_iter().chain(program_dirs().into_iter().map(|dir| dir.join(name)))
+    overridden.into_iter().chain(beside).chain(program_dirs().into_iter().map(|dir| dir.join(name)))
         .find(|path| is_executable(path))
         .unwrap_or_else(|| PathBuf::from(name))
 }

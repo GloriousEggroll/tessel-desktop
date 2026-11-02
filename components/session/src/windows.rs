@@ -184,7 +184,7 @@ impl HelperWindows {
         let process = match gio::Subprocess::newv(&argv, flags) {
             Ok(process) => process,
             Err(_) => {
-                self.lost(session, "Tessel Dock's window helper could not start. Build or reinstall it.");
+                self.lost(session, "The dock's window helper could not start. Build or reinstall it.");
                 return;
             }
         };

@@ -3,6 +3,7 @@ name = "tessel-capture"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
+build = "build.rs"
 description = "Screenshot & Screen Recorder (tessel-capture, org.tessel.Capture): ScreenCast portal capture, HDR to SDR screenshots, FFmpeg recording, annotation editor."
 
 [lib]
@@ -34,3 +35,6 @@ harness = false
 
 [dev-dependencies]
 gio-unix = "0.22"
+
+[build-dependencies]
+cc.workspace = true
