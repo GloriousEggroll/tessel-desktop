@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "เวอร์ชันเดสก์ท็อป",
   "Details": "รายละเอียด",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "รายละเอียดอยู่ใน {path} ผู้ดูแลระบบสามารถติดตั้งอีกครั้งด้วย install_all.py --apply",
   "Details: %s": "รายละเอียด: %s",
   "Development build": "รุ่นพัฒนา",
   "Device": "อุปกรณ์",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "ดูโปรเซสเซอร์ หน่วยความจำ กราฟิก ความจุดิสก์ และเฟิร์มแวร์",
   "The name this computer uses on the network.": "ชื่อที่คอมพิวเตอร์เครื่องนี้ใช้บนเครือข่าย",
   "Copy every detail as plain text for bug reports and support requests.": "คัดลอกรายละเอียดทั้งหมดเป็นข้อความธรรมดาสำหรับรายงานข้อบกพร่องและคำขอความช่วยเหลือ",
-  "See running processes and how busy the processor, memory and disks are.": "ดูโปรเซสที่กำลังทำงานและภาระของโปรเซสเซอร์ หน่วยความจำ และดิสก์"
+  "See running processes and how busy the processor, memory and disks are.": "ดูโปรเซสที่กำลังทำงานและภาระของโปรเซสเซอร์ หน่วยความจำ และดิสก์",
+  "Details are in {path}. Your administrator can run the installation again.": "รายละเอียดอยู่ใน {path} ผู้ดูแลระบบสามารถเรียกใช้การติดตั้งอีกครั้งได้"
 }

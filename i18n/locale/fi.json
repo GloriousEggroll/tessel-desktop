@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Työpöydän versio",
   "Details": "Tiedot",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Tiedot ovat tiedostossa {path}. Ylläpitäjä voi suorittaa asennuksen uudelleen komennolla install_all.py --apply.",
   "Details: %s": "Tiedot: %s",
   "Development build": "Kehitysversio",
   "Device": "Laite",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Näytä suoritin, muisti, grafiikka, levytila ja laiteohjelmisto.",
   "The name this computer uses on the network.": "Nimi, jota tämä tietokone käyttää verkossa.",
   "Copy every detail as plain text for bug reports and support requests.": "Kopioi kaikki tiedot pelkkänä tekstinä vikailmoituksia ja tukipyyntöjä varten.",
-  "See running processes and how busy the processor, memory and disks are.": "Näytä käynnissä olevat prosessit sekä suorittimen, muistin ja levyjen kuormitus."
+  "See running processes and how busy the processor, memory and disks are.": "Näytä käynnissä olevat prosessit sekä suorittimen, muistin ja levyjen kuormitus.",
+  "Details are in {path}. Your administrator can run the installation again.": "Tiedot ovat tiedostossa {path}. Järjestelmänvalvoja voi suorittaa asennuksen uudelleen."
 }

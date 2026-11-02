@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Verze pracovního prostředí",
   "Details": "Podrobnosti",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Podrobnosti jsou v {path}. Správce může instalaci spustit znovu pomocí install_all.py --apply.",
   "Details: %s": "Podrobnosti: %s",
   "Development build": "Vývojové sestavení",
   "Device": "Zařízení",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Zobrazit procesor, paměť, grafiku, kapacitu disků a firmware.",
   "The name this computer uses on the network.": "Název, který tento počítač používá v síti.",
   "Copy every detail as plain text for bug reports and support requests.": "Zkopírovat všechny údaje jako prostý text pro hlášení chyb a žádosti o podporu.",
-  "See running processes and how busy the processor, memory and disks are.": "Zobrazit běžící procesy a vytížení procesoru, paměti a disků."
+  "See running processes and how busy the processor, memory and disks are.": "Zobrazit běžící procesy a vytížení procesoru, paměti a disků.",
+  "Details are in {path}. Your administrator can run the installation again.": "Podrobnosti jsou v {path}. Správce může instalaci spustit znovu."
 }

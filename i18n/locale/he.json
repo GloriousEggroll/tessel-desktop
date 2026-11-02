@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "גרסת שולחן העבודה",
   "Details": "פרטים",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "הפרטים נמצאים ב־{path}. מנהל המערכת יכול להריץ את ההתקנה שוב עם install_all.py --apply.",
   "Details: %s": "פרטים: %s",
   "Development build": "גרסת פיתוח",
   "Device": "התקן",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "הצגת המעבד, הזיכרון, הגרפיקה, נפח האחסון והקושחה.",
   "The name this computer uses on the network.": "השם שמחשב זה משתמש בו ברשת.",
   "Copy every detail as plain text for bug reports and support requests.": "העתקת כל הפרטים כטקסט פשוט לדיווחי תקלות ולבקשות תמיכה.",
-  "See running processes and how busy the processor, memory and disks are.": "הצגת התהליכים הפועלים ומידת העומס על המעבד, הזיכרון והכוננים."
+  "See running processes and how busy the processor, memory and disks are.": "הצגת התהליכים הפועלים ומידת העומס על המעבד, הזיכרון והכוננים.",
+  "Details are in {path}. Your administrator can run the installation again.": "הפרטים נמצאים ב־{path}. מנהל המערכת יכול להריץ את ההתקנה שוב."
 }

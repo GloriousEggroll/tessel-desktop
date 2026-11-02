@@ -649,7 +649,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Version du bureau",
   "Details": "Détails",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Les détails se trouvent dans {path}. Votre administrateur peut relancer l’installation avec install_all.py --apply.",
   "Details: %s": "Détails : %s",
   "Development build": "Version de développement",
   "Device": "Périphérique",
@@ -2242,5 +2241,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Voir le processeur, la mémoire, les graphismes, la capacité des disques et le micrologiciel.",
   "The name this computer uses on the network.": "Le nom que cet ordinateur utilise sur le réseau.",
   "Copy every detail as plain text for bug reports and support requests.": "Copier tous les détails en texte brut pour les rapports de bogue et les demandes d’assistance.",
-  "See running processes and how busy the processor, memory and disks are.": "Voir les processus en cours et la charge du processeur, de la mémoire et des disques."
+  "See running processes and how busy the processor, memory and disks are.": "Voir les processus en cours et la charge du processeur, de la mémoire et des disques.",
+  "Details are in {path}. Your administrator can run the installation again.": "Les détails se trouvent dans {path}. Votre administrateur peut relancer l’installation."
 }

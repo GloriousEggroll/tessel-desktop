@@ -644,7 +644,6 @@
   "Tessel": "Tessel",
   "Desktop version": "桌面版本",
   "Details": "详细信息",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "详细信息位于 {path}。管理员可以使用 install_all.py --apply 再次运行安装。",
   "Details: %s": "详细信息：%s",
   "Development build": "开发版本",
   "Device": "设备",
@@ -2089,5 +2088,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "查看处理器、内存、图形、磁盘容量和固件。",
   "The name this computer uses on the network.": "此计算机在网络上使用的名称。",
   "Copy every detail as plain text for bug reports and support requests.": "将所有详细信息复制为纯文本，用于错误报告和支持请求。",
-  "See running processes and how busy the processor, memory and disks are.": "查看正在运行的进程以及处理器、内存和磁盘的繁忙程度。"
+  "See running processes and how busy the processor, memory and disks are.": "查看正在运行的进程以及处理器、内存和磁盘的繁忙程度。",
+  "Details are in {path}. Your administrator can run the installation again.": "详细信息位于 {path}。管理员可以重新运行安装。"
 }

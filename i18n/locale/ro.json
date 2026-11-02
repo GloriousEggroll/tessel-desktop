@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Versiune desktop",
   "Details": "Detalii",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Detaliile sunt în {path}. Administratorul poate rula din nou instalarea cu install_all.py --apply.",
   "Details: %s": "Detalii: %s",
   "Development build": "Versiune de dezvoltare",
   "Device": "Dispozitiv",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Vedeți procesorul, memoria, grafica, capacitatea discului și firmware-ul.",
   "The name this computer uses on the network.": "Numele pe care acest calculator îl folosește în rețea.",
   "Copy every detail as plain text for bug reports and support requests.": "Copiați toate detaliile ca text simplu pentru rapoarte de erori și cereri de asistență.",
-  "See running processes and how busy the processor, memory and disks are.": "Vedeți procesele care rulează și cât de ocupate sunt procesorul, memoria și discurile."
+  "See running processes and how busy the processor, memory and disks are.": "Vedeți procesele care rulează și cât de ocupate sunt procesorul, memoria și discurile.",
+  "Details are in {path}. Your administrator can run the installation again.": "Detaliile sunt în {path}. Administratorul poate rula din nou instalarea."
 }

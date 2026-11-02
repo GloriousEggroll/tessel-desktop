@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Versi desktop",
   "Details": "Detail",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Detail ada di {path}. Administrator Anda dapat menjalankan pemasangan lagi dengan install_all.py --apply.",
   "Details: %s": "Detail: %s",
   "Development build": "Build pengembangan",
   "Device": "Perangkat",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Lihat prosesor, memori, grafis, kapasitas disk, dan firmware.",
   "The name this computer uses on the network.": "Nama yang digunakan komputer ini di jaringan.",
   "Copy every detail as plain text for bug reports and support requests.": "Salin semua detail sebagai teks biasa untuk laporan bug dan permintaan dukungan.",
-  "See running processes and how busy the processor, memory and disks are.": "Lihat proses yang berjalan dan seberapa sibuk prosesor, memori, dan disk."
+  "See running processes and how busy the processor, memory and disks are.": "Lihat proses yang berjalan dan seberapa sibuk prosesor, memori, dan disk.",
+  "Details are in {path}. Your administrator can run the installation again.": "Detail ada di {path}. Administrator Anda dapat menjalankan instalasi lagi."
 }

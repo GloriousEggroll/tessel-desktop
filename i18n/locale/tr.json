@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Masaüstü sürümü",
   "Details": "Ayrıntılar",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Ayrıntılar {path} içinde. Yöneticiniz kurulumu install_all.py --apply ile yeniden çalıştırabilir.",
   "Details: %s": "Ayrıntılar: %s",
   "Development build": "Geliştirme sürümü",
   "Device": "Aygıt",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "İşlemciyi, belleği, grafiği, disk kapasitesini ve donanım yazılımını görün.",
   "The name this computer uses on the network.": "Bu bilgisayarın ağda kullandığı ad.",
   "Copy every detail as plain text for bug reports and support requests.": "Hata raporları ve destek talepleri için tüm ayrıntıları düz metin olarak kopyalayın.",
-  "See running processes and how busy the processor, memory and disks are.": "Çalışan işlemleri ve işlemcinin, belleğin ve disklerin ne kadar meşgul olduğunu görün."
+  "See running processes and how busy the processor, memory and disks are.": "Çalışan işlemleri ve işlemcinin, belleğin ve disklerin ne kadar meşgul olduğunu görün.",
+  "Details are in {path}. Your administrator can run the installation again.": "Ayrıntılar {path} içinde. Yöneticiniz kurulumu yeniden çalıştırabilir."
 }

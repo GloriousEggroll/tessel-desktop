@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Έκδοση επιφάνειας εργασίας",
   "Details": "Λεπτομέρειες",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Λεπτομέρειες στο {path}. Ο διαχειριστής μπορεί να εκτελέσει ξανά την εγκατάσταση με install_all.py --apply.",
   "Details: %s": "Λεπτομέρειες: %s",
   "Development build": "Δοκιμαστική έκδοση",
   "Device": "Συσκευή",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Δείτε τον επεξεργαστή, τη μνήμη, τα γραφικά, τη χωρητικότητα δίσκων και το υλικολογισμικό.",
   "The name this computer uses on the network.": "Το όνομα που χρησιμοποιεί αυτός ο υπολογιστής στο δίκτυο.",
   "Copy every detail as plain text for bug reports and support requests.": "Αντιγραφή όλων των στοιχείων ως απλό κείμενο για αναφορές σφαλμάτων και αιτήματα υποστήριξης.",
-  "See running processes and how busy the processor, memory and disks are.": "Δείτε τις διεργασίες που εκτελούνται και πόσο απασχολημένοι είναι ο επεξεργαστής, η μνήμη και οι δίσκοι."
+  "See running processes and how busy the processor, memory and disks are.": "Δείτε τις διεργασίες που εκτελούνται και πόσο απασχολημένοι είναι ο επεξεργαστής, η μνήμη και οι δίσκοι.",
+  "Details are in {path}. Your administrator can run the installation again.": "Λεπτομέρειες στο {path}. Ο διαχειριστής σας μπορεί να εκτελέσει ξανά την εγκατάσταση."
 }

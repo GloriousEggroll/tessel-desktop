@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Версия рабочего стола",
   "Details": "Подробности",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Подробности в {path}. Администратор может повторить установку командой install_all.py --apply.",
   "Details: %s": "Подробности: %s",
   "Development build": "Сборка для разработки",
   "Device": "Устройство",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Процессор, память, графика, объём дисков и микропрограмма.",
   "The name this computer uses on the network.": "Имя, под которым этот компьютер виден в сети.",
   "Copy every detail as plain text for bug reports and support requests.": "Скопировать все сведения обычным текстом для отчётов об ошибках и обращений в поддержку.",
-  "See running processes and how busy the processor, memory and disks are.": "Запущенные процессы и загрузка процессора, памяти и дисков."
+  "See running processes and how busy the processor, memory and disks are.": "Запущенные процессы и загрузка процессора, памяти и дисков.",
+  "Details are in {path}. Your administrator can run the installation again.": "Подробности в {path}. Администратор может снова запустить установку."
 }

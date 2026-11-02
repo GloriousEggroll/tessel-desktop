@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Skrivbordsversion",
   "Details": "Detaljer",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Detaljer finns i {path}. Administratören kan köra installationen igen med install_all.py --apply.",
   "Details: %s": "Detaljer: %s",
   "Development build": "Utvecklingsversion",
   "Device": "Enhet",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Se processor, minne, grafik, diskkapacitet och fast programvara.",
   "The name this computer uses on the network.": "Namnet som den här datorn använder i nätverket.",
   "Copy every detail as plain text for bug reports and support requests.": "Kopiera alla uppgifter som ren text för felrapporter och supportärenden.",
-  "See running processes and how busy the processor, memory and disks are.": "Se processer som körs och hur belastade processorn, minnet och diskarna är."
+  "See running processes and how busy the processor, memory and disks are.": "Se processer som körs och hur belastade processorn, minnet och diskarna är.",
+  "Details are in {path}. Your administrator can run the installation again.": "Detaljer finns i {path}. Administratören kan köra installationen igen."
 }

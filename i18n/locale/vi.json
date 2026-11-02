@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Phiên bản màn hình nền",
   "Details": "Chi tiết",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "Chi tiết có trong {path}. Quản trị viên có thể chạy lại cài đặt bằng install_all.py --apply.",
   "Details: %s": "Chi tiết: %s",
   "Development build": "Bản dựng phát triển",
   "Device": "Thiết bị",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "Xem bộ xử lý, bộ nhớ, đồ họa, dung lượng ổ đĩa và phần sụn.",
   "The name this computer uses on the network.": "Tên mà máy tính này dùng trên mạng.",
   "Copy every detail as plain text for bug reports and support requests.": "Sao chép mọi thông tin dưới dạng văn bản thuần để báo lỗi và yêu cầu hỗ trợ.",
-  "See running processes and how busy the processor, memory and disks are.": "Xem các tiến trình đang chạy và mức bận của bộ xử lý, bộ nhớ và ổ đĩa."
+  "See running processes and how busy the processor, memory and disks are.": "Xem các tiến trình đang chạy và mức bận của bộ xử lý, bộ nhớ và ổ đĩa.",
+  "Details are in {path}. Your administrator can run the installation again.": "Chi tiết có trong {path}. Quản trị viên có thể chạy lại quá trình cài đặt."
 }

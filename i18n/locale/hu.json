@@ -462,7 +462,6 @@
   "Tessel": "Tessel",
   "Desktop version": "Asztali környezet verziója",
   "Details": "Részletek",
-  "Details are in {path}. Your administrator can run the installation again with install_all.py --apply.": "A részletek itt találhatók: {path}. A rendszergazda újra futtathatja a telepítést az install_all.py --apply paranccsal.",
   "Details: %s": "Részletek: %s",
   "Development build": "Fejlesztői változat",
   "Device": "Eszköz",
@@ -1907,5 +1906,6 @@
   "See the processor, memory, graphics, disk capacity and firmware.": "A processzor, a memória, a grafika, a lemezkapacitás és a firmware megtekintése.",
   "The name this computer uses on the network.": "A számítógép neve a hálózaton.",
   "Copy every detail as plain text for bug reports and support requests.": "Minden adat másolása egyszerű szövegként hibajelentésekhez és támogatási kérésekhez.",
-  "See running processes and how busy the processor, memory and disks are.": "A futó folyamatok, valamint a processzor, a memória és a lemezek terhelésének megtekintése."
+  "See running processes and how busy the processor, memory and disks are.": "A futó folyamatok, valamint a processzor, a memória és a lemezek terhelésének megtekintése.",
+  "Details are in {path}. Your administrator can run the installation again.": "A részletek itt találhatók: {path}. A rendszergazda újra lefuttathatja a telepítést."
 }
