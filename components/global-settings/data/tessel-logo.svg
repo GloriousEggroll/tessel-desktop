@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Tessel</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4b3a9c"/>
+      <stop offset=".55" stop-color="#b14a8e"/>
+      <stop offset="1" stop-color="#f3925f"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".18"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#sheen)"/>
+  <g transform="translate(128 128) scale(1.12) translate(-128 -128)">
+    <polygon points="132.98,119.38 132.98,62.62 182.13,91.00" opacity="1.0" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="146.95,128.00 196.11,99.62 196.11,156.38" opacity="0.86" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="132.98,136.62 182.13,165.00 132.98,193.38" opacity="0.72" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="123.02,136.62 123.02,193.38 73.87,165.00" opacity="0.58" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="118.05,128.00 68.89,156.38 68.89,99.62" opacity="0.72" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="123.02,119.38 73.87,91.00 123.02,62.62" opacity="0.86" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+  </g>
+</svg>
