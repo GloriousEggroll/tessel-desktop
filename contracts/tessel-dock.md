@@ -27,7 +27,7 @@ user-facing spec for behaviour and must stay true.
 | Readiness | sd_notify `READY=1\nSTATUS=Dock and system tray ready` over `$NOTIFY_SOCKET` (abstract `@` supported) **only after** startup complete AND tray backend `ready` AND `host_registered`; sent once | service_readiness.py; tessel-dock.py:166-169 |
 | Signals | SIGTERM/SIGINT → `app.quit()` (orderly shutdown closes helpers, restores previews) | tessel-dock.py:180-181,805-856 |
 
-### CLI (`Gtk.Application`, id `org.tessel.Tessel Dock`, `HANDLES_COMMAND_LINE`) — tessel-dock.py:298-367
+### CLI (`Gtk.Application`, id `org.tessel.Dock`, `HANDLES_COMMAND_LINE`) — tessel-dock.py:298-367
 Second invocations forward argv to the primary via `org.gtk.Application.CommandLine`. If argv contains any of
 `--check --quit --menu --menu-hotkey --toggle-desktop --desktop-status`, the app gets `IS_LAUNCHER` so it
 **never starts a dock** when none is running (tessel-dock.py:1561-1566; test_dock_ui `menu_launcher_does_not_start_a_stopped_dock`).
@@ -54,8 +54,8 @@ Other scripts with CLIs (installed into source tree only, not runtime): `install
 
 ## 2. D-Bus — owned (session bus)
 
-### 2.1 `org.tessel.Tessel Dock` (GApplication unique name)
-GApplication exports at `/org/tessel/Tessel Dock`: `org.gtk.Application` (Activate/Open/CommandLine — used by CLI
+### 2.1 `org.tessel.Dock` (GApplication unique name)
+GApplication exports at `/org/tessel/Dock`: `org.gtk.Application` (Activate/Open/CommandLine — used by CLI
 forwarding), `org.gtk.Actions` with app actions:
 - `prepare-capture` (param `b` recording) — releases/keeps the Screen-Record preset popover's grab (panel_ui.py:116-152). Called by tessel-capture/capture_popups.py:4-25 via `org.gtk.Actions.Activate (sava{sv})`.
 - `finish-screenshot` (no param) — restores popover autohide.

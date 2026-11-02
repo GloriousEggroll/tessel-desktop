@@ -75,7 +75,7 @@ Tessel Shell owns four things:
 | prompt | `org.tessel.Prompt` | `NON_UNIQUE` (wayshell_prompt.py:247) |
 | capture picker | `org.tessel.CapturePicker` | `NON_UNIQUE` (capture_picker.py:49) |
 
-- `tessel-login/session_transition.py:39` waits for the bus names `org.tessel.Tessel Dock` **and
+- `tessel-login/session_transition.py:39` waits for the bus names `org.tessel.Dock` **and
   `com.nobaraDesktopView`** before it fades out the login transition.
   **The Rust daemon must own `com.nobaraDesktopView` on the session bus** (zbus `request_name` is enough).
 - `CLI_XML` (`com.nobaraDesktopView.CLI`: ListMonitors/Set/ApplyJSON, tessel-shell:3822) is **defined but never
@@ -144,7 +144,7 @@ exits 1. Errors print `Tessel Shell: <err>` to stderr and exit 1.
 ### 2.3 D-Bus consumed
 | Peer | Usage |
 |---|---|
-| `org.tessel.Tessel Dock` `/org/tessel/Settings` `org.tessel.Settings` | `GetWorkareas() → s` (2000 ms, NO_AUTO_START). Signal `WorkareasChanged(s)`. Proxy flags DO_NOT_AUTO_START and DO_NOT_LOAD_PROPERTIES. The client tracks `g-name-owner`; on owner loss all areas are cleared. It accepts only signals whose sender is the current owner. A live signal bumps the serial so it beats an in-flight reply (desktop_workarea.py). Payload JSON: `{"version":1,"monitors":[{"name":str,"geometry":[x,y,w,h],"workarea":[x,y,w,h]}]}`. It is rejected if: >64 KiB, version≠1, >128 monitors, duplicate or empty names, non-int values or abs>2^30, w/h≤0, or a workarea outside the geometry. |
+| `org.tessel.Dock` `/org/tessel/Settings` `org.tessel.Settings` | `GetWorkareas() → s` (2000 ms, NO_AUTO_START). Signal `WorkareasChanged(s)`. Proxy flags DO_NOT_AUTO_START and DO_NOT_LOAD_PROPERTIES. The client tracks `g-name-owner`; on owner loss all areas are cleared. It accepts only signals whose sender is the current owner. A live signal bumps the serial so it beats an in-flight reply (desktop_workarea.py). Payload JSON: `{"version":1,"monitors":[{"name":str,"geometry":[x,y,w,h],"workarea":[x,y,w,h]}]}`. It is rejected if: >64 KiB, version≠1, >128 monitors, duplicate or empty names, non-int values or abs>2^30, w/h≤0, or a workarea outside the geometry. |
 | `org.freedesktop.Notifications` | `Notify(susssasa{sv}i)`: app_name=`tr("Desktop")`, id 0, icon `dialog-error-symbolic`, hints `{"urgency": byte 1}`, timeout 8000. Async; failures are only logged (desktop_file_ops.py:365). |
 | `org.tessel.CaptureSelection` at the *requesting app's unique name* (`:N.M` derived from the session path) | capture picker: `Select(o session, as tokens) → (b handled, s token)` (1200 ms) and `Selected(o session, as outputs)` (1000 ms), both NO_AUTO_START. The session must match `^/org/freedesktop/portal/desktop/session/(\d+(?:_\d+)+)/capture_[a-f0-9]+$`, and the owner is `':' + group1.replace('_','.')` (shared/capture_selection.py:58-86). The server side (`SelectionBroker`) is owned by tessel-capture or tessel-dock and is not part of tessel-shell. |
 | PipeWire / WirePlumber (`Wp` 0.5) | `shared/application_audio.py`: per-app mute buttons on switcher and overview cards. |

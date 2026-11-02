@@ -1,6 +1,6 @@
 //! Owned D-Bus surfaces (W-c; contract §2, §3).
 //!
-//! - `settings_api` — `org.tessel.Settings` at `/org/tessel/Settings` (settings_api.py),
+//! - `settings_api` — `org.tessel.Dock.Settings` at `/org/tessel/Dock/Settings` (settings_api.py),
 //!   driven through the `SettingsHost` trait the application implements.
 //! - `sni`          — StatusNotifier watcher + host backend (status_tray.py `StatusTrayBackend`).
 //! - `dbusmenu`     — `com.canonical.dbusmenu` client → `gio::Menu` + `gio::SimpleActionGroup`

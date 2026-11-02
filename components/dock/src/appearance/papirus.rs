@@ -335,7 +335,7 @@ impl Mirrors {
         let data_dirs = data_dirs.unwrap_or_else(|| std::env::var("XDG_DATA_DIRS").unwrap_or_else(|_| "/usr/local/share:/usr/share".into())
             .split(':').filter(|p| !p.is_empty()).map(PathBuf::from).collect());
         Self {
-            icons: data_home.join("icons"), private: data_home.join("tessel-dock").join("papirus-icons"),
+            icons: data_home.join("icons"), private: data_home.join(tessel_core::paths::SUITE).join("dock").join("papirus-icons"),
             home, data_home, data_dirs,
             find_program: Box::new(|name| tessel_core::shell::which(name).map(|p| p.to_string_lossy().into_owned())),
             runner: Box::new(ProcessRunner),

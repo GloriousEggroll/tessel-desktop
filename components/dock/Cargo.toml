@@ -3,7 +3,7 @@ name = "tessel-dock"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Tessel Dock: dock/panel, application menu, StatusNotifier tray, indicators and appearance publishers (port of tessel-bluetooth/tessel-dock)."
+description = "Tessel's dock/panel: application menu, StatusNotifier tray, indicators and appearance publishers."
 
 [lib]
 name = "tessel_dock"
@@ -12,6 +12,16 @@ path = "src/lib.rs"
 [[bin]]
 name = "tessel-dock"
 path = "src/main.rs"
+
+# Runs one application inside the unit the dock starts for it.
+[[bin]]
+name = "tessel-dock-launch"
+path = "src/bin/tessel-dock-launch.rs"
+
+# The Caps Lock status stream.
+[[bin]]
+name = "tessel-capslock-status"
+path = "src/bin/tessel-capslock-status.rs"
 
 [dependencies]
 tessel-core.workspace = true

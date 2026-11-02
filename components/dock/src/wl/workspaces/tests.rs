@@ -131,25 +131,6 @@ fn natural_names_compare_numbers_by_value_and_text_casefolded() {
 }
 
 #[test]
-fn natural_name_matches_python() {
-    // Same order as Python's sorted(key=natural_name) on these names.
-    let names = ["10", "9", "ß", "SS", "a01", "a1", "a", "١٢", "x٣y", "Z", "z2", "z10"];
-    let python = std::process::Command::new("python3").arg("-I").arg("-c").arg(format!(
-        "import sys,json,re; sys.path.insert(0,'{}/tessel-bluetooth/tessel-dock')\n\
-         from workspace_backend import natural_name\n\
-         print(json.dumps(sorted({:?}, key=natural_name)))",
-        std::env::var("HOME").unwrap(), names)).output();
-    let Ok(output) = python else { return };
-    if !output.status.success() {
-        return; // PyGObject missing: the import needs gi
-    }
-    let expected: Vec<String> = serde_json::from_slice(&output.stdout).unwrap();
-    let mut ours: Vec<&str> = names.to_vec();
-    ours.sort_by_key(|v| natural_name(v));
-    assert_eq!(ours, expected);
-}
-
-#[test]
 fn disabled_hidden_and_stale_actions_are_never_sent() {
     let h = harness();
     h.backend.start();
@@ -298,7 +279,7 @@ fn startup_timeout_and_not_started_messages() {
     assert_eq!(h.backend.error(), "The compositor did not provide workspace information.");
     assert!(fire_delay(&h.scheduler, 1000));
     h.connector.complete(Startup::NotStarted);
-    assert_eq!(h.backend.error(), "Tessel Dock's workspace helper could not start. Build or reinstall it.");
+    assert_eq!(h.backend.error(), "The dock's workspace helper could not start. Build or reinstall it.");
 }
 
 #[test]

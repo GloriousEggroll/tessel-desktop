@@ -183,7 +183,7 @@ background-color: transparent; border: none; box-shadow: none; }}"));
         let activities = rgba(background, 0.40);
         let slider = rgba(foreground, 0.3);
         css += &format!("
-window{root}.tessel_shell-switcher {{ background-image: none; background-color: transparent;
+window{root}.tessel-shell-switcher {{ background-image: none; background-color: transparent;
     border: none; box-shadow: none; color: {fg}; }}
 {root} .switcher-surface {{ {material} border-radius: {radius}px;
     color: {fg}; border-color: {line}; }}

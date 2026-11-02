@@ -236,13 +236,13 @@ pub fn background_css(is_dark: bool, style: &PanelStyle) -> Result<String, Strin
 {panel} button:active {{ background-color: rgba({accent}, 0.24); }}
 {panel} button.focused {{ background-color: rgba({accent}, 0.16); }}
 {panel} button:focus-visible, {panel} entry:focus-within {{ outline-color: rgb({accent}); }}
-{panel} .tessel_dock-indicator.focused {{ background-color: rgb({accent}); }}
-{panel} button.tessel_dock-workspace {{ border-radius: {inner}px; }}
-{panel} button.tessel_dock-workspace.active {{
+{panel} .tessel-dock-indicator.focused {{ background-color: rgb({accent}); }}
+{panel} button.tessel-dock-workspace {{ border-radius: {inner}px; }}
+{panel} button.tessel-dock-workspace.active {{
     background-color: rgba({accent}, 0.38); box-shadow: inset 0 0 0 1px rgba({accent}, 0.70);
     font-weight: 700;
 }}
-{panel} button.tessel_dock-workspace.active:not(.urgent) {{ color: rgb({foreground}); }}
+{panel} button.tessel-dock-workspace.active:not(.urgent) {{ color: rgb({foreground}); }}
 {status} {{ color: rgb({accent}); }}
 "))
 }
@@ -273,14 +273,14 @@ pub fn popup_css(scope: &str, is_dark: bool, wallpaper: Option<Rgb>, transparenc
         corners += &format!("\n{controls} {{ border-radius: 9999px; }}");
     }
     Ok(format!("
-popover.{scope}.tessel_dock-context-menu {{ background-image: none; background-color: transparent; box-shadow: none; }}
+popover.{scope}.tessel-dock-context-menu {{ background-image: none; background-color: transparent; box-shadow: none; }}
 {popup}, {menu} {{
     {material} border-radius: {radius}px;
     color: rgb({foreground}); border-color: rgba({foreground}, 0.14);
 }}
 {popup} button, {popup} flowbox, {popup} list, {popup} row,
 {menu} button {{ color: rgb({foreground}); }}
-{popup} .tessel_dock-subtitle {{ color: rgba({foreground}, 0.65); }}
+{popup} .tessel-dock-subtitle {{ color: rgba({foreground}, 0.65); }}
 {popup} button:hover, {popup} flowboxchild:hover, {popup} row:hover,
 {menu} button:hover {{ background-color: rgba({foreground}, 0.09); }}
 {popup} button.focused, {popup} flowboxchild:selected, {popup} row:selected,
@@ -288,13 +288,13 @@ popover.{scope}.tessel_dock-context-menu {{ background-image: none; background-c
 {popup} button:active, {menu} button:active {{ background-color: rgba({accent}, 0.24); }}
 {popup} flowboxchild:focus, {popup} button:focus-visible, {popup} row:focus-visible,
 {menu} button:focus-visible {{ outline-color: rgb({accent}); }}
-{popup} .tessel_dock-indicator.focused {{ background-color: rgb({accent}); }}
-{popup} .tessel_dock-app-menu-header {{ border-bottom-color: rgba({foreground}, 0.10); }}
+{popup} .tessel-dock-indicator.focused {{ background-color: rgb({accent}); }}
+{popup} .tessel-dock-app-menu-header {{ border-bottom-color: rgba({foreground}, 0.10); }}
 {popup} separator {{ background-color: rgba({foreground}, 0.10); }}
-{popup} button.tessel_dock-app-pin {{ color: rgba({foreground}, 0.65); }}
-{popup} button.tessel_dock-app-pin.pinned {{ color: rgb({accent}); }}
-{popup} button.tessel_dock-app-pin:hover {{ color: rgb({foreground}); }}
-{popup} button.tessel_dock-app-menu-settings {{ background-color: rgba({foreground}, 0.05); }}
+{popup} button.tessel-dock-app-pin {{ color: rgba({foreground}, 0.65); }}
+{popup} button.tessel-dock-app-pin.pinned {{ color: rgb({accent}); }}
+{popup} button.tessel-dock-app-pin:hover {{ color: rgb({foreground}); }}
+{popup} button.tessel-dock-app-menu-settings {{ background-color: rgba({foreground}, 0.05); }}
 {popup} entry {{
     background-image: none; background-color: mix(rgba({background}, {alpha:.3}), rgba({foreground}, {alpha:.3}), 0.07);
     color: rgb({foreground}); border-color: rgba({foreground}, 0.14);

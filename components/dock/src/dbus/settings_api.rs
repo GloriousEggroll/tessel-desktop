@@ -1,11 +1,11 @@
 //! settings_api.py: validated settings access for Global Settings without
-//! launching another dock — `org.tessel.Settings` at `/org/tessel/Settings`
-//! on the application's connection (the app owns `org.tessel.Tessel Dock`).
+//! launching another dock — `org.tessel.Dock.Settings` at `/org/tessel/Dock/Settings`
+//! on the application's connection (the app owns `org.tessel.Dock`).
 //!
 //! Methods: `Read() -> s`, `Apply(s) -> s`, `Preview(s)`, `Restore()`,
 //! `GetWorkareas() -> s`, `GetPopupPlacement(ss) -> s`, `GetTrayApps() -> s`,
 //! signal `WorkareasChanged(s)` (idle-coalesced, only when the payload
-//! changes). Errors: `org.tessel.Settings.Error` with Python's messages. The
+//! changes). Errors: `org.tessel.Dock.Settings.Error` with Python's messages. The
 //! preview is restored when its owner's unique name vanishes and on close.
 //!
 //! API: implement [`SettingsHost`] in the application, then
@@ -26,10 +26,10 @@ use std::collections::BTreeSet;
 use std::rc::{Rc, Weak};
 use tessel_core::pyfmt::{json_dumps, JsonStyle};
 
-pub const BUS_NAME: &str = "org.tessel.Tessel Dock";
-pub const OBJECT_PATH: &str = "/org/tessel/Settings";
-pub const INTERFACE: &str = "org.tessel.Settings";
-pub const ERROR: &str = "org.tessel.Settings.Error";
+pub const BUS_NAME: &str = "org.tessel.Dock";
+pub const OBJECT_PATH: &str = "/org/tessel/Dock/Settings";
+pub const INTERFACE: &str = "org.tessel.Dock.Settings";
+pub const ERROR: &str = "org.tessel.Dock.Settings.Error";
 
 pub const APPEARANCE_FIELDS: &[&str] = &["transparency", "transparency_enabled", "frosted", "frost_strength", "match_wallpaper",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
@@ -46,7 +46,7 @@ pub const LAYOUT_FIELDS: &[&str] = &["edge", "alignment", "hide_delay_ms", "reve
 const PREVIEW_REQUIRED: &[&str] = &["transparency", "match_wallpaper", "rounded_corners", "float_mode"];
 const PREVIEW_OPTIONAL: &[&str] = &["transparency_enabled", "frosted", "frost_strength"];
 
-pub const XML: &str = r#"<node><interface name="org.tessel.Settings">
+pub const XML: &str = r#"<node><interface name="org.tessel.Dock.Settings">
 <method name="Read"><arg type="s" direction="out"/></method>
 <method name="Apply"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 <method name="Preview"><arg type="s" direction="in"/></method>

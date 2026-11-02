@@ -636,20 +636,20 @@ mod tests {
     #[test]
     fn argparse_error_text_is_python_text() {
         std::env::remove_var("COLUMNS");
-        let top = "usage: tessel-shell\n                {list-monitors,switch-window,show-activities,switcher-status,set,set-color,apply-json} ...\n";
-        let set = "usage: tessel-shell set [-h] --monitor MONITOR [--file FILE]\n                    [--mode {Fill,Fit,Stretch,Center,Tile,Color Only}]\n                    [--color COLOR]\n";
+        let top = "usage: tessel-shell\n                    {list-monitors,switch-window,show-activities,switcher-status,set,set-color,apply-json} ...\n";
+        let set = "usage: tessel-shell set [-h] --monitor MONITOR [--file FILE]\n                        [--mode {Fill,Fit,Stretch,Center,Tile,Color Only}]\n                        [--color COLOR]\n";
         let cases: Vec<(&[&str], String)> = vec![
             (&["bogus"], format!("{top}tessel-shell: error: argument cmd: invalid choice: 'bogus' (choose from 'list-monitors', 'switch-window', 'show-activities', 'switcher-status', 'set', 'set-color', 'apply-json')\n")),
             (&["set"], format!("{set}tessel-shell set: error: the following arguments are required: --monitor/-m\n")),
             (&["set", "-m"], format!("{set}tessel-shell set: error: argument --monitor/-m: expected one argument\n")),
             (&["set", "-m", "X", "--mode", "Bad"], format!("{set}tessel-shell set: error: argument --mode: invalid choice: 'Bad' (choose from 'Fill', 'Fit', 'Stretch', 'Center', 'Tile', 'Color Only')\n")),
-            (&["switch-window", "--reverse=1"], "usage: tessel-shell switch-window [-h] [--reverse]\nwayshell switch-window: error: argument --reverse: ignored explicit argument '1'\n".into()),
+            (&["switch-window", "--reverse=1"], "usage: tessel-shell switch-window [-h] [--reverse]\ntessel-shell switch-window: error: argument --reverse: ignored explicit argument '1'\n".into()),
             (&["list-monitors", "x"], format!("{top}tessel-shell: error: unrecognized arguments: x\n")),
-            (&["apply-json"], "usage: tessel-shell apply-json [-h] json_path\nwayshell apply-json: error: the following arguments are required: json_path\n".into()),
+            (&["apply-json"], "usage: tessel-shell apply-json [-h] json_path\ntessel-shell apply-json: error: the following arguments are required: json_path\n".into()),
             (&["set", "--m", "A"], format!("{set}tessel-shell set: error: ambiguous option: --m could match --monitor, --mode\n")),
             (&["--x"], format!("{top}tessel-shell: error: unrecognized arguments: --x\n")),
-            (&["set-color", "-m", "A"], "usage: tessel-shell set-color [-h] --monitor MONITOR --color COLOR\n                          [--mode {Color Only,Fill,Fit,Stretch,Center,Tile}]\nwayshell set-color: error: the following arguments are required: --color/-c\n".into()),
-            (&["show-activities", "--monitor"], "usage: tessel-shell show-activities [-h] [--monitor MONITOR]\nwayshell show-activities: error: argument --monitor: expected one argument\n".into()),
+            (&["set-color", "-m", "A"], "usage: tessel-shell set-color [-h] --monitor MONITOR --color COLOR\n                              [--mode {Color Only,Fill,Fit,Stretch,Center,Tile}]\ntessel-shell set-color: error: the following arguments are required: --color/-c\n".into()),
+            (&["show-activities", "--monitor"], "usage: tessel-shell show-activities [-h] [--monitor MONITOR]\ntessel-shell show-activities: error: argument --monitor: expected one argument\n".into()),
             (&["set", "-m", "A", "--", "x"], format!("{top}tessel-shell: error: unrecognized arguments: -- x\n")),
             (&["switch-window", "-r"], format!("{top}tessel-shell: error: unrecognized arguments: -r\n")),
         ];

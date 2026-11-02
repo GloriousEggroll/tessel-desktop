@@ -3,7 +3,7 @@
 # own XDG_RUNTIME_DIR, own D-Bus session, private XDG dirs, no input devices.
 # Never touches the live session. Usage: headless.sh <outputs> <command...>
 set -eu
-R=/run/user/1000/cbt/rust-ws-prompt/n
+R=/run/user/1000/cbt/rust-${AGENT:-ws-prompt}/n
 OUTPUTS=$1; shift
 mkdir -p "$R/rt" "$R/cfg" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.

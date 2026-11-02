@@ -155,7 +155,7 @@ fn test_plan_is_read_only_and_has_no_services() {
     let launcher = files.iter().find(|f| f.path == home.join(".local/bin/tessel-prompt")).unwrap();
     assert_eq!(launcher.mode, 0o755);
     assert_eq!(String::from_utf8(launcher.data.clone()).unwrap(),
-               format!("#!/bin/sh\nexec {} \"$@\"\n", home.join(".local/share/tessel-shell/tessel-prompt").display()));
+               format!("#!/bin/sh\nexec {} \"$@\"\n", home.join(".local/lib/tessel/tessel-prompt").display()));
     assert_eq!(install::pending(&files).len(), 3);
     std::fs::remove_dir_all(&home).unwrap();
 }

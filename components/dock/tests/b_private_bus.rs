@@ -1,6 +1,6 @@
 //! W-c D-Bus tests on a PRIVATE bus (gio::TestDBus; also exported as the
 //! "system" bus): StatusNotifier watcher/host (test_status_tray BusTests),
-//! DBusMenu model (TrayUITests, model side), org.tessel.Settings
+//! DBusMenu model (TrayUITests, model side), org.tessel.Dock.Settings
 //! (test_settings_api / test_workareas bus tests), capture status, readiness
 //! and the real StatusBackend services. Never touches the desktop session.
 
@@ -505,7 +505,7 @@ fn dbusmenu_shortcuts_clicks_and_retired_callbacks(address: &str) {
 }
 
 // ---------------------------------------------------------------------------
-// org.tessel.Settings
+// org.tessel.Dock.Settings
 
 #[derive(Default)]
 struct FakeHost {
@@ -573,7 +573,7 @@ fn settings_read_apply_preview_and_disconnect_restore(address: &str) {
     settings_call(&client, "Apply", Some(json!({"changes": {"mode": "bar"}, "expected": {"mode": "dock"}}))).unwrap();
     // Errors carry the Settings error domain and Python's text.
     let error = settings_call(&client, "Apply", Some(json!({"changes": {"transparency": 1}, "expected": {"transparency": 99}}))).unwrap_err();
-    check!(gio::DBusError::remote_error(&error).as_deref() == Some("org.tessel.Settings.Error"));
+    check!(gio::DBusError::remote_error(&error).as_deref() == Some("org.tessel.Dock.Settings.Error"));
     check!(error.message().ends_with("Dock settings changed elsewhere. Reset this page before applying again."));
     let error = call(&client, BUS_NAME, OBJECT_PATH, INTERFACE, "Apply", Some(("not json",).to_variant())).unwrap_err();
     check!(error.message().ends_with("Expecting value: line 1 column 1 (char 0)"));
@@ -731,7 +731,7 @@ fn status_backend_real_services_on_private_bus() {
     let errors: Rc<RefCell<Vec<String>>> = Rc::default();
     let seen = errors.clone();
     let backend = StatusBackend::new(|| {}, Some(Box::new(move |error: &str| seen.borrow_mut().push(error.into()))),
-        StatusOptions { scripts: "/nonexistent".into(), job_factory: factory, scheduler: Rc::new(tessel_core::scheduler::GlibScheduler::default()),
+        StatusOptions { program: std::rc::Rc::new(|name| std::path::Path::new("/nonexistent").join(name)), job_factory: factory, scheduler: Rc::new(tessel_core::scheduler::GlibScheduler::default()),
                         services: Services::real(), on_show_desktop: None });
     backend.start();
     let tooltip = |name: &str| backend.get(name).unwrap()["tooltip"].as_str().unwrap().to_owned();

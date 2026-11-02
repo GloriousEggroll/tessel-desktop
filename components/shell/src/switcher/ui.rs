@@ -12,67 +12,67 @@ use std::rc::{Rc, Weak};
 use tessel_core::tr;
 
 pub const STYLE: &str = r#"
-window.tessel_shell-switcher, window.tessel_shell-switcher-backdrop {
+window.tessel-shell-switcher, window.tessel-shell-switcher-backdrop {
     background-image: none; background-color: transparent; box-shadow: none;
     border: none; border-radius: 0;
 }
-.tessel_shell-switcher .switcher-surface {
+.tessel-shell-switcher .switcher-surface {
     background-color: @theme_bg_color; color: @theme_fg_color;
     border: 1px solid alpha(@theme_fg_color, .14); border-radius: 12px; padding: 20px;
 }
-.tessel_shell-switcher .switcher-heading { font-size: 13pt; font-weight: 700; }
-.tessel_shell-switcher .switcher-count, .tessel_shell-switcher .switcher-hint {
+.tessel-shell-switcher .switcher-heading { font-size: 13pt; font-weight: 700; }
+.tessel-shell-switcher .switcher-count, .tessel-shell-switcher .switcher-hint {
     color: alpha(@theme_fg_color, .62); font-size: 9pt;
 }
-.tessel_shell-switcher .switcher-grid { background: transparent; padding: 0; }
-.tessel_shell-switcher .switcher-grid > flowboxchild { padding: 0; margin: 0; }
-.tessel_shell-switcher button.switcher-card {
+.tessel-shell-switcher .switcher-grid { background: transparent; padding: 0; }
+.tessel-shell-switcher .switcher-grid > flowboxchild { padding: 0; margin: 0; }
+.tessel-shell-switcher button.switcher-card {
     background-image: none; background-color: alpha(@theme_fg_color, .045);
     color: @theme_fg_color; border: 2px solid transparent; border-radius: 12px;
     padding: 10px 8px; box-shadow: none; text-shadow: none; outline: none;
     transition: none;
 }
-.tessel_shell-switcher button.switcher-card:hover {
+.tessel-shell-switcher button.switcher-card:hover {
     background-color: alpha(@theme_fg_color, .10);
 }
-.tessel_shell-switcher button.switcher-card.selected {
+.tessel-shell-switcher button.switcher-card.selected {
     background-color: alpha(@theme_selected_bg_color, .20);
     border-color: @theme_selected_bg_color;
 }
-.tessel_shell-switcher button.switcher-card-close {
+.tessel-shell-switcher button.switcher-card-close {
     min-width: 20px; min-height: 20px; padding: 1px; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, .12); box-shadow: none;
     background-image: none; background-color: alpha(@theme_fg_color, .05);
     color: @theme_fg_color;
 }
-.tessel_shell-switcher button.switcher-card-close:hover {
+.tessel-shell-switcher button.switcher-card-close:hover {
     background-color: alpha(@theme_fg_color, .14);
 }
 /* Card actions appear only for the card under the pointer or the selected card. */
-.tessel_shell-switcher .switcher-tile button.switcher-card-close { opacity: 0; }
-.tessel_shell-switcher .switcher-tile:hover button.switcher-card-close,
-.tessel_shell-switcher .switcher-tile.selected button.switcher-card-close { opacity: 1; }
-.tessel_shell-switcher .switcher-name { font-size: 10pt; font-weight: 600; }
-.tessel_shell-switcher .switcher-title { color: alpha(@theme_fg_color, .68); font-size: 9pt; }
-.tessel_shell-switcher .switcher-card.minimized image { opacity: .65; }
-.tessel_shell-switcher scrolledwindow { background-color: transparent; border: none; }
-.tessel_shell-switcher scrolledwindow scrollbar {
+.tessel-shell-switcher .switcher-tile button.switcher-card-close { opacity: 0; }
+.tessel-shell-switcher .switcher-tile:hover button.switcher-card-close,
+.tessel-shell-switcher .switcher-tile.selected button.switcher-card-close { opacity: 1; }
+.tessel-shell-switcher .switcher-name { font-size: 10pt; font-weight: 600; }
+.tessel-shell-switcher .switcher-title { color: alpha(@theme_fg_color, .68); font-size: 9pt; }
+.tessel-shell-switcher .switcher-card.minimized image { opacity: .65; }
+.tessel-shell-switcher scrolledwindow { background-color: transparent; border: none; }
+.tessel-shell-switcher scrolledwindow scrollbar {
     min-width: 8px; min-height: 8px; opacity: 1; background: transparent;
 }
-.tessel_shell-switcher scrolledwindow scrollbar slider {
+.tessel-shell-switcher scrolledwindow scrollbar slider {
     min-width: 6px; min-height: 32px; border-radius: 6px;
     background-color: alpha(@theme_fg_color, .25);
 }
-.tessel_shell-switcher scrollbar slider { min-width: 6px; min-height: 6px; border: none; padding: 0; margin: 0; }
-window.tessel_shell-switcher.activities { background-color: @theme_bg_color; }
-.tessel_shell-switcher.activities .switcher-surface {
+.tessel-shell-switcher scrollbar slider { min-width: 6px; min-height: 6px; border: none; padding: 0; margin: 0; }
+window.tessel-shell-switcher.activities { background-color: @theme_bg_color; }
+.tessel-shell-switcher.activities .switcher-surface {
     background-image: none; background-color: alpha(@theme_bg_color, .40);
     border: none; border-radius: 0; padding: 40px;
 }
-.tessel_shell-switcher.activities .switcher-grid { padding: 10px; }
-.tessel_shell-switcher.activities button.switcher-card { padding: 30px 10px 12px; }
-.tessel_shell-switcher.activities .switcher-heading { font-size: 18pt; }
-.tessel_shell-switcher .window-preview { background: alpha(@theme_fg_color, .025); border-radius: 8px; }
+.tessel-shell-switcher.activities .switcher-grid { padding: 10px; }
+.tessel-shell-switcher.activities button.switcher-card { padding: 30px 10px 12px; }
+.tessel-shell-switcher.activities .switcher-heading { font-size: 18pt; }
+.tessel-shell-switcher .window-preview { background: alpha(@theme_fg_color, .025); border-radius: 8px; }
 "#;
 
 #[derive(Clone, Debug, Default, PartialEq)]

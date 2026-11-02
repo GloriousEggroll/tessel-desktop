@@ -292,7 +292,6 @@ pub fn decode_utf8(bytes: &[u8]) -> Result<&str, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::testutil::{python, TempDir};
 
     #[test]
     fn values_follow_python_rules() {
@@ -301,51 +300,5 @@ mod tests {
         assert_eq!(loads("{\"a\": 1, \"a\": 2}").unwrap(), serde_json::json!({"a": 2}));
         assert_eq!(loads("\"\\ud800\"").unwrap(), serde_json::json!("\u{fffd}"));
         assert_eq!(loads("18446744073709551616").unwrap(), serde_json::json!(18446744073709551616.0));
-    }
-
-    #[test]
-    fn errors_match_python_json_loads() {
-        let cases = [
-            "\"\\x\"", "\"\\u12\"", "\"\\u12g4\"", "\"ab", "\"a\\", "\"a\u{1}b\"", "{\"a\":1,\"b\"}", "{\"a\" : }", "{,}", "[,]",
-            "[1,]", "{\"a\":1 \"b\":2}", "-", "01", "1.", "1e", "tru", "{\"a\":1}\n x", "\u{feff}{}", "[", "{", "{\"a\"", "  ",
-            "{\"a\":[1,{\"b\":}]}", "{\"a\":1,}", "[1 2]", "\n\n  {\"é\": x}", "[\"\\ud83d\\uzzzz\"]", "\"\\u1234", "{\"a\":1}}", "",
-            "nul", "-x", "[1,\n 2,]", "{\"k\":\t\"v\u{1f}\"}",
-        ];
-        let dir = TempDir::new();
-        std::fs::write(dir.join("cases.json"), serde_json::Value::from(cases.to_vec()).to_string()).unwrap();
-        let code = r#"
-import json
-for case in json.load(open("cases.json", encoding="utf-8")):
-    try:
-        json.loads(case)
-        print("OK")
-    except ValueError as error:
-        print(error)
-"#;
-        let Some(output) = python(dir.path(), code, &[]) else { return };
-        for (case, expected) in cases.iter().zip(output.lines()) {
-            let actual = match loads(case) {
-                Ok(_) => "OK".to_owned(),
-                Err(error) => error,
-            };
-            assert_eq!(actual, expected, "{case:?}");
-        }
-    }
-
-    #[test]
-    fn utf8_errors_match_python() {
-        let cases: &[&[u8]] = &[b"ab\xffcd", b"a\xc3\x28", b"a\xe2\x82\"", b"x\xe2\x82", b"\xf0\x9f\x98", b"\x80", b"\xed\xa0\x80", b"\xf4\x90\x80\x80", b"\xc0\xaf"];
-        let dir = TempDir::new();
-        for (index, case) in cases.iter().enumerate() {
-            std::fs::write(dir.join(&index.to_string()), case).unwrap();
-        }
-        let code = format!(
-            "for i in range({}):\n    try:\n        open(str(i), 'rb').read().decode('utf-8')\n        print('OK')\n    except UnicodeDecodeError as e:\n        print(e)\n",
-            cases.len()
-        );
-        let Some(output) = python(dir.path(), &code, &[]) else { return };
-        for (case, expected) in cases.iter().zip(output.lines()) {
-            assert_eq!(decode_utf8(case).unwrap_err(), expected, "{case:?}");
-        }
     }
 }

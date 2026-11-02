@@ -898,9 +898,9 @@ pub fn initial_pins(catalog: &dyn PinCatalog, cairo_dir: Option<&Path>) -> Vec<S
     dedupe(defaults)
 }
 
-/// `$XDG_CONFIG_HOME/tessel-dock/config.json`.
+/// `~/.config/tessel/dock/config.json`.
 pub fn default_path() -> PathBuf {
-    tessel_core::paths::config_home().join("tessel-dock/config.json")
+    tessel_core::paths::component_config_dir("dock").join("config.json")
 }
 
 /// The exact bytes `ConfigStore.save` writes for an (already validated) config.

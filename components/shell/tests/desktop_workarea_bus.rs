@@ -1,4 +1,4 @@
-//! WorkareaClient against a FAKE org.tessel.Tessel Dock on a private
+//! WorkareaClient against a FAKE org.tessel.Dock on a private
 //! dbus-daemon (gio::TestDBus): initial GetWorkareas, owner-only signals,
 //! malformed payloads ignored, owner loss clears, a new owner is re-queried.
 #![cfg(feature = "desktop")]
@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 use tessel_shell::desktop::workarea::{WorkareaClient, WorkareaSource, BUS_NAME, INTERFACE, OBJECT_PATH};
 
-const XML: &str = r#"<node><interface name="org.tessel.Settings">
+const XML: &str = r#"<node><interface name="org.tessel.Dock.Settings">
 <method name="GetWorkareas"><arg type="s" direction="out"/></method>
 <signal name="WorkareasChanged"><arg type="s"/></signal></interface></node>"#;
 

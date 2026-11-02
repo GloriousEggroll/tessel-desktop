@@ -36,7 +36,7 @@ fn plan_bundles_the_binary_launcher_and_only_desktop_chooser_configs() {
     let files = plan(&home, None, &home.join("system"), b"\x7fELF").unwrap();
     let paths: Vec<&Path> = files.iter().map(|(p, _, _)| p.as_path()).collect();
     assert!(paths.contains(&home.join(".local/bin/tessel-capture-picker").as_path()));
-    assert!(paths.contains(&home.join(".local/share/tessel-shell/tessel-capture-picker").as_path()));
+    assert!(paths.contains(&home.join(".local/lib/tessel/tessel-capture-picker").as_path()));
     let configs: std::collections::BTreeSet<String> = paths.iter().filter(|p| p.starts_with(home.join(".config")))
         .map(|p| p.file_name().unwrap().to_string_lossy().into_owned()).collect();
     assert_eq!(configs, ["labwc".to_owned(), "wlroots".to_owned()].into());

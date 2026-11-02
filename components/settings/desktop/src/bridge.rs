@@ -1,7 +1,7 @@
 //! `dock_pages.DockSettingsBridge`: edit only one page's dock fields and
 //! leave every unrelated live choice intact.
 //!
-//! Online (the dock owns `org.tessel.Tessel Dock`): `Read`/`Apply`/`Preview`/
+//! Online (the dock owns `org.tessel.Dock`): `Read`/`Apply`/`Preview`/
 //! `Restore`/`GetTrayApps` on `org.tessel.Settings` at `/org/tessel/Settings`,
 //! always with `NO_AUTO_START`. Offline: `tessel_dock::core::config::ConfigStore`
 //! (`$XDG_CONFIG_HOME/tessel-dock/config.json`, the dock's own byte format) and
@@ -159,7 +159,7 @@ impl BridgeCore {
     }
     pub fn store_path(&self) -> std::path::PathBuf { self.store.lock().unwrap().path.clone() }
 
-    /// `_running()`: `NameHasOwner(org.tessel.Tessel Dock)` without auto-start.
+    /// `_running()`: `NameHasOwner(org.tessel.Dock)` without auto-start.
     pub fn running(&self) -> Result<bool, String> {
         if let Some(running) = &self.running_override {
             return Ok(running());

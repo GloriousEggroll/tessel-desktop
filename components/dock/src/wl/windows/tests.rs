@@ -341,7 +341,7 @@ fn not_started_and_unsupported_compositor() {
     let h = harness();
     h.backend.start();
     h.connector.complete(Startup::NotStarted);
-    assert_eq!(h.backend.error(), "Tessel Dock's window helper could not start. Build or reinstall it.");
+    assert_eq!(h.backend.error(), "The dock's window helper could not start. Build or reinstall it.");
     assert!(fire_delay(&h.scheduler, 1000));
     let link = FakeLink::toplevel();
     link.toplevels.set(false);

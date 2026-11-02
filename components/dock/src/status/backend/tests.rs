@@ -93,7 +93,7 @@ impl Fixture {
         };
         let (e, c) = (errors.clone(), changed.clone());
         let backend = StatusBackend::new(move || c.set(c.get() + 1), Some(Box::new(move |error: &str| e.borrow_mut().push(error.into()))),
-            StatusOptions { scripts: "/test scripts".into(), job_factory: factory, scheduler: scheduler.clone(), services, on_show_desktop: None });
+            StatusOptions { program: Rc::new(|name| std::path::Path::new("/test bin").join(name)), job_factory: factory, scheduler: scheduler.clone(), services, on_show_desktop: None });
         Self { backend, scheduler, created, errors, changed, keep_awake, discovery, discovery_changed }
     }
 
@@ -141,9 +141,11 @@ fn start_has_one_shared_fixed_monitor_per_status_and_does_not_launch_apps() {
     f.backend.start();
     assert_eq!(f.created.borrow().len(), 10);
     assert_eq!(f.backend.job_names().len(), 10);
-    assert_eq!(f.job("notifications").command, ["/usr/bin/python3", "-u", "/test scripts/tessel-notifications/notification_status.py"]);
-    assert_eq!(f.job("network").command, ["/usr/bin/python3", "-u", "/test scripts/tessel-network/network_status.py"]);
-    assert_eq!(f.job("weather").command, ["/usr/bin/python3", "-u", "/test scripts/tessel-weather/weather_status.py", "--watch"]);
+    assert_eq!(f.job("notifications").command, ["/test bin/tessel-notifications-status"]);
+    assert_eq!(f.job("network").command, ["/test bin/tessel-network-status"]);
+    assert_eq!(f.job("capslock").command, ["/test bin/tessel-capslock-status"]);
+    assert_eq!(f.job("keyboard").command, ["/test bin/tessel-keyboard-status"]);
+    assert_eq!(f.job("weather").command, ["/test bin/tessel-weather-status", "--watch"]);
     assert!(f.job("weather").options.stream);
     assert!(f.job("audio").options == JobOptions { stream: false, timeout: 10000 });
     assert!(!f.created.borrow().iter().any(|job| job.command.iter().any(|a| a == "set-volume")));
@@ -288,7 +290,7 @@ fn actions_only_allow_fixed_scripts_and_refresh_after_completion() {
     assert!(f.created.borrow().is_empty());
     assert!(f.backend.action("idle_inhibitor"));
     let job = f.job("action-idle_inhibitor");
-    assert_eq!(job.command, ["/usr/bin/python3", "/test scripts/tessel-keep-awake/keep_awake.py", "--toggle"]);
+    assert_eq!(job.command, ["/test bin/tessel-keep-awake", "--toggle"]);
     assert!(!f.backend.action("idle_inhibitor"));
     job.finish(None);
     assert!(!f.backend.job_names().contains(&"idle_inhibitor".to_owned()));
@@ -410,7 +412,7 @@ fn json_errors_read_like_python() {
     assert_eq!(python_json_error("{} x", &error), "Extra data: line 1 column 4 (char 3)");
 }
 
-// ProcessTests: real child processes (python3 -c), never a status script.
+// ProcessTests: real child processes (sh -c), never a status program.
 
 fn run_job(code: &str, timeout: u32, json_lines: bool) -> (Vec<String>, Option<String>, bool) {
     let context = glib::MainContext::new();
@@ -425,7 +427,7 @@ fn run_job(code: &str, timeout: u32, json_lines: bool) -> (Vec<String>, Option<S
             l.borrow_mut().push(text.to_owned());
             Ok(())
         });
-        let job = ProcessJob::new(vec!["/usr/bin/python3".into(), "-I".into(), "-c".into(), code.into()], on_line,
+        let job = ProcessJob::new(vec!["/bin/sh".into(), "-c".into(), code.into()], on_line,
                                   Rc::new(move |error| r.borrow_mut().push(error)), JobOptions { stream: false, timeout });
         job.start();
         assert!(tessel_core::timer::wait_for(&context, std::time::Duration::from_secs(3), || !results.borrow().is_empty()),
@@ -441,7 +443,7 @@ fn run_job(code: &str, timeout: u32, json_lines: bool) -> (Vec<String>, Option<S
 
 #[test]
 fn process_unicode_and_final_unterminated_line_are_drained_before_exit() {
-    let (lines, error, closed) = run_job("import sys; sys.stdout.write('☀\\nlast line')", 1000, false);
+    let (lines, error, closed) = run_job("printf '☀\\nlast line'", 1000, false);
     assert_eq!(lines, ["☀", "last line"]);
     assert_eq!(error, None);
     assert!(closed);
@@ -449,7 +451,7 @@ fn process_unicode_and_final_unterminated_line_are_drained_before_exit() {
 
 #[test]
 fn process_timeout_terminates_a_silent_child() {
-    let (lines, error, closed) = run_job("import time; time.sleep(10)", 50, false);
+    let (lines, error, closed) = run_job("exec sleep 10", 50, false);
     assert!(lines.is_empty());
     assert!(error.unwrap().contains("timed out"));
     assert!(closed);
@@ -457,22 +459,22 @@ fn process_timeout_terminates_a_silent_child() {
 
 #[test]
 fn process_oversized_unterminated_line_is_rejected() {
-    let (lines, error, _) = run_job("import sys; sys.stdout.write('x' * 70000); sys.stdout.flush()", 1000, false);
+    let (lines, error, _) = run_job("head -c 70000 /dev/zero | tr '\\0' x", 1000, false);
     assert!(lines.is_empty());
     assert!(error.unwrap().contains("oversized"));
 }
 
 #[test]
 fn process_invalid_json_finishes_cleanly_for_restart() {
-    let (_, error, _) = run_job("print('not JSON')", 1000, true);
+    let (_, error, _) = run_job("echo 'not JSON'", 1000, true);
     assert_eq!(error.as_deref(), Some("Expecting value: line 1 column 1 (char 0)"));
 }
 
 #[test]
 fn process_failure_and_invalid_utf8() {
-    let (_, error, _) = run_job("import sys; sys.exit(3)", 1000, false);
+    let (_, error, _) = run_job("exit 3", 1000, false);
     assert_eq!(error.as_deref(), Some("status command failed"));
-    let (_, error, _) = run_job("import sys; sys.stdout.buffer.write(b'\\xff\\n')", 1000, false);
+    let (_, error, _) = run_job("printf '\\377\\n'", 1000, false);
     assert_eq!(error.as_deref(), Some("'utf-8' codec can't decode byte 0xff in position 0: invalid start byte"));
 }
 

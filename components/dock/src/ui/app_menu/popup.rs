@@ -51,10 +51,10 @@ pub trait PopupHost {
 /// Pin stars stay out of the way until a row is hovered, selected or
 /// focused; pinned applications always show their filled star.
 pub const APP_MENU_PIN_CSS: &str = "
-.tessel_dock-app-menu flowboxchild button.tessel_dock-app-pin:not(.pinned) { opacity: 0; }
-.tessel_dock-app-menu flowboxchild:hover button.tessel_dock-app-pin,
-.tessel_dock-app-menu flowboxchild:selected button.tessel_dock-app-pin,
-.tessel_dock-app-menu flowboxchild:focus-within button.tessel_dock-app-pin { opacity: 1; }
+.tessel-dock-app-menu flowboxchild button.tessel-dock-app-pin:not(.pinned) { opacity: 0; }
+.tessel-dock-app-menu flowboxchild:hover button.tessel-dock-app-pin,
+.tessel-dock-app-menu flowboxchild:selected button.tessel-dock-app-pin,
+.tessel-dock-app-menu flowboxchild:focus-within button.tessel-dock-app-pin { opacity: 1; }
 ";
 
 thread_local! {

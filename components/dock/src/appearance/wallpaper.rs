@@ -1,7 +1,7 @@
 //! Per-monitor wallpaper colours (wallpaper_palette.py).
 //!
 //! [`PaletteReader`] (worker-owned) reads Tessel Shell's
-//! `~/.config/tessel-shell/wallpapers.json`, samples each selected image with
+//! `~/.config/tessel/shell/wallpapers.json`, samples each selected image with
 //! gdk-pixbuf (64 px thumbnail, the same decoder Python uses) or a video's
 //! representative frame with a bounded `ffmpeg`, and falls back to the
 //! configured solid colour. Unchanged files are sampled once.
@@ -362,9 +362,9 @@ impl PaletteReader {
         }
     }
 
-    /// Tessel Shell's default `~/.config/tessel-shell/wallpapers.json`.
+    /// The shell's `~/.config/tessel/shell/wallpapers.json`.
     pub fn default_config_path() -> PathBuf {
-        tessel_core::paths::home().join(".config/tessel-shell/wallpapers.json")
+        tessel_core::paths::component_config_dir("shell").join("wallpapers.json")
     }
 
     pub fn frost_cache_mut(&mut self) -> &mut dyn FrostCache {

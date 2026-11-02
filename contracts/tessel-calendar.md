@@ -32,7 +32,7 @@ No .desktop file, no keybind, no systemd unit.
 - Error mapping (`_error_text` :152-166): remote names containing AccessDenied/NotAuthorized/InteractiveAuthorizationRequired/Cancelled/Canceled → "Authorization was canceled or denied. No change was applied."; AutomaticTimeSyncEnabled → "Turn off automatic date and time before changing the date."
 - `MAX_TIME_USEC` = (((2^63-1)//1e9 − 30·365·86400)·1e6 − 1) (kernel TIME_SETTOD_SEC_MAX) (:22-23).
 
-### Consumed: `org.tessel.Tessel Dock` (session) — shared popup_placement.py
+### Consumed: `org.tessel.Dock` (session) — shared popup_placement.py
 - `org.tessel.Settings.GetPopupPlacement(ss connector, group="clock") → s JSON {"edge","offset","align"}`, path `/org/tessel/Settings`, `NO_AUTO_START`, 500 ms; invalid/absent → use CLI edge/offset. ~/tessel-bluetooth/shared/popup_placement.py:69-90; group set at calendar_popup.py:80.
 
 ### Owned

@@ -34,7 +34,7 @@ rm -f "$R/result" "$R/log"
 {
   echo '#!/bin/sh'
   echo 'case "$XDG_RUNTIME_DIR:$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac'
-  printf 'E_PYTHON=%s E_CHURN_BATCHES=%s WAYDOCK_E_HEADLESS=1 ' "${E_PYTHON:-}" "${E_CHURN_BATCHES:-}"; printf 'GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory'
+  printf 'E_CHURN_BATCHES=%s WAYDOCK_E_HEADLESS=1 ' "${E_CHURN_BATCHES:-}"; printf 'GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory'
   printf ' TMPDIR="%s/tmp" timeout %s' "$R" "${TIMEOUT:-600}"
   printf " '%s' %s" "$BIN" "${1:-}"
   printf ' > "%s/log" 2>&1; echo $? > "%s/result"\n' "$R" "$R"

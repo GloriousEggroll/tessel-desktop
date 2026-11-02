@@ -1,8 +1,8 @@
 //! The Tessel Dock application (tessel-dock.py `class Tessel Dock`, contract §1, §2.1,
-//! §5): `Gtk.Application` `org.tessel.Tessel Dock` with `HANDLES_COMMAND_LINE`
+//! §5): `Gtk.Application` `org.tessel.Dock` with `HANDLES_COMMAND_LINE`
 //! (`IS_LAUNCHER` for probe/shortcut options, see [`crate::cli`]), startup
 //! wiring of every backend, sd_notify readiness after startup AND the tray
-//! host handshake, `org.tessel.Settings` (B's `SettingsApi`) with
+//! host handshake, `org.tessel.Dock.Settings` (B's `SettingsApi`) with
 //! `WorkareasChanged`, monitors → dock clones, the `--menu` output probe,
 //! show desktop, trash watching, palette/gtk.css/window-button export (D's
 //! `Publisher`), appearance previews, pins, launches, SIGTERM/SIGINT and the
@@ -53,7 +53,7 @@ use crate::wl::show_desktop::{self, ShowDesktop};
 use crate::wl::{Window, WindowBackend, WorkspaceBackend};
 use tessel_core::tr;
 
-pub const APPLICATION_ID: &str = "org.tessel.Tessel Dock";
+pub const APPLICATION_ID: &str = "org.tessel.Dock";
 
 /// `_appearance_preview` & co.
 #[derive(Clone, Debug, Default)]
@@ -530,10 +530,9 @@ impl App {
             return;
         }
         self.close_popups();
-        let launcher = tessel_core::paths::home().join(".local/share/tessel-shell/wayshell_cli.py");
-        let launcher = launcher.to_string_lossy().into_owned();
+        let launcher = tessel_core::paths::program("tessel-shell-cli");
         let argv: Vec<&std::ffi::OsStr> =
-            ["/usr/bin/python3", launcher.as_str(), "show-activities", "--monitor", monitor_name].into_iter().map(std::ffi::OsStr::new).collect();
+            [launcher.as_os_str(), "show-activities".as_ref(), "--monitor".as_ref(), monitor_name.as_ref()].into();
         let process = match gio::Subprocess::newv(&argv, gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_PIPE) {
             Ok(process) => process,
             Err(error) => {
@@ -1185,7 +1184,7 @@ pub fn main() -> i32 {
     tessel_core::i18n::initialize();
     let argv: Vec<String> = std::env::args().collect();
     glib::set_prgname(Some("tessel-dock"));
-    glib::set_application_name("Tessel Dock");
+    glib::set_application_name("Dock");
     let mut flags = gio::ApplicationFlags::HANDLES_COMMAND_LINE;
     if cli::is_launcher(&argv) {
         // Probes and keyboard shortcuts must never start a dock outside its

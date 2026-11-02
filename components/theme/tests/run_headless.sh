@@ -3,7 +3,7 @@
 set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../../.." && pwd)
-export TMPDIR=/run/user/1000/cbt/rust-ws-prompt
+export TMPDIR=/run/user/1000/cbt/rust-${AGENT:-ws-prompt}
 mkdir -p "$TMPDIR"
 BIN=$(cd "$ROOT" && cargo test -p "${PKG:-tessel-theme}" --test ui_headless --no-run --message-format=json 2>/dev/null \
       | python3 -c 'import json,sys

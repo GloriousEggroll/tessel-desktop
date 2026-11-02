@@ -3,8 +3,6 @@
 //!   plus the client calls (duplicated in tessel-capture-picker/selection.rs).
 //! - `dl`: a tiny dlopen/dlsym wrapper (also used ad hoc by tessel-network's libnm.rs).
 //! - `xkb`: libxkbcommon keysym name lookup (ctypes in Python).
-//! - `paths`: Python `os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')` semantics
-//!   (an empty variable is used verbatim, unlike tessel_core::paths).
 //! - `monotonic`: `time.monotonic()` (CLOCK_MONOTONIC seconds).
 
 pub mod capture_selection;
@@ -12,14 +10,6 @@ pub mod dl;
 pub mod xkb;
 
 use std::path::PathBuf;
-
-/// `Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))`.
-pub fn config_root() -> PathBuf {
-    match std::env::var_os("XDG_CONFIG_HOME") {
-        Some(value) => PathBuf::from(value),
-        None => home().join(".config"),
-    }
-}
 
 /// `Path.home()`: `$HOME`, else the passwd entry.
 pub fn home() -> PathBuf {

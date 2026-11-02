@@ -1,4 +1,4 @@
-//! Read-only preview of install_prompts.py for the Rust prompt: lists the files
+//! Read-only preview of the prompt's installation: lists the files
 //! that would change (launcher, desktop entry, rc.xml). There is no --apply.
 //! Usage: tessel-install-prompts [--home DIR] [--config-home DIR] [--binary PATH] [--show]
 

@@ -20,9 +20,8 @@
 //!   [`Launcher`] (`launch_separately`, `launch_process`,
 //!   `launch_desktop_file`, `launch_uri`) over an injectable
 //!   [`Spawner`](super::spawn::Spawner). The helper argv defaults to
-//!   `/usr/bin/python3 <runtime>/app_catalog.py <mode> <target>` (the Python
-//!   module stays installed); [`run_launch_helper`] / [`launch_helper_main`]
-//!   are the Rust port of its `__main__` for a future `tessel-dock-launch`.
+//!   `tessel-dock-launch <mode> <target>`; [`run_launch_helper`] /
+//!   [`launch_helper_main`] are its implementation.
 
 use std::cell::RefCell;
 use std::ffi::{c_char, CStr, CString};
@@ -348,7 +347,7 @@ fn py_split(text: &str) -> Vec<&str> {
 // ---- Launch history -------------------------------------------------------
 
 /// Small per-user launch counter for the menu's Frequent row
-/// (`$XDG_STATE_HOME/tessel-dock/launch-counts.json`). Failures are harmless.
+/// (`~/.local/state/tessel/dock/launch-counts.json`). Failures are harmless.
 pub struct LaunchHistory {
     pub path: PathBuf,
     pub counts: OrderedMap<i64>,
@@ -358,7 +357,7 @@ impl LaunchHistory {
     pub const LIMIT: usize = 200;
 
     pub fn default_path() -> PathBuf {
-        tessel_core::paths::state_home().join("tessel-dock").join("launch-counts.json")
+        tessel_core::paths::component_state_dir("dock").join("launch-counts.json")
     }
 
     pub fn new(path: Option<PathBuf>) -> Self {
@@ -822,12 +821,9 @@ impl std::fmt::Display for LaunchError {
     }
 }
 
-/// Default helper argv prefix: `/usr/bin/python3 <runtime>/app_catalog.py`.
+/// Default helper argv prefix: the `tessel-dock-launch` program.
 pub fn default_helper() -> Vec<String> {
-    vec![
-        super::panel_actions::PYTHON.into(),
-        tessel_core::paths::data_home().join("tessel-dock/app_catalog.py").to_string_lossy().into_owned(),
-    ]
+    vec![tessel_core::paths::program("tessel-dock-launch").to_string_lossy().into_owned()]
 }
 
 /// Launches apps in independent `app-tessel-dock-*.service` units.
@@ -1094,7 +1090,7 @@ pub fn run_launch_helper(mode: &str, target: &str) -> i32 {
     }
 }
 
-/// `python3 app_catalog.py <mode> <target>` argument handling (`args`
+/// `tessel-dock-launch <mode> <target>` argument handling (`args`
 /// excludes the program name).
 pub fn launch_helper_main(args: &[String]) -> i32 {
     if args.len() != 2 {

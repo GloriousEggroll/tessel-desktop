@@ -3,18 +3,20 @@
 # own XDG_RUNTIME_DIR, own service-free D-Bus (no activatable services), no input
 # devices, two headless outputs. Never touches the live session.
 set -eu
-R=/run/user/1000/cbt/rust-wscap/n
+R=/run/user/1000/cbt/rust-${AGENT:-wscap}/n
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg"; chmod 700 "$R/rt"
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e '/<standard_session_servicedirs/d' -e '/<servicedir>/d' \
   /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-export TMPDIR=/run/user/1000/cbt/rust-ws-cap
+export TMPDIR=/run/user/1000/cbt/rust-${AGENT:-ws-cap}
+mkdir -p "$TMPDIR"
+(cd "$ROOT" && cargo build -q -p tessel-wayland --bin tessel-dock-toplevel)
 BIN=$(cd "$ROOT" && cargo test -p tessel-capture-picker --test ui_headless --no-run --message-format=json 2>/dev/null \
       | python3 -I -c 'import json,sys
 for line in sys.stdin:
     m=json.loads(line)
     if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
-HELPER=$HOME/.local/share/tessel-dock/tessel-dock-toplevel
+HELPER=$ROOT/target/debug/tessel-dock-toplevel
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac

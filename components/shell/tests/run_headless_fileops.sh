@@ -3,12 +3,12 @@
 # (tools/headless.md). Never touches the live session: own XDG_RUNTIME_DIR,
 # own D-Bus, temporary HOME/XDG dirs, fake ffprobe-free PATH entries only.
 set -eu
-R=/run/user/1000/cbt/rust-wsfops/n
+R=/run/user/1000/cbt/rust-${AGENT:-wsfops}/n
 mkdir -p "$R/rt" "$R/cfg" "$R/home" "$R/xdg/config" "$R/xdg/cache" "$R/xdg/data" "$R/tmp"; chmod 700 "$R/rt"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-ws-fops cargo test -p tessel-shell \
+BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-${AGENT:-ws-fops} cargo test -p tessel-shell \
       --test wallpaper_chooser_ui --no-run --message-format=json 2>/dev/null \
       | python3 -c 'import json,sys
 for line in sys.stdin:

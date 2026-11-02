@@ -50,7 +50,7 @@ Args are validated in the launching process before registering (2978); invalid �
 - `org.bluez.obex` `AgentManager1.RegisterAgent(o)/UnregisterAgent(o)`; `GetNameOwner(org.bluez.obex)`; re-registers after obexd restart (540-577, 677-698); reads `Transfer1` (Name/Filename, Size, Type, Session, Status, Transferred) and `Session1.Destination`.
 - `org.freedesktop.Notifications` (`Notifier`, 713-805): `GetCapabilities` (actions?), `Notify(susssasa{sv}i)` with hints `urgency y`, `desktop-entry s "tessel-bluetooth"`, optional `value i` (progress %), `CloseNotification(u)`, signals `ActionInvoked`, `NotificationClosed`. App name = translated "Bluetooth".
 - `org.freedesktop.FileManager1.ShowItems(as uris, s "")` for "Show in folder", fallback `launch_default_for_uri(dir)` (tessel-bluetooth.py:1376-1397).
-- `org.tessel.Tessel Dock` `/org/tessel/Settings` `org.tessel.Settings.GetPopupPlacement(s connector, s group="service_apps") → s JSON {edge, offset 0..4096, align start|center|end}` (NO_AUTO_START, 500 ms) via `shared/popup_placement.py:69-90`; invalid/missing → use CLI edge/offset.
+- `org.tessel.Dock` `/org/tessel/Settings` `org.tessel.Settings.GetPopupPlacement(s connector, s group="service_apps") → s JSON {edge, offset 0..4096, align start|center|end}` (NO_AUTO_START, 500 ms) via `shared/popup_placement.py:69-90`; invalid/missing → use CLI edge/offset.
 
 ## 3. Files
 | Path | Format | R/W |

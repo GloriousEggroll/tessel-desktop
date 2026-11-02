@@ -28,12 +28,12 @@ const TEXTURE_VERSION: &[u8] = b"tessel-dock-frosted-v3\0";
 pub const MODES: [&str; 5] = ["Fill", "Fit", "Stretch", "Tile", "Center"];
 pub const DEFAULT_BACKING: Rgb = [112, 112, 112];
 
-/// `$XDG_CACHE_HOME/tessel-dock/frosted` (only an absolute XDG_CACHE_HOME counts).
+/// `$XDG_CACHE_HOME/tessel/dock/frosted` (only an absolute XDG_CACHE_HOME counts).
 pub fn cache_directory() -> PathBuf {
     match std::env::var_os("XDG_CACHE_HOME").map(PathBuf::from) {
         Some(value) if value.is_absolute() => value,
         _ => tessel_core::paths::home().join(".cache"),
-    }.join("tessel-dock").join("frosted")
+    }.join(tessel_core::paths::SUITE).join("dock").join("frosted")
 }
 
 /// `(dev, ino, size, mtime_ns, ctime_ns, mode)`.

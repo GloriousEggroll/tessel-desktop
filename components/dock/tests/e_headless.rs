@@ -1,7 +1,7 @@
 //! W-e whole-application tests in a private headless labwc (2 outputs):
 //! the real `tessel-dock` binary with a fake HOME, driven like the session does —
 //! CLI (`--check`, `--menu`, `--toggle-desktop`, …), sd_notify readiness,
-//! `org.tessel.Settings` on the private bus (GetWorkareas, Apply,
+//! `org.tessel.Dock.Settings` on the private bus (GetWorkareas, Apply,
 //! WorkareasChanged), a virtual pointer (wlrctl) and grim screenshots.
 //! Windows are GTK windows of this test process; their compositor state is
 //! observed through tessel-dock's own `wl::WindowBackend`.
@@ -29,6 +29,13 @@ use std::time::{Duration, Instant};
 use tessel_dock::wl::WindowBackend;
 
 const BIN: &str = env!("CARGO_BIN_EXE_tessel-dock");
+/// The Tessel programs the dock may run; the test dock finds fakes beside itself.
+const FAKE_PROGRAMS: &[&str] = &[
+    "tessel-power-status", "tessel-battery-status", "tessel-brightness-status", "tessel-network-status",
+    "tessel-capslock-status", "tessel-notifications-status", "tessel-weather-status", "tessel-keyboard-status",
+    "tessel-tiling-status", "tessel-keep-awake", "tessel-capture", "tessel-settings", "tessel-system-monitor",
+    "tessel-dock-launch",
+];
 /// labwc lays the private outputs out as HEADLESS-2 (0,0) then HEADLESS-1 (1280,0).
 const H1: i32 = 1280;
 const H1_REGION: &str = "1280,0 1280x720";
@@ -62,6 +69,31 @@ fn settle(seconds: f64) { wait_for(seconds, || false); }
 
 fn root() -> PathBuf { PathBuf::from(std::env::var("TMPDIR").expect("TMPDIR")) }
 
+/// The dock binary linked into a private directory (on the target disk) with
+/// fake Tessel programs beside it, so `tessel_core::paths::program` never finds
+/// a real status stream, Settings or shell CLI. The fake `tessel-shell-cli`
+/// records Activities requests (hot corners) in `$HOME/activities.log`.
+fn dock_bin() -> &'static Path {
+    static DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    DIR.get_or_init(|| {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("e_headless-bin-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let dock = dir.join("tessel-dock");
+        if std::fs::hard_link(BIN, &dock).is_err() {
+            std::fs::copy(BIN, &dock).unwrap();
+        }
+        let mut fakes: Vec<(&str, &str)> = FAKE_PROGRAMS.iter().map(|name| (*name, "#!/bin/sh\nexit 1\n")).collect();
+        fakes.push(("tessel-shell-cli", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$HOME/activities.log\"\n"));
+        for (name, script) in fakes {
+            std::fs::write(dir.join(name), script).unwrap();
+            std::fs::set_permissions(dir.join(name), std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        dock
+    })
+}
+
 /// One dock process with its own fake HOME.
 struct Dock {
     child: Child,
@@ -72,28 +104,18 @@ struct Dock {
 fn home(name: &str, config: &Value) -> PathBuf {
     let home = root().join("homes").join(name);
     let _ = std::fs::remove_dir_all(&home);
-    for sub in [".config/tessel-dock", ".config/labwc", ".cache", ".local/share/tessel-shell", ".local/state", ".config/waybar/scripts"] {
+    for sub in [".config/tessel/dock", ".config/labwc", ".cache", ".local/share", ".local/state"] {
         std::fs::create_dir_all(home.join(sub)).unwrap();
     }
     std::fs::write(home.join(".config/labwc/rc.xml"), "<labwc_config/>\n").unwrap();
     let mut config = config.clone();
     config["version"] = Value::from(1);
-    std::fs::write(home.join(".config/tessel-dock/config.json"), serde_json::to_string_pretty(&config).unwrap()).unwrap();
-    // Fake Tessel Shell CLI: records Activities requests (hot corners).
-    std::fs::write(home.join(".local/share/tessel-shell/wayshell_cli.py"),
-                   "import sys, os\nopen(os.path.join(os.path.dirname(__file__), 'activities.log'), 'a').write(' '.join(sys.argv[1:]) + '\\n')\n").unwrap();
+    std::fs::write(home.join(".config/tessel/dock/config.json"), serde_json::to_string_pretty(&config).unwrap()).unwrap();
     home
 }
 
 fn command(home: &Path) -> Command {
-    // E_PYTHON=1 runs the same tests against the Python dock (reference).
-    let mut command = if std::env::var("E_PYTHON").is_ok_and(|v| !v.is_empty()) {
-        let mut command = Command::new("/usr/bin/python3");
-        command.arg("/home/tcrider/tessel-bluetooth/tessel-dock/tessel-dock.py");
-        command
-    } else {
-        Command::new(BIN)
-    };
+    let mut command = Command::new(dock_bin());
     command.env("HOME", home).env("XDG_CONFIG_HOME", home.join(".config")).env("XDG_CACHE_HOME", home.join(".cache"))
         .env("XDG_DATA_HOME", home.join(".local/share")).env("XDG_STATE_HOME", home.join(".local/state"))
         .env("XDG_CONFIG_DIRS", root().join("none")).env_remove("LABWC_PID").env_remove("NOTIFY_SOCKET");
@@ -147,7 +169,7 @@ impl Dock {
     }
 
     fn activities(&self) -> String {
-        std::fs::read_to_string(self.home.join(".local/share/tessel-shell/activities.log")).unwrap_or_default()
+        std::fs::read_to_string(self.home.join("activities.log")).unwrap_or_default()
     }
 
     fn stop(mut self) -> Result<i32, String> {
@@ -175,7 +197,7 @@ impl Drop for Dock {
 fn bus() -> gio::DBusConnection { gio::bus_get_sync(gio::BusType::Session, None::<&gio::Cancellable>).expect("private bus") }
 
 fn settings_call(method: &str, args: Option<&glib::Variant>) -> Result<glib::Variant, String> {
-    bus().call_sync(Some("org.tessel.Tessel Dock"), "/org/tessel/Settings", "org.tessel.Settings", method, args, None,
+    bus().call_sync(Some("org.tessel.Dock"), "/org/tessel/Dock/Settings", "org.tessel.Dock.Settings", method, args, None,
                     gio::DBusCallFlags::NONE, 5000, None::<&gio::Cancellable>).map_err(|e| e.to_string())
 }
 
@@ -256,7 +278,7 @@ fn launcher_options_never_start_a_dock_and_singleton_health_shutdown() -> Result
         ensure!(code != 0, "{option} without a dock succeeded");
     }
     let owner = bus().call_sync(Some("org.freedesktop.DBus"), "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner",
-                                Some(&("org.tessel.Tessel Dock",).to_variant()), None, gio::DBusCallFlags::NONE, 2000,
+                                Some(&("org.tessel.Dock",).to_variant()), None, gio::DBusCallFlags::NONE, 2000,
                                 None::<&gio::Cancellable>).map_err(|e| e.to_string())?;
     ensure!(owner.get::<(bool,)>() == Some((false,)), "a launcher option started a dock");
     let dock = Dock::start("health", serde_json::json!({"mode": "dock"}))?;
@@ -352,8 +374,8 @@ fn workareas_changed_is_emitted_only_on_change() -> Result<(), String> {
     let signals: Rc<RefCell<Vec<String>>> = Rc::default();
     let sink = signals.clone();
     let connection = bus();
-    let subscription = connection.signal_subscribe(None, Some("org.tessel.Settings"), Some("WorkareasChanged"),
-        Some("/org/tessel/Settings"), None, gio::DBusSignalFlags::NONE,
+    let subscription = connection.signal_subscribe(None, Some("org.tessel.Dock.Settings"), Some("WorkareasChanged"),
+        Some("/org/tessel/Dock/Settings"), None, gio::DBusSignalFlags::NONE,
         move |_, _, _, _, _, parameters| {
             if let Some((text,)) = parameters.get::<(String,)>() {
                 sink.borrow_mut().push(text);
@@ -413,7 +435,7 @@ fn hot_corner_dwell_latch_and_reentry() -> Result<(), String> {
 }
 
 /// Not in the default list: in the private labwc the corner also fires over a
-/// fullscreen client with the Python dock (E_PYTHON=1), so it is not a parity check.
+/// fullscreen client with the old Python dock too, so it is not a parity check.
 #[allow(dead_code)]
 fn hot_corner_is_blocked_by_fullscreen() -> Result<(), String> {
     let observer = Observer::new()?;
@@ -743,12 +765,9 @@ fn menu_churn_does_not_grow_memory() -> Result<(), String> {
     println!("     menu churn RSS per 10 menus: {samples:?}");
     let growth: Vec<i64> = samples.windows(2).map(|w| w[1] as i64 - w[0] as i64).collect();
     ensure!(growth[2] < 4 * 1024 || growth[2] < growth[0] / 2, "RSS keeps growing per 10 menus: {growth:?} kB");
-    // The Rust dock reuses the menu's icon paintables, so repeated menus
-    // must plateau outright (Python keeps growing ~7 MB per 10 menus in
-    // GTK's per-image icon loading; E_PYTHON runs keep the looser check).
-    if std::env::var("E_PYTHON").map_or(true, |v| v.is_empty()) {
-        ensure!(growth.iter().all(|g| *g < 2 * 1024), "RSS does not plateau per 10 menus: {growth:?} kB");
-    }
+    // The dock reuses the menu's icon paintables, so repeated menus must
+    // plateau outright.
+    ensure!(growth.iter().all(|g| *g < 2 * 1024), "RSS does not plateau per 10 menus: {growth:?} kB");
     dock.stop()?;
     Ok(())
 }

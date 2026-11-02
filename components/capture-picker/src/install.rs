@@ -10,9 +10,9 @@ use std::path::{Path, PathBuf};
 
 pub const PORTAL_UNIT: &str = "xdg-desktop-portal-wlr.service";
 pub const PORTAL_BUS: &str = "org.freedesktop.impl.portal.desktop.wlr";
-/// Where the Rust binary goes (next to the other Tessel Shell runtime files; the
-/// picker finds `../tessel-dock/tessel-dock-toplevel` from there).
-pub const BINARY: &str = ".local/share/tessel-shell/tessel-capture-picker";
+/// Where the binary goes (beside the other Tessel programs, where the picker
+/// finds `tessel-dock-toplevel`).
+pub const BINARY: &str = ".local/lib/tessel/tessel-capture-picker";
 /// The xdpw `chooser_cmd` target, unchanged from the Python install.
 pub const LAUNCHER: &str = ".local/bin/tessel-capture-picker";
 

@@ -37,20 +37,33 @@ pub fn title(key: &str) -> &'static str {
     }
 }
 
+/// The installed `tessel-capture` (`tessel_core::paths::program`), shell-quoted.
+pub fn program_text() -> String {
+    tessel_core::shell::shell_quote(&tessel_core::paths::program("tessel-capture").to_string_lossy())
+}
+
 pub fn command(key: &str) -> String {
     if key == "record" {
-        "/usr/local/bin/tessel-capture --toggle-recording".into()
+        format!("{} --toggle-recording", program_text())
     } else {
-        format!("/usr/local/bin/tessel-capture --capture {key}")
+        format!("{} --capture {key}", program_text())
     }
 }
 
+/// One of our bindings: `tessel-capture` (any install location, also the
+/// pre-rename `waycapture`) with a screenshot, recording or capture argument.
 fn owned(command_text: &str) -> bool {
-    command_text == "/usr/local/bin/tessel-capture --screenshot" || KEYS.iter().any(|k| command(k) == command_text)
+    let Some((program, arguments)) = command_text.split_once(' ') else { return false };
+    let name = Path::new(program.trim_matches('\'')).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    if name != "tessel-capture" && name != "waycapture" {
+        return false;
+    }
+    arguments == "--screenshot" || arguments == "--toggle-recording"
+        || KEYS.iter().any(|k| *k != "record" && arguments == format!("--capture {k}"))
 }
 
 pub fn config_root() -> PathBuf {
-    crate::compat::config_root()
+    tessel_core::paths::config_home()
 }
 
 fn is_py_space(c: char) -> bool {
@@ -99,7 +112,7 @@ pub fn display(value: &str) -> String {
 }
 
 pub fn path_in(root: &Path) -> PathBuf {
-    root.join("desktop-capture/shortcuts.json")
+    root.join("tessel/capture/shortcuts.json")
 }
 
 pub fn load(root: Option<&Path>) -> Values {
@@ -294,7 +307,7 @@ pub fn apply(values: &Values, root: Option<&Path>, reload: Option<&dyn Fn() -> R
     let path = path_in(&root);
     let previous = std::fs::read(&path).ok();
     if after != before {
-        let backup = root.join("desktop-capture/backups").join(format!("rc-{}.xml", timestamp()));
+        let backup = root.join("tessel/capture/backups").join(format!("rc-{}.xml", timestamp()));
         atomic_write(&backup, &before, 0o600)?;
     }
     if std::fs::read(&rc).map_err(|e| tessel_core::pyerr::os_error_path(&e, &rc))? != before {
@@ -331,7 +344,7 @@ mod tests {
 
     const CONFIG: &[u8] = br#"<labwc_config><keyboard><default/><!-- keep this -->
 <keybind key="W-r"><action name="Execute" command="other-app"/></keybind>
-<keybind key="Print"><action name="Execute"><command>/usr/local/bin/tessel_capture --screenshot</command></action></keybind>
+<keybind key="Print"><action name="Execute"><command>/usr/local/bin/waycapture --screenshot</command></action></keybind>
 </keyboard><mouse><default/></mouse></labwc_config>"#;
 
     fn with(changes: &[(&'static str, &str)]) -> Values {
@@ -350,9 +363,9 @@ mod tests {
         assert!(contains(&new, "command=\"other-app\""));
         assert!(contains(&new, "--capture screen"));
         assert!(!contains(&new, "--screenshot"));
-        assert_eq!(String::from_utf8_lossy(&new).matches("/usr/local/bin/tessel-capture").count(), 5);
+        assert_eq!(String::from_utf8_lossy(&new).matches(&format!("{} --", program_text())).count(), 5);
         assert!(contains(&new, "key=\"A-F9\""));
-        // Byte-identical to Python's capture_shortcuts.shortcut(CONFIG).
+        // Byte-identical to Python's capture_shortcuts.shortcut(CONFIG) (with the installed program).
         assert_eq!(String::from_utf8(new).unwrap(), concat!(
             "<labwc_config><keyboard><default/><!-- keep this -->\n",
             "<keybind key=\"W-r\"><action name=\"Execute\" command=\"other-app\"/></keybind>\n",
@@ -361,7 +374,7 @@ mod tests {
             "    <keybind key=\"C-Print\"><action name=\"Execute\"><command>/usr/local/bin/tessel-capture --capture area</command></action></keybind>\n",
             "    <keybind key=\"S-Print\"><action name=\"Execute\"><command>/usr/local/bin/tessel-capture --capture window</command></action></keybind>\n",
             "    <keybind key=\"A-Print\"><action name=\"Execute\"><command>/usr/local/bin/tessel-capture --capture workspace</command></action></keybind>\n",
-            "  </keyboard><mouse><default/></mouse></labwc_config>"));
+            "  </keyboard><mouse><default/></mouse></labwc_config>").replace("/usr/local/bin/tessel-capture", &program_text()));
     }
 
     #[test]
@@ -400,7 +413,7 @@ mod tests {
         assert_eq!(error, "reload failed");
         assert_eq!(std::fs::read(&rc).unwrap(), before);
         assert_eq!(load(Some(&root)), defaults());
-        assert!(std::fs::read_dir(root.join("desktop-capture/backups")).unwrap().any(|e| e.unwrap().file_name().to_string_lossy().ends_with(".xml")));
+        assert!(std::fs::read_dir(root.join("tessel/capture/backups")).unwrap().any(|e| e.unwrap().file_name().to_string_lossy().ends_with(".xml")));
         assert_eq!(std::fs::read_to_string(path_in(&root)).unwrap(),
                    "{\n  \"record\": \"A-F9\",\n  \"screen\": \"Print\",\n  \"area\": \"C-Print\",\n  \"window\": \"S-Print\",\n  \"workspace\": \"A-Print\"\n}\n");
         std::fs::write(path_in(&root), "{\"record\": 5}").unwrap();
