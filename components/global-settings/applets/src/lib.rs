@@ -1,6 +1,6 @@
 //! Global Settings pages that host the desktop applets' own controls
 //! (applet_pages.py, weather_page.py, language_page.py, capture_page.py), plus the
-//! Rust-only Archive Manager, Clipboard and Passwords pages.
+//! Rust-only Archive Manager, Clipboard, Passwords and System Information pages.
 //!
 //! Each page owns only its display subscriptions: persistent power policy,
 //! idle inhibition, notifications and Bluetooth stay in their resident
@@ -28,6 +28,7 @@ mod network;
 mod notifications;
 mod passwords;
 mod power;
+mod system_info;
 mod weather;
 
 pub use embed::{embed, Embed};
@@ -46,12 +47,14 @@ pub use network::{NetworkPage, FACADE_ID as NETWORK_FACADE_ID};
 pub use notifications::NotificationsPage;
 pub use passwords::PasswordsPage;
 pub use power::PowerPage;
+pub use system_info::{SystemInfo, SystemInfoPage, VERSION as TESSEL_VERSION};
 pub use weather::WeatherPage;
 
 /// Sections built here, in the order of `applet_pages.BUILDERS` followed by
 /// the stand-alone page modules.
 pub const SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                                 "datetime", "weather", "language", "capture", "archive", "clipboard", "passwords"];
+                                 "datetime", "weather", "language", "capture", "archive", "clipboard", "passwords",
+                                 "systeminfo"];
 
 /// `applet_pages.BUILDERS` keys (the sections `applet_pages.build_page` accepts).
 pub const APPLET_SECTIONS: &[&str] = &["audio", "bluetooth", "network", "power", "battery", "datetime", "keepawake",
@@ -95,6 +98,10 @@ pub struct Factories {
     pub archive_path: Option<PathBuf>,
     /// The clipboard settings file (default `~/.config/desktop-suite/clipboard.json`).
     pub clipboard_path: Option<PathBuf>,
+    /// The filesystem System Information reads `/etc`, `/proc` and `/sys` from (default `/`).
+    pub system_root: Option<PathBuf>,
+    /// How System Information starts System Monitor (default a gio subprocess).
+    pub system_launch: Option<system_info::Launch>,
 }
 
 /// Build one page lazily with the real services.
@@ -119,6 +126,7 @@ pub fn build_page_with(section: &str, host: &Host, factories: &Factories) -> Res
         "archive" => archive::build(host, factories),
         "clipboard" => clipboard::build(host, factories),
         "passwords" => passwords::build(host, factories),
+        "systeminfo" => system_info::build(host, factories),
         other => Err(format!("Unknown settings section: {other}")),
     }
 }
@@ -136,7 +144,8 @@ mod tests {
     #[test]
     fn sections_cover_every_builder_once() {
         assert_eq!(SECTIONS, &["audio", "bluetooth", "network", "power", "battery", "keepawake", "notifications",
-                               "datetime", "weather", "language", "capture", "archive", "clipboard", "passwords"]);
+                               "datetime", "weather", "language", "capture", "archive", "clipboard", "passwords",
+                               "systeminfo"]);
         let mut unique = SECTIONS.to_vec();
         unique.sort();
         unique.dedup();

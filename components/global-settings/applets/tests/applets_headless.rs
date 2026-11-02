@@ -251,6 +251,8 @@ pub struct Fakes {
     pub notifications: RefCell<Option<Rc<FakeNotifications>>>,
     pub language: RefCell<Option<Arc<FakeLanguage>>>,
     pub saved_modes: Rc<RefCell<Vec<String>>>,
+    /// Commands System Information started.
+    pub launched: Rc<RefCell<Vec<Vec<String>>>>,
 }
 
 pub fn factories(fakes: &Rc<Fakes>, scratch: &Path) -> Factories {
@@ -336,6 +338,12 @@ pub fn factories(fakes: &Rc<Fakes>, scratch: &Path) -> Factories {
     f.capture_path = Some(scratch.join("capture/config.json"));
     f.archive_path = Some(scratch.join("archive/archive-manager.json"));
     f.clipboard_path = Some(scratch.join("clipboard/clipboard.json"));
+    f.system_root = Some(scratch.join("system-root"));
+    let launched = fakes.launched.clone();
+    f.system_launch = Some(Rc::new(move |command: &[String]| {
+        launched.borrow_mut().push(command.to_vec());
+        if launched.borrow().len() > 1 { Err("not found".into()) } else { Ok(()) }
+    }));
     f
 }
 
@@ -896,6 +904,122 @@ fn test_passwords_page_lists_copies_and_deletes_waykeyring_entries(fx: &Fx) {
     let _ = daemon.wait();
 }
 
+/// A fake root: os-release, /proc and /sys of a laptop with one Intel GPU.
+fn fake_system_root(root: &Path) {
+    let _ = std::fs::remove_dir_all(root);
+    let put = |path: &str, text: &str| {
+        let path = root.join(path);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+    };
+    put("etc/os-release", "NAME=Fedora\nPRETTY_NAME=\"Fedora Linux 44 (Workstation Edition)\"\nLOGO=fedora-logo-icon\n");
+    put("proc/sys/kernel/hostname", "testbox\n");
+    put("proc/sys/kernel/osrelease", "6.20.1-100.fc44.x86_64\n");
+    put("proc/sys/kernel/arch", "x86_64\n");
+    put("proc/cpuinfo", "processor\t: 0\nmodel name\t: Intel(R) Core(TM) Ultra 7 155H\nprocessor\t: 1\nprocessor\t: 2\nprocessor\t: 3\n");
+    put("proc/meminfo", "MemTotal:       32768000 kB\n");
+    for (file, value) in [("sys_vendor", "LENOVO"), ("product_name", "21KC"), ("product_version", "ThinkPad X1 Carbon Gen 12"),
+                          ("bios_vendor", "LENOVO"), ("bios_version", "N3YET55W (1.20 )")] {
+        put(&format!("sys/class/dmi/id/{file}"), value);
+    }
+    put("sys/devices/pci/0000:00:02.0/vendor", "0x8086\n");
+    put("sys/devices/pci/0000:00:02.0/device", "0x7d55\n");
+    std::fs::create_dir_all(root.join("sys/class/drm/card1")).unwrap();
+    std::os::unix::fs::symlink(root.join("sys/devices/pci/0000:00:02.0"), root.join("sys/class/drm/card1/device")).unwrap();
+    put("usr/share/hwdata/pci.ids", "8086  Intel Corporation\n\t7d55  Meteor Lake-P [Intel Arc Graphics]\n");
+    put("sys/block/nvme0n1/removable", "0");
+    put("sys/block/nvme0n1/size", "2000409264");
+    put("sys/block/loop0/removable", "0");
+    put("sys/block/loop0/size", "999");
+}
+
+fn row_value(card: &gtk::Box, title: &str) -> Option<String> {
+    let mut child = card.first_child();
+    while let Some(row) = child {
+        child = row.next_sibling();
+        if row.widget_name() != title {
+            continue;
+        }
+        let mut stack = vec![row.last_child()?];
+        while let Some(widget) = stack.pop() {
+            if let Ok(value) = widget.clone().downcast::<gtk::Label>() {
+                return Some(value.label().to_string());
+            }
+            let mut inner = widget.first_child();
+            while let Some(x) = inner {
+                inner = x.next_sibling();
+                stack.push(x);
+            }
+        }
+    }
+    None
+}
+
+/// grim of the private nested output only (main() refused the live session).
+fn screenshot(name: &str) -> Option<PathBuf> {
+    let root = PathBuf::from(std::env::var("GS_ROOT").ok()?);
+    let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
+    check!(runtime != "/run/user/1000" && runtime.starts_with(root.to_str().unwrap()), "private session only");
+    let path = root.join(format!("{name}.png"));
+    let status = std::process::Command::new("/usr/bin/grim").arg(&path).status().ok()?;
+    status.success().then_some(path)
+}
+
+fn test_system_info_page_reads_the_fake_root_and_copies_plain_text(fx: &Fx) {
+    fake_system_root(fx.factories.system_root.as_ref().unwrap());
+    let page = fx.page("systeminfo");
+    let controls = controller::<SystemInfoPage>(&page);
+    for key in ["device_name", "software", "hardware", "copy", "monitor"] {
+        check!(page.search_targets.borrow().contains_key(key), "systeminfo target {key}");
+    }
+    check!(controls.page.content.has_css_class("system-page") || controls.page.widget.has_css_class("system-page"));
+    check!(wait(|| controls.copy.is_sensitive()), "system information did not load");
+    check!(controls.device_name.label() == "testbox", "{}", controls.device_name.label());
+    let software = |title: &str| row_value(&controls.software, title).unwrap_or_else(|| panic!("no {title} row"));
+    let hardware = |title: &str| row_value(&controls.hardware, title).unwrap_or_else(|| panic!("no {title} row"));
+    check!(software("Operating system") == "Fedora Linux 44 (Workstation Edition)");
+    check!(software("Kernel version") == "6.20.1-100.fc44.x86_64 (64-bit)", "{}", software("Kernel version"));
+    check!(software("Desktop environment") == format!("Tessel {}", gs_applets::TESSEL_VERSION));
+    // A fake root says nothing about the running compositor.
+    check!(software("Windowing system") == "Wayland (labwc)", "{}", software("Windowing system"));
+    check!(software("GTK version") == format!("{}.{}.{}", gtk::major_version(), gtk::minor_version(), gtk::micro_version()));
+    check!(hardware("Manufacturer") == "LENOVO");
+    check!(hardware("Model") == "21KC ThinkPad X1 Carbon Gen 12");
+    check!(hardware("Processor") == "Intel(R) Core(TM) Ultra 7 155H × 4", "{}", hardware("Processor"));
+    check!(hardware("Memory").ends_with("GiB"), "{}", hardware("Memory"));
+    check!(hardware("Graphics") == "Intel Arc Graphics", "{}", hardware("Graphics"));
+    check!(hardware("Disk capacity") == glib::format_size(2000409264 * 512).as_str(), "{}", hardware("Disk capacity"));
+    check!(hardware("Firmware") == "LENOVO N3YET55W (1.20 )", "{}", hardware("Firmware"));
+    settle(0.3);
+    if let Some(path) = screenshot("system-info") {
+        println!("     screenshot: {}", path.display());
+    }
+    let scroll = controls.page.widget.vadjustment();
+    scroll.set_value(scroll.upper());
+    settle(0.3);
+    if let Some(path) = screenshot("system-info-end") {
+        println!("     screenshot: {}", path.display());
+    }
+    controls.copy.emit_clicked();
+    let copied: Rc<RefCell<Option<String>>> = Rc::default();
+    let sink = copied.clone();
+    controls.page.widget.clipboard().read_text_async(gio::Cancellable::NONE, move |text| {
+        sink.replace(Some(text.ok().flatten().map(|t| t.to_string()).unwrap_or_default()));
+    });
+    check!(wait(|| copied.borrow().is_some()), "clipboard read");
+    let text = copied.borrow().clone().unwrap();
+    check!(text == controls.text(), "{text}");
+    check!(text.starts_with("Device name: testbox\nOperating system: Fedora Linux 44 (Workstation Edition)\n"), "{text}");
+    check!(text.contains("\nGraphics: Intel Arc Graphics\n") && text.ends_with("Firmware: LENOVO N3YET55W (1.20 )\n"), "{text}");
+    check!(controls.status.label() == "Copied to the clipboard.");
+    // System Monitor goes through the injected launcher; a failure is shown.
+    controls.monitor.emit_clicked();
+    check!(*fx.fakes.launched.borrow() == [vec!["system-monitor".to_owned()]]);
+    check!(!controls.status.has_css_class("error"));
+    controls.monitor.emit_clicked();
+    check!(controls.status.has_css_class("error") && controls.status.label() == "Could not open System Monitor: not found");
+}
+
 /// Every `target=` of these sections in settings_search.py resolves to a widget.
 fn test_search_targets_match_settings_search(fx: &Fx) {
     let source = std::env::var("BTMANAGER").map(PathBuf::from).unwrap_or_default().join("global-settings/settings_search.py");
@@ -968,7 +1092,7 @@ fn test_multiple_embedded_applets_and_language_share_one_lifecycle(fx: &Fx) {
 
 fn test_unknown_section_is_an_error(fx: &Fx) {
     check!(build_page_with("displays", &fx.dyn_host, &fx.factories).is_err());
-    check!(SECTIONS.len() == 14);
+    check!(SECTIONS.len() == 15);
 }
 
 // --------------------------------------------------------------------- main
@@ -996,6 +1120,8 @@ const TESTS: &[Test] = &[
     ("clipboard_page_edits_the_clipboard_settings_file", test_clipboard_page_edits_the_clipboard_settings_file),
     ("passwords_page_lists_copies_and_deletes_waykeyring_entries",
      test_passwords_page_lists_copies_and_deletes_waykeyring_entries),
+    ("system_info_page_reads_the_fake_root_and_copies_plain_text",
+     test_system_info_page_reads_the_fake_root_and_copies_plain_text),
     ("multiple_embedded_applets_and_language_share_one_lifecycle",
      test_multiple_embedded_applets_and_language_share_one_lifecycle),
     ("unknown_section_is_an_error", test_unknown_section_is_an_error),

@@ -1,0 +1,182 @@
+{
+ "System Information": {
+  "ar": "معلومات النظام", "cs": "Informace o systému", "da": "Systeminformation", "de": "Systeminformationen",
+  "el": "Πληροφορίες συστήματος", "es": "Información del sistema", "fi": "Järjestelmätiedot", "fr": "Informations système",
+  "he": "פרטי המערכת", "hi": "सिस्टम जानकारी", "hu": "Rendszerinformációk", "id": "Informasi Sistem",
+  "it": "Informazioni di sistema", "ja": "システム情報", "ko": "시스템 정보", "nb": "Systeminformasjon",
+  "nl": "Systeeminformatie", "pl": "Informacje o systemie", "pt": "Informações do sistema", "pt_BR": "Informações do sistema",
+  "ro": "Informații despre sistem", "ru": "Сведения о системе", "sk": "Informácie o systéme", "sv": "Systeminformation",
+  "th": "ข้อมูลระบบ", "tr": "Sistem Bilgisi", "uk": "Відомості про систему", "vi": "Thông tin hệ thống",
+  "zh_CN": "系统信息", "zh_TW": "系統資訊"
+ },
+ "Version {value1}": {
+  "ar": "الإصدار {value1}", "cs": "Verze {value1}", "da": "Version {value1}", "de": "Version {value1}",
+  "el": "Έκδοση {value1}", "es": "Versión {value1}", "fi": "Versio {value1}", "fr": "Version {value1}",
+  "he": "גרסה {value1}", "hi": "संस्करण {value1}", "hu": "{value1} verzió", "id": "Versi {value1}",
+  "it": "Versione {value1}", "ja": "バージョン {value1}", "ko": "버전 {value1}", "nb": "Versjon {value1}",
+  "nl": "Versie {value1}", "pl": "Wersja {value1}", "pt": "Versão {value1}", "pt_BR": "Versão {value1}",
+  "ro": "Versiunea {value1}", "ru": "Версия {value1}", "sk": "Verzia {value1}", "sv": "Version {value1}",
+  "th": "เวอร์ชัน {value1}", "tr": "Sürüm {value1}", "uk": "Версія {value1}", "vi": "Phiên bản {value1}",
+  "zh_CN": "版本 {value1}", "zh_TW": "版本 {value1}"
+ },
+ "Hardware": {
+  "ar": "العتاد", "cs": "Hardware", "da": "Hardware", "de": "Hardware",
+  "el": "Υλικό", "es": "Hardware", "fi": "Laitteisto", "fr": "Matériel",
+  "he": "חומרה", "hi": "हार्डवेयर", "hu": "Hardver", "id": "Perangkat keras",
+  "it": "Hardware", "ja": "ハードウェア", "ko": "하드웨어", "nb": "Maskinvare",
+  "nl": "Hardware", "pl": "Sprzęt", "pt": "Hardware", "pt_BR": "Hardware",
+  "ro": "Hardware", "ru": "Оборудование", "sk": "Hardvér", "sv": "Hårdvara",
+  "th": "ฮาร์ดแวร์", "tr": "Donanım", "uk": "Обладнання", "vi": "Phần cứng",
+  "zh_CN": "硬件", "zh_TW": "硬體"
+ },
+ "Kernel version": {
+  "ar": "إصدار النواة", "cs": "Verze jádra", "da": "Kerneversion", "de": "Kernel-Version",
+  "el": "Έκδοση πυρήνα", "es": "Versión del kernel", "fi": "Ytimen versio", "fr": "Version du noyau",
+  "he": "גרסת ליבה", "hi": "कर्नेल संस्करण", "hu": "Kernelverzió", "id": "Versi kernel",
+  "it": "Versione del kernel", "ja": "カーネルバージョン", "ko": "커널 버전", "nb": "Kjerneversjon",
+  "nl": "Kernelversie", "pl": "Wersja jądra", "pt": "Versão do kernel", "pt_BR": "Versão do kernel",
+  "ro": "Versiunea nucleului", "ru": "Версия ядра", "sk": "Verzia jadra", "sv": "Kärnversion",
+  "th": "เวอร์ชันเคอร์เนล", "tr": "Çekirdek sürümü", "uk": "Версія ядра", "vi": "Phiên bản nhân",
+  "zh_CN": "内核版本", "zh_TW": "核心版本"
+ },
+ "Desktop environment": {
+  "ar": "بيئة سطح المكتب", "cs": "Pracovní prostředí", "da": "Skrivebordsmiljø", "de": "Desktop-Umgebung",
+  "el": "Περιβάλλον επιφάνειας εργασίας", "es": "Entorno de escritorio", "fi": "Työpöytäympäristö", "fr": "Environnement de bureau",
+  "he": "סביבת שולחן עבודה", "hi": "डेस्कटॉप वातावरण", "hu": "Asztali környezet", "id": "Lingkungan desktop",
+  "it": "Ambiente desktop", "ja": "デスクトップ環境", "ko": "데스크톱 환경", "nb": "Skrivebordsmiljø",
+  "nl": "Bureaubladomgeving", "pl": "Środowisko graficzne", "pt": "Ambiente de trabalho", "pt_BR": "Ambiente de área de trabalho",
+  "ro": "Mediu desktop", "ru": "Среда рабочего стола", "sk": "Pracovné prostredie", "sv": "Skrivbordsmiljö",
+  "th": "สภาพแวดล้อมเดสก์ท็อป", "tr": "Masaüstü ortamı", "uk": "Стільничне середовище", "vi": "Môi trường màn hình nền",
+  "zh_CN": "桌面环境", "zh_TW": "桌面環境"
+ },
+ "GTK version": {
+  "ar": "إصدار GTK", "cs": "Verze GTK", "da": "GTK-version", "de": "GTK-Version",
+  "el": "Έκδοση GTK", "es": "Versión de GTK", "fi": "GTK-versio", "fr": "Version de GTK",
+  "he": "גרסת GTK", "hi": "GTK संस्करण", "hu": "GTK-verzió", "id": "Versi GTK",
+  "it": "Versione di GTK", "ja": "GTK バージョン", "ko": "GTK 버전", "nb": "GTK-versjon",
+  "nl": "GTK-versie", "pl": "Wersja GTK", "pt": "Versão do GTK", "pt_BR": "Versão do GTK",
+  "ro": "Versiunea GTK", "ru": "Версия GTK", "sk": "Verzia GTK", "sv": "GTK-version",
+  "th": "เวอร์ชัน GTK", "tr": "GTK sürümü", "uk": "Версія GTK", "vi": "Phiên bản GTK",
+  "zh_CN": "GTK 版本", "zh_TW": "GTK 版本"
+ },
+ "Manufacturer": {
+  "ar": "الشركة المصنعة", "cs": "Výrobce", "da": "Producent", "de": "Hersteller",
+  "el": "Κατασκευαστής", "es": "Fabricante", "fi": "Valmistaja", "fr": "Fabricant",
+  "he": "יצרן", "hi": "निर्माता", "hu": "Gyártó", "id": "Produsen",
+  "it": "Produttore", "ja": "製造元", "ko": "제조사", "nb": "Produsent",
+  "nl": "Fabrikant", "pl": "Producent", "pt": "Fabricante", "pt_BR": "Fabricante",
+  "ro": "Producător", "ru": "Производитель", "sk": "Výrobca", "sv": "Tillverkare",
+  "th": "ผู้ผลิต", "tr": "Üretici", "uk": "Виробник", "vi": "Nhà sản xuất",
+  "zh_CN": "制造商", "zh_TW": "製造商"
+ },
+ "Disk capacity": {
+  "ar": "سعة الأقراص", "cs": "Kapacita disků", "da": "Diskkapacitet", "de": "Speicherkapazität",
+  "el": "Χωρητικότητα δίσκων", "es": "Capacidad de disco", "fi": "Levytila", "fr": "Capacité des disques",
+  "he": "נפח אחסון", "hi": "डिस्क क्षमता", "hu": "Lemezkapacitás", "id": "Kapasitas disk",
+  "it": "Capacità del disco", "ja": "ディスク容量", "ko": "디스크 용량", "nb": "Diskkapasitet",
+  "nl": "Schijfcapaciteit", "pl": "Pojemność dysków", "pt": "Capacidade do disco", "pt_BR": "Capacidade do disco",
+  "ro": "Capacitate disc", "ru": "Объём дисков", "sk": "Kapacita diskov", "sv": "Diskkapacitet",
+  "th": "ความจุดิสก์", "tr": "Disk kapasitesi", "uk": "Обсяг дисків", "vi": "Dung lượng ổ đĩa",
+  "zh_CN": "磁盘容量", "zh_TW": "磁碟容量"
+ },
+ "Firmware": {
+  "ar": "البرنامج الثابت", "cs": "Firmware", "da": "Firmware", "de": "Firmware",
+  "el": "Υλικολογισμικό", "es": "Firmware", "fi": "Laiteohjelmisto", "fr": "Micrologiciel",
+  "he": "קושחה", "hi": "फ़र्मवेयर", "hu": "Firmware", "id": "Firmware",
+  "it": "Firmware", "ja": "ファームウェア", "ko": "펌웨어", "nb": "Fastvare",
+  "nl": "Firmware", "pl": "Oprogramowanie układowe", "pt": "Firmware", "pt_BR": "Firmware",
+  "ro": "Firmware", "ru": "Микропрограмма", "sk": "Firmvér", "sv": "Fast programvara",
+  "th": "เฟิร์มแวร์", "tr": "Donanım yazılımı", "uk": "Мікропрограма", "vi": "Phần sụn",
+  "zh_CN": "固件", "zh_TW": "韌體"
+ },
+ "Open System Monitor": {
+  "ar": "فتح مراقب النظام", "cs": "Otevřít Sledování systému", "da": "Åbn Systemovervågning", "de": "Systemmonitor öffnen",
+  "el": "Άνοιγμα Παρακολούθησης συστήματος", "es": "Abrir Monitor del sistema", "fi": "Avaa Järjestelmän valvonta", "fr": "Ouvrir le Moniteur système",
+  "he": "פתיחת צג המערכת", "hi": "सिस्टम मॉनिटर खोलें", "hu": "Rendszerfigyelő megnyitása", "id": "Buka Pemantau Sistem",
+  "it": "Apri Monitor di sistema", "ja": "システムモニターを開く", "ko": "시스템 모니터 열기", "nb": "Åpne Systemovervåker",
+  "nl": "Systeemmonitor openen", "pl": "Otwórz Monitor systemu", "pt": "Abrir o Monitor do sistema", "pt_BR": "Abrir o Monitor do sistema",
+  "ro": "Deschide Monitorul de sistem", "ru": "Открыть системный монитор", "sk": "Otvoriť Monitor systému", "sv": "Öppna Systemövervakare",
+  "th": "เปิดตัวตรวจสอบระบบ", "tr": "Sistem İzleyici'yi aç", "uk": "Відкрити системний монітор", "vi": "Mở Giám sát hệ thống",
+  "zh_CN": "打开系统监视器", "zh_TW": "開啟系統監視器"
+ },
+ "Could not open System Monitor: {value1}": {
+  "ar": "تعذّر فتح مراقب النظام: {value1}", "cs": "Sledování systému nelze otevřít: {value1}", "da": "Systemovervågning kunne ikke åbnes: {value1}", "de": "Systemmonitor konnte nicht geöffnet werden: {value1}",
+  "el": "Δεν ήταν δυνατό το άνοιγμα της Παρακολούθησης συστήματος: {value1}", "es": "No se pudo abrir el Monitor del sistema: {value1}", "fi": "Järjestelmän valvontaa ei voitu avata: {value1}", "fr": "Impossible d’ouvrir le Moniteur système : {value1}",
+  "he": "לא ניתן לפתוח את צג המערכת: {value1}", "hi": "सिस्टम मॉनिटर नहीं खोला जा सका: {value1}", "hu": "A Rendszerfigyelő nem nyitható meg: {value1}", "id": "Tidak dapat membuka Pemantau Sistem: {value1}",
+  "it": "Impossibile aprire Monitor di sistema: {value1}", "ja": "システムモニターを開けませんでした: {value1}", "ko": "시스템 모니터를 열 수 없습니다: {value1}", "nb": "Kunne ikke åpne Systemovervåker: {value1}",
+  "nl": "Systeemmonitor kon niet worden geopend: {value1}", "pl": "Nie można otworzyć Monitora systemu: {value1}", "pt": "Não foi possível abrir o Monitor do sistema: {value1}", "pt_BR": "Não foi possível abrir o Monitor do sistema: {value1}",
+  "ro": "Monitorul de sistem nu a putut fi deschis: {value1}", "ru": "Не удалось открыть системный монитор: {value1}", "sk": "Monitor systému sa nepodarilo otvoriť: {value1}", "sv": "Det gick inte att öppna Systemövervakare: {value1}",
+  "th": "ไม่สามารถเปิดตัวตรวจสอบระบบ: {value1}", "tr": "Sistem İzleyici açılamadı: {value1}", "uk": "Не вдалося відкрити системний монітор: {value1}", "vi": "Không thể mở Giám sát hệ thống: {value1}",
+  "zh_CN": "无法打开系统监视器：{value1}", "zh_TW": "無法開啟系統監視器：{value1}"
+ },
+ "64-bit": {
+  "ar": "64 بت", "cs": "64bitový", "da": "64-bit", "de": "64-Bit",
+  "el": "64-bit", "es": "64 bits", "fi": "64-bittinen", "fr": "64 bits",
+  "he": "64 סיביות", "hi": "64-बिट", "hu": "64 bites", "id": "64-bit",
+  "it": "64 bit", "ja": "64 ビット", "ko": "64비트", "nb": "64-bit",
+  "nl": "64-bits", "pl": "64-bitowy", "pt": "64 bits", "pt_BR": "64 bits",
+  "ro": "64 de biți", "ru": "64-разрядная", "sk": "64-bitový", "sv": "64-bitars",
+  "th": "64 บิต", "tr": "64 bit", "uk": "64-розрядна", "vi": "64-bit",
+  "zh_CN": "64 位", "zh_TW": "64 位元"
+ },
+ "32-bit": {
+  "ar": "32 بت", "cs": "32bitový", "da": "32-bit", "de": "32-Bit",
+  "el": "32-bit", "es": "32 bits", "fi": "32-bittinen", "fr": "32 bits",
+  "he": "32 סיביות", "hi": "32-बिट", "hu": "32 bites", "id": "32-bit",
+  "it": "32 bit", "ja": "32 ビット", "ko": "32비트", "nb": "32-bit",
+  "nl": "32-bits", "pl": "32-bitowy", "pt": "32 bits", "pt_BR": "32 bits",
+  "ro": "32 de biți", "ru": "32-разрядная", "sk": "32-bitový", "sv": "32-bitars",
+  "th": "32 บิต", "tr": "32 bit", "uk": "32-розрядна", "vi": "32-bit",
+  "zh_CN": "32 位", "zh_TW": "32 位元"
+ },
+ "See the operating system, kernel, desktop and GTK versions.": {
+  "ar": "اعرض إصدارات نظام التشغيل والنواة وسطح المكتب وGTK.", "cs": "Zobrazit verze operačního systému, jádra, pracovního prostředí a GTK.", "da": "Se versionerne af styresystemet, kernen, skrivebordet og GTK.", "de": "Versionen von Betriebssystem, Kernel, Desktop und GTK anzeigen.",
+  "el": "Δείτε τις εκδόσεις του λειτουργικού συστήματος, του πυρήνα, της επιφάνειας εργασίας και του GTK.", "es": "Consulte las versiones del sistema operativo, el kernel, el escritorio y GTK.", "fi": "Näytä käyttöjärjestelmän, ytimen, työpöydän ja GTK:n versiot.", "fr": "Voir les versions du système d’exploitation, du noyau, du bureau et de GTK.",
+  "he": "הצגת הגרסאות של מערכת ההפעלה, הליבה, שולחן העבודה ו־GTK.", "hi": "ऑपरेटिंग सिस्टम, कर्नेल, डेस्कटॉप और GTK के संस्करण देखें।", "hu": "Az operációs rendszer, a kernel, az asztal és a GTK verziójának megtekintése.", "id": "Lihat versi sistem operasi, kernel, desktop, dan GTK.",
+  "it": "Visualizza le versioni del sistema operativo, del kernel, del desktop e di GTK.", "ja": "オペレーティングシステム、カーネル、デスクトップ、GTK のバージョンを表示します。", "ko": "운영 체제, 커널, 데스크톱, GTK 버전을 확인합니다.", "nb": "Se versjonene av operativsystemet, kjernen, skrivebordet og GTK.",
+  "nl": "Bekijk de versies van het besturingssysteem, de kernel, het bureaublad en GTK.", "pl": "Wyświetl wersje systemu operacyjnego, jądra, pulpitu i GTK.", "pt": "Veja as versões do sistema operativo, do kernel, do ambiente de trabalho e do GTK.", "pt_BR": "Veja as versões do sistema operacional, do kernel, da área de trabalho e do GTK.",
+  "ro": "Vedeți versiunile sistemului de operare, nucleului, desktopului și GTK.", "ru": "Версии операционной системы, ядра, рабочего стола и GTK.", "sk": "Zobraziť verzie operačného systému, jadra, pracovného prostredia a GTK.", "sv": "Se versionerna av operativsystemet, kärnan, skrivbordet och GTK.",
+  "th": "ดูเวอร์ชันของระบบปฏิบัติการ เคอร์เนล เดสก์ท็อป และ GTK", "tr": "İşletim sistemi, çekirdek, masaüstü ve GTK sürümlerini görün.", "uk": "Версії операційної системи, ядра, стільниці та GTK.", "vi": "Xem phiên bản hệ điều hành, nhân, màn hình nền và GTK.",
+  "zh_CN": "查看操作系统、内核、桌面和 GTK 的版本。", "zh_TW": "檢視作業系統、核心、桌面與 GTK 的版本。"
+ },
+ "See the processor, memory, graphics, disk capacity and firmware.": {
+  "ar": "اعرض المعالج والذاكرة والرسوميات وسعة الأقراص والبرنامج الثابت.", "cs": "Zobrazit procesor, paměť, grafiku, kapacitu disků a firmware.", "da": "Se processor, hukommelse, grafik, diskkapacitet og firmware.", "de": "Prozessor, Arbeitsspeicher, Grafik, Speicherkapazität und Firmware anzeigen.",
+  "el": "Δείτε τον επεξεργαστή, τη μνήμη, τα γραφικά, τη χωρητικότητα δίσκων και το υλικολογισμικό.", "es": "Consulte el procesador, la memoria, los gráficos, la capacidad de disco y el firmware.", "fi": "Näytä suoritin, muisti, grafiikka, levytila ja laiteohjelmisto.", "fr": "Voir le processeur, la mémoire, les graphismes, la capacité des disques et le micrologiciel.",
+  "he": "הצגת המעבד, הזיכרון, הגרפיקה, נפח האחסון והקושחה.", "hi": "प्रोसेसर, मेमोरी, ग्राफ़िक्स, डिस्क क्षमता और फ़र्मवेयर देखें।", "hu": "A processzor, a memória, a grafika, a lemezkapacitás és a firmware megtekintése.", "id": "Lihat prosesor, memori, grafis, kapasitas disk, dan firmware.",
+  "it": "Visualizza processore, memoria, grafica, capacità del disco e firmware.", "ja": "プロセッサー、メモリー、グラフィックス、ディスク容量、ファームウェアを表示します。", "ko": "프로세서, 메모리, 그래픽, 디스크 용량, 펌웨어를 확인합니다.", "nb": "Se prosessor, minne, grafikk, diskkapasitet og fastvare.",
+  "nl": "Bekijk de processor, het geheugen, de grafische kaart, de schijfcapaciteit en de firmware.", "pl": "Wyświetl procesor, pamięć, grafikę, pojemność dysków i oprogramowanie układowe.", "pt": "Veja o processador, a memória, os gráficos, a capacidade do disco e o firmware.", "pt_BR": "Veja o processador, a memória, os gráficos, a capacidade do disco e o firmware.",
+  "ro": "Vedeți procesorul, memoria, grafica, capacitatea discului și firmware-ul.", "ru": "Процессор, память, графика, объём дисков и микропрограмма.", "sk": "Zobraziť procesor, pamäť, grafiku, kapacitu diskov a firmvér.", "sv": "Se processor, minne, grafik, diskkapacitet och fast programvara.",
+  "th": "ดูโปรเซสเซอร์ หน่วยความจำ กราฟิก ความจุดิสก์ และเฟิร์มแวร์", "tr": "İşlemciyi, belleği, grafiği, disk kapasitesini ve donanım yazılımını görün.", "uk": "Процесор, пам’ять, графіка, обсяг дисків і мікропрограма.", "vi": "Xem bộ xử lý, bộ nhớ, đồ họa, dung lượng ổ đĩa và phần sụn.",
+  "zh_CN": "查看处理器、内存、图形、磁盘容量和固件。", "zh_TW": "檢視處理器、記憶體、圖形、磁碟容量與韌體。"
+ },
+ "The name this computer uses on the network.": {
+  "ar": "الاسم الذي يستخدمه هذا الحاسوب على الشبكة.", "cs": "Název, který tento počítač používá v síti.", "da": "Det navn, denne computer bruger på netværket.", "de": "Der Name, den dieser Rechner im Netzwerk verwendet.",
+  "el": "Το όνομα που χρησιμοποιεί αυτός ο υπολογιστής στο δίκτυο.", "es": "El nombre que usa este equipo en la red.", "fi": "Nimi, jota tämä tietokone käyttää verkossa.", "fr": "Le nom que cet ordinateur utilise sur le réseau.",
+  "he": "השם שמחשב זה משתמש בו ברשת.", "hi": "वह नाम जिसका यह कंप्यूटर नेटवर्क पर उपयोग करता है।", "hu": "A számítógép neve a hálózaton.", "id": "Nama yang digunakan komputer ini di jaringan.",
+  "it": "Il nome che questo computer usa in rete.", "ja": "このコンピューターがネットワーク上で使う名前です。", "ko": "이 컴퓨터가 네트워크에서 사용하는 이름입니다.", "nb": "Navnet denne datamaskinen bruker på nettverket.",
+  "nl": "De naam die deze computer op het netwerk gebruikt.", "pl": "Nazwa, której ten komputer używa w sieci.", "pt": "O nome que este computador usa na rede.", "pt_BR": "O nome que este computador usa na rede.",
+  "ro": "Numele pe care acest calculator îl folosește în rețea.", "ru": "Имя, под которым этот компьютер виден в сети.", "sk": "Názov, ktorý tento počítač používa v sieti.", "sv": "Namnet som den här datorn använder i nätverket.",
+  "th": "ชื่อที่คอมพิวเตอร์เครื่องนี้ใช้บนเครือข่าย", "tr": "Bu bilgisayarın ağda kullandığı ad.", "uk": "Назва, під якою цей комп’ютер видно в мережі.", "vi": "Tên mà máy tính này dùng trên mạng.",
+  "zh_CN": "此计算机在网络上使用的名称。", "zh_TW": "這台電腦在網路上使用的名稱。"
+ },
+ "Copy every detail as plain text for bug reports and support requests.": {
+  "ar": "انسخ كل التفاصيل كنص عادي لتقارير الأخطاء وطلبات الدعم.", "cs": "Zkopírovat všechny údaje jako prostý text pro hlášení chyb a žádosti o podporu.", "da": "Kopiér alle detaljer som ren tekst til fejlrapporter og supporthenvendelser.", "de": "Alle Angaben als reinen Text für Fehlerberichte und Supportanfragen kopieren.",
+  "el": "Αντιγραφή όλων των στοιχείων ως απλό κείμενο για αναφορές σφαλμάτων και αιτήματα υποστήριξης.", "es": "Copie todos los datos como texto sin formato para informes de errores y solicitudes de soporte.", "fi": "Kopioi kaikki tiedot pelkkänä tekstinä vikailmoituksia ja tukipyyntöjä varten.", "fr": "Copier tous les détails en texte brut pour les rapports de bogue et les demandes d’assistance.",
+  "he": "העתקת כל הפרטים כטקסט פשוט לדיווחי תקלות ולבקשות תמיכה.", "hi": "बग रिपोर्ट और सहायता अनुरोधों के लिए हर विवरण को सादे टेक्स्ट के रूप में कॉपी करें।", "hu": "Minden adat másolása egyszerű szövegként hibajelentésekhez és támogatási kérésekhez.", "id": "Salin semua detail sebagai teks biasa untuk laporan bug dan permintaan dukungan.",
+  "it": "Copia tutti i dettagli come testo semplice per segnalazioni di bug e richieste di assistenza.", "ja": "バグ報告やサポート依頼のために、すべての詳細をプレーンテキストでコピーします。", "ko": "버그 보고와 지원 요청을 위해 모든 정보를 일반 텍스트로 복사합니다.", "nb": "Kopier alle detaljer som ren tekst til feilrapporter og brukerstøtte.",
+  "nl": "Kopieer alle gegevens als platte tekst voor foutrapporten en ondersteuningsverzoeken.", "pl": "Skopiuj wszystkie szczegóły jako zwykły tekst do zgłoszeń błędów i próśb o pomoc.", "pt": "Copie todos os detalhes como texto simples para relatórios de erros e pedidos de suporte.", "pt_BR": "Copie todos os detalhes como texto simples para relatórios de bugs e pedidos de suporte.",
+  "ro": "Copiați toate detaliile ca text simplu pentru rapoarte de erori și cereri de asistență.", "ru": "Скопировать все сведения обычным текстом для отчётов об ошибках и обращений в поддержку.", "sk": "Skopírovať všetky údaje ako obyčajný text pre hlásenia chýb a žiadosti o podporu.", "sv": "Kopiera alla uppgifter som ren text för felrapporter och supportärenden.",
+  "th": "คัดลอกรายละเอียดทั้งหมดเป็นข้อความธรรมดาสำหรับรายงานข้อบกพร่องและคำขอความช่วยเหลือ", "tr": "Hata raporları ve destek talepleri için tüm ayrıntıları düz metin olarak kopyalayın.", "uk": "Скопіювати всі відомості звичайним текстом для звітів про помилки та звернень до підтримки.", "vi": "Sao chép mọi thông tin dưới dạng văn bản thuần để báo lỗi và yêu cầu hỗ trợ.",
+  "zh_CN": "将所有详细信息复制为纯文本，用于错误报告和支持请求。", "zh_TW": "將所有詳細資訊複製為純文字，用於錯誤回報與支援請求。"
+ },
+ "See running processes and how busy the processor, memory and disks are.": {
+  "ar": "اعرض العمليات الجارية ومدى انشغال المعالج والذاكرة والأقراص.", "cs": "Zobrazit běžící procesy a vytížení procesoru, paměti a disků.", "da": "Se kørende processer, og hvor travlt processor, hukommelse og diske har.", "de": "Laufende Prozesse und die Auslastung von Prozessor, Arbeitsspeicher und Datenträgern anzeigen.",
+  "el": "Δείτε τις διεργασίες που εκτελούνται και πόσο απασχολημένοι είναι ο επεξεργαστής, η μνήμη και οι δίσκοι.", "es": "Consulte los procesos en ejecución y la carga del procesador, la memoria y los discos.", "fi": "Näytä käynnissä olevat prosessit sekä suorittimen, muistin ja levyjen kuormitus.", "fr": "Voir les processus en cours et la charge du processeur, de la mémoire et des disques.",
+  "he": "הצגת התהליכים הפועלים ומידת העומס על המעבד, הזיכרון והכוננים.", "hi": "चल रही प्रक्रियाएँ और प्रोसेसर, मेमोरी व डिस्क कितने व्यस्त हैं, देखें।", "hu": "A futó folyamatok, valamint a processzor, a memória és a lemezek terhelésének megtekintése.", "id": "Lihat proses yang berjalan dan seberapa sibuk prosesor, memori, dan disk.",
+  "it": "Visualizza i processi in esecuzione e il carico di processore, memoria e dischi.", "ja": "実行中のプロセスと、プロセッサー・メモリー・ディスクの使用状況を表示します。", "ko": "실행 중인 프로세스와 프로세서, 메모리, 디스크 사용량을 확인합니다.", "nb": "Se kjørende prosesser og hvor travle prosessoren, minnet og diskene er.",
+  "nl": "Bekijk actieve processen en hoe druk de processor, het geheugen en de schijven zijn.", "pl": "Wyświetl uruchomione procesy i obciążenie procesora, pamięci oraz dysków.", "pt": "Veja os processos em execução e a carga do processador, da memória e dos discos.", "pt_BR": "Veja os processos em execução e a carga do processador, da memória e dos discos.",
+  "ro": "Vedeți procesele care rulează și cât de ocupate sunt procesorul, memoria și discurile.", "ru": "Запущенные процессы и загрузка процессора, памяти и дисков.", "sk": "Zobraziť spustené procesy a vyťaženie procesora, pamäte a diskov.", "sv": "Se processer som körs och hur belastade processorn, minnet och diskarna är.",
+  "th": "ดูโปรเซสที่กำลังทำงานและภาระของโปรเซสเซอร์ หน่วยความจำ และดิสก์", "tr": "Çalışan işlemleri ve işlemcinin, belleğin ve disklerin ne kadar meşgul olduğunu görün.", "uk": "Запущені процеси та завантаження процесора, пам’яті й дисків.", "vi": "Xem các tiến trình đang chạy và mức bận của bộ xử lý, bộ nhớ và ổ đĩa.",
+  "zh_CN": "查看正在运行的进程以及处理器、内存和磁盘的繁忙程度。", "zh_TW": "檢視執行中的程序，以及處理器、記憶體與磁碟的忙碌程度。"
+ }
+}
