@@ -104,6 +104,9 @@ pub const REPLACEMENTS: &[(&str, &str)] = &[
     ("<!-- Desktop suite keybindings end -->", "<!-- Tessel keybindings end -->"),
     ("<!-- Waytile keyboard begin -->", "<!-- Tessel Tiling keyboard begin -->"),
     ("<!-- Waytile keyboard end -->", "<!-- Tessel Tiling keyboard end -->"),
+    // ~/.config/autostart/desktop-suite-icon-theme.desktop (login icon theme repair)
+    ("/.local/share/desktop-suite/session/desktop-suite-icon-theme", "/.local/lib/tessel/tessel-icon-theme"),
+    ("Name=Desktop Suite icon theme check", "Name=Tessel icon theme check"),
     // labwc commands written by the old installers and Global Settings
     ("~/.local/share/wayshell/wayshell-cli", "~/.local/bin/tessel-shell-cli"),
     ("/.local/bin/wayshell-lock", "/.local/bin/tessel-shell-lock"),
@@ -246,7 +249,7 @@ pub fn migrate(home: &Home) -> io::Result<Report> {
         }
     }
     for file in [home.config.join("labwc/rc.xml"), home.config.join("labwc/menu.xml"), home.config.join("labwc/environment"),
-                 home.config.join("mimeapps.list"),
+                 home.config.join("mimeapps.list"), home.config.join("autostart/desktop-suite-icon-theme.desktop"),
                  home.data.join("applications/mimeapps.list")] {
         if file.is_file() {
             rewrite_file(&file, &mut report)?;
