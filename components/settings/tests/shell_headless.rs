@@ -9,7 +9,6 @@ use std::time::{Duration, Instant};
 
 use tessel_settings::gs_base::style::{self, footer, page_header, symbolic_icon, unify_header, align_page_gutter, HeaderIcon, PAGE_MARGIN};
 use tessel_settings::gs_base::{tags, Host, SettingsPage};
-use tessel_settings::search::SearchIndex;
 use tessel_settings::window::{GlobalSettingsWindow, PageFactory, SECTIONS};
 use gtk::prelude::*;
 use gtk::{gdk, gio, glib};
@@ -414,15 +413,6 @@ fn audio_result_reveals_nested_audio_page() {
     window.cleanup();
     window.window.destroy();
 }
-
-/// Python's SearchIndex on the same queries (driver run inside this private
-/// session) must give the same ordered (section, key) lists.
-/// Search entries added after the port (no Python counterpart).
-const RUST_ONLY: &[(&str, &str)] = &[("theme", "icons")];
-/// Sections the Python suite does not have at all (Archive Manager replaces KDE's Ark; Clipboard, Klipper;
-/// System Information, KDE's About this System).
-const RUST_ONLY_SECTIONS: &[&str] = &["archive", "clipboard", "passwords", "systeminfo"];
-
 
 /// SingletonTests: a second launch is forwarded to this primary (private bus)
 /// and routes its --section into the existing window; --quit is refused

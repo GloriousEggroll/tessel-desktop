@@ -16,14 +16,13 @@ use tessel_session_startup::xml;
 struct Live {
     home: PathBuf,
     labwc: PathBuf,
-    units: PathBuf,
 }
 
 fn live() -> Option<Live> {
     suite_root()?;
     let home = scratch("labwc-session-test").join("home");
     live_home(&home);
-    Some(Live { labwc: home.join(".config/labwc"), units: home.join(".config/systemd/user"), home })
+    Some(Live { labwc: home.join(".config/labwc"), home })
 }
 
 impl Live {
