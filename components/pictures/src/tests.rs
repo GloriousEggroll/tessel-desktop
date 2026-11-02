@@ -346,11 +346,11 @@ fn cli_matches_argparse() {
     assert!(args(&["--full", "--slide", "--ch"]).unwrap().check);
     assert_eq!(args(&["--", "-x.png"]).unwrap().files, ["-x.png"]);
     assert_eq!(args(&["--help"]).unwrap_err(), Exit { code: 0, stdout: HELP.into(), stderr: String::new() });
-    let usage = "usage: picture_viewer.py [-h] [-f] [-s] [--check] [files ...]\n";
-    assert_eq!(args(&["--bogus"]).unwrap_err().stderr, format!("{usage}picture_viewer.py: error: unrecognized arguments: --bogus\n"));
-    assert_eq!(args(&["-x"]).unwrap_err().stderr, format!("{usage}picture_viewer.py: error: unrecognized arguments: -x\n"));
+    let usage = "usage: tessel-pictures [-h] [-f] [-s] [--check] [files ...]\n";
+    assert_eq!(args(&["--bogus"]).unwrap_err().stderr, format!("{usage}tessel-pictures: error: unrecognized arguments: --bogus\n"));
+    assert_eq!(args(&["-x"]).unwrap_err().stderr, format!("{usage}tessel-pictures: error: unrecognized arguments: -x\n"));
     assert_eq!(args(&["--fu=1"]).unwrap_err().stderr,
-               format!("{usage}picture_viewer.py: error: argument -f/--fullscreen: ignored explicit argument '1'\n"));
+               format!("{usage}tessel-pictures: error: argument -f/--fullscreen: ignored explicit argument '1'\n"));
     assert_eq!(check(), ("{\"ready\": true, \"gtk\": 4, \"application_id\": \"org.tessel.Pictures\", \
                           \"save_formats\": [\"BMP\", \"GIF\", \"JPEG\", \"PNG\", \"TIFF\", \"WEBP\"]}".to_string(), 0));
 }

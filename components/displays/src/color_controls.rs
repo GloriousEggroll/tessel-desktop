@@ -130,14 +130,14 @@ fn row(parent: &gtk::Box, title: &str, control: &impl IsA<gtk::Widget>, expand: 
     row
 }
 
-/// `../tessel-hdr-calibration/hdr_calibration.py` next to the installed program
-/// (`$WAY_DISPLAYS_HDR_CALIBRATION` overrides).
-pub fn hdr_calibration_path() -> PathBuf {
+/// The installed `tessel-hdr-calibration` program, or `None` when it is not
+/// installed (`$WAY_DISPLAYS_HDR_CALIBRATION` overrides).
+pub fn hdr_calibration_path() -> Option<PathBuf> {
     if let Some(path) = std::env::var_os("WAY_DISPLAYS_HDR_CALIBRATION").filter(|v| !v.is_empty()) {
-        return PathBuf::from(path);
+        return Some(PathBuf::from(path)).filter(|p| p.is_file());
     }
-    let exe = std::env::current_exe().ok().and_then(|p| p.canonicalize().ok()).unwrap_or_default();
-    exe.parent().and_then(|p| p.parent()).unwrap_or(std::path::Path::new("/")).join("tessel-hdr-calibration/hdr_calibration.py")
+    let program = tessel_core::paths::program("tessel-hdr-calibration");
+    if program.is_absolute() { Some(program) } else { glib::find_program_in_path(&program) }
 }
 
 impl ColorControls {
@@ -260,14 +260,12 @@ impl ColorControls {
     }
 
     fn calibrate_hdr(&self) {
-        let app = hdr_calibration_path();
-        let result = if !app.is_file() {
-            Err(tr!("Install HDR Calibration to use this control."))
-        } else {
-            let python = if std::path::Path::new("/usr/bin/python3").exists() { "/usr/bin/python3" } else { "python3" };
+        let result = if let Some(app) = hdr_calibration_path() {
             use std::os::unix::process::CommandExt;
-            std::process::Command::new(python).arg(&app).arg("--output").arg(&self.connector).process_group(0)
+            std::process::Command::new(app).arg("--output").arg(&self.connector).process_group(0)
                 .spawn().map(|_| ()).map_err(|e| tessel_core::pyerr::os_error_text(&e))
+        } else {
+            Err(tr!("Install HDR Calibration to use this control."))
         };
         if let Err(error) = result {
             self.error.replace(error);

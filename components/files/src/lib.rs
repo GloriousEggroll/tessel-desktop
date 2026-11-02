@@ -1,4 +1,4 @@
-//! tessel-files: the Files application (Rust port of ~/tessel-bluetooth/tessel-files;
+//! tessel-files: the Files application (ported from the retired Python Files;
 //! contract in contracts/tessel-files.md). The GTK-free backend lives in the
 //! sibling crates `tessel-files-ops` (operations/tools/extras/preferences) and
 //! `tessel-files-model` (model/launch/bus/completion/goto/devices); dialogs, previews

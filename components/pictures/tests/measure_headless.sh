@@ -1,5 +1,5 @@
 #!/bin/sh
-# Rust vs Python Pictures: time until the window is mapped (wlrctl sees app_id
+# Pictures: time until the window is mapped (wlrctl sees app_id
 # org.tessel.Pictures) and idle RSS/PSS with the same fixture photo open, in a
 # private nested headless labwc with a private D-Bus, private XDG dirs and a
 # private Pictures folder. Never touches the live session.
@@ -14,21 +14,16 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q --release -p tessel-pictures)
 REL="$ROOT/target/release"
-env -u WAYLAND_DISPLAY -u DISPLAY -u DBUS_SESSION_BUS_ADDRESS PYTHONDONTWRITEBYTECODE=1 python3 -I -c '
-import sys
-from PIL import Image, ImageDraw
-for name, color in (("01-sunset.png", "#ba6d8d"), ("02-coast.jpg", "#5180a7")):
-    picture = Image.new("RGB", (1600, 1000), color)
-    draw = ImageDraw.Draw(picture)
-    draw.ellipse((980, 180, 1280, 480), fill="#f5d29c")
-    draw.polygon([(0, 1000), (600, 400), (1140, 1000)], fill="#31455a")
-    picture.save(sys.argv[1] + "/" + name)
-' "$R/pictures"
+for spec in "01-sunset.png #ba6d8d" "02-coast.jpg #5180a7"; do
+  set -- $spec
+  magick -size 1600x1000 "xc:$2" -fill '#f5d29c' -draw 'ellipse 1130,330 150,150 0,360' \
+    -fill '#31455a' -draw 'polygon 0,1000 600,400 1140,1000' "$R/pictures/$1"
+done
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data"
-export XDG_STATE_HOME="$R/xdg/state" GSETTINGS_BACKEND=memory PYTHONDONTWRITEBYTECODE=1
+export XDG_STATE_HOME="$R/xdg/state" GSETTINGS_BACKEND=memory
 export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0
 ms() { date +%s%3N; }
 rss() { echo "\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) PSS=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
@@ -44,7 +39,6 @@ measure() {
 }
 for i in 1 2; do
   measure rust "$REL/tessel-pictures"
-  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-pictures/picture_viewer.py
 done
 labwc --exit
 RUN

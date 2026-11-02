@@ -39,10 +39,10 @@ pub trait Transaction {
 
 pub type AuthFactory = Rc<dyn Fn(Callbacks) -> Rc<dyn Transaction>>;
 
-/// `Path(__file__).with_name('tessel-lock-pam')`: next to the running executable.
+/// The PAM helper, `tessel-lock-pam`, in the program directory (next to the
+/// running executable first).
 pub fn helper_path() -> PathBuf {
-    std::env::current_exe().ok().and_then(|exe| exe.parent().map(|dir| dir.join("tessel-lock-pam")))
-        .unwrap_or_else(|| PathBuf::from("tessel-lock-pam"))
+    tessel_core::paths::program("tessel-lock-pam")
 }
 
 /// Helper command line for the selected fixed policy.

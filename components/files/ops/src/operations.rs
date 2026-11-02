@@ -583,7 +583,7 @@ impl Operations {
             #[cfg(test)]
             hooks: self.inner.hooks.lock().unwrap().clone(),
         };
-        std::thread::Builder::new().name(format!("Tessel Files-{kind}"))
+        std::thread::Builder::new().name(format!("tessel-files-{kind}"))
             .spawn(move || worker.run())
             .expect("spawn file operation worker");
         job

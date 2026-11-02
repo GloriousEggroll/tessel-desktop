@@ -271,19 +271,11 @@ mod tests {
     }
 
     #[test]
-    fn usage_and_help_match_python() {
-        let usage_text = "usage: session_manager.py [-h] [--popup] [--menu]\n                          [--popup-edge {top,bottom,left,right}]\n                          [--popup-offset POPUP_OFFSET]\n";
-        assert_eq!(usage("session_manager.py"), usage_text);
-        assert_eq!(error_text("session_manager.py", "unrecognized arguments: extra"),
-                   format!("{usage_text}session_manager.py: error: unrecognized arguments: extra\n"));
-        assert!(help("session_manager.py").starts_with(&format!("{usage_text}\n{DESCRIPTION}\n\noptions:\n")));
-    }
-
-    #[test]
-    fn shim_keeps_the_menu_flag_desktop_suite_action_greps_for() {
-        // tessel-action: grep -E "[\"']--menu[\"']" session_manager.py
-        let shim = include_str!("../shim/session_manager.py");
-        assert!(shim.contains("'--menu'") || shim.contains("\"--menu\""));
-        assert!(shim.contains("os.execv") && shim.contains("\"tessel-session\""));
+    fn usage_and_help_match_argparse() {
+        let usage_text = "usage: tessel-session [-h] [--popup] [--menu]\n                      [--popup-edge {top,bottom,left,right}]\n                      [--popup-offset POPUP_OFFSET]\n";
+        assert_eq!(usage("tessel-session"), usage_text);
+        assert_eq!(error_text("tessel-session", "unrecognized arguments: extra"),
+                   format!("{usage_text}tessel-session: error: unrecognized arguments: extra\n"));
+        assert!(help("tessel-session").starts_with(&format!("{usage_text}\n{DESCRIPTION}\n\noptions:\n")));
     }
 }

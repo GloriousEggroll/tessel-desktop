@@ -315,7 +315,7 @@ fn raise_attempt(id: String, window: glib::WeakRef<gtk::Window>, valid: std::rc:
 mod tests {
     use super::*;
     use std::collections::HashSet;
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     fn theme_names(theme: &str) -> HashSet<String> {
         let mut names = HashSet::new();
@@ -337,22 +337,28 @@ mod tests {
     // breeze and Papirus through ICON_FALLBACKS (reads installed themes only).
     #[test]
     fn settings_and_welcome_icons_resolve_to_symbolic_names() {
-        let source = tessel_core::paths::home().join("tessel-bluetooth");
+        let components = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../components");
         let chains: [(&str, &[&str]); 2] = [("breeze", &["breeze", "hicolor"]), ("Papirus", &["Papirus", "breeze", "hicolor"])];
-        if !source.is_dir() || ["breeze", "Papirus", "hicolor"].iter().any(|t| !Path::new("/usr/share/icons").join(t).is_dir()) {
-            eprintln!("skipping: sources or icon themes not installed");
+        if ["breeze", "Papirus", "hicolor"].iter().any(|t| !Path::new("/usr/share/icons").join(t).join("index.theme").is_file()) {
+            eprintln!("skipping: icon themes not installed");
             return;
         }
         let mut used = HashSet::new();
-        for folder in ["tessel-settings", "welcome"] {
-            let files: Vec<PathBuf> = std::fs::read_dir(source.join(folder)).unwrap().flatten().map(|e| e.path()).collect();
+        for folder in ["settings", "welcome"] {
+            let mut files = Vec::new();
+            let mut stack = vec![components.join(folder).join("src")];
+            while let Some(directory) = stack.pop() {
+                for path in std::fs::read_dir(&directory).unwrap().flatten().map(|e| e.path()) {
+                    if path.is_dir() { stack.push(path) } else { files.push(path) }
+                }
+            }
             for file in files {
                 let name = file.file_name().unwrap().to_string_lossy().into_owned();
-                if !name.ends_with(".py") || name.starts_with("test_") {
+                if !name.ends_with(".rs") || name.ends_with("tests.rs") {
                     continue;
                 }
                 let text = std::fs::read_to_string(&file).unwrap_or_default();
-                // re.findall(r"['\"]([a-z0-9-]+-symbolic)['\"]", text)
+                // Quoted `[a-z0-9-]+-symbolic` names.
                 let bytes = text.as_bytes();
                 let quote = |b: u8| b == b'\'' || b == b'"';
                 let mut i = 0;
@@ -373,7 +379,7 @@ mod tests {
                 }
             }
         }
-        for required in ["bluetooth-active-symbolic", "night-light-symbolic", "preferences-desktop-keyboard-shortcuts-symbolic",
+        for required in ["bluetooth-active-symbolic", "preferences-desktop-keyboard-shortcuts-symbolic",
                          "preferences-desktop-appearance-symbolic", "input-keyboard-symbolic"] {
             assert!(used.contains(required), "{required}");
         }

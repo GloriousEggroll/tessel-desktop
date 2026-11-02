@@ -3,7 +3,7 @@ name = "tessel-files-widgets"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Files GTK widgets: files_style.py, files_information.py, file_print.py, file_quicklook.py, file_dialogs.py, file_jobs.py, files_devices.DiskUsage."
+description = "Files GTK widgets: style, information panel, printing, quick look, dialogs, job progress and disk usage."
 
 [lib]
 name = "tessel_files_widgets"

@@ -1,5 +1,5 @@
 //! `welcome.arguments()`: argparse (`allow_abbrev`) with byte-identical texts.
-pub const PROG: &str = "welcome.py";
+pub const PROG: &str = "tessel-welcome";
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Arguments {
@@ -9,10 +9,10 @@ pub struct Arguments {
 
 pub type Exit = (i32, String, String);
 
-pub const USAGE: &str = "usage: welcome.py [-h] [--first-run] [--page PAGE]\n";
+pub const USAGE: &str = "usage: tessel-welcome [-h] [--first-run] [--page PAGE]\n";
 
 pub fn help() -> String {
-    format!("{USAGE}\nWelcome: first-run setup for Tessel; reopen it from the application\nmenu.\n\noptions:\n  -h, --help   show this help message and exit\n  --first-run  opened by the first-login setup\n  --page PAGE  start at this step\n")
+    format!("{USAGE}\nWelcome: first-run setup for Tessel; reopen it from the application menu.\n\noptions:\n  -h, --help   show this help message and exit\n  --first-run  opened by the first-login setup\n  --page PAGE  start at this step\n")
 }
 
 fn error(message: &str) -> Exit { (2, String::new(), format!("{USAGE}{PROG}: error: {message}\n")) }
@@ -106,10 +106,9 @@ mod tests {
         assert_eq!(parse(&v(&["--page", "nonsense"])).unwrap().page.as_deref(), Some("nonsense"));
     }
 
-    /// Byte comparison with argparse output captured from welcome.py inside
-    /// the private headless session (tests/fixtures/welcome_capture.out).
+    /// Byte comparison with the argparse-style texts in tests/fixtures/welcome_capture.out.
     #[test]
-    fn texts_match_captured_python_output() {
+    fn texts_match_captured_output() {
         let captured = include_str!("../tests/fixtures/welcome_capture.out");
         for block in captured.split("=== ").skip(1) {
             let (header, body) = block.split_once('\n').unwrap();

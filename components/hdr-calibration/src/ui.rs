@@ -139,9 +139,7 @@ pub fn pattern_helper() -> PathBuf {
     if let Some(path) = std::env::var_os("HDR_CALIBRATION_PATTERN") {
         return PathBuf::from(path);
     }
-    let directory = std::env::current_exe().ok().and_then(|e| e.parent().map(Path::to_path_buf)).unwrap_or_default();
-    let helper = directory.join("hdr-pattern");
-    if helper.exists() { helper } else { directory.join("build/hdr-pattern") }
+    tessel_core::paths::program("hdr-pattern")
 }
 
 impl Window {

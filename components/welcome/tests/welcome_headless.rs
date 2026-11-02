@@ -1,4 +1,4 @@
-//! Welcome GUI checks (port of test_welcome.py WelcomeUITests) in the private
+//! Welcome GUI checks in the private
 //! headless labwc. Run only through tests/run_headless.sh.
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -316,7 +316,7 @@ fn single_instance_routes_page() {
     assert_eq!(window.current(), Some("style"));
     let (code, err) = run(&["--page"]);
     assert_eq!(code, 2);
-    assert!(err.ends_with("welcome.py: error: argument --page: expected one argument\n"), "{err}");
+    assert!(err.ends_with("tessel-welcome: error: argument --page: expected one argument\n"), "{err}");
     assert!(Rc::ptr_eq(&app.window.borrow().clone().unwrap().0, &window.0));
     assert_eq!(*first_runs.borrow(), vec![true]);
     window.window.close();

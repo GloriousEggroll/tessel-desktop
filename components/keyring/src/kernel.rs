@@ -4,6 +4,8 @@
 use crate::crypto::MasterKey;
 
 pub const DESCRIPTION: &str = "tessel-keyring:master";
+/// The name pre-Tessel PAM modules stored the key under: read, never written.
+pub const LEGACY_DESCRIPTION: &str = "waykeyring:master";
 const KEY_SPEC_USER_KEYRING: libc::c_long = -4;
 const KEYCTL_UNLINK: libc::c_long = 9;
 const KEYCTL_SEARCH: libc::c_long = 10;
@@ -48,9 +50,13 @@ fn find(name: &str) -> Option<libc::c_long> {
     (id >= 0).then_some(id)
 }
 
-/// The key the login stored, if any.
+/// The key the login stored, if any (an older login's name as a fallback).
 pub fn load() -> Option<MasterKey> {
-    load_as(DESCRIPTION)
+    load_first(&[DESCRIPTION, LEGACY_DESCRIPTION])
+}
+
+fn load_first(names: &[&str]) -> Option<MasterKey> {
+    names.iter().find_map(|name| load_as(name))
 }
 
 fn load_as(name: &str) -> Option<MasterKey> {
@@ -64,9 +70,10 @@ fn load_as(name: &str) -> Option<MasterKey> {
     MasterKey::from_bytes(&buffer[..len as usize])
 }
 
-/// Remove the key (keyring locked by the user).
+/// Remove the key (keyring locked by the user), under either name.
 pub fn forget() {
-    forget_as(DESCRIPTION)
+    forget_as(DESCRIPTION);
+    forget_as(LEGACY_DESCRIPTION);
 }
 
 fn forget_as(name: &str) {
@@ -89,5 +96,21 @@ mod tests {
         assert_eq!(load_as(&name).unwrap().bytes(), key.bytes());
         forget_as(&name);
         assert!(load_as(&name).is_none());
+    }
+
+    #[test]
+    fn load_prefers_the_new_name_and_falls_back_to_the_old_one() {
+        // Throw-away names standing for DESCRIPTION and LEGACY_DESCRIPTION.
+        let (new, old) = (format!("tessel-keyring-test-new:{}", std::process::id()),
+                          format!("tessel-keyring-test-old:{}", std::process::id()));
+        let (new_key, old_key) = (MasterKey::generate().unwrap(), MasterKey::generate().unwrap());
+        assert!(load_first(&[&new, &old]).is_none());
+        store_as(&old, &old_key).unwrap();
+        assert_eq!(load_first(&[&new, &old]).unwrap().bytes(), old_key.bytes(), "an old login still unlocks");
+        store_as(&new, &new_key).unwrap();
+        assert_eq!(load_first(&[&new, &old]).unwrap().bytes(), new_key.bytes(), "the new name wins");
+        forget_as(&new);
+        forget_as(&old);
+        assert!(load_first(&[&new, &old]).is_none());
     }
 }

@@ -182,7 +182,7 @@ impl Default for ConfigStore {
 
 impl ConfigStore {
     pub fn new(path: Option<PathBuf>) -> Self {
-        Self { path: path.unwrap_or_else(|| config_home().join("tessel/tessel-lock.json")) }
+        Self { path: path.unwrap_or_else(|| tessel_core::paths::suite_config_dir().join("lock-screen.json")) }
     }
 
     pub fn load(&self) -> Result<LockConfig, String> {
@@ -256,7 +256,7 @@ pub fn home_assistant_installed() -> bool {
 
 /// `desktop_wallpaper(monitor)`: the monitor's still-image wallpaper.
 pub fn desktop_wallpaper(monitor: &str) -> Option<PathBuf> {
-    let text = std::fs::read_to_string(config_home().join("tessel-shell/wallpapers.json")).ok()?;
+    let text = std::fs::read_to_string(tessel_core::paths::component_config_dir("shell").join("wallpapers.json")).ok()?;
     let data: Value = serde_json::from_str(&text).ok()?;
     let entry = data.as_object()?.get(monitor).cloned().unwrap_or(Value::Object(Map::new()));
     let file = entry.as_object()?.get("file_path").and_then(Value::as_str).unwrap_or("").to_owned();
@@ -311,7 +311,7 @@ mod tests {
     fn store_writes_python_bytes() {
         let dir = std::env::temp_dir().join(format!("gs-lock-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        let store = ConfigStore::new(Some(dir.join("tessel/tessel-lock.json")));
+        let store = ConfigStore::new(Some(dir.join("tessel/lock-screen.json")));
         assert_eq!(store.load().unwrap(), LockConfig::default());
         let mut changes = Map::new();
         changes.insert("slideshow".into(), json!(["/x.png"]));

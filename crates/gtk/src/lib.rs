@@ -1,5 +1,5 @@
-//! Shared GTK4 helpers of Tessel (ports of tessel-bluetooth/shared GTK
-//! modules and the Tessel Dock palette theme). Re-exports `gtk4` as `gtk`.
+//! Shared GTK4 helpers of Tessel (widgets, popups, OSD, blur and the
+//! Tessel Dock palette theme). Re-exports `gtk4` as `gtk`.
 
 pub use gtk;
 pub use gtk4_layer_shell as layer_shell;

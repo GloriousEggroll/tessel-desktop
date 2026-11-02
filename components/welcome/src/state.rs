@@ -1,22 +1,12 @@
-//! Setup state and launch helpers from welcome_ui.py.
+//! Setup state and launch helpers.
 use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-/// `state_directory(environ)`: `$XDG_STATE_HOME or ~/.local/state` + `tessel`.
-pub fn state_directory_from(state_home: Option<&str>, home: &Path) -> PathBuf {
-    match state_home.filter(|s| !s.is_empty()) {
-        Some(base) => PathBuf::from(base),
-        None => home.join(".local/state"),
-    }
-    .join("tessel")
-}
-
-pub fn state_directory() -> PathBuf {
-    state_directory_from(std::env::var("XDG_STATE_HOME").ok().as_deref(), &tessel_core::paths::home())
-}
+/// `~/.local/state/tessel`.
+pub fn state_directory() -> PathBuf { tessel_core::paths::suite_state_dir() }
 
 pub fn setup_done_path() -> PathBuf { state_directory().join("setup-done") }
 
@@ -26,7 +16,7 @@ pub struct InstallStatus {
     pub failed: Vec<String>,
 }
 
-/// The last `install_all.py --apply` result, or None when there is none.
+/// The last installation result (`install-status.json`), or None when there is none.
 pub fn install_status(path: Option<&Path>) -> Option<InstallStatus> {
     let path = path.map(Path::to_path_buf).unwrap_or_else(|| state_directory().join("install-status.json"));
     let text = std::fs::read(&path).ok()?;
@@ -80,20 +70,9 @@ pub fn mark_setup_done(path: Option<&Path>) -> std::io::Result<PathBuf> {
     Ok(path)
 }
 
-/// argv for Global Settings: the installed launcher, else the Rust binary
-/// beside this executable, else the installed Python entry point.
-pub fn settings_command(arguments: &[&str], home: Option<&Path>) -> Vec<String> {
-    let home = home.map(Path::to_path_buf).unwrap_or_else(tessel_core::paths::home);
-    let launcher = home.join(".local/bin/tessel-settings");
-    let mut argv = if launcher.is_file() && tessel_core::shell::is_executable(&launcher) {
-        vec![launcher.to_string_lossy().into_owned()]
-    } else if let Some(binary) = std::env::current_exe().ok().and_then(|exe| exe.parent().map(|p| p.join("tessel-settings")))
-        .filter(|p| p.is_file() && tessel_core::shell::is_executable(p)) {
-        vec![binary.to_string_lossy().into_owned()]
-    } else {
-        vec!["/usr/bin/python3".to_owned(),
-             home.join(".local/share/tessel-settings/global_settings.py").to_string_lossy().into_owned()]
-    };
+/// argv for Settings (`tessel-settings`).
+pub fn settings_command(arguments: &[&str]) -> Vec<String> {
+    let mut argv = vec![tessel_core::paths::program("tessel-settings").to_string_lossy().into_owned()];
     argv.extend(arguments.iter().map(|a| a.to_string()));
     argv
 }
@@ -119,13 +98,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&base);
         std::fs::create_dir_all(&base).unwrap();
         base
-    }
-
-    #[test]
-    fn state_paths_follow_xdg_state_home() {
-        assert_eq!(state_directory_from(Some("/x/state"), Path::new("/home/u")).join("setup-done"),
-                   PathBuf::from("/x/state/tessel/setup-done"));
-        assert_eq!(state_directory_from(Some(""), Path::new("/home/u")), PathBuf::from("/home/u/.local/state/tessel"));
     }
 
     #[test]
@@ -158,14 +130,10 @@ mod tests {
     }
 
     #[test]
-    fn settings_command_prefers_the_installed_launcher() {
-        let base = scratch("launcher");
-        let command = settings_command(&["--shortcuts"], Some(&base));
-        assert_eq!(command.last().unwrap(), "--shortcuts");
-        let launcher = base.join(".local/bin/tessel-settings");
-        std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
-        std::fs::write(&launcher, "#!/bin/sh\n").unwrap();
-        std::fs::set_permissions(&launcher, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
-        assert_eq!(settings_command(&["--shortcuts"], Some(&base)), vec![launcher.to_string_lossy().into_owned(), "--shortcuts".into()]);
+    fn settings_command_runs_tessel_settings() {
+        let command = settings_command(&["--shortcuts"]);
+        assert_eq!(command.len(), 2);
+        assert!(command[0].ends_with("tessel-settings"), "{command:?}");
+        assert_eq!(command[1], "--shortcuts");
     }
 }

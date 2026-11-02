@@ -15,9 +15,9 @@ use tessel_core::pyjson::py_float;
 pub const VERSION: i64 = 1;
 pub const DELAY_SECONDS: f64 = 30.0;
 
-/// `$XDG_STATE_HOME/tessel-text-editor/recovery` (default `~/.local/state/...`).
+/// `~/.local/state/tessel/text-editor/recovery`.
 pub fn recovery_dir() -> PathBuf {
-    tessel_core::paths::state_home().join("tessel-text-editor/recovery")
+    tessel_core::paths::component_state_dir("text-editor").join("recovery")
 }
 
 pub fn new_identifier() -> String {
@@ -93,7 +93,7 @@ fn alive(pid: Option<&Value>) -> bool {
     }
     let Ok(command) = std::fs::read(format!("/proc/{pid}/cmdline")) else { return false };
     let has = |needle: &[u8]| command.windows(needle.len()).any(|w| w == needle);
-    has(b"text_editor") || has(b"tessel-text-editor") || has(b"editor_ui")
+    has(b"text_editor") || has(b"text-editor") || has(b"editor_ui")
 }
 
 /// `value == 1` in Python (1, 1.0 and True).

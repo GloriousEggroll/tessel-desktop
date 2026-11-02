@@ -1,5 +1,5 @@
 //! The PAM helper side (`tessel-keyring --login`, `--change-password`), run as the
-//! user by pam_waykeyring.so with the password on stdin.
+//! user by pam_tessel_keyring.so with the password on stdin.
 //!
 //! `--login`: first sign-in creates the keyring (master key wrapped with the
 //! login password); later ones unwrap the master key. Either way the key goes

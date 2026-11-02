@@ -13,10 +13,7 @@ printf '<labwc_config/>\n' > "$R/cfg/rc.xml"
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-text-editor --test ui_headless --no-run --message-format=json 2>/dev/null \
-      | python3 -c 'import json,sys
-for line in sys.stdin:
-    m=json.loads(line)
-    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
+      | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable) | .executable')
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh

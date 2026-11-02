@@ -1,11 +1,11 @@
-//! calculator.py `arguments()` (argparse) and `check()`.
+//! The argparse-style command line and `check()`.
 
 use crate::backend::MAX_EXPRESSION;
 
-/// argparse's `prog`: the Python launcher runs `calculator.py`.
-pub const PROG: &str = "calculator.py";
-pub const USAGE: &str = "usage: calculator.py [-h] [--scientific] [--check] [expression]\n";
-pub const HELP: &str = "usage: calculator.py [-h] [--scientific] [--check] [expression]
+/// argparse's `prog`: the binary name.
+pub const PROG: &str = "calculator";
+pub const USAGE: &str = "usage: calculator [-h] [--scientific] [--check] [expression]\n";
+pub const HELP: &str = "usage: calculator [-h] [--scientific] [--check] [expression]
 
 A standalone themed calculator with standard and scientific modes.
 

@@ -13,7 +13,11 @@ fn map(value: Value) -> Map<String, Value> {
 }
 
 fn set_raw_xattr(path: &Path, value: &[u8]) -> std::result::Result<(), i32> {
-    let name = std::ffi::CString::new(METADATA_ATTRIBUTE).unwrap();
+    set_named_xattr(path, METADATA_ATTRIBUTE, value)
+}
+
+fn set_named_xattr(path: &Path, attribute: &str, value: &[u8]) -> std::result::Result<(), i32> {
+    let name = std::ffi::CString::new(attribute).unwrap();
     let target = fsx::cstring(path).unwrap();
     let status = unsafe { libc::lsetxattr(target.as_ptr(), name.as_ptr(), value.as_ptr().cast(), value.len(), 0) };
     if status == 0 { Ok(()) } else { Err(std::io::Error::last_os_error().raw_os_error().unwrap_or(0)) }
@@ -104,6 +108,18 @@ fn test_fallback_for_unsupported_xattrs_is_atomic_and_inode_bound() {
     write(&replacement, "A different file");
     std::fs::rename(&replacement, &f.file).unwrap();
     assert_eq!(f.store.read(&f.file), EMPTY_METADATA);
+}
+
+#[test]
+fn test_legacy_xattr_is_read_until_the_next_edit() {
+    let f = fixture();
+    if let Err(errno) = set_named_xattr(&f.file, LEGACY_METADATA_ATTRIBUTE, b"{\"rating\":3}") {
+        eprintln!("Test filesystem lacks xattrs: errno {errno}; skipping");
+        return;
+    }
+    assert_eq!(f.store.read(&f.file).rating, 3);
+    f.store.write(&f.file, &map(json!({"rating": 2}))).unwrap();
+    assert_eq!(f.store.read(&f.file).rating, 2);
 }
 
 #[test]

@@ -968,14 +968,14 @@ fn main() {
     }
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_default();
-    if runtime == "/run/user/1000" || display.is_empty() || !std::env::temp_dir().to_string_lossy().contains("/cbt/rust-archive-manager/") {
+    if runtime == "/run/user/1000" || display.is_empty() || !std::env::temp_dir().to_string_lossy().contains("/cbt/rust-") {
         eprintln!("ui_headless: refusing to run outside the private compositor");
         std::process::exit(1);
     }
     let filters: Vec<String> = std::env::args().skip(1).collect();
     tessel_core::i18n::initialize();
     gtk::init().expect("gtk");
-    let config = std::env::temp_dir().join("config/tessel-archive.json");
+    let config = std::env::temp_dir().join("config/archive-manager.json");
     let app = App::new(gio::ApplicationFlags::HANDLES_COMMAND_LINE, Store::new(Some(config)));
     app.app.register(None::<&gio::Cancellable>).expect("register on the private bus");
     assert!(!app.app.is_remote());

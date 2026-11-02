@@ -1,9 +1,9 @@
-//! pam_waykeyring.so
+//! pam_tessel_keyring.so
 //!
 //! ```text
-//! -auth     optional pam_waykeyring.so      # keep a copy of the password for the session
-//! -session  optional pam_waykeyring.so      # run `tessel-keyring --login` as the user with it on stdin
-//! -password optional pam_waykeyring.so      # run `tessel-keyring --change-password` (old NUL new)
+//! -auth     optional pam_tessel_keyring.so      # keep a copy of the password for the session
+//! -session  optional pam_tessel_keyring.so      # run `tessel-keyring --login` as the user with it on stdin
+//! -password optional pam_tessel_keyring.so      # run `tessel-keyring --change-password` (old NUL new)
 //! ```
 //!
 //! Never fails a login: every entry point returns PAM_IGNORE (or PAM_SUCCESS
@@ -13,7 +13,7 @@
 use std::ffi::{c_char, c_int, c_void, CStr, CString};
 use std::ptr;
 
-pub const DEFAULT_HELPER: &str = "/usr/local/lib/tessel/keyring/tessel-keyring";
+pub const DEFAULT_HELPER: &str = "/usr/local/lib/tessel/tessel-keyring";
 const DATA_NAME: &[u8] = b"tessel_keyring_authtok\0";
 const HELPER_TIMEOUT_SECONDS: u64 = 20;
 
@@ -79,7 +79,7 @@ fn helper_path(argc: c_int, argv: *const *const c_char) -> CString {
 }
 
 fn log(message: &str) {
-    if let Ok(text) = CString::new(format!("pam_waykeyring: {message}")) {
+    if let Ok(text) = CString::new(format!("pam_tessel_keyring: {message}")) {
         // SAFETY: constant format string and a valid C string argument.
         unsafe { libc::syslog(libc::LOG_AUTHPRIV | libc::LOG_NOTICE, b"%s\0".as_ptr() as *const c_char, text.as_ptr()) };
     }

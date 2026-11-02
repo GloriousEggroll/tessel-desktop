@@ -149,19 +149,3 @@ pub const NAVIGATION_CSS: &str = r#"
 }
 "#;
 
-#[cfg(test)]
-mod tests {
-    /// Byte-identical to the Python bytes literals (read-only check when the source is present).
-    #[test]
-    fn matches_python_source() {
-        let path = std::path::Path::new(&std::env::var("HOME").unwrap_or_default()).join("tessel-bluetooth/tessel-files/files_style.py");
-        let Ok(source) = std::fs::read_to_string(path) else { return };
-        let literal = |name: &str| {
-            let start = source.find(&format!("{name} = b'''")).unwrap() + name.len() + 7;
-            let end = source[start..].find("'''").unwrap() + start;
-            source[start..end].to_string()
-        };
-        assert_eq!(literal("CSS"), super::CSS);
-        assert_eq!(literal("NAVIGATION_CSS"), super::NAVIGATION_CSS);
-    }
-}

@@ -646,7 +646,7 @@ impl SessionApplication {
 
     fn command_line(&self, command: &gio::ApplicationCommandLine) -> glib::ExitCode {
         let arguments: Vec<String> = command.arguments().iter().map(|a| a.to_string_lossy().into_owned()).collect();
-        let prog = args::prog(arguments.first().map(String::as_str).unwrap_or("session_manager.py"));
+        let prog = args::prog(arguments.first().map(String::as_str).unwrap_or("tessel-session"));
         match args::parse(arguments.get(1..).unwrap_or(&[])) {
             Outcome::Run(parsed) => {
                 self.show(&parsed.popup_edge, parsed.popup_offset as i32, parsed.menu);

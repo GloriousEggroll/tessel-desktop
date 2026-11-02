@@ -3,7 +3,7 @@ name = "tessel-lock"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "Tessel Shell secure session lock (ext-session-lock-v1) + tessel-lock-pam helper (Rust port of tessel-lock/)."
+description = "Tessel secure session lock (ext-session-lock-v1) + tessel-lock-pam helper (Rust port of tessel-lock/)."
 build = "build.rs"
 
 [lib]

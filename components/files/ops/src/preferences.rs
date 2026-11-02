@@ -47,26 +47,14 @@ fn choices(key: &str) -> Option<&'static [&'static str]> {
 const PREFERENCES_STYLE: JsonStyle = JsonStyle { ensure_ascii: false, sort_keys: false, indent: Some(2),
                                                  item_separator: ",", key_separator: ": " };
 
-/// `$XDG_CONFIG_HOME` when absolute, else `~/.config` (pure form for tests).
-fn config_home_from(value: Option<std::ffi::OsString>, home: &Path) -> PathBuf {
-    match value {
-        Some(value) if Path::new(&value).is_absolute() => PathBuf::from(value),
-        _ => home.join(".config"),
-    }
-}
-
-fn config_home() -> PathBuf {
-    config_home_from(std::env::var_os("XDG_CONFIG_HOME"), &tessel_core::paths::home())
-}
-
-/// Default preferences file: `$XDG_CONFIG_HOME/tessel/tessel-files.json`.
+/// Default preferences file: `~/.config/tessel/file-manager.json`.
 pub fn default_preferences_path() -> PathBuf {
-    config_home().join("tessel/tessel-files.json")
+    tessel_core::paths::suite_config_dir().join("file-manager.json")
 }
 
 /// Default GTK bookmarks file: `$XDG_CONFIG_HOME/gtk-3.0/bookmarks`.
 pub fn default_bookmarks_path() -> PathBuf {
-    config_home().join("gtk-3.0/bookmarks")
+    tessel_core::paths::config_home().join("gtk-3.0/bookmarks")
 }
 
 /// `^[A-Za-z][A-Za-z0-9+.-]*:`, at most 8192 characters, no whitespace or NUL.

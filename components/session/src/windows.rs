@@ -58,22 +58,15 @@ pub type ErrorFn = Rc<dyn Fn(String)>;
 /// `WindowBackend(on_changed, on_error)`.
 pub type WindowFactory = Rc<dyn Fn(Changed, ErrorFn) -> Rc<dyn WindowSource>>;
 
-/// The helper Python's `_window_backend_class()` would use: Tessel Dock's
-/// development tree next to this component (`<exe dir>/../tessel-dock`), then the
-/// installed runtime copy `~/.local/share/tessel-dock`. `SESSION_MANAGER_WINDOW_HELPER`
-/// overrides the search (development and tests).
+/// Tessel Dock's window helper (`tessel-dock-toplevel`, found with
+/// [`tessel_core::paths::program`] or on `PATH`), or `None` when it is not installed.
+/// `SESSION_MANAGER_WINDOW_HELPER` overrides the search (development and tests).
 pub fn helper_path() -> Option<PathBuf> {
     if let Some(path) = std::env::var_os("SESSION_MANAGER_WINDOW_HELPER").filter(|v| !v.is_empty()) {
         return Some(PathBuf::from(path));
     }
-    let mut folders = Vec::new();
-    if let Some(dir) = std::env::current_exe().ok().and_then(|e| e.canonicalize().ok()).and_then(|e| e.parent().map(PathBuf::from)) {
-        if let Some(root) = dir.parent() {
-            folders.push(root.join("tessel-dock"));
-        }
-    }
-    folders.push(tessel_core::paths::home().join(".local/share/tessel-dock"));
-    folders.into_iter().map(|folder| folder.join("tessel-dock-toplevel")).find(|helper| helper.is_file())
+    let helper = tessel_core::paths::program("tessel-dock-toplevel");
+    if helper.is_absolute() { Some(helper) } else { glib::find_program_in_path(&helper) }
 }
 
 /// Factory for the real helper, or `None` when no helper is installed

@@ -44,8 +44,7 @@ fn status() -> i32 {
 
 fn main() {
     tessel_core::i18n::initialize();
-    let exe = std::env::current_exe().unwrap_or_else(|_| "tessel-keyring".into());
-    let mut config = Config::default_for(&exe);
+    let mut config = Config::installed();
     let mut mode = "serve";
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {

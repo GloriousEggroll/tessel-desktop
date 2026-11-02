@@ -538,8 +538,8 @@ fn test_gio_file_open_and_set_default_text_editor(f: &Fixture) {
     assert_eq!(f.window.text(), "key = 1\n");
     let applications = PathBuf::from(std::env::var("XDG_DATA_HOME").unwrap()).join("applications");
     std::fs::create_dir_all(&applications).unwrap();
-    let desktop = std::fs::read_to_string("/home/tcrider/tessel-bluetooth/tessel-text-editor/org.tessel.TextEditor.desktop").unwrap();
-    std::fs::write(applications.join("org.tessel.TextEditor.desktop"), desktop.replace("Exec=tessel-text-editor", "Exec=true")).unwrap();
+    std::fs::write(applications.join("org.tessel.TextEditor.desktop"),
+                   "[Desktop Entry]\nType=Application\nName=Text Editor\nExec=true %F\nMimeType=text/plain;\n").unwrap();
     WidgetExt::activate_action(&f.window.window, "win.set-default", None).unwrap();
     settle(0.1);
     let mimeapps = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap()).join("mimeapps.list");
@@ -573,7 +573,7 @@ fn test_non_utf8_asks_for_an_encoding(f: &Fixture) {
 fn test_view_toggles_persist_preferences(f: &Fixture) {
     WidgetExt::activate_action(&f.window.window, "win.wrap", None).unwrap();
     assert_eq!(f.window.view.wrap_mode(), gtk::WrapMode::None);
-    let config = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap()).join("tessel/tessel-text-editor.json");
+    let config = PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap()).join("tessel/text-editor.json");
     let value: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&config).unwrap()).unwrap();
     assert_eq!(value["wrap"], false);
     assert!(value["recent"].is_array());

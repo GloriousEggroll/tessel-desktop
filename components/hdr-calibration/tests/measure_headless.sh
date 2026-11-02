@@ -1,10 +1,10 @@
 #!/bin/sh
-# Rust vs Python tessel-hdr-calibration: time until the window is mapped (wlrctl sees
+# tessel-hdr-calibration: time until the window is mapped (wlrctl sees
 # app_id org.desktop.HDRCalibration) and idle RSS/PSS after 3 s, 2 runs each, in a
 # private nested headless labwc with a private D-Bus and private XDG dirs.
-# Both read only the private compositor's own status file ($R/rt/labwc-color-*.ini,
-# which lists no HDR output) and are never clicked, so neither writes rc.xml,
-# profiles or reports nor signals anything. Display/colour tools on PATH are
+# It reads only the private compositor's own status file ($R/rt/labwc-color-*.ini,
+# which lists no HDR output) and is never clicked, so it writes no rc.xml,
+# profiles or reports and signals nothing. Display/colour tools on PATH are
 # logging fakes; hdr-pattern is a fake too.
 set -eu
 AGENT=${AGENT:-hdr-calibration}
@@ -24,7 +24,7 @@ cat > "$R/run.sh" <<RUN
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" PATH="$R/bin:\$PATH" TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config"
 export XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" GSETTINGS_BACKEND=memory
-export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0 PYTHONDONTWRITEBYTECODE=1
+export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0
 export HDR_CALIBRATION_PATTERN="$R/bin/hdr-pattern"
 ms() { date +%s%3N; }
 rss() { echo "\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) PSS=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
@@ -40,7 +40,6 @@ measure() {
 }
 for i in 1 2; do
   measure rust "$REL/tessel-hdr-calibration"
-  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-hdr-calibration/hdr_calibration.py
 done
 labwc --exit
 RUN

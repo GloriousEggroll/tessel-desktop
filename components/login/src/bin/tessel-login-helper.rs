@@ -5,7 +5,7 @@
 //! `{"expected": <current appearance>, "appearance": <new appearance>}`. Every
 //! field is validated, the session must be installed and the wallpaper must be
 //! a system-readable image. The only file written is
-//! `/etc/tessel-login/appearance.json` (atomic replace, 0644, Python `json.dump`
+//! `/etc/tessel/login/appearance.json` (atomic replace, 0644, Python `json.dump`
 //! bytes). This binary links only GLib/libc (no GTK) and has no environment or flag
 //! overrides; tests inject paths through `cfg(test)` code only.
 use std::ffi::OsStr;
@@ -303,7 +303,7 @@ fn write_config(config: &Path, appearance: &Appearance) -> Result<(), String> {
 }
 
 /// Python's `main()`, with the destination and session roots as parameters.
-/// Production passes the fixed `/etc/tessel-login/appearance.json`, the system
+/// Production passes the fixed `/etc/tessel/login/appearance.json`, the system
 /// session roots and the real effective UID; only `cfg(test)` code passes others.
 fn run(config: &Path, roots: &[PathBuf], euid: u32, argc: usize, stdin: &mut dyn Read) -> Result<(), String> {
     if euid != 0 || argc != 1 {
@@ -352,7 +352,7 @@ mod tests {
             let sessions = root.join("sessions");
             std::fs::create_dir_all(&sessions).unwrap();
             std::fs::write(sessions.join("labwc.desktop"), "[Desktop Entry]\nName=labwc\nExec=sh\n").unwrap();
-            Fixture { config: root.join("etc/tessel-login/appearance.json"), roots: vec![sessions], root }
+            Fixture { config: root.join("etc/tessel/login/appearance.json"), roots: vec![sessions], root }
         }
 
         /// The write path with an injected euid of 0 — this test process is

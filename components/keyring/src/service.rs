@@ -110,7 +110,7 @@ pub struct Config {
     pub gnome_dir: PathBuf,
     /// KDE wallets to import (`~/.local/share/kwalletd`).
     pub kwallet_dir: PathBuf,
-    /// The GTK password prompt (`tessel-keyring-prompt` next to the binary).
+    /// The GTK password prompt (`tessel-keyring-prompt`).
     pub prompt: PathBuf,
     /// Take the master key from the kernel keyring (off in tests).
     pub kernel: bool,
@@ -119,13 +119,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn default_for(exe: &std::path::Path) -> Self {
+    pub fn installed() -> Self {
         let chkpwd = ["/usr/sbin/unix_chkpwd", "/sbin/unix_chkpwd"].iter().map(PathBuf::from).find(|p| p.exists());
         Config {
             dir: crate::store::default_dir(),
             gnome_dir: gnome_import::gnome_dir(),
             kwallet_dir: kwallet_import::kwallet_dir(),
-            prompt: exe.parent().map(|d| d.join("tessel-keyring-prompt")).unwrap_or_else(|| "tessel-keyring-prompt".into()),
+            prompt: tessel_core::paths::program("tessel-keyring-prompt"),
             kernel: true,
             chkpwd,
         }

@@ -1,6 +1,6 @@
 //! `tessel-files-widgets`: the standalone GTK4 widgets of Files (tessel-files), ported from
-//! `~/tessel-bluetooth/tessel-files/{files_style,files_information,file_print,file_quicklook,
-//! file_dialogs,file_jobs,files_devices}.py`. Contract: `contracts/tessel-files.md` §5.
+//! the retired Python Files (`{files_style,files_information,file_print,file_quicklook,
+//! file_dialogs,file_jobs,files_devices}.py`). Contract: `contracts/tessel-files.md` §5.
 //!
 //! Widgets are cheap-to-clone `Rc` handles (Python subclasses → struct + `widget()`);
 //! Python attributes are public fields reachable through `Deref` or accessor methods.

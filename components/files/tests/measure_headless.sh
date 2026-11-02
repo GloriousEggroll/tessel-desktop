@@ -1,11 +1,10 @@
 #!/bin/sh
-# Rust vs Python Files (tessel-files): time until the window is mapped (wlrctl sees
+# Files (tessel-files): time until the window is mapped (wlrctl sees
 # app_id org.tessel.Files), idle RSS/PSS after 3 s on an empty folder, and
 # RSS/PSS after browsing (a second invocation opens a 2,000-file folder with
 # 120 PNG images in icon view, 4 s later), two runs each, in a private nested
 # headless labwc with a private D-Bus (no service activation) and private
-# HOME/XDG dirs. Python runs only inside this private environment
-# (PYTHONDONTWRITEBYTECODE=1, fake HOME). Never touches the live session.
+# HOME/XDG dirs. Never touches the live session.
 set -eu
 AGENT=${AGENT:-file-manager}
 R=/run/user/1000/cbt/rust-$AGENT/m
@@ -28,7 +27,7 @@ cat > "$R/run.sh" <<RUN
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export HOME="$R/home" TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data"
 export XDG_STATE_HOME="$R/xdg/state" GSETTINGS_BACKEND=memory GIO_USE_VFS=local NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo
-export GDK_BACKEND=wayland GTK_USE_PORTAL=0 GDK_DEBUG=no-portals PYTHONDONTWRITEBYTECODE=1 PATH="$R/bin:\$PATH"
+export GDK_BACKEND=wayland GTK_USE_PORTAL=0 GDK_DEBUG=no-portals PATH="$R/bin:\$PATH"
 ms() { date +%s%3N; }
 mem() { echo "rss_kb=\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) pss_kb=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
 measure() {
@@ -45,7 +44,6 @@ measure() {
 }
 for i in 1 2; do
   measure rust "$REL/tessel-files"
-  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-files/file_manager.py
 done
 labwc --exit
 RUN

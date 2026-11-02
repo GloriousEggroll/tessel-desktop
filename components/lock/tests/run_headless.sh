@@ -7,8 +7,6 @@
 # real locker runs with a tessel-lock-pam wrapper that loads a FAKE libpam.so.0;
 # the system PAM stack is never used. The run FAILS if anything is
 # D-Bus-activated on the private bus.
-#   LOCK_MEASURE_PYTHON=1  also measure ~/tessel-bluetooth/tessel-lock/lock_screen.py
-#                          (inside the private env only, fake HOME).
 # Extra arguments filter check names.
 set -eu
 AGENT=${AGENT:-lock}
@@ -21,17 +19,14 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
     /usr/share/dbus-1/session.conf > "$R/d.conf"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-lock --test ui_headless --no-run --message-format=json 2>/dev/null \
-      | python3 -c 'import json,sys
-for line in sys.stdin:
-    m=json.loads(line)
-    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
+      | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable != null) | .executable')
 [ -n "$BIN" ] || { echo "build failed"; exit 1; }
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 LANG=C.UTF-8 HOME="$R/home" DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" LOCK_UI_ISOLATED_TEST=1 LOCK_TEST_DIR="$R/tmp" \
-LOCK_SCREEN_BIN="${LOCK_SCREEN_BIN:-}" LOCK_MEASURE_PYTHON="${LOCK_MEASURE_PYTHON:-0}" LOCK_PYTHON_SOURCE="$HOME/tessel-bluetooth/tessel-lock/lock_screen.py" \
+LOCK_SCREEN_BIN="${LOCK_SCREEN_BIN:-}" \
 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0 \
 GDK_DEBUG=no-portals GIO_USE_VFS=local TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" \
 XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" XDG_DATA_DIRS="$R/xdg/data:/usr/share" \

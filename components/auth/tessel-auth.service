@@ -5,7 +5,7 @@ PartOf=graphical-session.target
 
 [Service]
 Type=notify
-ExecStart=%h/.local/share/tessel-auth/tessel-auth
+ExecStart=%h/.local/lib/tessel/tessel-auth
 Restart=on-failure
 RestartSec=2
 TimeoutStartSec=15

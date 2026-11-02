@@ -165,6 +165,20 @@ fn environment_block_add_update_remove() {
 }
 
 #[test]
+fn blocks_written_before_the_tessel_rename_are_still_managed() {
+    let dir = scratch("legacy-markers");
+    let path = dir.join("environment");
+    std::fs::write(&path, "A=1\n# way-displays-gui primary output environment begin\nPROTON_WAYLAND_MONITOR=DP-1\n# way-displays-gui primary output environment end\n").unwrap();
+    assert_eq!(primary::read_labwc_primary_environment(&path).as_deref(), Some("DP-1"));
+    primary::write_labwc_primary_environment(&path, Some("DP-2"));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(!text.contains("way-displays-gui") && text.matches("PROTON_WAYLAND_MONITOR=").count() == 1, "{text}");
+    let rc = dir.join("rc.xml");
+    std::fs::write(&rc, "<labwc_config>\n  <!-- way-displays-gui HDR overrides begin -->\n  <hdrOutputs>\n    <output name=\"DP-1\" enabled=\"no\" />\n  </hdrOutputs>\n  <!-- way-displays-gui HDR overrides end -->\n</labwc_config>\n").unwrap();
+    assert_eq!(labwc::read_labwc_hdr_config(&rc).managed.get("DP-1"), Some(&false));
+}
+
+#[test]
 fn environment_parse_prefers_first_nonempty_variable() {
     let text = "A=1\n# tessel-displays primary output environment begin\r\nSDL_VIDEO_DISPLAY_PRIORITY=\nPROTON_WAYLAND_MONITOR= DP-3 \n# tessel-displays primary output environment end  \n";
     assert_eq!(primary::parse_labwc_primary_environment(text).as_deref(), Some("DP-3"));

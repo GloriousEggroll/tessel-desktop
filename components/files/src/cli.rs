@@ -4,21 +4,21 @@
 use gtk::gio;
 use gtk::prelude::*;
 
-pub const PROG: &str = "file_manager.py";
-pub const USAGE: &str = "usage: file_manager.py [-h] [--check] [--new-window] [--select] [--split]
-                       [--home]
-                       [locations ...]
+pub const PROG: &str = "tessel-files";
+pub const USAGE: &str = "usage: tessel-files [-h] [--check] [--new-window] [--select] [--split]
+                    [--home]
+                    [locations ...]
 ";
 /// Usage of the primary's `ArgumentParser(add_help=False)` (no prog given:
 /// argparse uses `sys.argv[0]`'s basename).
-pub const COMMAND_USAGE: &str = "usage: file_manager.py [--new-window] [--select] [--split] [--home]
-                       [locations ...]
+pub const COMMAND_USAGE: &str = "usage: tessel-files [--new-window] [--select] [--split] [--home]
+                    [locations ...]
 ";
-pub const HELP: &str = "usage: file_manager.py [-h] [--check] [--new-window] [--select] [--split]
-                       [--home]
-                       [locations ...]
+pub const HELP: &str = "usage: tessel-files [-h] [--check] [--new-window] [--select] [--split]
+                    [--home]
+                    [locations ...]
 
-Browse files with Tessel.
+Browse files.
 
 positional arguments:
   locations
@@ -156,7 +156,7 @@ mod tests {
         assert_eq!(o.locations, ["a", "--split"]);
         let e = parse(&args(&["--s"]), true).unwrap_err();
         assert_eq!(e.code, 2);
-        assert!(e.stderr.ends_with("file_manager.py: error: ambiguous option: --s could match --select, --split\n"));
+        assert!(e.stderr.ends_with("tessel-files: error: ambiguous option: --s could match --select, --split\n"));
         let e = parse(&args(&["--bogus", "-x"]), true).unwrap_err();
         assert!(e.stderr.ends_with("error: unrecognized arguments: --bogus -x\n"), "{}", e.stderr);
         assert_eq!(parse(&args(&["-h"]), true).unwrap_err().stdout, HELP);

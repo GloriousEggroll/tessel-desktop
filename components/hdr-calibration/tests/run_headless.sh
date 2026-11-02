@@ -17,10 +17,7 @@ done
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 (cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo build -q -p tessel-hdr-calibration --bin tessel-hdr-calibration)
 BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-hdr-calibration --test ui_headless --no-run --message-format=json 2>/dev/null \
-      | python3 -c 'import json,sys
-for line in sys.stdin:
-    m=json.loads(line)
-    if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
+      | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable) | .executable')
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh

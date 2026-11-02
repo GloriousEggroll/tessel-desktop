@@ -16,6 +16,11 @@ use tessel_core::pyerr::os_error_path;
 
 pub const BEGIN: &str = "<!-- tessel-displays color management begin -->";
 pub const END: &str = "<!-- tessel-displays color management end -->";
+/// The markers written before the Tessel rename; read as the current ones.
+pub const LEGACY_MARKERS: [(&str, &str); 2] = [
+    ("<!-- way-displays-gui color management begin -->", BEGIN),
+    ("<!-- way-displays-gui color management end -->", END),
+];
 pub const MAX_PROFILE: usize = 16 * 1024 * 1024;
 static BLOCK: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("(?s){}.*?{}", regex::escape(BEGIN), regex::escape(END))).unwrap());
 static CLOSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)</(?:labwc_config|openbox_config)\s*>").unwrap());
@@ -371,6 +376,16 @@ pub struct Transaction {
     pub backup: PathBuf,
 }
 
+/// Replace managed-block markers written before the Tessel rename with the current ones.
+pub fn upgrade_markers(mut text: String, legacy: &[(&str, &str)]) -> String {
+    for (old, new) in legacy {
+        if text.contains(old) {
+            text = text.replace(old, new);
+        }
+    }
+    text
+}
+
 fn trailing_only(text: &str, from: usize) -> bool {
     ONLY_TRAILING.is_match(&text[from..])
 }
@@ -398,6 +413,7 @@ pub fn write_colors(path: &Path, changes: &BTreeMap<String, ColorSettings>) -> R
     };
     let mut text = String::from_utf8(before.clone())
         .map_err(|e| ColorError::Value(format!("'utf-8' codec can't decode byte: {e}")))?;
+    text = upgrade_markers(text, &LEGACY_MARKERS);
     parse_colors(&text)?; // Reject malformed XML before any write.
     let matches: Vec<_> = BLOCK.find_iter(&text).map(|m| m.as_str().to_owned()).collect();
     if matches.len() > 1 || text.matches(BEGIN).count() != matches.len() || text.matches(END).count() != matches.len() {
@@ -452,10 +468,8 @@ pub fn write_colors(path: &Path, changes: &BTreeMap<String, ColorSettings>) -> R
     };
     let after = format!("{}{block}\n{}", &text[..close], &text[close..]).into_bytes();
     parse_colors(std::str::from_utf8(&after).unwrap())?;
-    let state = std::env::var("XDG_STATE_HOME").ok().filter(|v| !v.is_empty()).map(PathBuf::from)
-        .unwrap_or_else(|| tessel_core::paths::home().join(".local/state"));
     let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-    let backup = state.join("tessel/backups/color").join(format!("{nanos}-rc.xml"));
+    let backup = tessel_core::paths::suite_state_dir().join("backups/color").join(format!("{nanos}-rc.xml"));
     atomic_write(&backup, &before, 0o600)?;
     atomic_write(&path, &after, mode)?;
     Ok(Transaction { path, before, after, mode, existed, backup })

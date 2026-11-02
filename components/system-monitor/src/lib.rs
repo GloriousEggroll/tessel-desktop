@@ -1,4 +1,4 @@
-//! Rust port of `~/tessel-bluetooth/tessel-system-monitor` (see contracts/tessel-system-monitor.md).
+//! System Monitor: processes, performance, storage, network and graphics (see contracts/tessel-system-monitor.md).
 pub mod app;
 pub mod args;
 pub mod backend;

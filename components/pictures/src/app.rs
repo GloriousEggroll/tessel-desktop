@@ -8,8 +8,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use tessel_core::tr;
 
-pub const USAGE: &str = "usage: picture_viewer.py [-h] [-f] [-s] [--check] [files ...]\n";
-pub const HELP: &str = "usage: picture_viewer.py [-h] [-f] [-s] [--check] [files ...]
+pub const USAGE: &str = "usage: tessel-pictures [-h] [-f] [-s] [--check] [files ...]\n";
+pub const HELP: &str = "usage: tessel-pictures [-h] [-f] [-s] [--check] [files ...]
 
 Standalone GTK4 picture viewer and simple image editor.
 
@@ -39,7 +39,7 @@ pub struct Exit {
 }
 
 fn error(message: &str) -> Exit {
-    Exit { code: 2, stdout: String::new(), stderr: format!("{USAGE}picture_viewer.py: error: {message}\n") }
+    Exit { code: 2, stdout: String::new(), stderr: format!("{USAGE}tessel-pictures: error: {message}\n") }
 }
 
 const LONG: [(&str, &str); 4] = [("--help", "-h/--help"), ("--fullscreen", "-f/--fullscreen"), ("--slideshow", "-s/--slideshow"), ("--check", "--check")];

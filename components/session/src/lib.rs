@@ -1,4 +1,4 @@
-//! Rust port of tessel-bluetooth/tessel-session: on-demand session controls
+//! Session: on-demand session controls
 //! (lock, switch user, log out, sleep, restart, power off) for the dock's
 //! session button and the `--menu` keyboard shortcut / power button.
 

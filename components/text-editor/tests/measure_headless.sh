@@ -1,5 +1,5 @@
 #!/bin/sh
-# Rust vs Python text editor: time until the window is mapped (wlrctl sees app_id
+# Text editor: time until the window is mapped (wlrctl sees app_id
 # org.tessel.TextEditor) and idle RSS/PSS, opening the same small file, 2 runs
 # each, in a private nested headless labwc with a private D-Bus and private XDG
 # dirs (recovery drafts, preferences and palette stay inside $R). Never touches
@@ -19,7 +19,7 @@ cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data"
-export XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" GSETTINGS_BACKEND=memory PYTHONDONTWRITEBYTECODE=1
+export XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" GSETTINGS_BACKEND=memory
 export NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GDK_BACKEND=wayland GTK_USE_PORTAL=0
 ms() { date +%s%3N; }
 mem() { echo "rss_kb=\$(awk '/VmRSS/ {print \$2}' /proc/\$1/status) pss_kb=\$(awk '/^Pss:/ {print \$2}' /proc/\$1/smaps_rollup)"; }
@@ -34,7 +34,6 @@ measure() {
 }
 for i in 1 2; do
   measure rust "$REL/tessel-text-editor"
-  measure python /usr/bin/python3 /home/tcrider/tessel-bluetooth/tessel-text-editor/text_editor.py
 done
 labwc --exit
 RUN

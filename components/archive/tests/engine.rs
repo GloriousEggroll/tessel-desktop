@@ -1,6 +1,6 @@
 //! Engine checks against the real tools and libarchive: every plugin, format
 //! and operation on fixtures under `std::env::temp_dir()` (run with
-//! TMPDIR=/run/user/1000/cbt/rust-archive-manager so they stay private).
+//! TMPDIR=/run/user/1000/cbt/rust-archive so they stay private).
 //! Formats whose tool is missing are skipped with a note.
 
 use tessel_archive::archive::{CreateOptions, Ctx, Error};

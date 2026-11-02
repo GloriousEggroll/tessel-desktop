@@ -14,6 +14,8 @@ use way_displays::color_config::{self, ColorError, Status, Transaction};
 
 pub const BEGIN: &str = "<!-- tessel-hdr-calibration begin -->";
 pub const END: &str = "<!-- tessel-hdr-calibration end -->";
+/// The markers written before the Tessel rename; read as the current ones.
+const LEGACY_MARKERS: [(&str, &str); 2] = [("<!-- hdr-calibration begin -->", BEGIN), ("<!-- hdr-calibration end -->", END)];
 static BLOCK: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("(?s){}.*?{}", regex::escape(BEGIN), regex::escape(END))).unwrap());
 static CLOSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)</(?:labwc_config|openbox_config)\s*>").unwrap());
 static SELF_CLOSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)/\s*>").unwrap());
@@ -63,20 +65,14 @@ fn value_error(text: &str) -> CalError {
     CalError::Value(text.into())
 }
 
-/// Python `os.environ.get(name, Path.home() / fallback)`.
-fn env_dir(name: &str, fallback: &str) -> PathBuf {
-    match std::env::var_os(name) {
-        Some(value) => PathBuf::from(value),
-        None => tessel_core::paths::home().join(fallback),
-    }
+/// `~/.config/tessel/hdr-calibration` (profiles.json, corrections/).
+pub fn config_dir() -> PathBuf {
+    tessel_core::paths::component_config_dir("hdr-calibration")
 }
 
-pub fn config_home() -> PathBuf {
-    env_dir("XDG_CONFIG_HOME", ".config")
-}
-
-pub fn state_home() -> PathBuf {
-    env_dir("XDG_STATE_HOME", ".local/state")
+/// `~/.local/state/tessel/hdr-calibration` (reports/).
+pub fn state_dir() -> PathBuf {
+    tessel_core::paths::component_state_dir("hdr-calibration")
 }
 
 /// The running session, as calibration.py sees it. Tests and the measurement fake it.
@@ -229,7 +225,7 @@ pub fn validate(profile: &Profile) -> Result<Profile, CalError> {
 }
 
 pub fn profiles_path() -> PathBuf {
-    config_home().join("tessel-hdr-calibration/profiles.json")
+    config_dir().join("profiles.json")
 }
 
 pub fn read_profiles() -> Result<Vec<Profile>, CalError> {
@@ -316,7 +312,7 @@ pub fn config_path(status: &Status, host: &dyn Host) -> Result<PathBuf, CalError
     if name != "labwc" || args.contains(&"--merge-config") || args.contains(&"-m") {
         return Err(value_error("Cannot determine a single labwc configuration for this session."));
     }
-    let mut folder = config_home().join("labwc");
+    let mut folder = tessel_core::paths::config_home().join("labwc");
     let mut config_file: Option<PathBuf> = None;
     for (i, arg) in args.iter().enumerate() {
         let next = args.get(i + 1);
@@ -394,6 +390,7 @@ pub fn write_config(path: &Path, connector: &str, profile: Option<&Profile>) -> 
         0o600
     };
     let mut text = String::from_utf8(before.clone()).map_err(|e| CalError::Value(format!("'utf-8' codec can't decode bytes: {e}")))?;
+    text = color_config::upgrade_markers(text, &LEGACY_MARKERS);
     color_config::parse_colors(&text)?;
     let matches: Vec<String> = BLOCK.find_iter(&text).map(|m| m.as_str().to_owned()).collect();
     if matches.len() > 1 || text.matches(BEGIN).count() != matches.len() || text.matches(END).count() != matches.len() {
@@ -455,7 +452,7 @@ pub fn write_config(path: &Path, connector: &str, profile: Option<&Profile>) -> 
     };
     let after = format!("{}{block}{}", &text[..close], &text[close..]).into_bytes();
     color_config::parse_colors(std::str::from_utf8(&after).unwrap())?;
-    let backup = state_home().join("tessel/backups/hdr").join(format!("{}-rc.xml", compat::time_ns()));
+    let backup = tessel_core::paths::suite_state_dir().join("backups/hdr").join(format!("{}-rc.xml", compat::time_ns()));
     color_config::atomic_write(&backup, &before, 0o600)?;
     color_config::atomic_write(&path, &after, mode)?;
     Ok(Transaction { path, before, after, mode, existed, backup })
@@ -594,7 +591,7 @@ pub fn workspace_report(connector: &str, profile: &Profile, host: &dyn Host) -> 
         "application_preview_verification": "not performed", "measured_luminance": null, "measured_color_error": null,
         "physical_color_accuracy": "unverified",
     });
-    let path = state_home().join("tessel-hdr-calibration/reports").join(format!("{}.json", compat::time_ns()));
+    let path = state_dir().join("reports").join(format!("{}.json", compat::time_ns()));
     color_config::atomic_write(&path, json_text(&report).as_bytes(), 0o600)?;
     Ok(path)
 }
