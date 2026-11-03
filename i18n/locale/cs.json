@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "Název, který tento počítač používá v síti.",
   "Copy every detail as plain text for bug reports and support requests.": "Zkopírovat všechny údaje jako prostý text pro hlášení chyb a žádosti o podporu.",
   "See running processes and how busy the processor, memory and disks are.": "Zobrazit běžící procesy a vytížení procesoru, paměti a disků.",
-  "Details are in {path}. Your administrator can run the installation again.": "Podrobnosti jsou v {path}. Správce může instalaci spustit znovu."
+  "Details are in {path}. Your administrator can run the installation again.": "Podrobnosti jsou v {path}. Správce může instalaci spustit znovu.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej nedovoluje měnit jas, když je zapnuté HDR. Chcete-li jej upravit, vypněte pro tento displej HDR.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej nedovoluje měnit kontrast, když je zapnuté HDR. Chcete-li jej upravit, vypněte pro tento displej HDR."
 }

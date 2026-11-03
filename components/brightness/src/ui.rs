@@ -28,6 +28,20 @@ pub fn friendly_message(message: &str, fallback: Option<&str>) -> String {
     friendly_status(message, fallback.unwrap_or(&default), &[])
 }
 
+/// Why an HDR-locked control is disabled.
+pub fn hdr_locked_text(feature: &str) -> String {
+    if feature == "contrast" {
+        tr!("This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.")
+    } else {
+        tr!("This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.")
+    }
+}
+
+/// The display refuses this control while HDR is on.
+pub fn hdr_locked(feature: &Value) -> bool {
+    feature.get("hdr_locked").is_some_and(model::truthy)
+}
+
 fn display_for(state: &Value, connector: &str, identity: &str) -> Option<Value> {
     state.get("displays").and_then(Value::as_array)?.iter()
         .find(|d| model::text(d, "connector") == connector && model::text(d, "id") == identity).cloned()
@@ -145,7 +159,8 @@ impl FeatureRow {
         let feature = display.as_ref().and_then(|d| d.get(&self.0.feature)).cloned().unwrap_or(Value::Null);
         let available = self.0.client.ready() && !self.0.identity.is_empty()
             && display.as_ref().is_some_and(|d| model::enabled(d, false))
-            && feature.get("supported") == Some(&Value::Bool(true)) && percent(&feature).is_some();
+            && feature.get("supported") == Some(&Value::Bool(true)) && percent(&feature).is_some()
+            && !hdr_locked(&feature);
         (display, feature, available)
     }
 
@@ -230,8 +245,15 @@ impl FeatureRow {
             self.0.scale.set_value(observed.unwrap_or(0.0));
             self.0.syncing.set(false);
         }
+        let locked = hdr_locked(&feature);
+        if locked {
+            // Still show what the display is set to, greyed out.
+            self.0.syncing.set(true);
+            self.0.scale.set_value(observed.unwrap_or(0.0));
+            self.0.syncing.set(false);
+        }
         let shown = local.or(if self.0.dragging.get() && available { Some(self.0.scale.value()) } else { observed });
-        self.0.value_label.set_text(&match shown.filter(|_| available) {
+        self.0.value_label.set_text(&match shown.filter(|_| available || locked) {
             Some(shown) => format!("{}%", fmt(shown, ".0f")),
             None => "—".into(),
         });
@@ -239,7 +261,12 @@ impl FeatureRow {
             let message = self.0.message.borrow().clone();
             if message.is_empty() { feature.get("error").and_then(Value::as_str).unwrap_or("").to_owned() } else { message }
         };
-        let mut hint = friendly_message(&raw, Some(&tr!("This display could not be adjusted.")));
+        let mut hint = if locked {
+            self.0.message.replace(String::new());
+            hdr_locked_text(&self.0.feature)
+        } else {
+            friendly_message(&raw, Some(&tr!("This display could not be adjusted.")))
+        };
         if hint.is_empty() && !available {
             hint = if !self.0.client.ready() {
                 tr!("Loading display controls…")

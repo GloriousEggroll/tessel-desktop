@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "Det navn, denne computer bruger på netværket.",
   "Copy every detail as plain text for bug reports and support requests.": "Kopiér alle detaljer som ren tekst til fejlrapporter og supporthenvendelser.",
   "See running processes and how busy the processor, memory and disks are.": "Se kørende processer, og hvor travlt processor, hukommelse og diske har.",
-  "Details are in {path}. Your administrator can run the installation again.": "Detaljer findes i {path}. Din administrator kan køre installationen igen."
+  "Details are in {path}. Your administrator can run the installation again.": "Detaljer findes i {path}. Din administrator kan køre installationen igen.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Denne skærm tillader ikke at ændre lysstyrken, mens HDR er slået til. Slå HDR fra for denne skærm for at justere den.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Denne skærm tillader ikke at ændre kontrasten, mens HDR er slået til. Slå HDR fra for denne skærm for at justere den."
 }

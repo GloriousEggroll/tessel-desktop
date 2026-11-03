@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "الاسم الذي يستخدمه هذا الحاسوب على الشبكة.",
   "Copy every detail as plain text for bug reports and support requests.": "انسخ كل التفاصيل كنص عادي لتقارير الأخطاء وطلبات الدعم.",
   "See running processes and how busy the processor, memory and disks are.": "اعرض العمليات الجارية ومدى انشغال المعالج والذاكرة والأقراص.",
-  "Details are in {path}. Your administrator can run the installation again.": "التفاصيل في {path}. يمكن للمسؤول تشغيل التثبيت مرة أخرى."
+  "Details are in {path}. Your administrator can run the installation again.": "التفاصيل في {path}. يمكن للمسؤول تشغيل التثبيت مرة أخرى.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "لا تسمح هذه الشاشة بتغيير السطوع أثناء تشغيل HDR. أوقف HDR لهذه الشاشة لضبطه.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "لا تسمح هذه الشاشة بتغيير التباين أثناء تشغيل HDR. أوقف HDR لهذه الشاشة لضبطه."
 }

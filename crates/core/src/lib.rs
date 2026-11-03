@@ -8,6 +8,7 @@ pub mod clock;
 pub mod fsutil;
 pub mod glib_compat;
 pub mod i18n;
+pub mod labwc_hdr;
 pub mod icon_theme;
 pub mod lang;
 pub mod paths;

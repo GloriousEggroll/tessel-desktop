@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "ชื่อที่คอมพิวเตอร์เครื่องนี้ใช้บนเครือข่าย",
   "Copy every detail as plain text for bug reports and support requests.": "คัดลอกรายละเอียดทั้งหมดเป็นข้อความธรรมดาสำหรับรายงานข้อบกพร่องและคำขอความช่วยเหลือ",
   "See running processes and how busy the processor, memory and disks are.": "ดูโปรเซสที่กำลังทำงานและภาระของโปรเซสเซอร์ หน่วยความจำ และดิสก์",
-  "Details are in {path}. Your administrator can run the installation again.": "รายละเอียดอยู่ใน {path} ผู้ดูแลระบบสามารถเรียกใช้การติดตั้งอีกครั้งได้"
+  "Details are in {path}. Your administrator can run the installation again.": "รายละเอียดอยู่ใน {path} ผู้ดูแลระบบสามารถเรียกใช้การติดตั้งอีกครั้งได้",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "จอแสดงผลนี้ไม่อนุญาตให้เปลี่ยนความสว่างขณะเปิด HDR ปิด HDR สำหรับจอแสดงผลนี้เพื่อปรับค่า",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "จอแสดงผลนี้ไม่อนุญาตให้เปลี่ยนคอนทราสต์ขณะเปิด HDR ปิด HDR สำหรับจอแสดงผลนี้เพื่อปรับค่า"
 }

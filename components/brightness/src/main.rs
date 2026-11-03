@@ -37,6 +37,14 @@ impl System for Machine {
     fn set_backlight(&self, name: &str, raw: u32, guard: &dyn Fn() -> Result<(), String>) -> Result<(), String> {
         RealSystem.set_backlight(name, raw, guard)
     }
+    // A test sysfs never reads the session's labwc config or writes remembered locks.
+    fn hdr_enabled(&self, connector: &str) -> bool { self.0.is_none() && RealSystem.hdr_enabled(connector) }
+    fn load_hdr_locks(&self) -> Vec<String> { if self.0.is_none() { RealSystem.load_hdr_locks() } else { Vec::new() } }
+    fn save_hdr_locks(&self, locks: &[String]) {
+        if self.0.is_none() {
+            RealSystem.save_hdr_locks(locks)
+        }
+    }
 }
 
 fn services(gtk_ready: bool) -> Services {

@@ -2089,5 +2089,7 @@
   "The name this computer uses on the network.": "이 컴퓨터가 네트워크에서 사용하는 이름입니다.",
   "Copy every detail as plain text for bug reports and support requests.": "버그 보고와 지원 요청을 위해 모든 정보를 일반 텍스트로 복사합니다.",
   "See running processes and how busy the processor, memory and disks are.": "실행 중인 프로세스와 프로세서, 메모리, 디스크 사용량을 확인합니다.",
-  "Details are in {path}. Your administrator can run the installation again.": "자세한 내용은 {path}에 있습니다. 관리자가 설치를 다시 실행할 수 있습니다."
+  "Details are in {path}. Your administrator can run the installation again.": "자세한 내용은 {path}에 있습니다. 관리자가 설치를 다시 실행할 수 있습니다.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 밝기를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 대비를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요."
 }

@@ -40,6 +40,10 @@ pub struct World {
     pub output_failure: bool,
     pub logind: Vec<(String, u32)>,
     pub backlight: Option<PathBuf>,
+    /// Connectors labwc drives in HDR.
+    pub hdr: Vec<String>,
+    /// The remembered HDR locks (load/save).
+    pub hdr_locks: Vec<String>,
 }
 
 pub struct FakeSystem {
@@ -113,6 +117,18 @@ impl System for FakeSystem {
     }
 
     fn sleep(&self, _duration: Duration) {}
+
+    fn hdr_enabled(&self, connector: &str) -> bool {
+        self.world.lock().unwrap().hdr.iter().any(|c| c == connector)
+    }
+
+    fn load_hdr_locks(&self) -> Vec<String> {
+        self.world.lock().unwrap().hdr_locks.clone()
+    }
+
+    fn save_hdr_locks(&self, locks: &[String]) {
+        self.world.lock().unwrap().hdr_locks = locks.to_vec();
+    }
 }
 
 pub struct FakeMonitors {
@@ -498,6 +514,76 @@ fn unconfirmed_write_publishes_real_value_and_fails() {
     assert!(!log.borrow()[0].0);
     assert!(log.borrow()[0].1.contains("reported 75"));
     assert_eq!(fx.display("DP-2")["brightness"]["raw"], 75);
+}
+
+#[test]
+fn a_control_the_display_ignores_in_hdr_is_locked_until_a_write_sticks() {
+    let fx = Fx::new();
+    fx.start();
+    {
+        let mut world = fx.world.lock().unwrap();
+        world.hdr = vec!["DP-2".into()];
+        world.ignore_write = true;
+    }
+    let (log, callback) = recorder();
+    fx.backend.set_raw("DP-2", "contrast", 93, callback, None, None);
+    fx.pump(|| !log.borrow().is_empty());
+    assert!(!log.borrow()[0].0);
+    let contrast = &fx.display("DP-2")["contrast"];
+    assert_eq!(contrast["hdr_locked"], true);
+    assert_eq!(contrast["error"], crate::backend::HDR_LOCKED);
+    assert_eq!(contrast["raw"], 75);
+    assert_eq!(fx.display("DP-2")["brightness"].get("hdr_locked"), None, "only the refused control is locked");
+    assert_eq!(fx.world.lock().unwrap().hdr_locks.len(), 1);
+    // While HDR stays on, another request never reaches the monitor.
+    let writes = fx.writes();
+    let (log, callback) = recorder();
+    fx.backend.set_raw("DP-2", "contrast", 50, callback, None, None);
+    fx.pump(|| !log.borrow().is_empty());
+    assert_eq!(*log.borrow(), vec![(false, crate::backend::HDR_LOCKED.to_owned())]);
+    assert_eq!(fx.writes(), writes);
+    // HDR off: the control is writable again, and a write that sticks forgets the lock.
+    {
+        let mut world = fx.world.lock().unwrap();
+        world.hdr.clear();
+        world.ignore_write = false;
+    }
+    let (log, callback) = recorder();
+    fx.backend.set_raw("DP-2", "contrast", 50, callback, None, None);
+    fx.pump(|| !log.borrow().is_empty());
+    assert!(log.borrow()[0].0, "{:?}", log.borrow());
+    assert_eq!(fx.display("DP-2")["contrast"].get("hdr_locked"), None);
+    assert!(fx.world.lock().unwrap().hdr_locks.is_empty());
+}
+
+#[test]
+fn an_ignored_write_without_hdr_is_not_an_hdr_lock() {
+    let fx = Fx::new();
+    fx.start();
+    fx.world.lock().unwrap().ignore_write = true;
+    let (log, callback) = recorder();
+    fx.backend.set_raw("DP-2", "contrast", 93, callback, None, None);
+    fx.pump(|| !log.borrow().is_empty());
+    assert!(log.borrow()[0].1.contains("reported 75"));
+    assert_eq!(fx.display("DP-2")["contrast"].get("hdr_locked"), None);
+    assert!(fx.world.lock().unwrap().hdr_locks.is_empty());
+}
+
+#[test]
+fn remembered_hdr_locks_show_on_the_first_probe() {
+    let fx = Fx::new();
+    fx.start();
+    let id = fx.display("DP-2")["id"].as_str().unwrap().to_owned();
+    // A new service whose previous session saved the lock for this display.
+    let fx2 = Fx::new();
+    {
+        let mut world = fx2.world.lock().unwrap();
+        world.hdr = vec!["DP-2".into()];
+        world.hdr_locks = vec![format!("{id}\ncontrast")];
+    }
+    fx2.start();
+    assert_eq!(fx2.display("DP-2")["contrast"]["hdr_locked"], true);
+    assert_eq!(fx2.display("DP-2")["brightness"].get("hdr_locked"), None);
 }
 
 #[test]

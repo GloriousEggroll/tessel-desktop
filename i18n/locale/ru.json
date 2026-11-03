@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "Имя, под которым этот компьютер виден в сети.",
   "Copy every detail as plain text for bug reports and support requests.": "Скопировать все сведения обычным текстом для отчётов об ошибках и обращений в поддержку.",
   "See running processes and how busy the processor, memory and disks are.": "Запущенные процессы и загрузка процессора, памяти и дисков.",
-  "Details are in {path}. Your administrator can run the installation again.": "Подробности в {path}. Администратор может снова запустить установку."
+  "Details are in {path}. Your administrator can run the installation again.": "Подробности в {path}. Администратор может снова запустить установку.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Этот дисплей не позволяет изменять яркость, пока включён HDR. Отключите HDR для этого дисплея, чтобы её настроить.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Этот дисплей не позволяет изменять контрастность, пока включён HDR. Отключите HDR для этого дисплея, чтобы её настроить."
 }

@@ -2089,5 +2089,7 @@
   "The name this computer uses on the network.": "這台電腦在網路上使用的名稱。",
   "Copy every detail as plain text for bug reports and support requests.": "將所有詳細資訊複製為純文字，用於錯誤回報與支援請求。",
   "See running processes and how busy the processor, memory and disks are.": "檢視執行中的程序，以及處理器、記憶體與磁碟的忙碌程度。",
-  "Details are in {path}. Your administrator can run the installation again.": "詳細資訊位於 {path}。管理員可以重新執行安裝。"
+  "Details are in {path}. Your administrator can run the installation again.": "詳細資訊位於 {path}。管理員可以重新執行安裝。",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "HDR 開啟時，此顯示器不允許變更亮度。若要調整亮度，請關閉此顯示器的 HDR。",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR 開啟時，此顯示器不允許變更對比度。若要調整對比度，請關閉此顯示器的 HDR。"
 }

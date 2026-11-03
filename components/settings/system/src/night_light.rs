@@ -6,9 +6,8 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 use serde_json::Value;
-use tessel_tiling::xml::{Element, Node};
 
-use crate::compat::{self, local_lower, value, Result};
+use crate::compat::{value, Result};
 
 pub const UNIT: &str = "tessel-night-light.service";
 pub const MIN_TEMPERATURE: i64 = 1900;
@@ -130,53 +129,10 @@ impl NightLightStore {
     }
 }
 
-fn boolean(text: &str, default: bool) -> bool {
-    match compat::strip(text).to_lowercase().as_str() {
-        "yes" | "true" | "1" | "on" => true,
-        "no" | "false" | "0" | "off" => false,
-        _ => default,
-    }
-}
-
-/// ElementTree `.text`: character data before the first child element.
-fn leading_text(element: &Element) -> String {
-    let mut text = String::new();
-    for node in &element.children {
-        match node {
-            Node::Text(t) | Node::CData(t) => text.push_str(t),
-            Node::Element(_) => break,
-            _ => {}
-        }
-    }
-    text
-}
-
 /// `(global HDR, {output: enabled})` from labwc's rc.xml.
 pub fn hdr_policy(rc_text: &str) -> (bool, HashMap<String, bool>) {
-    let Ok(document) = tessel_tiling::xml::parse(rc_text.as_bytes(), None) else { return (false, HashMap::new()) };
-    let (mut enabled, mut outputs) = (false, HashMap::new());
-    fn walk(element: &Element, enabled: &mut bool, outputs: &mut HashMap<String, bool>) {
-        let tag = local_lower(&element.name);
-        if tag == "core" {
-            for child in element.elements() {
-                if local_lower(&child.name) == "hdr" {
-                    *enabled = boolean(&leading_text(child), *enabled);
-                }
-            }
-        } else if tag == "hdroutputs" {
-            for output in element.elements() {
-                let name = output.attribute("name").unwrap_or("");
-                if let (false, Some(state)) = (name.is_empty(), output.attribute("enabled")) {
-                    outputs.insert(name.to_owned(), boolean(state, false));
-                }
-            }
-        }
-        for child in element.elements() {
-            walk(child, enabled, outputs);
-        }
-    }
-    walk(&document.root, &mut enabled, &mut outputs);
-    (enabled, outputs)
+    let (global, overrides) = tessel_core::labwc_hdr::parse_labwc_hdr_xml(rc_text);
+    (global, overrides.into_iter().collect())
 }
 
 /// `wlr-randr --json` names of enabled outputs, None when unknown.

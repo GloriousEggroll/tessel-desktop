@@ -96,7 +96,16 @@ pub trait System: Send + Sync {
     fn sleep(&self, duration: Duration) {
         std::thread::sleep(duration)
     }
+    /// Whether labwc drives `connector` in HDR (some monitors then lock brightness and contrast).
+    fn hdr_enabled(&self, connector: &str) -> bool;
+    /// Remembered `display id` + `feature` pairs the display refused to change while in HDR.
+    fn load_hdr_locks(&self) -> Vec<String>;
+    fn save_hdr_locks(&self, locks: &[String]);
 }
+
+/// Shown (in English, for logs and D-Bus) when HDR locks a control.
+pub const HDR_LOCKED: &str = "This display does not allow changing this while HDR is on.";
+const HDR_LOCKS_FILE: &str = "hdr-locked.json";
 
 /// The real machine: `/sys/class/{drm,backlight}`, subprocesses with
 /// `LC_ALL=C` and a deadline, and the system bus for logind.
@@ -146,6 +155,23 @@ impl System for RealSystem {
 
     fn backlight_root(&self) -> PathBuf {
         PathBuf::from("/sys/class/backlight")
+    }
+
+    fn hdr_enabled(&self, connector: &str) -> bool {
+        tessel_core::labwc_hdr::hdr_enabled(connector)
+    }
+
+    fn load_hdr_locks(&self) -> Vec<String> {
+        let path = tessel_core::paths::component_state_dir("brightness").join(HDR_LOCKS_FILE);
+        std::fs::read_to_string(path).ok().and_then(|text| serde_json::from_str::<Vec<String>>(&text).ok()).unwrap_or_default()
+    }
+
+    fn save_hdr_locks(&self, locks: &[String]) {
+        let directory = tessel_core::paths::component_state_dir("brightness");
+        let data = serde_json::to_vec(locks).unwrap_or_default();
+        if let Err(error) = tessel_core::fsutil::write_private(&directory, HDR_LOCKS_FILE, ".hdr-locked-", &data) {
+            eprintln!("Could not remember HDR-locked display controls: {error}");
+        }
     }
 
     fn set_backlight(&self, name: &str, raw: u32, guard: &dyn Fn() -> Result<(), String>) -> Result<(), String> {
@@ -293,9 +319,38 @@ struct Worker {
     hardware: HashMap<String, Record>,
     /// connector → (identity, record) of displays whose probe failed.
     no_ddc: HashMap<String, (Identity, Value)>,
+    /// `id\nfeature` the display refused to change while in HDR.
+    hdr_locks: HashSet<String>,
+}
+
+fn hdr_key(id: &str, feature: &str) -> String {
+    format!("{id}\n{feature}")
 }
 
 impl Worker {
+    /// Whether `feature` on this display is currently locked by HDR.
+    fn hdr_locked(&self, hardware: &Record, feature: &str) -> bool {
+        self.hdr_locks.contains(&hdr_key(&hardware.id, feature)) && self.system.hdr_enabled(&hardware.connector)
+    }
+
+    /// Mark a readable feature state as HDR-locked (disabled, with the reason).
+    fn apply_hdr_lock(&self, hardware: &Record, feature: &str, state: &mut Value) {
+        if state.get("supported") == Some(&Value::Bool(true)) && self.hdr_locked(hardware, feature) {
+            state["hdr_locked"] = true.into();
+            state["error"] = HDR_LOCKED.into();
+        }
+    }
+
+    fn remember_hdr_lock(&mut self, hardware: &Record, feature: &str, locked: bool) {
+        let key = hdr_key(&hardware.id, feature);
+        let changed = if locked { self.hdr_locks.insert(key) } else { self.hdr_locks.remove(&key) };
+        if changed {
+            let mut locks: Vec<String> = self.hdr_locks.iter().cloned().collect();
+            locks.sort();
+            self.system.save_hdr_locks(&locks);
+        }
+    }
+
     fn closed(&self) -> bool {
         self.closed.load(Ordering::SeqCst)
     }
@@ -517,6 +572,7 @@ impl Worker {
                 for feature in FEATURES {
                     if let Some((raw, maximum)) = values.get(feature) {
                         record[feature] = feature_state(Some(true), Some(*raw), Some(*maximum), "");
+                        self.apply_hdr_lock(hardware, feature, &mut record[feature]);
                     } else if hardware.method != "backlight" || feature != "contrast" {
                         record[feature] = feature_state(Some(false), None, None, UNAVAILABLE_CONTROL);
                         record[feature]["diagnostic"] = error.clone().into();
@@ -629,7 +685,8 @@ impl Worker {
         let (values, error) = self.get_values(&current, &[feature])?;
         self.validate(&expected, &current)?;
         let Some((raw, maximum)) = values.get(feature) else { return Err(error) };
-        let state = feature_state(Some(true), Some(*raw), Some(*maximum), "");
+        let mut state = feature_state(Some(true), Some(*raw), Some(*maximum), "");
+        self.apply_hdr_lock(&current, feature, &mut state);
         if let Some(record) = self.records.get_mut(connector) {
             record[feature] = state.clone();
         }
@@ -653,6 +710,16 @@ impl Worker {
         let Some(&(before, maximum)) = values.get(feature) else { return Err(error) };
         if maximum != expected_max || target > maximum {
             return Err("The monitor's hardware range changed; no value was written.".into());
+        }
+        if before != target && self.hdr_locked(&current, feature) {
+            let mut state = feature_state(Some(true), Some(before), Some(maximum), "");
+            self.apply_hdr_lock(&current, feature, &mut state);
+            if let Some(record) = self.records.get_mut(connector) {
+                record[feature] = state.clone();
+            }
+            self.send(Event::Finished { request, connector: connector.into(), feature: feature.into(), state: Some(state),
+                                        success: false, error: HDR_LOCKED.into() });
+            return Ok(());
         }
         if expected_raw.is_some_and(|raw| raw != before) {
             let error = "The monitor setting changed externally; no hardware value was written.";
@@ -706,8 +773,17 @@ impl Worker {
             return Err(format!("The hardware write could not be confirmed: {error}"));
         };
         let success = actual == target;
+        // A display that ignores the change while in HDR has locked the control
+        // (Alienware QD-OLEDs do this); remember it so the slider shows why.
+        if before != target && current.method == "ddc" && actual == before && self.system.hdr_enabled(connector) {
+            self.remember_hdr_lock(&current, feature, true);
+        } else if success && before != target {
+            self.remember_hdr_lock(&current, feature, false);
+        }
         let error = if success { String::new() } else { format!("The display reported {actual} after requesting {target}.") };
-        let state = feature_state(Some(true), Some(actual), Some(maximum), &error);
+        let mut state = feature_state(Some(true), Some(actual), Some(maximum), &error);
+        self.apply_hdr_lock(&current, feature, &mut state);
+        let error = state["error"].as_str().unwrap_or_default().to_owned();
         if let Some(record) = self.records.get_mut(connector) {
             record[feature] = state.clone();
         }
@@ -997,7 +1073,8 @@ impl Hardware for DisplayBackend {
         let (jobs, receiver) = mpsc::channel();
         let (events, event_receiver) = async_channel::unbounded();
         let mut worker = Worker { system: options.system.clone(), closed: self.0.worker_closed.clone(), events,
-                                  records: Map::new(), hardware: HashMap::new(), no_ddc: HashMap::new() };
+                                  records: Map::new(), hardware: HashMap::new(), no_ddc: HashMap::new(),
+                                  hdr_locks: options.system.load_hdr_locks().into_iter().collect() };
         let thread = std::thread::Builder::new().name("display-hardware".into()).spawn(move || worker.run(receiver))
             .expect("display-hardware thread");
         self.0.jobs.replace(Some(jobs));

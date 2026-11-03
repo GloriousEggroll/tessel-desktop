@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "Namnet som den här datorn använder i nätverket.",
   "Copy every detail as plain text for bug reports and support requests.": "Kopiera alla uppgifter som ren text för felrapporter och supportärenden.",
   "See running processes and how busy the processor, memory and disks are.": "Se processer som körs och hur belastade processorn, minnet och diskarna är.",
-  "Details are in {path}. Your administrator can run the installation again.": "Detaljer finns i {path}. Administratören kan köra installationen igen."
+  "Details are in {path}. Your administrator can run the installation again.": "Detaljer finns i {path}. Administratören kan köra installationen igen.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Den här skärmen tillåter inte att ljusstyrkan ändras medan HDR är på. Stäng av HDR för den här skärmen för att justera den.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Den här skärmen tillåter inte att kontrasten ändras medan HDR är på. Stäng av HDR för den här skärmen för att justera den."
 }

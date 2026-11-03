@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "De naam die deze computer op het netwerk gebruikt.",
   "Copy every detail as plain text for bug reports and support requests.": "Kopieer alle gegevens als platte tekst voor foutrapporten en ondersteuningsverzoeken.",
   "See running processes and how busy the processor, memory and disks are.": "Bekijk actieve processen en hoe druk de processor, het geheugen en de schijven zijn.",
-  "Details are in {path}. Your administrator can run the installation again.": "Details staan in {path}. Uw beheerder kan de installatie opnieuw uitvoeren."
+  "Details are in {path}. Your administrator can run the installation again.": "Details staan in {path}. Uw beheerder kan de installatie opnieuw uitvoeren.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Dit scherm staat het wijzigen van de helderheid niet toe terwijl HDR aan staat. Zet HDR uit voor dit scherm om deze aan te passen.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Dit scherm staat het wijzigen van het contrast niet toe terwijl HDR aan staat. Zet HDR uit voor dit scherm om dit aan te passen."
 }

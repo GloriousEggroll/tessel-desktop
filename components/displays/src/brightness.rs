@@ -16,6 +16,16 @@ use tessel_core::tr;
 pub const DELAYS: [i64; 8] = [30, 60, 120, 300, 600, 900, 1800, 3600];
 pub const FEATURES: [&str; 2] = ["brightness", "contrast"];
 
+/// Why an HDR-locked control is disabled.
+pub fn hdr_locked_text(feature: &str) -> String {
+    if feature == "contrast" {
+        tr!("This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.")
+    } else {
+        tr!("This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.")
+    }
+}
+
+
 /// `_duration(value)` (untranslated in Python).
 pub fn duration(value: i64) -> String {
     if value % 60 == 0 {
@@ -203,6 +213,7 @@ impl BrightnessControls {
             && data.get("supported").is_some_and(truthy)
             && number(data.get("value")).is_some_and(f64::is_finite)
             && !data.get("busy").is_some_and(truthy)
+            && !data.get("hdr_locked").is_some_and(truthy)
     }
 
     fn cancel_value(&self, feature: &str) {
@@ -367,13 +378,15 @@ impl BrightnessControls {
                 };
                 self.value_labels[feature].set_text(&text);
             }
+            let locked = data.get("hdr_locked").is_some_and(truthy);
             let tooltip = match data.get("error").filter(|e| truthy(e)) {
+                _ if locked => hdr_locked_text(feature),
                 Some(error) => py_str(error),
                 None if supported => tr!("{value1} for {value2}", value1 = capitalize(feature), value2 = self.connector.as_str()),
                 None => tr!("This monitor does not expose {value1} control.", value1 = feature),
             };
             self.scales[feature].set_tooltip_text(Some(&tooltip));
-            errors.push(data.get("error").cloned().unwrap_or(json!("")));
+            errors.push(if locked { Value::String(hdr_locked_text(feature)) } else { data.get("error").cloned().unwrap_or(json!("")) });
         }
         let mut settings = state.get("settings").filter(|v| truthy(v)).and_then(Value::as_object).cloned().unwrap_or_default();
         let busy = state.get("busy").is_some_and(truthy);

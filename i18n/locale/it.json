@@ -1907,5 +1907,7 @@
   "The name this computer uses on the network.": "Il nome che questo computer usa in rete.",
   "Copy every detail as plain text for bug reports and support requests.": "Copia tutti i dettagli come testo semplice per segnalazioni di bug e richieste di assistenza.",
   "See running processes and how busy the processor, memory and disks are.": "Visualizza i processi in esecuzione e il carico di processore, memoria e dischi.",
-  "Details are in {path}. Your administrator can run the installation again.": "I dettagli sono in {path}. L’amministratore può eseguire di nuovo l’installazione."
+  "Details are in {path}. Your administrator can run the installation again.": "I dettagli sono in {path}. L’amministratore può eseguire di nuovo l’installazione.",
+  "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Questo schermo non consente di modificare la luminosità mentre l'HDR è attivo. Disattiva l'HDR per questo schermo per regolarla.",
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Questo schermo non consente di modificare il contrasto mentre l'HDR è attivo. Disattiva l'HDR per questo schermo per regolarlo."
 }

@@ -191,6 +191,26 @@ fn refresh_is_read_only_and_shows_actual_values_and_unsupported_controls() {
     println!("ok refresh_is_read_only_and_shows_actual_values_and_unsupported_controls");
 }
 
+fn hdr_locked_control_is_disabled_with_its_value_and_a_note() {
+    let f = Fx::new();
+    f.client.set(|state| {
+        state["displays"][0]["contrast"]["hdr_locked"] = json!(true);
+        state["displays"][0]["contrast"]["error"] = json!("This display does not allow changing this while HDR is on.");
+    });
+    let popup = f.popup();
+    let contrast = row(&popup, "contrast");
+    assert!(!contrast.scale().is_sensitive());
+    assert_eq!(contrast.value_label().text(), "75%");
+    assert_eq!(contrast.scale().value(), 75.0);
+    assert!(contrast.hint().text().contains("Turn off HDR"), "{}", contrast.hint().text());
+    assert!(contrast.hint().text().contains("contrast"));
+    contrast.scale().set_value(20.0);
+    settle(0.25);
+    assert!(f.client.history().is_empty());
+    assert!(row(&popup, "brightness").scale().is_sensitive(), "only the locked control is disabled");
+    println!("ok hdr_locked_control_is_disabled_with_its_value_and_a_note");
+}
+
 fn debounce_coalesces_gesture_and_other_feature_refresh_does_not_reset_it() {
     let f = Fx::new();
     let popup = f.popup();
@@ -530,6 +550,7 @@ fn main() {
     gtk::init().expect("display");
     gtk::Settings::default().unwrap().set_gtk_application_prefer_dark_theme(true);
     refresh_is_read_only_and_shows_actual_values_and_unsupported_controls();
+    hdr_locked_control_is_disabled_with_its_value_and_a_note();
     debounce_coalesces_gesture_and_other_feature_refresh_does_not_reset_it();
     busy_feature_keeps_latest_pending_value_and_remains_interactive();
     submitted_value_survives_unrelated_refresh_until_hardware_reply();
