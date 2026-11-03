@@ -39,7 +39,6 @@ SYSTEM_PARTS = ("keyring", "lock-pam", "session-entry", "retire-old")
 EXPLICIT_SYSTEM_PARTS = ("login",)    # only with --only login (the login screen; takes effect at the next boot)
 # Native helpers built by build.rs into the build output (not [[bin]] targets).
 HELPERS = ("tessel-keyboard-input", "libcapture-pipewire.so")
-# Native pieces the build may skip (missing -devel packages): an installed copy is kept.
 # The suite's own build of xdg-desktop-portal-wlr, replaced by the distribution package
 # once that carries the chooser-session patch (Nobara 0.8.4-4).
 OLD_PORTAL = "usr/local/libexec/waycapture-portal-wlr"
@@ -64,6 +63,7 @@ def old_portal_dropins(home):
             if path.suffix == ".conf" and "waycapture-portal-wlr" in path.read_text(errors="replace")]
 
 
+# Native pieces the build may skip (missing -devel packages): an installed copy is kept.
 CARRY_OVER = {"libcapture-pipewire.so": ("usr/local/lib/desktop-suite/capture-manager/libcapture-pipewire.so",)}
 # The lock screen's PAM services: (desktop-suite name, Tessel name).
 LOCK_PAM = (("waylock", "tessel-lock"), ("waylock-password", "tessel-lock-password"),
@@ -222,6 +222,10 @@ def user_plan(home, parts, binaries, target_dir):
         service = REPO / "components/keyring/data/org.freedesktop.secrets.service"
         if service.is_file():
             plan.write(home / ".local/share/dbus-1/services" / service.name, service.read_bytes())
+            # The activation file names SystemdService=tessel-keyring.service: without the unit,
+            # every Secret Service request (browsers, password managers) fails.
+            unit = REPO / "components/keyring/data/tessel-keyring.service"
+            plan.write(home / ".config/systemd/user" / unit.name, unit.read_bytes())
     if "retire-old" in parts:
         applications = home / ".local/share/applications"
         if applications.is_dir():

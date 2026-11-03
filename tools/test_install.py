@@ -62,6 +62,9 @@ class UserInstall(unittest.TestCase):
         self.assertNotIn("luna-clock", os.listdir(lib), "Kasumi is not installed")
         units = self.home / ".config/systemd/user"
         self.assertIn("ExecStart=%h/.local/lib/tessel/tessel-dock\n", (units / "tessel-dock.service").read_text())
+        activation = (self.home / ".local/share/dbus-1/services/org.freedesktop.secrets.service").read_text()
+        self.assertIn("SystemdService=tessel-keyring.service", activation)
+        self.assertIn("BusName=org.freedesktop.secrets", (units / "tessel-keyring.service").read_text())
         files = (self.home / ".local/share/applications/org.tessel.Files.desktop").read_text()
         self.assertIn(f"Exec={lib}/tessel-files %U", files)
         settings = (self.home / ".local/share/applications/org.tessel.GlobalSettings.desktop").read_text()
