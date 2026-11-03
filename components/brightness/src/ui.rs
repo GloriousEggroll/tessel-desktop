@@ -316,6 +316,9 @@ impl ScalingRow {
         scale.set_digits(3);
         scale.set_hexpand(true);
         scale.set_increments(0.125, 0.125);
+        // The end mark labels ("100%", "250%") are centered on the trough ends; keep them inside the card.
+        scale.set_margin_start(14);
+        scale.set_margin_end(14);
         for step in 8..=20 {
             let value = step as f64 / 8.0;
             let text = (step % 4 == 0).then(|| scale_text(value));

@@ -57,7 +57,8 @@ window.tessel-notifications.tray-popup { background: transparent; }
 .tessel-notifications .group-header { padding: 2px 0; }
 .tessel-notifications .group-header button.group-toggle { padding: 2px 6px; }
 .tessel-notifications .group-cards { margin-top: 8px; }
-.tessel-notifications .dnd-options button { padding: 4px 8px; font-size: 9pt; }
+.tessel-notifications .dnd-card { padding: 12px 14px; border-radius: 10px;
+    background-color: alpha(@theme_fg_color, 0.045); border: 1px solid alpha(@theme_fg_color, 0.10); }
 .tessel-notifications .notification-center-title { font-size: 10.5pt; }
 ";
 
@@ -329,6 +330,7 @@ pub fn dnd_options(callback: Rc<dyn Fn(Value)>) -> (gtk::Box, HashMap<&'static s
     let mut buttons = HashMap::new();
     for (choice, title) in DND_CHOICES {
         let button = gtk::Button::builder().hexpand(true).build();
+        button.add_css_class("popup-chip");
         // Wrap long translations onto a second line instead of truncating.
         let label = gtk::Label::builder().label(tr!(title)).wrap(true).justify(gtk::Justification::Center).build();
         label.set_wrap_mode(pango::WrapMode::WordChar);
@@ -923,7 +925,10 @@ impl NotificationCenter {
         let dnd_switch = gtk::Switch::builder().valign(gtk::Align::Center).build();
         accessible(&dnd_switch, &tr!("Do Not Disturb"));
         dnd_row.append(&dnd_switch);
-        content.append(&dnd_row);
+        let dnd_card = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        dnd_card.add_css_class("dnd-card");
+        dnd_card.append(&dnd_row);
+        content.append(&dnd_card);
         let patch_slot = slot.clone();
         let (dnd_options, dnd_buttons) = dnd_options(Rc::new(move |patch| {
             if let Some(inner) = patch_slot.borrow().upgrade() {
@@ -932,7 +937,7 @@ impl NotificationCenter {
                 }
             }
         }));
-        content.append(&dnd_options);
+        dnd_card.append(&dnd_options);
         let status_label = gtk::Label::builder().xalign(0.0).wrap(true).build();
         status_label.set_max_width_chars(42);
         status_label.add_css_class("muted");
@@ -1119,6 +1124,7 @@ impl NotificationCenter {
         }
         inner.stack.set_visible_child_name(if entries.is_empty() { "empty" } else { "history" });
         inner.clear_button.set_sensitive(!entries.is_empty() && ready);
+        inner.clear_button.set_visible(!entries.is_empty());
     }
 
     pub fn present(&self) {

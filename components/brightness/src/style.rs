@@ -40,7 +40,7 @@ window.brightnessmanager { background-color: @theme_bg_color; }
 }
 .brightnessmanager button:hover { background-color: mix(@brightness_surface, @theme_fg_color, 0.06); }
 .brightnessmanager button:disabled { opacity: 0.45; }
-.brightnessmanager button:focus { outline: 2px solid alpha(@brightness_accent, 0.6); outline-offset: -2px; }
+.brightnessmanager button:focus-visible { outline: 2px solid alpha(@brightness_accent, 0.6); outline-offset: -2px; }
 .brightnessmanager button.primary {
     background-color: @brightness_accent; color: white; border-color: transparent;
 }

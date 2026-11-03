@@ -48,7 +48,7 @@ window.calendarmanager { background-color: @theme_bg_color; }
 .calendarmanager button.icon-button:hover {
     background-color: alpha(@theme_fg_color, 0.07);
 }
-.calendarmanager button:focus {
+.calendarmanager button:focus-visible {
     outline: 2px solid alpha(@calendar_accent, 0.65); outline-offset: -2px;
 }
 .calendarmanager button:disabled { opacity: 0.45; }

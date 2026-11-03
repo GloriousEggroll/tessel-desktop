@@ -414,6 +414,13 @@ window.tray-popup button.popup-flat:not(.suggested-action) {
 }
 window.tray-popup button.popup-flat:focus:not(:focus-visible) { outline: none; }
 window.tray-popup button.popup-flat { min-height: 30px; padding: 2px 12px; border-radius: 8px; }
+window.tray-popup button.popup-chip {
+    min-height: 26px; padding: 3px 8px; border-radius: 10px; font-size: 9pt;
+    background-image: none; background-color: alpha(currentColor, 0.07); border: none; box-shadow: none;
+}
+window.tray-popup button.popup-chip:hover { background-color: alpha(currentColor, 0.13); }
+window.tray-popup button.popup-chip:active { background-color: alpha(currentColor, 0.18); }
+window.tray-popup button.popup-chip:focus:not(:focus-visible) { outline: none; }
 ";
 
 /// Load the shared popup stylesheets once per display (APPLICATION+5 and +35).

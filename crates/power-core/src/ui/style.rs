@@ -60,7 +60,7 @@ window.powermanager { background-color: @theme_bg_color; }
 }
 .powermanager button:hover { background-color: mix(@power_surface, @theme_fg_color, 0.06); }
 .powermanager button:disabled { opacity: 0.45; }
-.powermanager button:focus { outline: 2px solid alpha(@power_accent, 0.6); outline-offset: -2px; }
+.powermanager button:focus-visible { outline: 2px solid alpha(@power_accent, 0.6); outline-offset: -2px; }
 .powermanager button.primary {
     background-color: @power_accent; color: white; border-color: transparent;
 }

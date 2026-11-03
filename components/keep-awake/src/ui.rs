@@ -22,11 +22,13 @@ window.tessel-keep-awake.tray-popup { background: transparent; }
 }
 .tessel-keep-awake .muted { color: alpha(@theme_fg_color, 0.65); }
 .tessel-keep-awake .card {
-    border-radius: 8px; padding: 12px;
+    border-radius: 10px; padding: 0;
     background-color: alpha(@theme_fg_color, 0.045);
     border: 1px solid alpha(@theme_fg_color, 0.10);
 }
-.tessel-keep-awake .status { font-size: 9pt; }
+.tessel-keep-awake .keep-awake-row { padding: 12px 14px; min-height: 28px; }
+.tessel-keep-awake .card > separator { margin: 0 14px; background-color: alpha(@theme_fg_color, 0.08); min-height: 1px; }
+.tessel-keep-awake .status { font-size: 9pt; margin: 0 2px; }
 .tessel-keep-awake .error { color: mix(@theme_fg_color, #e05d65, 0.75); }
 ";
 
@@ -135,41 +137,43 @@ impl KeepAwakePopup {
         let heading = popup_header(&["view-reveal-symbolic", "preferences-desktop-screensaver-symbolic"],
                                    &tr!("Keep Awake"), Some(" "), Vec::new());
         append(&content, &heading.root, false, false);
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 18);
-        row.add_css_class("card");
-        let session_label = gtk::Label::builder().label(tr!("Keep this session awake")).xalign(0.0).wrap(true)
-            .max_width_chars(28).build();
+        // One grouped card: the switch with what it does, then how long it lasts.
+        let card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        card.add_css_class("card");
+        card.add_css_class("keep-awake-card");
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
+        row.add_css_class("keep-awake-row");
+        let labels = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        labels.set_valign(gtk::Align::Center);
+        let session_label = gtk::Label::builder().label(tr!("Keep this session awake")).xalign(0.0).wrap(true).build();
         session_label.add_css_class("row-title");
-        append(&row, &session_label, true, false);
+        append(&labels, &session_label, false, false);
+        let detail = gtk::Label::builder()
+            .label(tr!("Pause automatic dimming, display off, and sleep for the time you choose.")).xalign(0.0)
+            .wrap(true).max_width_chars(30).build();
+        detail.add_css_class("row-detail");
+        append(&labels, &detail, false, false);
+        append(&row, &labels, true, false);
         let toggle = gtk::Switch::new();
         toggle.set_valign(gtk::Align::Center);
         accessible(&toggle, &tr!("Keep this session awake"));
         append(&row, &toggle, false, false);
-        append(&content, &row, false, false);
-        let duration_row = gtk::Box::new(gtk::Orientation::Horizontal, 18);
-        duration_row.add_css_class("card");
-        let labels = gtk::Box::new(gtk::Orientation::Vertical, 3);
-        let title = gtk::Label::builder().label(tr!("Keep awake")).xalign(0.0).build();
+        append(&card, &row, false, false);
+        append(&card, &gtk::Separator::new(gtk::Orientation::Horizontal), false, false);
+        let duration_row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
+        duration_row.add_css_class("keep-awake-row");
+        let title = gtk::Label::builder().label(tr!("Duration")).xalign(0.0).valign(gtk::Align::Center).build();
         title.add_css_class("row-title");
-        append(&labels, &title, false, false);
-        let detail = gtk::Label::builder().label(tr!("Turns off by itself after this time.")).xalign(0.0).wrap(true)
-            .max_width_chars(22).build();
-        detail.add_css_class("row-detail");
-        append(&labels, &detail, false, false);
-        append(&duration_row, &labels, true, false);
+        append(&duration_row, &title, true, false);
         let choices: Vec<String> = DURATION_CHOICES.iter().map(|(_, label)| tr!(label)).collect();
         let choices: Vec<&str> = choices.iter().map(String::as_str).collect();
         let duration = gtk::DropDown::from_strings(&choices);
         duration.set_valign(gtk::Align::Center);
-        accessible(&duration, &tr!("Keep awake"));
+        duration.add_css_class("flat");
+        accessible(&duration, &tr!("Keep awake duration"));
         append(&duration_row, &duration, false, false);
-        append(&content, &duration_row, false, false);
-        let detail = gtk::Label::builder()
-            .label(tr!("Pause automatic dimming, display off, and sleep for the time you choose.")).xalign(0.0).build();
-        detail.add_css_class("row-detail");
-        detail.set_wrap(true);
-        detail.set_max_width_chars(40);
-        append(&content, &detail, false, false);
+        append(&card, &duration_row, false, false);
+        append(&content, &card, false, false);
         let status = gtk::Label::builder().xalign(0.0).build();
         status.add_css_class("status");
         status.add_css_class("row-detail");
@@ -262,6 +266,8 @@ impl KeepAwakePopup {
         let (subtitle, status) = texts(backend.as_ref(), &end_time_text);
         inner.subtitle.set_text(&subtitle);
         inner.status.set_text(&status);
+        // Off with no error repeats the subtitle; the line only speaks when it adds something.
+        inner.status.set_visible(!backend.error().is_empty() || backend.active() || backend.requested());
         if backend.error().is_empty() {
             inner.status.remove_css_class("error");
         } else {

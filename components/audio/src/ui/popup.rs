@@ -162,6 +162,7 @@ impl VolumePopup {
             let empty = gtk::Label::new(Some(&empty_text));
             empty.set_xalign(0.0);
             empty.add_css_class("muted");
+            empty.add_css_class("row-detail");
             empty.set_wrap(true);
             section.append(&empty);
             stream_sections.insert(key, (rows, empty));

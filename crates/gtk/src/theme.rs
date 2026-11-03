@@ -367,7 +367,7 @@ pub fn theme_css(scope: &str, entry: &MonitorPalette, is_dark: bool, options: &T
     rules.push(rule(&root, &["button:hover", "menuitem:hover", "row:hover", "gridview child:hover"], format!("background-color: {hover}; color: {fg};")));
     rules.push(rule(&root, &["button:checked", "button:active", "row:selected", "gridview child:selected", "treeview:selected", "menuitem:hover"],
          format!("background-color: {selected}; color: {fg};")));
-    rules.push(rule(&root, &["button:focus", "entry:focus", "spinbutton:focus"], format!("outline-color: {ac}; border-color: {ac};")));
+    rules.push(rule(&root, &["button:focus-visible", "entry:focus", "spinbutton:focus"], format!("outline-color: {ac}; border-color: {ac};")));
     // Text fields focus their inner text node, so the frame uses :focus-within.
     rules.push(rule(&root, &["entry:focus-within", "spinbutton:focus-within", "searchentry:focus-within", "textview:focus-within", "passwordentry:focus-within"],
          format!("outline: 2px solid alpha({ac}, 0.55); outline-offset: -2px; border-color: {ac};")));

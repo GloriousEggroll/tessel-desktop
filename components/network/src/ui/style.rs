@@ -86,7 +86,7 @@ window.networkmanager { background-color: @theme_bg_color; }
     color: @network_error; background-color: alpha(@network_error, 0.09);
     border-color: transparent;
 }
-.networkmanager button:focus {
+.networkmanager button:focus-visible {
     outline: 2px solid alpha(@network_accent, 0.65); outline-offset: -2px;
 }
 .networkmanager button:disabled { opacity: 0.45; }

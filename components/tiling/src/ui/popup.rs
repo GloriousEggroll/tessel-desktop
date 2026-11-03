@@ -18,7 +18,10 @@ pub const APPLICATION_ID: &str = "org.tessel.Tiling";
 pub const CSS: &str = ".tiling-shortcuts .popup-surface { background: @theme_bg_color; color: @theme_fg_color;
             border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
             .tiling-shortcuts .shortcut-row { padding: 8px 2px; border-bottom: 1px solid alpha(@theme_fg_color,.08); }
-            .tiling-shortcuts .key { font-size: 10.5pt; font-weight: 600; }
+            .tiling-shortcuts .tiling-card { padding: 12px 14px; border-radius: 10px;
+                background-color: alpha(@theme_fg_color,.045); border: 1px solid alpha(@theme_fg_color,.10); }
+            .tiling-shortcuts .shortcut-row:last-child { border-bottom: none; }
+            .tiling-shortcuts .key { font-size: 9.5pt; font-weight: 600; }
             .tiling-shortcuts .detail { font-size: 9pt; opacity: .7; }";
 
 /// Whether every casefolded word of `query` occurs in `text` (already casefolded).
@@ -74,7 +77,10 @@ impl Shortcuts {
         let state = heading.subtitle_label.clone();
         // Every status poll and change runs off the GTK thread.
         let controls = TilingControls::new(config, status, false, None, runner);
-        content.append(controls.widget());
+        let card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        card.add_css_class("tiling-card");
+        card.append(controls.widget());
+        content.append(&card);
         let hint = gtk::Label::builder()
             .label(tr!("These shortcuts apply while tiling is on. Existing shortcuts return when it is off."))
             .xalign(0.0).wrap(true).max_width_chars(40).build();

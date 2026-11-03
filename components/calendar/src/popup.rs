@@ -81,6 +81,7 @@ impl CalendarPopup {
         events_status.set_wrap(true);
         events_status.set_wrap_mode(pango::WrapMode::WordChar);
         events_status.set_max_width_chars(40);
+        events_status.add_css_class("row-detail");
         tessel_gtk::utils::append(&events_box, &events_status, false, false);
         tessel_gtk::utils::append(&content, &events_box, false, false);
 

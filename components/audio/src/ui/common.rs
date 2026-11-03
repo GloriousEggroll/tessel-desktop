@@ -45,7 +45,7 @@ window.audiomanager { background-color: @theme_bg_color; }
 .audiomanager button.primary { background-color: @audio_accent; color: @theme_selected_fg_color; border-color: transparent; }
 .audiomanager button.icon-button { padding: 4px 7px; min-width: 24px; background-color: transparent; border-color: transparent; }
 .audiomanager button.icon-button:hover { background-color: alpha(@theme_fg_color, 0.07); }
-.audiomanager button:focus { outline: 2px solid alpha(@audio_accent, 0.65); outline-offset: 2px; }
+.audiomanager button:focus-visible { outline: 2px solid alpha(@audio_accent, 0.65); outline-offset: 2px; }
 .audiomanager button:disabled { opacity: 0.45; }
 .audiomanager .navigation { background: transparent; }
 .audiomanager .navigation row { padding: 12px; border-radius: 9px; margin-bottom: 4px; }
