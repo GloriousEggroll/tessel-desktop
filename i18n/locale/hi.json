@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "चल रही प्रक्रियाएँ और प्रोसेसर, मेमोरी व डिस्क कितने व्यस्त हैं, देखें।",
   "Details are in {path}. Your administrator can run the installation again.": "विवरण {path} में हैं। आपका व्यवस्थापक इंस्टॉलेशन फिर से चला सकता है।",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "HDR चालू होने पर यह डिस्प्ले चमक बदलने की अनुमति नहीं देता। इसे समायोजित करने के लिए इस डिस्प्ले के लिए HDR बंद करें।",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR चालू होने पर यह डिस्प्ले कंट्रास्ट बदलने की अनुमति नहीं देता। इसे समायोजित करने के लिए इस डिस्प्ले के लिए HDR बंद करें।"
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR चालू होने पर यह डिस्प्ले कंट्रास्ट बदलने की अनुमति नहीं देता। इसे समायोजित करने के लिए इस डिस्प्ले के लिए HDR बंद करें।",
+  "See this PC's hardware and software.": "इस पीसी का हार्डवेयर और सॉफ़्टवेयर देखें।",
+  "System Information could not be opened": "सिस्टम जानकारी नहीं खोली जा सकी"
 }

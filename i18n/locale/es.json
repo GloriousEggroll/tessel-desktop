@@ -2244,5 +2244,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Consulte los procesos en ejecución y la carga del procesador, la memoria y los discos.",
   "Details are in {path}. Your administrator can run the installation again.": "Los detalles están en {path}. Su administrador puede volver a ejecutar la instalación.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Esta pantalla no permite cambiar el brillo mientras HDR está activado. Desactiva HDR en esta pantalla para ajustarlo.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Esta pantalla no permite cambiar el contraste mientras HDR está activado. Desactiva HDR en esta pantalla para ajustarlo."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Esta pantalla no permite cambiar el contraste mientras HDR está activado. Desactiva HDR en esta pantalla para ajustarlo.",
+  "See this PC's hardware and software.": "Consulta el hardware y el software de este equipo.",
+  "System Information could not be opened": "No se pudo abrir la información del sistema"
 }

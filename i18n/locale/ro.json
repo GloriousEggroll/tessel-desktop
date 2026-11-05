@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Vedeți procesele care rulează și cât de ocupate sunt procesorul, memoria și discurile.",
   "Details are in {path}. Your administrator can run the installation again.": "Detaliile sunt în {path}. Administratorul poate rula din nou instalarea.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Acest ecran nu permite modificarea luminozității cât timp HDR este activat. Dezactivați HDR pentru acest ecran pentru a o ajusta.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Acest ecran nu permite modificarea contrastului cât timp HDR este activat. Dezactivați HDR pentru acest ecran pentru a-l ajusta."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Acest ecran nu permite modificarea contrastului cât timp HDR este activat. Dezactivați HDR pentru acest ecran pentru a-l ajusta.",
+  "See this PC's hardware and software.": "Vezi componentele hardware și software ale acestui PC.",
+  "System Information could not be opened": "Informațiile despre sistem nu au putut fi deschise"
 }

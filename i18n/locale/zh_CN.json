@@ -2091,5 +2091,7 @@
   "See running processes and how busy the processor, memory and disks are.": "查看正在运行的进程以及处理器、内存和磁盘的繁忙程度。",
   "Details are in {path}. Your administrator can run the installation again.": "详细信息位于 {path}。管理员可以重新运行安装。",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "HDR 开启时，此显示器不允许更改亮度。要调整亮度，请关闭此显示器的 HDR。",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR 开启时，此显示器不允许更改对比度。要调整对比度，请关闭此显示器的 HDR。"
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR 开启时，此显示器不允许更改对比度。要调整对比度，请关闭此显示器的 HDR。",
+  "See this PC's hardware and software.": "查看此电脑的硬件和软件。",
+  "System Information could not be opened": "无法打开系统信息"
 }

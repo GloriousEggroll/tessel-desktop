@@ -41,6 +41,34 @@ pub const REMAINING: [(&str, &str); 3] = [
     ("poweroff", "Power off anyway"),
 ];
 
+/// The System Information row (like "About This Mac"), above the session actions.
+pub const SYSTEM_INFO: (&str, &str, &str) = ("System Information", "computer-symbolic", "See this PC's hardware and software.");
+
+/// argv opening Settings at System Information.
+pub fn system_info_command() -> Vec<String> {
+    vec![tessel_core::paths::program("tessel-settings").to_string_lossy().into_owned(), "--section".into(), "systeminfo".into()]
+}
+
+/// One popup row: icon, title and a muted detail line.
+fn action_button(title: &str, icon: &str, detail: &str) -> gtk::Button {
+    let button = gtk::Button::new();
+    button.add_css_class("session-action");
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 14);
+    let icon_image = image(icon, 16);
+    icon_image.set_valign(gtk::Align::Center);
+    row.append(&icon_image);
+    let words = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(3).hexpand(true).build();
+    let name = gtk::Label::builder().label(tr!(title)).xalign(0.0).build();
+    name.add_css_class("session-title");
+    words.append(&name);
+    let description = gtk::Label::builder().label(tr!(detail)).xalign(0.0).wrap(true).max_width_chars(34).build();
+    description.add_css_class("subtitle");
+    words.append(&description);
+    row.append(&words);
+    button.set_child(Some(&row));
+    button
+}
+
 pub const CSS: &str = "
 window.tessel-session.tray-popup { background: transparent; }
 .tessel-session .popup-surface { background: @theme_bg_color; border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
@@ -50,6 +78,7 @@ window.tessel-session.tray-popup { background: transparent; }
 .tessel-session .session-action { padding: 10px 12px; border-radius: 8px; background: transparent; border: none; box-shadow: none; }
 .tessel-session .session-action:hover { background: alpha(@theme_fg_color,.08); }
 .tessel-session .session-blocker { padding: 6px 4px; }
+.tessel-session .session-separator { margin: 2px 12px; background: alpha(@theme_fg_color,.10); }
 .tessel-session .session-tile { min-width: 40px; min-height: 40px; border-radius: 8px; background: alpha(@theme_selected_bg_color,.13); color: @theme_selected_bg_color; }
 ";
 
@@ -302,6 +331,7 @@ pub struct SessionPopup {
     pub menu: bool,
     pub pending: RefCell<Option<String>>,
     pub window: gtk::ApplicationWindow,
+    pub system_info: gtk::Button,
     pub buttons: Vec<(String, gtk::Button)>,
     pub actions: gtk::Box,
     pub confirmation: gtk::Box,
@@ -335,7 +365,13 @@ impl SessionPopup {
         let header = gtk::Box::new(gtk::Orientation::Horizontal, 12);
         let tile = gtk::Box::builder().halign(gtk::Align::Center).valign(gtk::Align::Center).build();
         tile.add_css_class("session-tile");
-        tile.append(&image("system-shutdown-symbolic", 24));
+        let glyph = image("system-shutdown-symbolic", 24);
+        // Fill the 40px tile and center in it (the image alone sits at its start).
+        glyph.set_hexpand(true);
+        glyph.set_vexpand(true);
+        glyph.set_halign(gtk::Align::Center);
+        glyph.set_valign(gtk::Align::Center);
+        tile.append(&glyph);
         header.append(&tile);
         let title = gtk::Label::builder().label(tr!("Session")).xalign(0.0).build();
         title.add_css_class("title");
@@ -344,23 +380,15 @@ impl SessionPopup {
 
         let actions = gtk::Box::new(gtk::Orientation::Vertical, 4);
         content.append(&actions);
+        let (title, icon, detail) = SYSTEM_INFO;
+        let system_info = action_button(title, icon, detail);
+        actions.append(&system_info);
+        let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+        separator.add_css_class("session-separator");
+        actions.append(&separator);
         let mut buttons = Vec::new();
         for (key, title, icon, detail) in ACTIONS {
-            let button = gtk::Button::new();
-            button.add_css_class("session-action");
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 14);
-            let icon_image = image(icon, 16);
-            icon_image.set_valign(gtk::Align::Center);
-            row.append(&icon_image);
-            let words = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(3).hexpand(true).build();
-            let name = gtk::Label::builder().label(tr!(title)).xalign(0.0).build();
-            name.add_css_class("session-title");
-            words.append(&name);
-            let description = gtk::Label::builder().label(tr!(detail)).xalign(0.0).wrap(true).max_width_chars(34).build();
-            description.add_css_class("subtitle");
-            words.append(&description);
-            row.append(&words);
-            button.set_child(Some(&row));
+            let button = action_button(title, icon, detail);
             actions.append(&button);
             buttons.push((key.to_owned(), button));
         }
@@ -406,7 +434,7 @@ impl SessionPopup {
         content.append(&status);
 
         let popup = Rc::new(Self {
-            menu, pending: RefCell::new(None), window: window.clone(), buttons, actions, confirmation, question,
+            menu, pending: RefCell::new(None), window: window.clone(), system_info, buttons, actions, confirmation, question,
             confirm_button, remaining, remaining_title, remaining_detail, remaining_list, remaining_cancel,
             anyway_button, status, controller: RefCell::new(None), app: Rc::downgrade(&app.0),
         });
@@ -415,6 +443,8 @@ impl SessionPopup {
             let key = key.clone();
             button.connect_clicked(move |_| if let Some(popup) = weak.upgrade() { popup.choose(&key) });
         }
+        let weak = Rc::downgrade(&popup);
+        popup.system_info.connect_clicked(move |_| if let Some(popup) = weak.upgrade() { popup.open_system_info() });
         let weak = Rc::downgrade(&popup);
         cancel.connect_clicked(move |_| if let Some(popup) = weak.upgrade() { popup.cancel() });
         let weak = Rc::downgrade(&popup);
@@ -484,6 +514,20 @@ impl SessionPopup {
             self.confirm_button.set_label(&tr!(title));
         } else {
             app.perform(action);
+        }
+    }
+
+    /// Open Settings at System Information and close the popup.
+    pub fn open_system_info(&self) {
+        let Some(app) = self.app() else { return };
+        if app.busy() {
+            return;
+        }
+        let argv = system_info_command();
+        let args: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
+        match gio::Subprocess::newv(&args, gio::SubprocessFlags::STDOUT_SILENCE | gio::SubprocessFlags::STDERR_SILENCE) {
+            Ok(_) => self.controller().dismiss(),
+            Err(error) => self.status.set_text(&format!("{}: {}", tr!("System Information could not be opened"), error.message())),
         }
     }
 

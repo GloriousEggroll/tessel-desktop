@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Lihat proses yang berjalan dan seberapa sibuk prosesor, memori, dan disk.",
   "Details are in {path}. Your administrator can run the installation again.": "Detail ada di {path}. Administrator Anda dapat menjalankan instalasi lagi.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Layar ini tidak mengizinkan perubahan kecerahan saat HDR aktif. Matikan HDR untuk layar ini agar dapat menyesuaikannya.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Layar ini tidak mengizinkan perubahan kontras saat HDR aktif. Matikan HDR untuk layar ini agar dapat menyesuaikannya."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Layar ini tidak mengizinkan perubahan kontras saat HDR aktif. Matikan HDR untuk layar ini agar dapat menyesuaikannya.",
+  "See this PC's hardware and software.": "Lihat perangkat keras dan perangkat lunak PC ini.",
+  "System Information could not be opened": "Informasi Sistem tidak dapat dibuka"
 }

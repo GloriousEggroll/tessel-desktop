@@ -363,13 +363,73 @@ fn collect_labels(widget: &gtk::Widget) -> Vec<String> {
     out
 }
 
+/// "About This Mac": System Information is the first row, set apart from the
+/// session actions, and opens Settings there without touching the backend.
+fn system_information_row_opens_settings() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = setup();
+    let popup = f.popup();
+    let first = popup.actions.first_child().expect("rows");
+    assert_eq!(first, popup.system_info.clone().upcast::<gtk::Widget>(), "System Information comes first");
+    assert!(first.next_sibling().is_some_and(|w| w.is::<gtk::Separator>()), "a separator follows it");
+    assert!(popup.system_info.has_css_class("session-action"));
+    assert_eq!(collect_labels(popup.system_info.upcast_ref()), ["System Information", "See this PC's hardware and software."]);
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("session-ui-programs-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let log = dir.join("settings.log");
+    let fake = dir.join("tessel-settings");
+    std::fs::write(&fake, format!("#!/bin/sh\nprintf '%s ' \"$@\" > '{}'\n", log.display())).unwrap();
+    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    std::env::set_var("TESSEL_PROGRAM_DIR", &dir);
+    popup.system_info.emit_clicked();
+    let end = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while !log.exists() && std::time::Instant::now() < end {
+        settle(0.05);
+    }
+    std::env::remove_var("TESSEL_PROGRAM_DIR");
+    assert_eq!(std::fs::read_to_string(&log).unwrap_or_default().trim(), "--section systeminfo");
+    settle(0.2);
+    assert!(!popup.window.is_visible(), "the popup closes");
+    assert!(f.backend.last_action().is_none(), "no session action ran");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The power glyph sits in the middle of its header tile.
+fn header_glyph_is_centered() {
+    let f = setup();
+    let popup = f.popup();
+    let tile = find_class(popup.window.upcast_ref(), "session-tile").expect("tile");
+    let glyph = tile.first_child().expect("glyph");
+    let bounds = glyph.compute_bounds(&tile).expect("bounds");
+    let (cx, cy) = (bounds.x() + bounds.width() / 2.0, bounds.y() + bounds.height() / 2.0);
+    assert!((cx - tile.width() as f32 / 2.0).abs() <= 1.0 && (cy - tile.height() as f32 / 2.0).abs() <= 1.0,
+            "glyph center ({cx},{cy}) in a {}x{} tile", tile.width(), tile.height());
+}
+
+fn find_class(widget: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
+    if widget.has_css_class(class) {
+        return Some(widget.clone());
+    }
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if let Some(found) = find_class(&c, class) {
+            return Some(found);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
 fn main() {
     if std::env::var_os("SESSION_UI_ISOLATED_TEST").is_none() {
         println!("ui_headless: skipped (run tests/run_headless.sh for the private headless labwc)");
         return;
     }
     gtk::init().expect("gtk init");
-    let tests: [(&str, fn()); 12] = [
+    let tests: [(&str, fn()); 14] = [
+        ("system_information_row_opens_settings", system_information_row_opens_settings),
+        ("header_glyph_is_centered", header_glyph_is_centered),
         ("logout_closes_apps_first_and_proceeds_when_all_closed", logout_closes_apps_first_and_proceeds_when_all_closed),
         ("remaining_apps_listed_with_cancel_and_anyway", remaining_apps_listed_with_cancel_and_anyway),
         ("list_updates_and_continues_when_last_app_closes", list_updates_and_continues_when_last_app_closes),

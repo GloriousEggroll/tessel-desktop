@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Запущені процеси та завантаження процесора, пам’яті й дисків.",
   "Details are in {path}. Your administrator can run the installation again.": "Подробиці в {path}. Адміністратор може знову запустити встановлення.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Цей дисплей не дозволяє змінювати яскравість, поки увімкнено HDR. Вимкніть HDR для цього дисплея, щоб її налаштувати.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Цей дисплей не дозволяє змінювати контрастність, поки увімкнено HDR. Вимкніть HDR для цього дисплея, щоб її налаштувати."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Цей дисплей не дозволяє змінювати контрастність, поки увімкнено HDR. Вимкніть HDR для цього дисплея, щоб її налаштувати.",
+  "See this PC's hardware and software.": "Переглянути обладнання та програми цього комп’ютера.",
+  "System Information could not be opened": "Не вдалося відкрити відомості про систему"
 }

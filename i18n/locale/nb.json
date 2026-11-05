@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Se kjørende prosesser og hvor travle prosessoren, minnet og diskene er.",
   "Details are in {path}. Your administrator can run the installation again.": "Detaljer finnes i {path}. Administratoren kan kjøre installasjonen på nytt.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Denne skjermen tillater ikke endring av lysstyrken mens HDR er på. Slå av HDR for denne skjermen for å justere den.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Denne skjermen tillater ikke endring av kontrasten mens HDR er på. Slå av HDR for denne skjermen for å justere den."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Denne skjermen tillater ikke endring av kontrasten mens HDR er på. Slå av HDR for denne skjermen for å justere den.",
+  "See this PC's hardware and software.": "Se maskinvaren og programvaren på denne PC-en.",
+  "System Information could not be opened": "Kunne ikke åpne systeminformasjon"
 }

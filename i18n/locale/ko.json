@@ -2091,5 +2091,7 @@
   "See running processes and how busy the processor, memory and disks are.": "실행 중인 프로세스와 프로세서, 메모리, 디스크 사용량을 확인합니다.",
   "Details are in {path}. Your administrator can run the installation again.": "자세한 내용은 {path}에 있습니다. 관리자가 설치를 다시 실행할 수 있습니다.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 밝기를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 대비를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 대비를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요.",
+  "See this PC's hardware and software.": "이 PC의 하드웨어와 소프트웨어를 확인합니다.",
+  "System Information could not be opened": "시스템 정보를 열 수 없습니다"
 }

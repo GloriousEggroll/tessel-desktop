@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Xem các tiến trình đang chạy và mức bận của bộ xử lý, bộ nhớ và ổ đĩa.",
   "Details are in {path}. Your administrator can run the installation again.": "Chi tiết có trong {path}. Quản trị viên có thể chạy lại quá trình cài đặt.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Màn hình này không cho phép thay đổi độ sáng khi HDR đang bật. Hãy tắt HDR cho màn hình này để điều chỉnh.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Màn hình này không cho phép thay đổi độ tương phản khi HDR đang bật. Hãy tắt HDR cho màn hình này để điều chỉnh."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Màn hình này không cho phép thay đổi độ tương phản khi HDR đang bật. Hãy tắt HDR cho màn hình này để điều chỉnh.",
+  "See this PC's hardware and software.": "Xem phần cứng và phần mềm của máy tính này.",
+  "System Information could not be opened": "Không thể mở Thông tin hệ thống"
 }

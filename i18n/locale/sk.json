@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Zobraziť spustené procesy a vyťaženie procesora, pamäte a diskov.",
   "Details are in {path}. Your administrator can run the installation again.": "Podrobnosti sú v {path}. Správca môže inštaláciu spustiť znova.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej neumožňuje meniť jas, keď je zapnuté HDR. Ak ho chcete upraviť, vypnite pre tento displej HDR.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej neumožňuje meniť kontrast, keď je zapnuté HDR. Ak ho chcete upraviť, vypnite pre tento displej HDR."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej neumožňuje meniť kontrast, keď je zapnuté HDR. Ak ho chcete upraviť, vypnite pre tento displej HDR.",
+  "See this PC's hardware and software.": "Zobraziť hardvér a softvér tohto počítača.",
+  "System Information could not be opened": "Informácie o systéme sa nepodarilo otvoriť"
 }

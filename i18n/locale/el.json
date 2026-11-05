@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "Δείτε τις διεργασίες που εκτελούνται και πόσο απασχολημένοι είναι ο επεξεργαστής, η μνήμη και οι δίσκοι.",
   "Details are in {path}. Your administrator can run the installation again.": "Λεπτομέρειες στο {path}. Ο διαχειριστής σας μπορεί να εκτελέσει ξανά την εγκατάσταση.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Αυτή η οθόνη δεν επιτρέπει την αλλαγή φωτεινότητας όταν το HDR είναι ενεργό. Απενεργοποιήστε το HDR για αυτή την οθόνη για να τη ρυθμίσετε.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Αυτή η οθόνη δεν επιτρέπει την αλλαγή αντίθεσης όταν το HDR είναι ενεργό. Απενεργοποιήστε το HDR για αυτή την οθόνη για να τη ρυθμίσετε."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Αυτή η οθόνη δεν επιτρέπει την αλλαγή αντίθεσης όταν το HDR είναι ενεργό. Απενεργοποιήστε το HDR για αυτή την οθόνη για να τη ρυθμίσετε.",
+  "See this PC's hardware and software.": "Δείτε το υλικό και το λογισμικό αυτού του υπολογιστή.",
+  "System Information could not be opened": "Δεν ήταν δυνατό το άνοιγμα των πληροφοριών συστήματος"
 }

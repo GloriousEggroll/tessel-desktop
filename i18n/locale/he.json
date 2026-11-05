@@ -1909,5 +1909,7 @@
   "See running processes and how busy the processor, memory and disks are.": "הצגת התהליכים הפועלים ומידת העומס על המעבד, הזיכרון והכוננים.",
   "Details are in {path}. Your administrator can run the installation again.": "הפרטים נמצאים ב־{path}. מנהל המערכת יכול להריץ את ההתקנה שוב.",
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "מסך זה אינו מאפשר לשנות את הבהירות כאשר HDR פועל. כבו את HDR עבור מסך זה כדי לכוונן אותה.",
-  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "מסך זה אינו מאפשר לשנות את הניגודיות כאשר HDR פועל. כבו את HDR עבור מסך זה כדי לכוונן אותה."
+  "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "מסך זה אינו מאפשר לשנות את הניגודיות כאשר HDR פועל. כבו את HDR עבור מסך זה כדי לכוונן אותה.",
+  "See this PC's hardware and software.": "הצגת החומרה והתוכנה של מחשב זה.",
+  "System Information could not be opened": "לא ניתן לפתוח את מידע המערכת"
 }
