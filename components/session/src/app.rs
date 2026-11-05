@@ -44,9 +44,13 @@ pub const REMAINING: [(&str, &str); 3] = [
 /// The System Information row (like "About This Mac"), above the session actions.
 pub const SYSTEM_INFO: (&str, &str, &str) = ("System Information", "computer-symbolic", "See this PC's hardware and software.");
 
-/// argv opening Settings at System Information.
+/// argv opening Settings at System Information. Settings runs in its own user
+/// unit: this popup's unit stops when the popup closes and would take a direct
+/// child with it.
 pub fn system_info_command() -> Vec<String> {
-    vec![tessel_core::paths::program("tessel-settings").to_string_lossy().into_owned(), "--section".into(), "systeminfo".into()]
+    let program = |name: &str| tessel_core::paths::program(name).to_string_lossy().into_owned();
+    vec![program("systemd-run"), "--user".into(), "--collect".into(), "--quiet".into(), "--property=Type=exec".into(),
+         program("tessel-settings"), "--section".into(), "systeminfo".into()]
 }
 
 /// One popup row: icon, title and a muted detail line.
@@ -366,9 +370,9 @@ impl SessionPopup {
         let tile = gtk::Box::builder().halign(gtk::Align::Center).valign(gtk::Align::Center).build();
         tile.add_css_class("session-tile");
         let glyph = image("system-shutdown-symbolic", 24);
-        // Fill the 40px tile and center in it (the image alone sits at its start).
-        glyph.set_hexpand(true);
-        glyph.set_vexpand(true);
+        // A homogeneous box gives its child the whole 40px tile to center in;
+        // expanding the glyph instead would stretch the tile across the header.
+        tile.set_homogeneous(true);
         glyph.set_halign(gtk::Align::Center);
         glyph.set_valign(gtk::Align::Center);
         tile.append(&glyph);

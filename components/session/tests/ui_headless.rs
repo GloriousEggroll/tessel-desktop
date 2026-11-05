@@ -378,9 +378,12 @@ fn system_information_row_opens_settings() {
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let log = dir.join("settings.log");
-    let fake = dir.join("tessel-settings");
-    std::fs::write(&fake, format!("#!/bin/sh\nprintf '%s ' \"$@\" > '{}'\n", log.display())).unwrap();
-    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    // A fake systemd-run records the unit it was asked to start; nothing real runs.
+    for (name, script) in [("systemd-run", format!("#!/bin/sh\nprintf '%s ' \"$@\" > '{}'\n", log.display())),
+                           ("tessel-settings", "#!/bin/sh\nexit 0\n".to_owned())] {
+        std::fs::write(dir.join(name), script).unwrap();
+        std::fs::set_permissions(dir.join(name), std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
     std::env::set_var("TESSEL_PROGRAM_DIR", &dir);
     popup.system_info.emit_clicked();
     let end = std::time::Instant::now() + std::time::Duration::from_secs(5);
@@ -388,7 +391,9 @@ fn system_information_row_opens_settings() {
         settle(0.05);
     }
     std::env::remove_var("TESSEL_PROGRAM_DIR");
-    assert_eq!(std::fs::read_to_string(&log).unwrap_or_default().trim(), "--section systeminfo");
+    assert_eq!(std::fs::read_to_string(&log).unwrap_or_default().trim(),
+               format!("--user --collect --quiet --property=Type=exec {} --section systeminfo", dir.join("tessel-settings").display()),
+               "Settings starts in its own unit, so it outlives the popup");
     settle(0.2);
     assert!(!popup.window.is_visible(), "the popup closes");
     assert!(f.backend.last_action().is_none(), "no session action ran");
@@ -405,6 +410,11 @@ fn header_glyph_is_centered() {
     let (cx, cy) = (bounds.x() + bounds.width() / 2.0, bounds.y() + bounds.height() / 2.0);
     assert!((cx - tile.width() as f32 / 2.0).abs() <= 1.0 && (cy - tile.height() as f32 / 2.0).abs() <= 1.0,
             "glyph center ({cx},{cy}) in a {}x{} tile", tile.width(), tile.height());
+    // The tile keeps its own size and the title sits right beside it.
+    assert!(tile.width() <= 44, "the tile stretched to {}px", tile.width());
+    let title = tile.next_sibling().expect("title");
+    let at = title.compute_bounds(&tile.parent().unwrap()).unwrap().x();
+    assert!(at <= tile.width() as f32 + 16.0, "title starts at {at}, away from the tile");
 }
 
 fn find_class(widget: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
