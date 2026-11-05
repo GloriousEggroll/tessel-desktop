@@ -14,7 +14,7 @@ BIN=$(cd "$ROOT" && TMPDIR=/run/user/1000/cbt/rust-$AGENT cargo test -p tessel-t
 for line in sys.stdin:
     m=json.loads(line)
     if m.get("reason")=="compiler-artifact" and m["target"]["name"]=="ui_headless" and m.get("executable"): print(m["executable"])')
-CASES="shortcut_popup_controls_and_search worker_thread_controls second_launch_activates_the_first_instance"
+CASES="shortcut_popup_controls_and_search worker_thread_controls a_poll_from_before_a_toggle_does_not_undo_it second_launch_activates_the_first_instance"
 rm -f "$R/result" "$R/log"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh

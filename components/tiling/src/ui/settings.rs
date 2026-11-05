@@ -266,6 +266,8 @@ struct ControlsInner {
     launcher: PathBuf,
     state: RefCell<Reply>,
     loading: Cell<bool>,
+    /// Bumped by every finished switch change; a poll started before it is stale.
+    generation: Cell<u64>,
     outline_pending_sign_out: Cell<bool>,
     widget: gtk::Box,
     enabled_switch: gtk::Switch,
@@ -318,7 +320,7 @@ impl TilingControls {
         widget.append(&actions);
         let this = Self(Rc::new(ControlsInner {
             backend: backend.clone(), status_call: status_call.clone(), runner, launcher, state: RefCell::default(),
-            loading: Cell::new(false), outline_pending_sign_out: Cell::new(false), widget, enabled_switch: enabled_switch.clone(),
+            loading: Cell::new(false), generation: Cell::new(0), outline_pending_sign_out: Cell::new(false), widget, enabled_switch: enabled_switch.clone(),
             enabled_detail, enabled: RefCell::new(None), gapless, outline_text, outline_switch: outline_switch.clone(),
             outline_detail, outline: RefCell::new(None), notice, error, sign_out, shortcuts: shortcuts.clone(),
             state_hook: RefCell::new(None),
@@ -336,6 +338,7 @@ impl TilingControls {
         let finished: Finished = Rc::new(move |_, _, error| {
             if let Some(inner) = weak.upgrade() {
                 let this = TilingControls(inner);
+                this.changed();
                 this.show_error(error.as_ref());
                 this.refresh();
             }
@@ -347,6 +350,7 @@ impl TilingControls {
         let finished: Finished = Rc::new(move |_, supported, error| {
             if let Some(inner) = weak.upgrade() {
                 let this = TilingControls(inner);
+                this.changed();
                 this.show_error(error.as_ref());
                 if error.is_none() && !truthy(supported.as_ref()) {
                     // Saved now; this compositor loads the outline at the next login.
@@ -406,16 +410,25 @@ impl TilingControls {
 
     pub fn launcher(&self) -> &Path { &self.0.launcher }
 
+    fn changed(&self) { self.0.generation.set(self.0.generation.get() + 1); }
+
     pub fn refresh(&self) {
         self.0.gapless.refresh();
         if self.0.loading.get() || self.busy() {
             return;
         }
         self.0.loading.set(true);
+        let generation = self.0.generation.get();
         let (status, backend) = (self.0.status_call.clone(), self.0.backend.clone());
         let this = self.clone();
         self.0.runner.run(move || Ok((status(), backend.load_preferences()?)), move |result| {
             this.0.loading.set(false);
+            if this.0.generation.get() != generation || this.busy() {
+                // Read before a change landed (or while one runs): showing it would
+                // flip the switch back, so ask again once the change has settled.
+                this.refresh();
+                return;
+            }
             match result {
                 Err(error) => this.show_error(Some(&error)),
                 Ok((state, preferences)) => this.apply_state(&state, &preferences),

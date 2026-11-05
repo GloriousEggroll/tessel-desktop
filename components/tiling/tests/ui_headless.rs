@@ -200,6 +200,47 @@ fn second_launch_activates_the_first_instance() {
     settle(0.1);
 }
 
+/// A status poll that read the old state before a click landed must not flip the
+/// switch back when it finishes after the change.
+fn a_poll_from_before_a_toggle_does_not_undo_it() {
+    let f = fixture("stale");
+    use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
+    // `arm` holds the next status read (the poll, not the click's own read) until `release`.
+    let (arm, release) = (Arc::new(AtomicBool::new(false)), Arc::new(AtomicBool::new(false)));
+    let (inner, armed, released) = (f.status.clone(), arm.clone(), release.clone());
+    let status: StatusCall = Arc::new(move || {
+        let state = inner();
+        if armed.swap(false, SeqCst) {
+            while !released.load(SeqCst) {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        }
+        state
+    });
+    let (app, current) = build_application("top", 30, Some(f.config.clone()), Some(status), Runner::Thread);
+    app.register(None::<&gio::Cancellable>).unwrap();
+    app.activate();
+    assert!(wait_for(|| current.borrow().as_ref().is_some_and(|p| p.window().is_mapped()), 5.0), "popup never mapped");
+    let popup = current.borrow().clone().unwrap();
+    let controls = popup.controls().clone();
+    assert!(wait_for(|| controls.enabled_switch().is_active() && controls.enabled_switch().is_sensitive() && !controls.busy(), 3.0));
+    for want in [false, true, false] {
+        release.store(false, SeqCst);
+        arm.store(true, SeqCst);
+        controls.refresh();
+        settle(0.05);
+        controls.enabled_switch().set_active(want);
+        assert!(wait_for(|| !controls.busy() && f.state.lock().unwrap().enabled == want, 3.0), "change to {want} not applied");
+        release.store(true, SeqCst);
+        settle(1.0);
+        assert_eq!(controls.enabled_switch().is_active(), want, "a stale poll flipped the switch back");
+        assert_eq!(controls.enabled_switch().state(), want);
+        assert!(controls.enabled_switch().is_sensitive());
+    }
+    app.quit();
+    settle(0.1);
+}
+
 fn main() {
     let Ok(case) = std::env::var("TILING_UI") else {
         eprintln!("ui_headless: skipped (run tests/run_headless.sh)");
@@ -214,6 +255,7 @@ fn main() {
     match case.as_str() {
         "shortcut_popup_controls_and_search" => shortcut_popup_controls_and_search(Runner::Inline),
         "worker_thread_controls" => shortcut_popup_controls_and_search(Runner::Thread),
+        "a_poll_from_before_a_toggle_does_not_undo_it" => a_poll_from_before_a_toggle_does_not_undo_it(),
         "second_launch_activates_the_first_instance" => second_launch_activates_the_first_instance(),
         other => panic!("unknown case {other}"),
     }

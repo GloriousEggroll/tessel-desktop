@@ -36,7 +36,7 @@ Status must import no GTK (watch is long-running inside tessel-dock).
 
 ## 2. IPC — compositor control socket (consumed)
 
-- Path: `$XDG_RUNTIME_DIR/tessel-tiling-$WAYLAND_DISPLAY.sock` (fallback runtime `/run/user/<uid>`), `AF_UNIX SOCK_DGRAM`. tiling_client.py:28-44; tiling.c init 781.
+- Path: `$XDG_RUNTIME_DIR/waytile-$WAYLAND_DISPLAY.sock (labwc's name; keep it)` (fallback runtime `/run/user/<uid>`), `AF_UNIX SOCK_DGRAM`. tiling_client.py:28-44; tiling.c init 781.
 - Client rules: reject if `WAYLAND_DISPLAY` empty or contains `/`, or command > 255 bytes; `stat` target must be owned by uid and `S_ISSOCK`; bind reply socket at `mkdtemp(prefix='wt-', dir=runtime)/reply`; timeout 1.5 s; `recv(65536)`; reply must have `version==1 && ready is True`; non-empty `error` → `RuntimeError(error)`. 
 - Server: `SO_PASSCRED`, drops requests without matching `SCM_CREDENTIALS` uid, truncated (`MSG_TRUNC`) or >255 bytes; socket chmod 0600; stale same-uid socket unlinked only on `ECONNREFUSED`; reply dropped if ≥60000 bytes.
 - Requests (exact strings): `status`, `windows`, `enable`, `disable`, `outline on`, `outline off`, `outline-color <output> <r> <g> <b>` (0-255, ≤64 outputs, name ≤127), `action <tiling command>`, `capture-output <foreign-toplevel identifier>` (labwc-color only). While session locked, everything except `status`/`windows`(/capture-output) returns `error:"The session is locked."`; unknown → `"Unknown tiling request."`.

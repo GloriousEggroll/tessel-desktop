@@ -44,13 +44,17 @@ fn runtime_dir() -> PathBuf {
     }
 }
 
-/// `$XDG_RUNTIME_DIR/tessel-tiling-$WAYLAND_DISPLAY.sock` for a valid display name.
+/// The control socket's file name prefix. labwc's tiling patch creates it
+/// (rpm-sources labwc 0007), so it is the compositor's name, not a Tessel one.
+pub const SOCKET_PREFIX: &str = "waytile-";
+
+/// `$XDG_RUNTIME_DIR/waytile-$WAYLAND_DISPLAY.sock` for a valid display name.
 pub fn socket_path(command: &str) -> Result<PathBuf, ClientError> {
     let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_default();
     if display.is_empty() || display.contains('/') || command.len() > 255 {
         return Err(ClientError::Unavailable(tr!("Tiling requires a labwc Wayland session.")));
     }
-    Ok(runtime_dir().join(format!("tessel-tiling-{display}.sock")))
+    Ok(runtime_dir().join(format!("{SOCKET_PREFIX}{display}.sock")))
 }
 
 struct TemporaryDirectory(PathBuf);
@@ -154,3 +158,13 @@ pub fn status_text(state: &Reply) -> String {
 
 /// The compositor PID from a reply when it is a positive integer.
 pub fn compositor_pid(state: &Reply) -> Option<i64> { as_int(state.get("compositor_pid")).filter(|pid| *pid > 0) }
+
+#[cfg(test)]
+mod tests {
+    /// labwc's tiling patch binds `waytile-$WAYLAND_DISPLAY.sock`; the Tessel rename
+    /// once changed this to `tessel-tiling-` and every toggle reported "sign out".
+    #[test]
+    fn the_socket_name_is_the_one_labwc_creates() {
+        assert_eq!(super::SOCKET_PREFIX, "waytile-");
+    }
+}
