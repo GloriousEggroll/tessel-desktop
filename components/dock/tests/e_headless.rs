@@ -326,11 +326,53 @@ fn every_edge_reserves_bar_plus_gap_even_while_hidden() -> Result<(), String> {
         }
         dock.stop()?;
     }
-    let dock = Dock::start("dock-mode", serde_json::json!({"mode": "dock", "edge": "bottom"}))?;
-    let snapshot = workareas()?;
-    ensure!(insets(&snapshot, "HEADLESS-1") == Some([0, 0, 0, 0]), "dock mode reserved {snapshot}");
+    // A compact dock reserves while it stays on screen and not while it auto-hides.
+    for (alignment, auto_hide) in [("center", false), ("start", false), ("center", true)] {
+        let dock = Dock::start(&format!("dock-mode-{alignment}-{auto_hide}"), serde_json::json!({
+            "mode": "dock", "edge": "bottom", "alignment": alignment, "auto_hide": auto_hide, "float_mode": true, "gap": 8}))?;
+        settle(0.5);
+        let inset = insets(&workareas()?, "HEADLESS-1").ok_or("missing monitor")?;
+        if auto_hide {
+            ensure!(inset == [0, 0, 0, 0], "an auto-hiding dock reserved {inset:?}");
+        } else {
+            ensure!(inset[1] > 8 && inset[0] == 0 && inset[2] == 0 && inset[3] == 0, "{alignment} dock insets {inset:?}");
+        }
+        dock.stop()?;
+    }
+    Ok(())
+}
+
+/// Mac layout: top bar plus a floating compact app dock at the bottom. Maximized
+/// windows fill the space between them instead of running behind the dock.
+fn mac_layout_maximized_window_stops_at_the_app_dock() -> Result<(), String> {
+    let observer = Observer::new()?;
+    let dock = Dock::start("mac", serde_json::json!({"mode": "bar", "edge": "top", "separate_app_dock": true,
+        "app_dock_edge": "bottom", "app_dock_expand": false, "app_dock_float_mode": true, "app_dock_gap": 8, "app_dock_auto_hide": false,
+        "app_dock_icon_size": 48, "magnification": true, "hover_scale": 1.6}))?;
+    settle(0.5);
+    let inset = insets(&workareas()?, "HEADLESS-1").ok_or("missing monitor")?;
+    ensure!(inset[0] > 0 && inset[1] > 48 && inset[2] == 0 && inset[3] == 0, "mac insets {inset:?}");
+    ensure!(inset[1] < 48 * 2 + 8 + 40, "the reservation includes magnification room: {inset:?}");
+    pointer(400, 400);
+    settle(0.3);
+    let window = gtk_window(&observer, "Mac maximized", |w| w.maximize())?;
+    ensure!(wait_for(5.0, || observer.window("Mac maximized").is_some_and(|w| w.maximized)), "not maximized");
+    let output = observer.window("Mac maximized").unwrap().outputs.first().cloned().unwrap_or_default();
+    let inset = insets(&workareas()?, &output).ok_or("maximized on an unknown output")?;
+    let height = gdk_monitor_height(&output);
+    let usable = height - inset[0] as i32 - inset[1] as i32;
+    ensure!(wait_for(5.0, || window.height() > 0 && window.height() <= usable && window.height() > usable - 40),
+            "maximized height {} with {usable}px between bar and dock ({output} {height}px, insets {inset:?})", window.height());
+    window.destroy();
     dock.stop()?;
     Ok(())
+}
+
+fn gdk_monitor_height(connector: &str) -> i32 {
+    let display = gtk::gdk::Display::default().expect("display");
+    let monitors = display.monitors();
+    (0..monitors.n_items()).filter_map(|i| monitors.item(i).and_downcast::<gtk::gdk::Monitor>())
+        .find(|m| m.connector().as_deref() == Some(connector)).map(|m| m.geometry().height()).unwrap_or(0)
 }
 
 fn bar_clones_reserve_only_their_own_output() -> Result<(), String> {
@@ -796,6 +838,7 @@ fn main() {
         ("output_layout", output_layout),
         ("launcher_options_never_start_a_dock_and_singleton_health_shutdown", launcher_options_never_start_a_dock_and_singleton_health_shutdown),
         ("every_edge_reserves_bar_plus_gap_even_while_hidden", every_edge_reserves_bar_plus_gap_even_while_hidden),
+        ("mac_layout_maximized_window_stops_at_the_app_dock", mac_layout_maximized_window_stops_at_the_app_dock),
         ("bar_clones_reserve_only_their_own_output", bar_clones_reserve_only_their_own_output),
         ("maximized_window_drops_float_gap_per_monitor", maximized_window_drops_float_gap_per_monitor),
         ("workareas_changed_is_emitted_only_on_change", workareas_changed_is_emitted_only_on_change),

@@ -200,9 +200,13 @@ impl DockSurface {
         let catcher = transparent_area();
         sensor.set_child(Some(&catcher));
         let window = surface(Some(&application), monitor, "tessel-dock", Layer::Bottom, false);
-        let reservation = if app_dock && bar_mode {
+        // A compact dock that stays on screen keeps windows clear of it (maximized
+        // and tiled windows stop at its top edge, as on a Mac); one that hides doesn't.
+        let compact_reserves = !bar_mode && !config.auto_hide;
+        let reservation = if (app_dock && bar_mode) || compact_reserves {
             // Reserve after the top bar in layer order, without allowing the
-            // sidebar to shorten that bar.
+            // sidebar to shorten that bar. Spanning the whole edge makes the
+            // compositor honor the zone whatever the dock's alignment.
             let reservation = surface(Some(&application), monitor, "tessel-dock-app-reservation", Layer::Bottom, false);
             reservation.set_default_size(1, 1);
             reservation.set_child(Some(&transparent_area()));
@@ -345,7 +349,7 @@ impl DockSurface {
         self.geometry_signals.borrow_mut().push((self.monitor.clone().upcast(), handler));
         self.wake(2.0);
         self.render(Rc::new(Vec::new()));
-        if self.bar_mode {
+        if self.bar_mode || self.reservation.is_some() {
             self.resize_sensor();
         }
         if let Some(reservation) = &self.reservation {
@@ -513,8 +517,8 @@ impl DockSurface {
     }
 
     pub fn refresh_window_state(&self) {
-        // Maximization suppresses floating only for bars; compact docks
-        // neither reserve space nor change their gap when windows maximize.
+        // Maximization suppresses floating only for bars; compact docks keep
+        // their gap (and their reservation) when windows maximize.
         if self.destroyed.get() {
             return;
         }
@@ -715,8 +719,10 @@ impl DockSurface {
         }
         // A bar owns a strip of the monitor's usable workspace, reserved on
         // the always-mapped reveal surface (it reaches the edge, so this size
-        // includes the floating gap). Compact docks never reserve.
-        let zone = if self.bar_mode { if self.horizontal { height } else { width } } else { -1 };
+        // includes the floating gap). A compact dock reserves its unmagnified
+        // size plus the gap unless it auto-hides.
+        let reserves = self.bar_mode || !self.config.auto_hide;
+        let zone = if reserves { if self.horizontal { height } else { width } } else { -1 };
         let reservation = self.reservation();
         if self.reservation.is_some() {
             reservation.set_size_request(1, 1);

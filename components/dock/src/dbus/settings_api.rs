@@ -318,7 +318,8 @@ impl SettingsApi {
             return source();
         }
         let monitors: Vec<(String, Rect)> = self.0.host.monitors().into_iter().map(|m| (m.name, m.geometry)).collect();
-        let reservations: Vec<(String, String, i64)> = self.0.host.docks().into_iter().filter(|d| d.bar_mode)
+        let reservations: Vec<(String, String, i64)> = self.0.host.docks().into_iter()
+            .filter(|d| d.exclusive_zone > 0)
             .map(|d| (d.monitor_name, d.config.edge, d.exclusive_zone)).collect();
         json_dumps(&workarea_snapshot(&monitors, &reservations), &JsonStyle::COMPACT)
     }
