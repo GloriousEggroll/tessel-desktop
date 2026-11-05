@@ -1,6 +1,8 @@
 # Tessel defaults for the labwc session (XDG_CURRENT_DESKTOP=wlroots:labwc).
 # Archive Manager (org.tessel.ArchiveManager) opens every archive type it supports;
 # the list is the MimeType= line of components/archive/data/org.tessel.ArchiveManager.desktop.
+# Pictures (org.tessel.Pictures) opens every image type it supports: the image/* part of the
+# MimeType= line of components/pictures/data/org.tessel.Pictures.desktop.
 # ~/.config/mimeapps.list (Global Settings > Default Apps) overrides these per user.
 [Default Applications]
 application/x-tar=org.tessel.ArchiveManager.desktop;
@@ -62,3 +64,16 @@ application/vnd.squashfs=org.tessel.ArchiveManager.desktop;
 application/vnd.appimage=org.tessel.ArchiveManager.desktop;
 application/x-iso9660-appimage=org.tessel.ArchiveManager.desktop;
 application/x-ms-wim=org.tessel.ArchiveManager.desktop;
+image/jpeg=org.tessel.Pictures.desktop;
+image/png=org.tessel.Pictures.desktop;
+image/webp=org.tessel.Pictures.desktop;
+image/gif=org.tessel.Pictures.desktop;
+image/tiff=org.tessel.Pictures.desktop;
+image/bmp=org.tessel.Pictures.desktop;
+image/x-icon=org.tessel.Pictures.desktop;
+image/svg+xml=org.tessel.Pictures.desktop;
+image/svg+xml-compressed=org.tessel.Pictures.desktop;
+image/avif=org.tessel.Pictures.desktop;
+image/heif=org.tessel.Pictures.desktop;
+image/heic=org.tessel.Pictures.desktop;
+image/jxl=org.tessel.Pictures.desktop;
