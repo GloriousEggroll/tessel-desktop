@@ -474,5 +474,5 @@ pub fn main(argv: Vec<String>) -> i32 {
 
 /// The program file path for helper commands (`sys.executable` + script).
 pub fn helper_program() -> PathBuf {
-    std::env::current_exe().unwrap_or_else(|_| tessel_core::paths::program("tessel-files"))
+    tessel_core::paths::own_program("tessel-files")
 }

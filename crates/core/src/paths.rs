@@ -81,7 +81,37 @@ pub fn program(name: &str) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(name))
 }
 
+/// This program's own file, for running it again (helper modes). Once an
+/// update replaces the file, Linux reports the running binary as
+/// "<path> (deleted)"; the path without that suffix is the updated program.
+/// Falls back to [`program`]`(name)` when neither exists.
+pub fn own_program(name: &str) -> PathBuf {
+    let exe = env::current_exe().ok().map(|exe| undeleted(&exe));
+    exe.filter(|path| is_executable(path)).unwrap_or_else(|| program(name))
+}
+
+/// `path` without the kernel's " (deleted)" suffix.
+pub fn undeleted(path: &std::path::Path) -> PathBuf {
+    use std::os::unix::ffi::OsStrExt;
+    let bytes = path.as_os_str().as_bytes();
+    let bytes = bytes.strip_suffix(b" (deleted)").unwrap_or(bytes);
+    PathBuf::from(std::ffi::OsStr::from_bytes(bytes))
+}
+
 fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
     std::fs::metadata(path).is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+}
+
+#[cfg(test)]
+mod own_program_tests {
+    use super::*;
+
+    #[test]
+    fn a_replaced_binary_runs_the_updated_file() {
+        assert_eq!(undeleted(std::path::Path::new("/a/tessel-files (deleted)")), PathBuf::from("/a/tessel-files"));
+        assert_eq!(undeleted(std::path::Path::new("/a/tessel-files")), PathBuf::from("/a/tessel-files"));
+        // The test binary itself exists, so it is its own program.
+        assert_eq!(own_program("nothing-by-this-name"), env::current_exe().unwrap());
+    }
 }

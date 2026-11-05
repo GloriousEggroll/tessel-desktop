@@ -43,9 +43,7 @@ fn process_environment() -> Vec<(String, String)> {
 
 /// `[current_exe, "--launch-helper"]`.
 pub fn default_helper() -> Vec<String> {
-    let exe = std::env::current_exe()
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| tessel_core::paths::program("tessel-files").to_string_lossy().into_owned());
+    let exe = tessel_core::paths::own_program("tessel-files").to_string_lossy().into_owned();
     vec![exe, HELPER_FLAG.into()]
 }
 

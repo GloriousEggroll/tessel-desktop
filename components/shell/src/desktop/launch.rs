@@ -279,7 +279,7 @@ pub fn launch_environment(context: Option<&gio::AppLaunchContext>, info: Option<
 
 pub fn helper_argv(mode: &str, target: &str) -> Vec<String> {
     let mut argv = HELPER_OVERRIDE.with(|c| c.borrow().clone()).unwrap_or_else(|| {
-        vec![std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| "tessel-shell".into())]
+        vec![tessel_core::paths::own_program("tessel-shell").to_string_lossy().into_owned()]
     });
     argv.push(mode.into());
     argv.push(target.into());
