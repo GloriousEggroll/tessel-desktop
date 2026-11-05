@@ -223,6 +223,52 @@ fn cli_rejects_settings_and_negative_offsets() {
     assert!(String::from_utf8_lossy(&output.stdout).contains("On-demand media controls using the lock screen's MPRIS and icon backends."));
 }
 
+/// YouTube in a browser plays and is paused, then Spotify plays and is paused:
+/// Play (in Tessel's controls and on the media key) resumes Spotify, the last
+/// thing that was playing, even though the browser sorts first by name.
+fn play_resumes_the_player_that_played_last() {
+    let browser = FakePlayer::new("Browser", opts("Paused"));
+    let client = client(false);
+    client.start(false);
+    settle(0.3);
+    browser.change(&[("PlaybackStatus", s("Playing"))]);
+    settle(0.1);
+    browser.change(&[("PlaybackStatus", s("Paused"))]);
+    let spotify = FakePlayer::new("Spotify", opts("Paused"));
+    settle(0.3);
+    assert_eq!(client.current().unwrap().name, browser.name, "fixture: the browser sorts first by name");
+    // A player the user picked earlier yields once another starts playing.
+    client.choose(&browser.name);
+    spotify.change(&[("PlaybackStatus", s("Playing"))]);
+    settle(0.1);
+    spotify.change(&[("PlaybackStatus", s("Paused"))]);
+    settle(0.1);
+    assert_eq!(tessel_media::mpris::last_player().as_deref(), Some(spotify.name.as_str()));
+    assert_eq!(client.current().unwrap().name, spotify.name);
+    client.toggle();
+    settle(0.1);
+    assert_eq!(spotify.calls(), ["Play"]);
+    assert!(browser.calls().is_empty(), "the browser was resumed: {:?}", browser.calls());
+    // A fresh control (another process, the popup) agrees.
+    spotify.change(&[("PlaybackStatus", s("Paused"))]);
+    let other = MediaSession::new(|| {}, true);
+    other.start(false);
+    settle(0.3);
+    assert_eq!(other.current().unwrap().name, spotify.name);
+    other.close();
+    // The media key script.
+    let script = concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/bin/tessel-action");
+    let mut child = Command::new("sh").args([script, "play-pause"]).spawn().unwrap();
+    let end = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while child.try_wait().unwrap().is_none() && std::time::Instant::now() < end {
+        settle(0.02);
+    }
+    settle(0.1);
+    assert!(browser.calls().is_empty(), "the media key resumed the browser: {:?}", browser.calls());
+    assert!(matches!(spotify.calls().last().map(String::as_str), Some("PlayPause" | "Play")), "{:?}", spotify.calls());
+    client.close();
+}
+
 #[test]
 fn private_bus() {
     // tools/headless.md: GTestDBus has no service dirs (nothing can be activated); GTK/GIO here
@@ -230,6 +276,11 @@ fn private_bus() {
     for (key, value) in [("GDK_DEBUG", "no-portals"), ("GIO_USE_VFS", "local"), ("GTK_USE_PORTAL", "0")] {
         std::env::set_var(key, value);
     }
+    // The last-player file lives in a scratch runtime dir, never the real session's.
+    let runtime = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("media-runtime-{}", std::process::id()));
+    std::fs::create_dir_all(&runtime).unwrap();
+    // SAFETY: single test function; nothing else reads the environment concurrently.
+    unsafe { std::env::set_var("XDG_RUNTIME_DIR", &runtime) };
     let bus = gio::TestDBus::new(gio::TestDBusFlags::NONE);
     bus.up();
     assert_eq!(std::env::var("DBUS_SESSION_BUS_ADDRESS").unwrap(), bus.bus_address().unwrap().as_str());
@@ -248,6 +299,10 @@ fn private_bus() {
     replacement_owner_never_receives_stale_command();
     settle(0.1);
     dock_controller_only_changes_playback_on_explicit_action();
+    settle(0.1);
+    let _ = std::fs::remove_file(tessel_media::mpris::last_player_file());
+    play_resumes_the_player_that_played_last();
     cli_rejects_settings_and_negative_offsets();
     bus.down();
+    let _ = std::fs::remove_dir_all(&runtime);
 }

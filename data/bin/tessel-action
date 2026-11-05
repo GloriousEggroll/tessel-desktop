@@ -37,18 +37,38 @@ terminal() {
 }
 
 media() {
-    if have playerctl; then exec playerctl "$1"; fi
-    # Without playerctl, call the first MPRIS player directly.
     case "$1" in
         play-pause) method=PlayPause ;; pause) method=Pause ;; next) method=Next ;;
         previous) method=Previous ;; stop) method=Stop ;; *) exit 2 ;;
     esac
-    player=$(gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
-        --method org.freedesktop.DBus.ListNames 2>/dev/null | tr ',' '\n' \
-        | sed -n "s/.*'\(org\.mpris\.MediaPlayer2\.[^']*\)'.*/\1/p" | head -n 1)
+    player=$(media_player)
     [ -n "$player" ] || exit 0
+    if have playerctl; then exec playerctl --player="${player#org.mpris.MediaPlayer2.}" "$1"; fi
     exec gdbus call --session --dest "$player" --object-path /org/mpris/MediaPlayer2 \
         --method "org.mpris.MediaPlayer2.Player.$method" >/dev/null
+}
+
+# The player the media keys control, chosen like Tessel's media controls: one that
+# is playing (the most recently started first), else the player that most recently
+# started playing ($XDG_RUNTIME_DIR/tessel-media-last-player), else the first player.
+media_player() {
+    players=$(gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
+        --method org.freedesktop.DBus.ListNames 2>/dev/null | tr ',' '\n' \
+        | sed -n "s/.*'\(org\.mpris\.MediaPlayer2\.[^']*\)'.*/\1/p")
+    [ -n "$players" ] || return 0
+    last=$(head -n 1 "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/tessel-media-last-player" 2>/dev/null)
+    case "
+$players
+" in *"
+$last
+"*) ;; *) last= ;; esac
+    playing=
+    for candidate in $last $players; do
+        status=$(gdbus call --session --dest "$candidate" --object-path /org/mpris/MediaPlayer2 \
+            --method org.freedesktop.DBus.Properties.Get org.mpris.MediaPlayer2.Player PlaybackStatus 2>/dev/null)
+        case "$status" in *Playing*) playing=$candidate; break ;; esac
+    done
+    if [ -n "$playing" ]; then echo "$playing"; elif [ -n "$last" ]; then echo "$last"; else echo "$players" | head -n 1; fi
 }
 
 volume() {

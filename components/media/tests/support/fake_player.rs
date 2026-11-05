@@ -14,7 +14,7 @@ use std::rc::Rc;
 pub const PATH: &str = "/org/mpris/MediaPlayer2";
 pub const PLAYER: &str = "org.mpris.MediaPlayer2.Player";
 
-const BASE: &str = r#"<method name="Pause"/><method name="Play"/><method name="Previous"/><method name="Next"/>
+const BASE: &str = r#"<method name="Pause"/><method name="Play"/><method name="PlayPause"/><method name="Previous"/><method name="Next"/>
 <property name="PlaybackStatus" type="s" access="read"/>
 <property name="Metadata" type="a{sv}" access="read"/>
 <property name="CanControl" type="b" access="read"/>
@@ -169,8 +169,10 @@ impl FakePlayer {
             invocation.return_dbus_error("org.mpris.MediaPlayer2.Error.Failed", "Fixture rejection");
             return;
         }
-        if method == "Pause" || method == "Play" {
-            self.change(&[("PlaybackStatus", s(if method == "Pause" { "Paused" } else { "Playing" }))]);
+        let playing = self.state.borrow().properties["PlaybackStatus"].str() == Some("Playing");
+        if method == "Pause" || method == "Play" || method == "PlayPause" {
+            let pause = method == "Pause" || (method == "PlayPause" && playing);
+            self.change(&[("PlaybackStatus", s(if pause { "Paused" } else { "Playing" }))]);
         }
         invocation.return_value(None);
     }

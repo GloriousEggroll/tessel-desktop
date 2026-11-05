@@ -255,6 +255,29 @@ pub struct Inner {
 #[derive(Clone)]
 pub struct MediaSession(pub Rc<Inner>);
 
+/// `$XDG_RUNTIME_DIR/tessel-media-last-player`: the bus name of the player that
+/// most recently started playing. Every Tessel media control (dock, popup, lock
+/// screen, the media keys in `tessel-action`) resumes that player first, so Play
+/// after pausing returns to the last thing that was playing.
+pub fn last_player_file() -> std::path::PathBuf { tessel_core::paths::runtime_dir().join("tessel-media-last-player") }
+
+pub fn last_player() -> Option<String> {
+    let text = std::fs::read_to_string(last_player_file()).ok()?;
+    let name = text.trim();
+    name.starts_with("org.mpris.MediaPlayer2.").then(|| name.to_owned())
+}
+
+fn remember_last_player(name: &str) {
+    if last_player().as_deref() == Some(name) {
+        return;
+    }
+    let path = last_player_file();
+    let temporary = path.with_extension(format!("{}.tmp", std::process::id()));
+    if std::fs::write(&temporary, format!("{name}\n")).is_ok() && std::fs::rename(&temporary, &path).is_err() {
+        let _ = std::fs::remove_file(&temporary);
+    }
+}
+
 fn up(weak: &Weak<Inner>) -> Option<MediaSession> { weak.upgrade().map(MediaSession) }
 
 fn property(proxy: &gio::DBusProxy, key: &str) -> Py {
@@ -399,6 +422,9 @@ impl MediaSession {
             this.identity(&name, &proxy);
             if pause && property(&proxy, "PlaybackStatus").str() == Some("Playing") {
                 this.command(&name, &proxy, "Pause", None);
+            } else if !this.0.readonly && last_player().is_none() && property(&proxy, "PlaybackStatus").str() == Some("Playing") {
+                // Already playing before any Tessel control saw it start.
+                remember_last_player(&name);
             }
             this.changed();
         });
@@ -437,7 +463,22 @@ impl MediaSession {
         if has("PlaybackStatus") || has("Metadata") {
             self.0.errors.borrow_mut().remove(&name);
         }
+        if has("PlaybackStatus") && property(proxy, "PlaybackStatus").str() == Some("Playing") {
+            self.started_playing(&name);
+        }
         self.changed();
+    }
+
+    /// A player began playing: it becomes the one Play resumes, and a player the
+    /// user picked earlier no longer holds the controls.
+    fn started_playing(&self, name: &str) {
+        let pinned = self.0.pinned.borrow().clone();
+        if pinned.is_some_and(|pinned| pinned != name) {
+            self.0.pinned.replace(None);
+        }
+        if !self.0.readonly {
+            remember_last_player(name);
+        }
     }
 
     fn build(&self, name: &str, proxy: &gio::DBusProxy) -> Option<Media> {
@@ -480,13 +521,15 @@ impl MediaSession {
         self.build(name, &proxy)
     }
 
-    /// LockMedia.current: playing first, then the previous selection, then bus name.
+    /// Playing first, then the player that most recently started playing
+    /// ([`last_player`]), then the previous selection, then bus name.
     fn base_current(&self) -> Option<Media> {
         let players: Vec<(String, gio::DBusProxy)> = self.0.players.borrow().iter().map(|(n, p)| (n.clone(), p.proxy.clone())).collect();
         let selected = self.0.selected.borrow().clone();
+        let last = last_player();
         let mut choices: Vec<Media> = players.iter().filter_map(|(name, proxy)| self.build(name, proxy)).collect();
-        choices.sort_by(|a, b| (!a.playing, Some(&a.name) != selected.as_ref(), &a.name)
-            .cmp(&(!b.playing, Some(&b.name) != selected.as_ref(), &b.name)));
+        let key = |m: &Media| (!m.playing, Some(&m.name) != last.as_ref(), Some(&m.name) != selected.as_ref(), m.name.clone());
+        choices.sort_by_key(key);
         let media = choices.into_iter().next();
         self.0.selected.replace(media.as_ref().map(|m| m.name.clone()));
         media
