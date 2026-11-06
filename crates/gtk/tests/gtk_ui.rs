@@ -267,6 +267,71 @@ fn live_theme(cache: &std::path::Path) {
     println!("ok theme");
 }
 
+/// The image inside the window's close button: its measured width shows which
+/// window-button style won (dot: no padding, 16px; plain glyph: 4px padding, 24px).
+fn close_image_width(window: &gtk::Window) -> i32 {
+    fn find(widget: &gtk::Widget) -> Option<gtk::Widget> {
+        if widget.has_css_class("close") {
+            return widget.first_child();
+        }
+        let mut child = widget.first_child();
+        while let Some(current) = child {
+            if let Some(found) = find(&current) {
+                return Some(found);
+            }
+            child = current.next_sibling();
+        }
+        None
+    }
+    let image = find(window.upcast_ref()).expect("a close button");
+    image.measure(gtk::Orientation::Horizontal, -1).0
+}
+
+/// GTK reads the user's gtk.css once, when a process starts, and at a higher
+/// priority than application CSS. A window opened under one layout must still
+/// follow the window-button style of the layout chosen afterwards.
+fn window_buttons_follow_the_layout_while_open(cache: &std::path::Path) {
+    let path = cache.join("tessel/dock/palette-buttons.json");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let display = gdk::Display::default().unwrap();
+    let monitor = display.monitors().item(0).and_downcast::<gdk::Monitor>().unwrap();
+    let g = monitor.geometry();
+    let write = |colored: bool| {
+        let palette = serde_json::json!({"version": 1, "is_dark": true, "colored_window_buttons": colored, "monitors": [
+            {"name": monitor.connector().map(|c| c.to_string()).unwrap_or_default(), "geometry": [g.x(), g.y(), g.width(), g.height()],
+             "background": [30, 15, 50], "foreground": [238, 238, 238], "accent": [105, 167, 255]}]});
+        std::fs::write(&path, palette.to_string()).unwrap();
+    };
+    for started_colored in [true, false] {
+        // What gtk.css held when this process started.
+        let stale = gtk::CssProvider::new();
+        stale.load_from_string(&theme::window_controls_css("window", [238, 238, 238], started_colored));
+        gtk::style_context_add_provider_for_display(&display, &stale, gtk::STYLE_PROVIDER_PRIORITY_USER);
+        write(started_colored);
+        let client = theme::PaletteClient::new(Some(path.clone()));
+        let window = gtk::Window::new();
+        let controls = gtk::WindowControls::new(gtk::PackType::End);
+        controls.set_decoration_layout(Some(":close"));
+        window.set_child(Some(&controls));
+        let binding = theme::attach(&window, Some(&client));
+        window.present();
+        settle(0.5);
+        client.refresh();
+        settle(0.2);
+        let (before, after) = if started_colored { (16, 24) } else { (24, 16) };
+        assert_eq!(close_image_width(&window), before, "style at start (colored: {started_colored})");
+        write(!started_colored);
+        client.refresh();
+        settle(0.2);
+        assert_eq!(close_image_width(&window), after, "the open window follows the switch (started colored: {started_colored})");
+        binding.close();
+        window.destroy();
+        gtk::style_context_remove_provider_for_display(&display, &stale);
+        settle(0.1);
+    }
+    println!("ok window buttons follow the layout");
+}
+
 fn osd_checks() {
     let dismissed = Rc::new(Cell::new(false));
     let flag = dismissed.clone();
@@ -302,6 +367,7 @@ fn main() {
     app.register(None::<&gio::Cancellable>).unwrap();
     app_menu_checks(&app);
     live_theme(&cache);
+    window_buttons_follow_the_layout_while_open(&cache);
     osd_checks();
     println!("gtk_ui: all checks passed");
 }

@@ -604,6 +604,7 @@ struct ThemeInner {
     scope: String,
     provider: RefCell<Option<gtk::CssProvider>>,
     corner_provider: RefCell<Option<gtk::CssProvider>>,
+    controls_provider: RefCell<Option<gtk::CssProvider>>,
     display: RefCell<Option<gdk::Display>>,
     signature: RefCell<Option<(Option<String>, bool)>>,
     closed: Cell<bool>,
@@ -622,7 +623,7 @@ impl WindowTheme {
         let scope = format!("tessel-dock-companion-{}", SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
         let theme = Self(Rc::new(ThemeInner {
             window: window.downgrade(), client: client.clone(), scope: scope.clone(), provider: RefCell::new(None),
-            corner_provider: RefCell::new(None), display: RefCell::new(None), signature: RefCell::new(None),
+            corner_provider: RefCell::new(None), controls_provider: RefCell::new(None), display: RefCell::new(None), signature: RefCell::new(None),
             closed: Cell::new(false), monitor_name: RefCell::new(None), pending: RefCell::new(None),
             blur: blur::attach(window, None, true, true), signals: RefCell::new(Vec::new()),
         }));
@@ -742,6 +743,16 @@ impl WindowTheme {
             gtk::style_context_add_provider_for_display(&display, &provider, PRIORITY_APPLICATION + 30);
             self.0.provider.replace(Some(provider));
         }
+        if let (Some(entry), Some(palette)) = (&entry, &palette) {
+            // GTK reads the user's gtk.css once, when the process starts, and
+            // above application CSS. Its window buttons are the ones of the
+            // layout chosen back then, so this window's current style goes
+            // above it, or a layout switch would not reach open windows.
+            let provider = gtk::CssProvider::new();
+            provider.load_from_string(&window_controls_css(&format!("window.{}", self.0.scope), entry.foreground, palette.colored_window_buttons));
+            gtk::style_context_add_provider_for_display(&display, &provider, PRIORITY_USER + 2);
+            self.0.controls_provider.replace(Some(provider));
+        }
         if square {
             // Radius alone takes precedence over app-specific styles (Files'
             // navigation, popup wrappers, and native GTK controls). Keeping it
@@ -756,12 +767,13 @@ impl WindowTheme {
 
     fn remove_provider(&self) {
         if let Some(display) = self.0.display.take() {
-            for provider in [self.0.provider.take(), self.0.corner_provider.take()].into_iter().flatten() {
+            for provider in [self.0.provider.take(), self.0.corner_provider.take(), self.0.controls_provider.take()].into_iter().flatten() {
                 gtk::style_context_remove_provider_for_display(&display, &provider);
             }
         }
         self.0.provider.replace(None);
         self.0.corner_provider.replace(None);
+        self.0.controls_provider.replace(None);
     }
 
     pub fn close(&self) {
