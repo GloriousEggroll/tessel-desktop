@@ -211,7 +211,8 @@ impl Publisher {
         self.gtk_color_scheme.publish(settings.saved_match_wallpaper, is_dark, saved.as_ref(), settings.colored_window_buttons);
         // labwc title bars use the same palette as GTK header bars.
         self.window_buttons.set_palette(is_dark, saved.as_ref().and_then(palette_of).as_ref());
-        self.window_buttons.apply(settings.window_buttons_left, settings.colored_window_buttons, settings.window_shadows);
+        self.window_buttons.apply(settings.window_buttons_left, settings.colored_window_buttons, settings.window_shadows,
+                                 settings.apps_rounded_corners);
         // Folder icons are global, so follow the same primary display as GTK;
         // wait for the real wallpaper rather than briefly applying default blue.
         let ready = saved.as_ref().and_then(|s| s.get("wallpaper_ready")).and_then(Value::as_bool).unwrap_or(false);

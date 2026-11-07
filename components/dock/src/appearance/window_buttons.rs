@@ -1,9 +1,9 @@
 //! Window-button side and style for GTK and labwc title bars (window_buttons.py).
 //!
-//! `apply(left, colored, shadows)` sets GSettings `button-layout` (through an
+//! `apply(left, colored, shadows, rounded)` sets GSettings `button-layout` (through an
 //! injectable [`ButtonLayoutStore`]), `gtk-decoration-layout` in existing
 //! gtk-3.0/gtk-4.0 `settings.ini`, the rc.xml `<theme><titlebar><layout>` and
-//! `<theme><dropShadows>`, and the managed labwc theme's SVG buttons and
+//! `<theme><dropShadows>`, `<theme><roundWindowContent>`, and the managed labwc theme's SVG buttons and
 //! themerc. Each target is rewritten only when its content differs, and labwc
 //! is asked to reload (asynchronously, coalesced, only under labwc) when a
 //! labwc file changed. `set_palette` follows the GTK header-bar palette in
@@ -211,7 +211,7 @@ struct Inner {
 
 #[derive(Default)]
 struct State {
-    applied: Option<(bool, bool, bool)>,
+    applied: Option<(bool, bool, bool, bool)>,
     error: Option<String>,
     palette: Option<PaletteKey>,
     themed: Option<PaletteKey>,
@@ -241,7 +241,7 @@ impl WindowButtons {
         self.0.state.borrow().error.clone()
     }
 
-    pub fn applied(&self) -> Option<(bool, bool, bool)> {
+    pub fn applied(&self) -> Option<(bool, bool, bool, bool)> {
         self.0.state.borrow().applied
     }
 
@@ -308,8 +308,8 @@ impl WindowButtons {
         }
     }
 
-    pub fn apply(&self, left: bool, colored: bool, shadows: bool) -> bool {
-        if self.0.state.borrow().applied == Some((left, colored, shadows)) {
+    pub fn apply(&self, left: bool, colored: bool, shadows: bool, rounded: bool) -> bool {
+        if self.0.state.borrow().applied == Some((left, colored, shadows, rounded)) {
             return false;
         }
         let mut changed = false;
@@ -330,6 +330,10 @@ impl WindowButtons {
                     Ok(value) => reload = value || reload,
                     Err(error) => errors.push(error),
                 }
+                match self.labwc_rounded(rounded) {
+                    Ok(value) => reload = value || reload,
+                    Err(error) => errors.push(error),
+                }
             }
             Err(error) => errors.push(error),
         }
@@ -347,7 +351,7 @@ impl WindowButtons {
         let mut state = self.0.state.borrow_mut();
         state.error = if errors.is_empty() { None } else { Some(errors.join("; ")) };
         if errors.is_empty() {
-            state.applied = Some((left, colored, shadows));
+            state.applied = Some((left, colored, shadows, rounded));
         }
         changed || reload
     }
@@ -405,6 +409,20 @@ impl WindowButtons {
             return Ok(false);
         }
         atomic_write(&self.0.labwc_rc, &rc_xml::with_theme_value(&data, &["dropShadows"], wanted)?)
+            .map_err(|e| fsx::error_text(&e))?;
+        Ok(true)
+    }
+
+    /// labwc cuts window contents to its corner radius, for applications that
+    /// draw square windows themselves (Spotify, browsers).
+    fn labwc_rounded(&self, enabled: bool) -> Result<bool, String> {
+        let Some(data) = self.read_rc()? else { return Ok(false) };
+        let wanted = if enabled { "yes" } else { "no" };
+        let current = rc_xml::theme_value(&data, &["roundWindowContent"])?.filter(|v| !v.is_empty()).unwrap_or_else(|| "no".into());
+        if current == wanted {
+            return Ok(false);
+        }
+        atomic_write(&self.0.labwc_rc, &rc_xml::with_theme_value(&data, &["roundWindowContent"], wanted)?)
             .map_err(|e| fsx::error_text(&e))?;
         Ok(true)
     }
@@ -505,17 +523,41 @@ mod tests {
             button_layout: Some(Box::new(FakeGsettings(RefCell::new(GTK_LAYOUTS[0].into()), written.clone()))),
             ..Default::default()
         });
-        assert!(buttons.apply(true, false, false));
-        assert!(!buttons.apply(true, false, false));
+        assert!(buttons.apply(true, false, false, false));
+        assert!(!buttons.apply(true, false, false, false));
         let rc = std::fs::read(config.join("labwc/rc.xml")).unwrap();
         assert_eq!(rc_xml::title_layout(&rc).unwrap().as_deref(), Some(LABWC_LAYOUTS[1]));
         assert!(std::fs::read_to_string(config.join("gtk-4.0/settings.ini")).unwrap().contains("gtk-decoration-layout=close,minimize,maximize:"));
         assert_eq!(*written.borrow(), [GTK_LAYOUTS[1]]);
         assert_eq!(reloads.get(), 1);
         buttons.reset_applied();
-        assert!(!buttons.apply(true, false, false), "already matching on disk");
+        assert!(!buttons.apply(true, false, false, false), "already matching on disk");
         assert_eq!(reloads.get(), 1);
         assert!(buttons.error().is_none());
+    }
+
+    #[test]
+    fn rounded_corners_reach_labwc_for_applications_that_draw_square_windows() {
+        let config = root("rounded");
+        std::fs::create_dir_all(config.join("labwc")).unwrap();
+        std::fs::write(config.join("labwc/rc.xml"), RC).unwrap();
+        let reloads = Rc::new(Cell::new(0));
+        let counter = reloads.clone();
+        let buttons = WindowButtons::new(WindowButtonsOptions {
+            config_home: Some(config.clone()), data_home: Some(config.join("data")),
+            reconfigure: Some(Box::new(move || counter.set(counter.get() + 1))),
+            scheduler: Some(Rc::new(FakeScheduler::default())), button_layout: Some(Box::new(NoGsettings)),
+            ..Default::default()
+        });
+        let value = || rc_xml::theme_value(&std::fs::read(config.join("labwc/rc.xml")).unwrap(), &["roundWindowContent"]).unwrap();
+        assert!(buttons.apply(false, false, false, true));
+        assert_eq!(value().as_deref(), Some("yes"));
+        assert_eq!(reloads.get(), 1);
+        assert!(!buttons.apply(false, false, false, true), "nothing to do");
+        assert_eq!(reloads.get(), 1);
+        assert!(buttons.apply(false, false, false, false));
+        assert_eq!(value().as_deref(), Some("no"));
+        assert_eq!(reloads.get(), 2);
     }
 
     #[test]
@@ -527,7 +569,7 @@ mod tests {
             config_home: Some(config.clone()), data_home: Some(config.join("data")), reconfigure: Some(Box::new(|| panic!("no reload"))),
             scheduler: Some(Rc::new(FakeScheduler::default())), button_layout: Some(Box::new(NoGsettings)), ..Default::default()
         });
-        assert!(!buttons.apply(true, false, true));
+        assert!(!buttons.apply(true, false, true, false));
         assert!(buttons.error().is_some());
         assert!(buttons.applied().is_none());
         assert_eq!(std::fs::read(config.join("labwc/rc.xml")).unwrap(), b"<labwc_config><theme></labwc_config>");
@@ -554,7 +596,7 @@ mod tests {
         let run = |scheduler: &FakeScheduler| for id in scheduler.ids() { scheduler.fire(id); };
         let (dark, light) = (color_palette(true, Some([20, 26, 40])), color_palette(false, Some([20, 26, 40])));
         assert!(buttons.set_palette(true, Some(&dark)));
-        buttons.apply(false, false, true);
+        buttons.apply(false, false, true, false);
         assert_eq!(reloads.get(), 1);
         let values = labwc_theme::themerc_values(&labwc_theme::titlebar_colors(true, Some(&dark)));
         let title = format!("window.active.title.bg.color: {}", labwc_theme::themerc_value(&values, "window.active.title.bg.color").unwrap());
