@@ -449,3 +449,22 @@ pub fn describe_changes(preset: &Preset, config: &DockConfig, workspaces: Option
     }
     Ok(lines)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The bar reaches the screen edges, so its own outline stays square, but
+    /// the applications menu it opens (the menu hotkey) floats on its own and
+    /// takes this setting.
+    #[test]
+    fn mac_bar_keeps_square_edges_and_opens_a_rounded_menu() {
+        let (_, bytes, icon) = BUILTIN.iter().find(|(key, ..)| *key == "mac").unwrap();
+        let preset = parse_preset("mac", &decode(bytes).unwrap(), PresetIcon::Embedded(icon)).unwrap();
+        let config = merged_config(&DockConfig::default(), &preset.dock).unwrap();
+        assert_eq!(config.mode, "bar");
+        assert!(config.effective_rounded_corners(), "the menu opened from the bar is rounded");
+        assert!(!config.effective_float_mode(), "a bar that doesn't float keeps square outer corners");
+        assert!(config.apps_rounded_corners);
+    }
+}

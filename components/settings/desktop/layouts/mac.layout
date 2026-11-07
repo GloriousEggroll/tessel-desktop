@@ -51,7 +51,7 @@
     "bar_border_enabled": false,
     "bar_border_sides": [],
     "bar_float_mode": false,
-    "bar_rounded_corners": false,
+    "bar_rounded_corners": true,
     "colored_window_buttons": true,
     "compact_bar": true,
     "edge": "top",
