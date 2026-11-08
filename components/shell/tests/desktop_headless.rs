@@ -626,6 +626,30 @@ fn interaction(env: &Env, app: &gtk::Application) {
         vec!["System Monitor", "Settings", "Change Wallpaper", "Configure Displays"],
     ]);
     assert_eq!(menus::labels(&menus::background_model(false))[3], ["System Monitor", "Settings", "Change Wallpaper"]);
+    // A second right-click opens at the pointer, not where the last menu opened.
+    let overlay: gtk::Widget = view.overlay.clone().upcast();
+    view.window.present();
+    assert!(wait_until(|| overlay.width() > 10 && overlay.height() > 10, 5.0), "desktop view is laid out");
+    view.set_menu_anchor(&overlay, 5, 5);
+    menus::background_menu(&view);
+    let popovers = || {
+        let mut found = Vec::new();
+        let mut child = overlay.first_child();
+        while let Some(c) = child {
+            if let Ok(p) = c.clone().downcast::<gtk::PopoverMenu>() {
+                found.push(p);
+            }
+            child = c.next_sibling();
+        }
+        found
+    };
+    let menu = popovers().pop().expect("background menu is parented to the view");
+    let (_, point) = menu.pointing_to();
+    let (_, x, y, _) = view.state.borrow().last_menu_anchor.clone().unwrap();
+    assert_ne!((point.x(), point.y()), (5, 5), "menu reused the previous menu's position");
+    assert_eq!((point.x(), point.y()), (x, y), "a confirmation from this menu opens where it opened");
+    menu.popdown();
+    assert!(wait_until(|| popovers().is_empty(), 2.0));
     let saved_path = std::env::var("PATH").unwrap();
     std::env::set_var("PATH", &env.bin);
     assert!(!menus::has_display_settings());

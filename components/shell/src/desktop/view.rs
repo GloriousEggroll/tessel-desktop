@@ -1543,11 +1543,14 @@ impl DesktopView {
 
     // ------------------------------------------------------------ dialogs
 
-    fn set_menu_anchor(&self, parent: &gtk::Widget, x: i32, y: i32) {
+    pub fn set_menu_anchor(&self, parent: &gtk::Widget, x: i32, y: i32) {
         self.state.borrow_mut().last_menu_anchor = Some((parent.clone(), x, y, std::time::Instant::now()));
     }
 
     /// `_popover_parent_at_pointer` -> (overlay of the view under the pointer, x, y).
+    ///
+    /// A popover that follows up on a menu (a confirmation) opens where that
+    /// menu was, if the menu opened in the last few seconds.
     pub fn popover_parent_at_pointer(&self) -> (gtk::Widget, i32, i32) {
         let anchor = self.state.borrow().last_menu_anchor.clone();
         if let Some((parent, x, y, at)) = anchor {
@@ -1556,6 +1559,12 @@ impl DesktopView {
                 return (parent, x.clamp(0, (aw - 1).max(0)), y.clamp(0, (ah - 1).max(0)));
             }
         }
+        self.parent_under_pointer()
+    }
+
+    /// The overlay of the view under the pointer and the pointer's position
+    /// in it, ignoring where the last menu opened.
+    fn parent_under_pointer(&self) -> (gtk::Widget, i32, i32) {
         let center = |widget: &gtk::Widget| {
             let (aw, ah) = Self::widget_size(widget);
             (widget.clone(), (aw / 2).max(1), (ah / 2).max(1))
@@ -1580,8 +1589,10 @@ impl DesktopView {
         clamp(own)
     }
 
+    /// `remember` marks a menu: it opens at the pointer and becomes the
+    /// anchor for follow-ups. Follow-ups open at that anchor.
     fn popup_at_pointer(&self, popover: &impl IsA<gtk::Popover>, remember: bool) {
-        let (parent, x, y) = self.popover_parent_at_pointer();
+        let (parent, x, y) = if remember { self.parent_under_pointer() } else { self.popover_parent_at_pointer() };
         if remember {
             self.set_menu_anchor(&parent, x, y);
         }
