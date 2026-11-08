@@ -1,0 +1,8 @@
+#%PAM-1.0
+# Shared by Tessel Login and Tessel Lock.
+# Includes system-auth live, so authselect changes apply automatically.
+# The included stack's sufficient success exits authentication before authfail.
+# Only successful account validation resets the counter (pam_faillock account).
+auth required pam_faillock.so preauth conf=/etc/security/tessel-login-faillock.conf
+auth include system-auth
+auth [default=die] pam_faillock.so authfail conf=/etc/security/tessel-login-faillock.conf

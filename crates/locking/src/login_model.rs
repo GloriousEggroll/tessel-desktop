@@ -268,9 +268,13 @@ fn session_from(path: &Path, stem: &str) -> Result<Option<Session>, String> {
 /// The post-PAM launcher greetd runs for every session. The greeter's programs
 /// are fixed system-scope paths (not `tessel_core::paths::program`): greetd and
 /// the greeter run as other users than the one logging in.
-pub const START_SESSION: &str = "/usr/local/lib/tessel/tessel-start-session";
+pub const START_SESSION: &str = tessel_core::system_program!("tessel-start-session");
 /// labwc's one-shot desktop fade (`--startup` command).
-pub const SESSION_TRANSITION: &str = "/usr/local/lib/tessel/tessel-session-transition";
+pub const SESSION_TRANSITION: &str = tessel_core::system_program!("tessel-session-transition");
+
+/// The packaged session's wrapper around labwc (data/session): it passes its
+/// arguments on to labwc, so `--startup` works the same.
+const SESSION_LAUNCH: &str = "tessel-session-launch";
 
 impl Session {
     /// `Session.request()`: greetd's `start_session` request. greetd joins `cmd`
@@ -284,7 +288,7 @@ impl Session {
     /// `request()` with another labwc `--startup` command (the Rust swap).
     pub fn request_with(&self, transition: &str) -> Map<String, Value> {
         let mut argv = self.argv.clone();
-        let is_labwc = argv.first().is_some_and(|first| Path::new(first).file_name().is_some_and(|name| name == "labwc"));
+        let is_labwc = argv.first().is_some_and(|first| Path::new(first).file_name().is_some_and(|name| name == "labwc" || name == SESSION_LAUNCH));
         if is_labwc && !argv.iter().any(|arg| arg == "-s" || arg == "--startup" || arg.starts_with("--startup=")) {
             argv.push("--startup".into());
             argv.push(transition.into());
@@ -512,6 +516,9 @@ mod tests {
         assert_eq!(request.keys().collect::<Vec<_>>(), ["type", "cmd", "env"]);
         let labwc = Session { ident: "labwc".into(), name: "labwc".into(), argv: vec!["labwc".into()], desktops: "labwc".into() };
         assert_eq!(labwc.request()["cmd"][0], "/usr/local/lib/tessel/tessel-start-session labwc --startup /usr/local/lib/tessel/tessel-session-transition");
+        // The packaged session's wrapper passes --startup on to labwc.
+        let launch = Session { ident: "tessel".into(), name: "Tessel".into(), argv: vec!["/usr/lib/tessel/tessel-session-launch".into()], desktops: "labwc".into() };
+        assert_eq!(launch.request()["cmd"][0], "/usr/local/lib/tessel/tessel-start-session /usr/lib/tessel/tessel-session-launch --startup /usr/local/lib/tessel/tessel-session-transition");
         for argv in [vec!["/usr/bin/labwc", "--startup", "existing command"], vec!["labwc", "-s", "x"], vec!["labwc", "--startup=x"],
                      vec!["startplasma-wayland"]] {
             let session = Session { ident: "t".into(), name: "T".into(), argv: argv.iter().map(|s| s.to_string()).collect(), desktops: "T".into() };

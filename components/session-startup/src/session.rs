@@ -15,8 +15,10 @@ use crate::pystr::{casefold, html_escape, html_unescape, py_strip, split_whitesp
 use crate::xdg::{ENV_BEGIN, ENV_BLOCK, ENV_END, START_BEGIN, START_BLOCK, START_END};
 use crate::xml;
 
-pub const ACTION: &str = "~/.local/bin/tessel-action";
-pub const LOCK: &str = "~/.local/bin/tessel-shell-lock";
+pub const ACTION: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-action" } else { "~/.local/bin/tessel-action" };
+pub const LOCK: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-shell-lock" } else { "~/.local/bin/tessel-shell-lock" };
+/// The autostart's tiling command (the shell expands `$HOME`).
+const TILING: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-tiling" } else { "\"$HOME/.local/bin/tessel-tiling\"" };
 pub const BLOCK_BEGIN: &str = "<!-- Tessel keybindings begin";
 pub const BLOCK_END: &str = "<!-- Tessel keybindings end -->";
 pub const WAYTILE_BEGIN: &str = "<!-- Tessel Tiling keyboard begin -->";
@@ -570,7 +572,7 @@ systemctl --user start tessel-keep-awake.service >/dev/null 2>&1 &
 {START_BLOCK}
 
 # Restore optional window tiling only in the labwc session.
-"$HOME/.local/bin/tessel-tiling" --restore >/dev/null 2>&1 &
+{TILING} --restore >/dev/null 2>&1 &
 
 # Start the automatic touch keyboard only in the labwc session.
 systemctl --user start tessel-keyboard.service >/dev/null 2>&1 &
@@ -706,7 +708,9 @@ pub const LEGACY_PROGRAMS: [&str; 3] = ["/.local/bin/waytile", "/.local/bin/wayd
 pub fn is_legacy_statement(statement: &str) -> bool {
     match statement_key(statement) {
         Key::Service(name) => LEGACY_UNITS.contains(&name.as_str()),
-        Key::Code(text) => LEGACY_PROGRAMS.iter().any(|program| text.contains(program)),
+        // A package's template runs tiling from /usr/bin: an earlier ~/.local install's line is not personal.
+        Key::Code(text) => LEGACY_PROGRAMS.iter().any(|program| text.contains(program))
+            || (tessel_core::paths::PACKAGED && text.contains("/.local/bin/tessel-tiling")),
         Key::Block(_) => false,
     }
 }

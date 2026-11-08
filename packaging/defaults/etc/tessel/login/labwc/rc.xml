@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <core><gap>0</gap><decoration>none</decoration></core>
+  <!-- Explicit nonempty binding sets prevent fallback desktop shortcuts. -->
+  <keyboard><keybind key="F35"><action name="None" /></keybind></keyboard>
+  <mouse><context name="Root"><mousebind button="Right" action="Press"><action name="None" /></mousebind></context></mouse>
+  <desktops><number>1</number></desktops>
+</labwc_config>

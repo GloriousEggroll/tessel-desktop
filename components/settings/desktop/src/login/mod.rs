@@ -20,7 +20,7 @@ use tessel_core::tr;
 
 use model::{Appearance, Session, PLACEMENTS};
 
-pub const HELPER_COMMAND: [&str; 2] = ["pkexec", "/usr/local/lib/tessel/tessel-login-helper"];
+pub const HELPER_COMMAND: [&str; 2] = ["pkexec", tessel_core::system_program!("tessel-login-helper")];
 
 /// Python keyword seams: appearance file, session roots, helper argv.
 #[derive(Default, Clone)]

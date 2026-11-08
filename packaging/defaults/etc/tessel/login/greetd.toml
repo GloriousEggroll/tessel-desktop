@@ -1,0 +1,13 @@
+[terminal]
+vt = 1
+switch = true
+
+[general]
+service = "tessel-login"
+source_profile = true
+runfile = "/run/tessel-login.run"
+
+[default_session]
+command = "/usr/lib/tessel/tessel-start-greeter"
+user = "greetd"
+service = "greetd-greeter"

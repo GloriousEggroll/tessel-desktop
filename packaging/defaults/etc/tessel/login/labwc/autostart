@@ -1,0 +1,2 @@
+#!/bin/sh
+# The greeter is the compositor's --session child. No desktop autostart here.

@@ -58,6 +58,22 @@ pub const SUITE: &str = "tessel";
 /// `tessel-dock` and `dock` both name the part `dock`.
 fn part_name(part: &str) -> &str { part.strip_prefix("tessel-").unwrap_or(part) }
 
+/// True when a distribution package built this program (`TESSEL_PACKAGED` set
+/// at build time, see distribution/fedora). Paths that other programs read
+/// from generated configuration then point at `/usr` instead of the
+/// `tools/install.py` locations.
+pub const PACKAGED: bool = option_env!("TESSEL_PACKAGED").is_some();
+
+/// The fixed, root-owned path of a Tessel program, for callers that must not
+/// search the user's directories (the login screen, pkexec): `/usr/lib/tessel`
+/// in a package, otherwise `/usr/local/lib/tessel`.
+#[macro_export]
+macro_rules! system_program {
+    ($name:literal) => {
+        if $crate::paths::PACKAGED { concat!("/usr/lib/tessel/", $name) } else { concat!("/usr/local/lib/tessel/", $name) }
+    };
+}
+
 /// Where Tessel's programs are installed, most specific first. The running
 /// program's own directory comes before these (see [`program`]).
 pub fn program_dirs() -> Vec<PathBuf> {

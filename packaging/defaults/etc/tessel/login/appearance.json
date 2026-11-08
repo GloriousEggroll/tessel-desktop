@@ -1,0 +1,10 @@
+{
+  "picture": "/usr/share/wallpapers/nobara-winds1.webp",
+  "placement": "fill",
+  "background_color": "#161820",
+  "blur_strength": 50,
+  "transparency": 5,
+  "idle_seconds": 30,
+  "clock_24h": false,
+  "default_session": "tessel"
+}

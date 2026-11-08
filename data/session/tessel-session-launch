@@ -1,0 +1,18 @@
+#!/bin/sh
+# The packaged Tessel session (usr/share/wayland-sessions/tessel.desktop): set up
+# this user's labwc files once per installed package version, then run labwc.
+# tools/install.py does this setup itself, so a ~/.local install is left alone.
+libdir=/usr/lib/tessel
+state="${XDG_STATE_HOME:-$HOME/.local/state}/tessel"
+config="${XDG_CONFIG_HOME:-$HOME/.config}/labwc"
+version=$(cat "$libdir/session-version" 2>/dev/null)
+if [ ! -x "$HOME/.local/lib/tessel/tessel-configure-session" ] &&
+   [ "$(cat "$state/session-version" 2>/dev/null)" != "$version" ]; then
+    if [ ! -e "$config/rc.xml" ]; then
+        mkdir -p "$config" && cp /usr/share/tessel/labwc/rc.xml "$config/rc.xml"
+    fi
+    "$libdir/tessel-configure-session" --apply >/dev/null 2>&1 &&
+        "$libdir/tessel-xdg-autostart" --apply >/dev/null 2>&1 &&
+        mkdir -p "$state" && printf '%s\n' "$version" > "$state/session-version"
+fi
+exec /usr/bin/labwc "$@"

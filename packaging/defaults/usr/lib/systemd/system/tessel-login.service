@@ -1,0 +1,21 @@
+[Unit]
+Description=Tessel login screen
+After=systemd-user-sessions.service systemd-logind.service plymouth-quit-wait.service getty@tty1.service
+Conflicts=getty@tty1.service greetd.service plasmalogin.service sddm.service lightdm.service gdm.service
+StartLimitIntervalSec=30
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/greetd --config /etc/tessel/login/greetd.toml
+Restart=always
+RestartSec=2
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+TimeoutStopSec=30
+KeyringMode=shared
+LimitCORE=0
+UMask=0077
+
+[Install]
+Alias=display-manager.service

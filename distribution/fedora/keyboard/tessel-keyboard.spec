@@ -1,0 +1,86 @@
+# Tessel component "keyboard". Built from one source tree per release: see
+# distribution/fedora/README.md for how the sources are made.
+%global debug_package %{nil}
+%global tessel_libdir %{_prefix}/lib/tessel
+%{!?tessel_cargo_target_dir:%global tessel_cargo_target_dir %{_builddir}/tessel-target}
+
+Name:           tessel-keyboard
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        Tessel on-screen keyboard
+License:        GPL-3.0-or-later
+URL:            https://nobaraproject.org
+Source0:        tessel-%{version}.tar.gz
+Source1:        tessel-%{version}-vendor.tar.xz
+
+BuildRequires:  cargo
+BuildRequires:  gcc
+BuildRequires:  pkgconfig(cairo)
+BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
+BuildRequires:  pkgconfig(gio-2.0)
+BuildRequires:  pkgconfig(glib-2.0)
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(graphene-gobject-1.0)
+BuildRequires:  pkgconfig(gtk4)
+BuildRequires:  pkgconfig(gtk4-layer-shell-0)
+BuildRequires:  pkgconfig(gtk4-wayland)
+BuildRequires:  pkgconfig(libudev)
+BuildRequires:  pkgconfig(pango)
+BuildRequires:  pkgconfig(wayland-client)
+BuildRequires:  pkgconfig(wayland-scanner)
+BuildRequires:  pkgconfig(xkbcommon)
+BuildRequires:  rust
+BuildRequires:  systemd-rpm-macros
+
+Requires:       tessel-common = %{version}-%{release}
+
+%description
+Tessel on-screen keyboard. Part of the Tessel desktop.
+
+%prep
+%autosetup -n tessel-%{version} -a1
+cat >> .cargo/config.toml <<'EOF'
+
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+EOF
+
+%build
+export TESSEL_PACKAGED=1
+export CARGO_TARGET_DIR=%{tessel_cargo_target_dir}
+export CARGO_HOME=%{_builddir}/cargo-home
+export RUSTFLAGS="-Clink-arg=-Wl,-z,relro -Clink-arg=-Wl,-z,now"
+cargo build --release --offline --locked -p tessel-keyboard
+
+%install
+export CARGO_TARGET_DIR=%{tessel_cargo_target_dir}
+install -d %{buildroot}%{tessel_libdir} %{buildroot}%{_bindir}
+install -m755 "$CARGO_TARGET_DIR/release/tessel-keyboard" %{buildroot}%{tessel_libdir}/tessel-keyboard
+ln -s ../lib/tessel/tessel-keyboard %{buildroot}%{_bindir}/tessel-keyboard
+install -m755 "$CARGO_TARGET_DIR/release/tessel-keyboard-status" %{buildroot}%{tessel_libdir}/tessel-keyboard-status
+ln -s ../lib/tessel/tessel-keyboard-status %{buildroot}%{_bindir}/tessel-keyboard-status
+# Built by build.rs into the build output: the newest copy is this build's.
+helper=$(find "$CARGO_TARGET_DIR/release/build" -name tessel-keyboard-input -printf '%T@ %p\n' | sort -n | tail -n 1 | cut -d' ' -f2-)
+install -m755 "$helper" %{buildroot}%{tessel_libdir}/tessel-keyboard-input
+install -d %{buildroot}%{_userunitdir}
+sed 's|%h/.local/lib/tessel|%{tessel_libdir}|g' data/units/tessel-keyboard.service > %{buildroot}%{_userunitdir}/tessel-keyboard.service
+chmod 644 %{buildroot}%{_userunitdir}/tessel-keyboard.service
+install -d %{buildroot}%{_datadir}/applications
+sed -e 's|@LIBDIR@|%{tessel_libdir}|g' -e 's#^\(Exec\|TryExec\)=tessel-#\1=%{tessel_libdir}/tessel-#' data/applications/org.tessel.OnScreenKeyboard.desktop > %{buildroot}%{_datadir}/applications/org.tessel.OnScreenKeyboard.desktop
+chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.OnScreenKeyboard.desktop
+
+%files
+%{tessel_libdir}/tessel-keyboard
+%{_bindir}/tessel-keyboard
+%{tessel_libdir}/tessel-keyboard-status
+%{_bindir}/tessel-keyboard-status
+%{tessel_libdir}/tessel-keyboard-input
+%{_userunitdir}/tessel-keyboard.service
+%{_datadir}/applications/org.tessel.OnScreenKeyboard.desktop
+
+%changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
+- First package

@@ -13,7 +13,10 @@
 use std::ffi::{c_char, c_int, c_void, CStr, CString};
 use std::ptr;
 
-pub const DEFAULT_HELPER: &str = "/usr/local/lib/tessel/tessel-keyring";
+pub const DEFAULT_HELPER: &str = match option_env!("TESSEL_PACKAGED") {
+    Some(_) => "/usr/lib/tessel/tessel-keyring",
+    None => "/usr/local/lib/tessel/tessel-keyring",
+};
 const DATA_NAME: &[u8] = b"tessel_keyring_authtok\0";
 const HELPER_TIMEOUT_SECONDS: u64 = 20;
 

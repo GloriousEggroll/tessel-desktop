@@ -57,7 +57,7 @@ All executables (apps, daemons, status streams, helpers) are installed flat into
 |---|---|---|
 | user | `~/.local/lib/tessel/` | symlinks in `~/.local/bin/` |
 | system | `/usr/local/lib/tessel/` | symlinks in `/usr/local/bin/` |
-| package | `/usr/lib/tessel/` (or `/usr/libexec/tessel/`) | `/usr/bin/` |
+| package (`distribution/fedora`) | `/usr/lib/tessel/` | `/usr/bin/` |
 
 Find another program with `tessel_core::paths::program("tessel-power-status")`: beside the
 running executable first, then those directories, else the bare name (`PATH`). Status streams

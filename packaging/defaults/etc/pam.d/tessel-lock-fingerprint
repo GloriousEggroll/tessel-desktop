@@ -1,0 +1,7 @@
+#%PAM-1.0
+# Fingerprint-only Tessel Lock unlock.
+# Runs in parallel with tessel-lock-password; either success cancels the other.
+auth required pam_faillock.so preauth conf=/etc/security/tessel-login-faillock.conf
+auth required pam_fprintd.so
+account required pam_faillock.so conf=/etc/security/tessel-login-faillock.conf
+account include password-auth
