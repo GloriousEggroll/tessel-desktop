@@ -16,7 +16,10 @@ config=${MOCK_CONFIG:-/mnt/Storage/Projects/Development/nobara/rpm-sources/mock/
 version=$(rpmspec -q --srpm --qf '%{version}' "$here/tessel-meta/tessel-meta.spec")
 # One chroot and one cargo target directory, so each package reuses what the
 # packages before it compiled.
-mock=(mock -r "$config" --uniqueext tessel --quiet)
+# gcc needs kernel-headers, which only Nobara's kernel repository has and the
+# mock configuration does not list.
+kernel_repo=${KERNEL_REPO:-https://usw.nobaraproject.org/rolling/linux-nobara-mainline/x86_64/}
+mock=(mock -r "$config" --uniqueext tessel --quiet --addrepo="$kernel_repo")
 target=/var/tmp/tessel-target
 
 mkdir -p "$out/RPMS" "$out/SRPMS" "$out/logs" "$sources"
