@@ -12,7 +12,7 @@ rm -f "$R/result"
 {
   echo '#!/bin/sh'
   echo 'case "$XDG_RUNTIME_DIR:$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac'
-  echo "export WAYSHELL_UI_ISOLATED=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory"
+  echo "export TESSEL_SHELL_UI_ISOLATED=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory"
   echo "export UI_TEST_FILTER='${UI_TEST_FILTER:-}'"
   echo "export XDG_CONFIG_HOME='$R/xdg/config' XDG_CACHE_HOME='$R/xdg/cache' XDG_DATA_HOME='$R/xdg/data'"
   printf 'timeout 300'; for a in "$@"; do printf " '%s'" "$a"; done; printf ' > "%s/log" 2>&1; echo $? > "%s/result"\n' "$R" "$R"

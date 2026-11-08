@@ -6,7 +6,7 @@
 //! (port of FullscreenGuardNativeTests).
 //!
 //! Runs only inside the private headless labwc of tests/run_wl_headless.sh
-//! (WAYDOCK_WL_HEADLESS=1, private XDG_RUNTIME_DIR); anywhere else it skips
+//! (TESSEL_DOCK_WL_HEADLESS=1, private XDG_RUNTIME_DIR); anywhere else it skips
 //! without connecting to anything.
 
 use gtk::prelude::*;
@@ -313,7 +313,7 @@ fn x11_fixture(width: i32, height: i32) {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
-    if std::env::var("WAYDOCK_WL_HEADLESS").as_deref() != Ok("1") || runtime.is_empty() || runtime == "/run/user/1000" {
+    if std::env::var("TESSEL_DOCK_WL_HEADLESS").as_deref() != Ok("1") || runtime.is_empty() || runtime == "/run/user/1000" {
         println!("wl_headless: skipped (run tests/run_wl_headless.sh)");
         return;
     }

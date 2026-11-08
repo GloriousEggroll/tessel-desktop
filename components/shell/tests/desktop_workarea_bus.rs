@@ -22,13 +22,13 @@ fn connect(address: &str) -> gio::DBusConnection {
     gio::DBusConnection::for_address_sync(address, gio::DBusConnectionFlags::AUTHENTICATION_CLIENT | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION, None, gio::Cancellable::NONE).unwrap()
 }
 
-struct FakeWaydock {
+struct FakeTesselDock {
     connection: gio::DBusConnection,
     owner: gio::OwnerId,
     registration: gio::RegistrationId,
 }
 
-fn fake_tessel_dock(address: &str, reply: Rc<RefCell<String>>) -> FakeWaydock {
+fn fake_tessel_dock(address: &str, reply: Rc<RefCell<String>>) -> FakeTesselDock {
     let connection = connect(address);
     let info = gio::DBusNodeInfo::for_xml(XML).unwrap().lookup_interface(INTERFACE).unwrap();
     let registration = connection
@@ -40,7 +40,7 @@ fn fake_tessel_dock(address: &str, reply: Rc<RefCell<String>>) -> FakeWaydock {
         .build()
         .unwrap();
     let owner = gio::bus_own_name_on_connection(&connection, BUS_NAME, gio::BusNameOwnerFlags::NONE, |_, _| {}, |_, _| {});
-    FakeWaydock { connection, owner, registration }
+    FakeTesselDock { connection, owner, registration }
 }
 
 fn wait(context: &glib::MainContext, mut done: impl FnMut() -> bool) -> bool {

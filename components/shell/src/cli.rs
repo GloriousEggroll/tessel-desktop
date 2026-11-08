@@ -1,5 +1,5 @@
 //! The `tessel-shell` argv grammar (tessel-shell:4801 `_cli_client` and
-//! `do_command_line`), the `wayshell_cli.py` keyboard client and the
+//! `do_command_line`), the `tessel_shell.py` keyboard client and the
 //! `tessel-shell.sock` client side (contract §2.1, §2.2).
 //!
 //! The parser is a small argparse work-alike: long options with unique-prefix
@@ -44,7 +44,7 @@ pub struct ParseError {
     pub text: String,
 }
 
-/// `wayshell_cli.monitor_name`.
+/// `tessel_shell_cli.monitor_name`.
 pub fn monitor_name(value: &str) -> Result<(), String> {
     if value.is_empty() || value.chars().count() > 128 || !is_printable(value) || tessel_core::pyjson::py_strip(value) != value {
         return Err("Monitor must be a valid output connector name.".into());
@@ -448,7 +448,7 @@ pub fn daemon_request(path: &Path, payload: &Value) -> Result<Value, RequestErro
     serde_json::from_str(tessel_core::pyjson::py_strip(&text)).map_err(|e| RequestError::Message(e.to_string()))
 }
 
-/// `wayshell_cli.request`: 2 s timeout, reply ≤ 64 KiB, must be an object.
+/// `tessel_shell_cli.request`: 2 s timeout, reply ≤ 64 KiB, must be an object.
 pub fn cli_request(payload: &Value, timeout: Duration) -> Result<Map<String, Value>, RequestError> {
     let runtime = std::env::var("XDG_RUNTIME_DIR").ok().filter(|v| !v.is_empty())
         .ok_or_else(|| RequestError::Message("No desktop session runtime directory is available.".into()))?;
@@ -525,7 +525,7 @@ pub fn client_main(argv: &[String], sock_path: &Path) -> Option<Outcome> {
     })
 }
 
-// ------------------------------------------------------------ wayshell_cli.py
+// ------------------------------------------------------------ tessel_shell.py
 
 const CLI_DESCRIPTION: &str = "Lightweight keyboard launcher for the existing Tessel Shell daemon.";
 const CLI_CHOICES: &str = "{switch-window,show-activities,switcher-status}";
@@ -556,7 +556,7 @@ fn keyboard_help(prog: &str, argv: &[String]) -> Option<String> {
     })
 }
 
-/// `wayshell_cli.main(argv)`; `request` performs the socket exchange.
+/// `tessel_shell_cli.main(argv)`; `request` performs the socket exchange.
 pub fn keyboard_main(prog: &str, argv: &[String], request: impl FnOnce(&Value) -> Result<Map<String, Value>, RequestError>) -> Outcome {
     if let Some(help) = keyboard_help(prog, argv) {
         return Outcome { stdout: help, ..Default::default() };
@@ -687,25 +687,25 @@ mod tests {
         std::env::remove_var("COLUMNS");
         let ok = |v: Value| v.as_object().unwrap().clone();
         let mut sent = Vec::new();
-        let out = keyboard_main("wayshell_cli.py", &args(&["show-activities"]), |p| { sent.push(dumps(p)); Ok(ok(json!({"ok": true}))) });
+        let out = keyboard_main("tessel_shell.py", &args(&["show-activities"]), |p| { sent.push(dumps(p)); Ok(ok(json!({"ok": true}))) });
         assert_eq!(out, Outcome::default());
         assert_eq!(sent, vec![r#"{"cmd": "show-activities"}"#.to_string()]);
-        let out = keyboard_main("wayshell_cli.py", &args(&["show-activities", "--monitor", " X"]), |_| unreachable!());
+        let out = keyboard_main("tessel_shell.py", &args(&["show-activities", "--monitor", " X"]), |_| unreachable!());
         assert_eq!(out.code, 2);
-        assert_eq!(out.stderr, "usage: wayshell_cli.py show-activities [-h] [--monitor MONITOR]\nwayshell_cli.py show-activities: error: argument --monitor: Monitor must be a valid output connector name.\n");
-        let out = keyboard_main("wayshell_cli.py", &[], |_| unreachable!());
-        assert_eq!(out.stderr, "usage: wayshell_cli.py [-h]\n                       {switch-window,show-activities,switcher-status} ...\nwayshell_cli.py: error: the following arguments are required: command\n");
-        let out = keyboard_main("wayshell_cli.py", &args(&["bogus"]), |_| unreachable!());
-        assert_eq!(out.stderr, "usage: wayshell_cli.py [-h]\n                       {switch-window,show-activities,switcher-status} ...\nwayshell_cli.py: error: argument command: invalid choice: 'bogus' (choose from 'switch-window', 'show-activities', 'switcher-status')\n");
-        let out = keyboard_main("wayshell_cli.py", &args(&["-h"]), |_| unreachable!());
-        assert_eq!(out.stdout, "usage: wayshell_cli.py [-h]\n                       {switch-window,show-activities,switcher-status} ...\n\nLightweight keyboard launcher for the existing Tessel Shell daemon.\n\npositional arguments:\n  {switch-window,show-activities,switcher-status}\n    switch-window       advance the Alt+Tab switcher\n    show-activities     show the persistent window overview\n    switcher-status     check the running switcher without opening it\n\noptions:\n  -h, --help            show this help message and exit\n");
+        assert_eq!(out.stderr, "usage: tessel_shell.py show-activities [-h] [--monitor MONITOR]\ntessel_shell.py show-activities: error: argument --monitor: Monitor must be a valid output connector name.\n");
+        let out = keyboard_main("tessel_shell.py", &[], |_| unreachable!());
+        assert_eq!(out.stderr, "usage: tessel_shell.py [-h]\n                       {switch-window,show-activities,switcher-status} ...\ntessel_shell.py: error: the following arguments are required: command\n");
+        let out = keyboard_main("tessel_shell.py", &args(&["bogus"]), |_| unreachable!());
+        assert_eq!(out.stderr, "usage: tessel_shell.py [-h]\n                       {switch-window,show-activities,switcher-status} ...\ntessel_shell.py: error: argument command: invalid choice: 'bogus' (choose from 'switch-window', 'show-activities', 'switcher-status')\n");
+        let out = keyboard_main("tessel_shell.py", &args(&["-h"]), |_| unreachable!());
+        assert_eq!(out.stdout, "usage: tessel_shell.py [-h]\n                       {switch-window,show-activities,switcher-status} ...\n\nLightweight keyboard launcher for the existing Tessel Shell daemon.\n\npositional arguments:\n  {switch-window,show-activities,switcher-status}\n    switch-window       advance the Alt+Tab switcher\n    show-activities     show the persistent window overview\n    switcher-status     check the running switcher without opening it\n\noptions:\n  -h, --help            show this help message and exit\n");
         let mut sent = Vec::new();
-        let out = keyboard_main("wayshell_cli.py", &args(&["switch-window", "--reverse"]), |p| { sent.push(dumps(p)); Ok(ok(json!({"ok": false, "msg": "nope"}))) });
+        let out = keyboard_main("tessel_shell.py", &args(&["switch-window", "--reverse"]), |p| { sent.push(dumps(p)); Ok(ok(json!({"ok": false, "msg": "nope"}))) });
         assert_eq!(sent, vec![r#"{"cmd": "switch-window", "reverse": true}"#.to_string()]);
         assert_eq!((out.code, out.stderr.as_str()), (1, "nope\n"));
-        let out = keyboard_main("wayshell_cli.py", &args(&["switcher-status"]), |_| Ok(ok(json!({"ok": true, "ready": true}))));
+        let out = keyboard_main("tessel_shell.py", &args(&["switcher-status"]), |_| Ok(ok(json!({"ok": true, "ready": true}))));
         assert_eq!(out.stdout, "{\"ok\": true, \"ready\": true}\n");
-        let out = keyboard_main("wayshell_cli.py", &args(&["switcher-status"]), |_| Err(RequestError::Io(std::io::Error::from_raw_os_error(111))));
+        let out = keyboard_main("tessel_shell.py", &args(&["switcher-status"]), |_| Err(RequestError::Io(std::io::Error::from_raw_os_error(111))));
         assert_eq!(out.stderr, "Tessel Shell: [Errno 111] Connection refused\n");
     }
 }

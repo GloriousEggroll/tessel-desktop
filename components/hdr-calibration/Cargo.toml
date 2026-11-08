@@ -23,7 +23,7 @@ serde_json.workspace = true
 libc.workspace = true
 regex.workspace = true
 roxmltree = "0.20"
-way-displays = { path = "../displays" }
+tessel-displays = { path = "../displays" }
 
 [[test]]
 name = "ui_headless"

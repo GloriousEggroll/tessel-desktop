@@ -30,7 +30,7 @@ Runs:
 | §5 show desktop (C's ShowDesktop; indicator via StatusBackend) | yes | e_headless `show_desktop_restores_only_its_windows` (pre-minimized kept, maximized kept, focus restored) |
 | §5 window click rules (focused → minimize, else activate; multi → preview) | yes (via F1 `activate_window`) | e_headless `dock_click_minimizes_focused_and_restores`; compare harness preview shots |
 | §5 focused title minimize/restore shared across clones | yes (A's FocusedTitle, app-wide) | logic in A's tests; not GUI-tested here |
-| §5 Activities (`/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py show-activities --monitor N`, one in flight, stderr → error) | yes | e_headless hot-corner tests (fake wayshell_cli.py records argv) |
+| §5 Activities (`/usr/bin/python3 ~/.local/share/tessel-shell/tessel_shell.py show-activities --monitor N`, one in flight, stderr → error) | yes | e_headless hot-corner tests (fake tessel_shell.py records argv) |
 | §5 hot corners (TOP `tessel-dock-hot-corner`, 3×3 + edge strips input region, dwell 100–2000, latch, re-entry, fullscreen block, raise after TOP promotion, status JSON) | yes | `ui::hot_corners::tests::*`, e_headless `hot_corner_dwell_latch_and_reentry`, `hot_corner_is_blocked_by_fullscreen` |
 | §5 monitor naming/selection | yes (A's `monitor_entries` with `gdk::Monitor` keys) | compare harness `monitor_labels` identical |
 | §5 launches (A's `Launcher`, GDK launch context timestamp 0, history) | yes (F1's `launch_app`) | A's tests; not exercised GUI-side (never launch real apps) |

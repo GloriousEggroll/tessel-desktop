@@ -337,11 +337,11 @@ pub fn helper_main_with(args: &[String], backend: &dyn HelperBackend, token: imp
 }
 
 /// The helper entry point: `args` are the arguments after `--launch-helper`.
-/// The startup token is taken (and removed) from `WAYDOCK_LAUNCH_STARTUP_ID`.
+/// The startup token is taken (and removed) from `TESSEL_DOCK_LAUNCH_STARTUP_ID`.
 pub fn helper_main(args: &[String]) -> i32 {
     helper_main_with(args, &GioHelper, || {
-        let token = std::env::var("WAYDOCK_LAUNCH_STARTUP_ID").ok();
-        std::env::remove_var("WAYDOCK_LAUNCH_STARTUP_ID");
+        let token = std::env::var("TESSEL_DOCK_LAUNCH_STARTUP_ID").ok();
+        std::env::remove_var("TESSEL_DOCK_LAUNCH_STARTUP_ID");
         token
     })
 }

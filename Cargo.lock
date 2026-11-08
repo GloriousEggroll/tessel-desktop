@@ -990,13 +990,13 @@ dependencies = [
  "libc",
  "serde_json",
  "tessel-core",
+ "tessel-displays",
  "tessel-dock",
  "tessel-gtk",
  "tessel-locking",
  "tessel-shell",
  "tessel-tiling",
  "tessel-weather",
- "way-displays",
 ]
 
 [[package]]
@@ -2471,6 +2471,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tessel-displays"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "gtk4-layer-shell",
+ "libc",
+ "regex",
+ "roxmltree 0.20.0",
+ "serde_json",
+ "tessel-core",
+ "tessel-gtk",
+ "wayland-client",
+ "wayland-protocols-wlr",
+ "yaml-rust2",
+]
+
+[[package]]
 name = "tessel-dock"
 version = "0.1.0"
 dependencies = [
@@ -2593,8 +2612,8 @@ dependencies = [
  "roxmltree 0.20.0",
  "serde_json",
  "tessel-core",
+ "tessel-displays",
  "tessel-gtk",
- "way-displays",
 ]
 
 [[package]]
@@ -3235,23 +3254,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "way-displays"
-version = "0.1.0"
-dependencies = [
- "gio",
- "glib",
- "gtk4",
- "gtk4-layer-shell",
- "libc",
- "regex",
- "roxmltree 0.20.0",
- "serde_json",
- "tessel-core",
- "tessel-gtk",
- "yaml-rust2",
 ]
 
 [[package]]

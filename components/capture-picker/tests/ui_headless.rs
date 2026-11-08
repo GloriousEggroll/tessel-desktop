@@ -313,7 +313,7 @@ fn live_per_monitor_palette_is_attached() {
 fn icons_follow_the_toplevel_snapshot() {
     // `Options.icons = None` runs the real `tessel-dock-toplevel --snapshot`
     // (the tessel-wayland helper, on this private display only).
-    let Some(helper) = std::env::var_os("WAYSHELL_CAPTURE_TOPLEVEL_HELPER") else {
+    let Some(helper) = std::env::var_os("TESSEL_SHELL_CAPTURE_TOPLEVEL_HELPER") else {
         println!("skip icons_follow_the_toplevel_snapshot (no helper)");
         return;
     };

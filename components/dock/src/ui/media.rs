@@ -54,7 +54,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for VerticalText {
-        const NAME: &'static str = "WaydockVerticalText";
+        const NAME: &'static str = "TesselDockVerticalText";
         type Type = super::VerticalText;
         type ParentType = gtk::Widget;
     }

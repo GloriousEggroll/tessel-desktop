@@ -491,7 +491,7 @@
   "Disks": "Discuri",
   "Dismiss": "Închide",
   "Display": "Ecran",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Setările ecranului nu au putut fi încărcate. Asigurați-vă că way-displays rulează, apoi încercați din nou.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Setările ecranului nu au putut fi încărcate. Asigurați-vă că tessel-displays rulează, apoi încercați din nou.",
   "Displays": "Ecrane",
   "Displays are unavailable": "Ecranele nu sunt disponibile",
   "Do Not Disturb duration": "Durata modului Nu deranja",

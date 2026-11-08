@@ -28,7 +28,7 @@ rm -f "$R/result" "$R/log"
 {
   echo '#!/bin/sh'
   echo 'case "$XDG_RUNTIME_DIR:$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac'
-  printf 'WAYDOCK_WL_HEADLESS=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory timeout %s' "${TIMEOUT:-180}"
+  printf 'TESSEL_DOCK_WL_HEADLESS=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory timeout %s' "${TIMEOUT:-180}"
   printf " '%s'" "$BIN"
   printf ' > "%s/log" 2>&1; echo $? > "%s/result"\n' "$R" "$R"
   echo 'labwc --exit'

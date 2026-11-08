@@ -475,7 +475,7 @@ fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_default();
     // Only ever inside the private compositor (its runtime dir lives under /run/user/1000/cbt/).
-    if std::env::var_os("WAYKEYS_UI").is_none() || !runtime.contains("/cbt/") || display.is_empty() {
+    if std::env::var_os("TESSEL_KEYBOARD_UI").is_none() || !runtime.contains("/cbt/") || display.is_empty() {
         println!("skipped: run tests/run_headless.sh (private headless labwc only)");
         return;
     }

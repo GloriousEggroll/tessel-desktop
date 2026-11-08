@@ -491,7 +491,7 @@
   "Disks": "Δίσκοι",
   "Dismiss": "Κλείσιμο",
   "Display": "Οθόνη",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Δεν ήταν δυνατή η φόρτωση των ρυθμίσεων οθόνης. Βεβαιωθείτε ότι εκτελείται το way-displays και δοκιμάστε ξανά.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Δεν ήταν δυνατή η φόρτωση των ρυθμίσεων οθόνης. Βεβαιωθείτε ότι εκτελείται το tessel-displays και δοκιμάστε ξανά.",
   "Displays": "Οθόνες",
   "Displays are unavailable": "Οι οθόνες δεν είναι διαθέσιμες",
   "Do Not Disturb duration": "Διάρκεια «Μην ενοχλείτε»",

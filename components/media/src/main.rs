@@ -1,4 +1,4 @@
-//! `media_manager.py` / `waymedia`: on-demand media controls using the lock
+//! `media_manager.py` / `tessel-media`: on-demand media controls using the lock
 //! screen's MPRIS and icon backends.
 
 use gio::prelude::*;

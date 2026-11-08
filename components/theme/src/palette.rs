@@ -1,4 +1,4 @@
-//! Tessel Dock palette cache reader of wayshell_theme.py (`palette_path`,
+//! Tessel Dock palette cache reader of tessel_shell_theme.py (`palette_path`,
 //! `read_palette`, `monitor_palette`).
 
 use crate::css::{frost_texture_path, Colors};

@@ -669,7 +669,7 @@ impl super::config::PinCatalog for AppCatalog {
 pub const SERVICE_ENV: &[&str] = &[
     "INVOCATION_ID", "JOURNAL_STREAM", "NOTIFY_SOCKET", "WATCHDOG_PID", "WATCHDOG_USEC", "WATCHDOG_DEVICE", "LISTEN_PID",
     "LISTEN_FDS", "LISTEN_FDNAMES", "SYSTEMD_EXEC_PID", "MAINPID", "MANAGERPID", "PIDFILE", "EXIT_CODE", "EXIT_STATUS",
-    "SERVICE_RESULT", "GIO_LAUNCHED_DESKTOP_FILE", "GIO_LAUNCHED_DESKTOP_FILE_PID", "WAYDOCK_LAUNCH_STARTUP_ID",
+    "SERVICE_RESULT", "GIO_LAUNCHED_DESKTOP_FILE", "GIO_LAUNCHED_DESKTOP_FILE_PID", "TESSEL_DOCK_LAUNCH_STARTUP_ID",
 ];
 
 pub const SYSTEMD_RUN: &str = "/usr/bin/systemd-run";
@@ -765,7 +765,7 @@ fn process_environment() -> Vec<(String, String)> {
 
 /// `_launch_environment(context, info, files)` with `base` = `os.environ`
 /// (used only without a context). Returns the app environment (service
-/// variables removed, startup token in `WAYDOCK_LAUNCH_STARTUP_ID`) and token.
+/// variables removed, startup token in `TESSEL_DOCK_LAUNCH_STARTUP_ID`) and token.
 pub fn launch_environment(
     context: Option<&dyn LaunchContext>,
     info: Option<&gio::AppInfo>,
@@ -796,7 +796,7 @@ pub fn launch_environment(
     }
     let token = token.filter(|t| !t.is_empty());
     if let Some(token) = &token {
-        environment.insert("WAYDOCK_LAUNCH_STARTUP_ID", token.clone());
+        environment.insert("TESSEL_DOCK_LAUNCH_STARTUP_ID", token.clone());
     }
     (environment, token)
 }
@@ -1002,7 +1002,7 @@ mod transferred {
         *TYPE.get_or_init(|| unsafe {
             glib::gobject_ffi::g_type_register_static_simple(
                 gio::ffi::g_app_launch_context_get_type(),
-                b"WaydockTransferredLaunchContext\0".as_ptr() as *const c_char,
+                b"TesselDockTransferredLaunchContext\0".as_ptr() as *const c_char,
                 std::mem::size_of::<gio::ffi::GAppLaunchContextClass>() as u32,
                 Some(class_init),
                 std::mem::size_of::<gio::ffi::GAppLaunchContext>() as u32,
@@ -1076,11 +1076,11 @@ pub fn launch_helper(mode: &str, target: &str, token: Option<&str>) -> Result<()
 }
 
 /// The helper `__main__` for one operation: takes the token from
-/// `WAYDOCK_LAUNCH_STARTUP_ID` (removing it from the environment), prints
+/// `TESSEL_DOCK_LAUNCH_STARTUP_ID` (removing it from the environment), prints
 /// `Tessel Dock launch: <error>` on failure. Returns the exit status.
 pub fn run_launch_helper(mode: &str, target: &str) -> i32 {
-    let token = std::env::var("WAYDOCK_LAUNCH_STARTUP_ID").ok();
-    std::env::remove_var("WAYDOCK_LAUNCH_STARTUP_ID");
+    let token = std::env::var("TESSEL_DOCK_LAUNCH_STARTUP_ID").ok();
+    std::env::remove_var("TESSEL_DOCK_LAUNCH_STARTUP_ID");
     match launch_helper(mode, target, token.as_deref()) {
         Ok(()) => 0,
         Err(error) => {

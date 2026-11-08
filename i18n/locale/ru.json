@@ -491,7 +491,7 @@
   "Disks": "Диски",
   "Dismiss": "Закрыть",
   "Display": "Экран",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Не удалось загрузить параметры дисплея. Убедитесь, что way-displays запущен, и повторите попытку.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Не удалось загрузить параметры дисплея. Убедитесь, что tessel-displays запущен, и повторите попытку.",
   "Displays": "Экраны",
   "Displays are unavailable": "Дисплеи недоступны",
   "Do Not Disturb duration": "Длительность режима «Не беспокоить»",

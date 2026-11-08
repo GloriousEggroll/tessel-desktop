@@ -9,7 +9,7 @@ the virtual-keyboard / input-method protocols; only the helper does.
 Tests: `cargo test -p tessel-keyboard` (unit + `tests/bridge.rs` + `tests/lock_monitor.rs`
 on a private `gio::TestDBus`), and `tests/run_headless.sh` (private nested headless labwc,
 2 outputs, private D-Bus/XDG dirs) for `tests/ui.rs` and `tests/service_phase.sh`.
-`tests/ui.rs` skips itself unless it is in the private compositor (`WAYKEYS_UI`, runtime dir
+`tests/ui.rs` skips itself unless it is in the private compositor (`TESSEL_KEYBOARD_UI`, runtime dir
 under `/run/user/1000/cbt/`).
 
 | Contract item | Implemented | Test |

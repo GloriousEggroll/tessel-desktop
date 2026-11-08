@@ -1,8 +1,8 @@
-//! Port of `~/tessel-bluetooth/tessel-shell/wayshell_theme.py`: apply Tessel Dock's monitor
+//! Port of `~/tessel-bluetooth/tessel-shell/tessel_shell_theme.py`: apply Tessel Dock's monitor
 //! palette to Tessel Shell's GTK 4 controls, never the wallpaper.
 //!
 //! Public API used by tessel-shell and tessel-prompt:
-//! `WayshellTheme::new(path: Option<PathBuf>) -> Rc<WayshellTheme>`, `.refresh()`, `.close()`,
+//! `TesselShellTheme::new(path: Option<PathBuf>) -> Rc<TesselShellTheme>`, `.refresh()`, `.close()`,
 //! plus the pure functions (`palette_path`, `read_palette`, `monitor_palette`,
 //! `frost_texture_path`, `frost_background`, `on_accent`, `palette_css`).
 //!
@@ -78,7 +78,7 @@ struct WindowState {
 ///
 /// GTK file/color dialogs created in this process are picked up automatically.
 /// DesktopView marks itself `tessel-shell-desktop` before the next idle refresh.
-pub struct WayshellTheme {
+pub struct TesselShellTheme {
     pub path: PathBuf,
     snapshot: RefCell<Option<Rc<Palette>>>,
     stamp: Cell<Stamp>,
@@ -95,11 +95,11 @@ pub struct WayshellTheme {
     file_monitor: RefCell<Option<(gio::FileMonitor, glib::SignalHandlerId)>>,
     monitors: Option<gio::ListModel>,
     monitors_handler: RefCell<Option<glib::SignalHandlerId>>,
-    this: RefCell<Weak<WayshellTheme>>,
+    this: RefCell<Weak<TesselShellTheme>>,
 }
 
-impl WayshellTheme {
-    /// `WayshellTheme(path=None)`; `None` follows [`palette_path`].
+impl TesselShellTheme {
+    /// `TesselShellTheme(path=None)`; `None` follows [`palette_path`].
     pub fn new(path: Option<PathBuf>) -> Rc<Self> {
         let path = path.unwrap_or_else(palette_path);
         let display = gdk::Display::default();
@@ -383,7 +383,7 @@ impl WayshellTheme {
     }
 }
 
-fn queue(weak: &Weak<WayshellTheme>) {
+fn queue(weak: &Weak<TesselShellTheme>) {
     if let Some(theme) = weak.upgrade() {
         theme.queue_refresh();
     }

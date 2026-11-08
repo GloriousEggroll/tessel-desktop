@@ -491,7 +491,7 @@
   "Disks": "Ổ đĩa",
   "Dismiss": "Đóng",
   "Display": "Màn hình",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Không thể tải cài đặt màn hình. Hãy đảm bảo way-displays đang chạy rồi thử lại.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Không thể tải cài đặt màn hình. Hãy đảm bảo tessel-displays đang chạy rồi thử lại.",
   "Displays": "Màn hình",
   "Displays are unavailable": "Không có màn hình khả dụng",
   "Do Not Disturb duration": "Thời lượng Không làm phiền",

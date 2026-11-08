@@ -491,7 +491,7 @@
   "Disks": "Discos",
   "Dismiss": "Fechar",
   "Display": "Ecrã",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Não foi possível carregar as definições do ecrã. Certifique-se de que o way-displays está em execução e tente novamente.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Não foi possível carregar as definições do ecrã. Certifique-se de que o tessel-displays está em execução e tente novamente.",
   "Displays": "Ecrãs",
   "Displays are unavailable": "Os ecrãs não estão disponíveis",
   "Do Not Disturb duration": "Duração de Não incomodar",

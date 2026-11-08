@@ -1,4 +1,4 @@
-//! The YAML subset of the way-displays IPC: `yaml.safe_load` of replies into
+//! The YAML subset of the tessel-displays IPC: `yaml.safe_load` of replies into
 //! JSON values and a block-style `yaml.safe_dump(sort_keys=False)` for requests.
 
 use serde_json::{Map, Number, Value};

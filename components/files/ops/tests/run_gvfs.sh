@@ -106,7 +106,7 @@ bus_log="$root/bus.log"
 status=0
 env -i PATH="$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/config" XDG_DATA_HOME="$root/data" \
     XDG_CACHE_HOME="$root/cache" XDG_RUNTIME_DIR="$root/runtime" LANG=C.UTF-8 \
-    WAYFILES_GVFS_ISOLATED=1 WAYFILES_GVFS_TEST_ROOT="$root" \
+    TESSEL_FILES_GVFS_ISOLATED=1 TESSEL_FILES_GVFS_TEST_ROOT="$root" \
     DBUS_SYSTEM_BUS_ADDRESS="unix:path=$root/no-system-bus" \
     GIO_USE_VFS=gvfs GIO_USE_VOLUME_MONITOR=unix GVFS_DISABLE_FUSE=1 \
     GDK_DEBUG=no-portals GTK_USE_PORTAL=0 \

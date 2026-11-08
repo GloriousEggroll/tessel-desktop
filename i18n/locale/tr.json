@@ -491,7 +491,7 @@
   "Disks": "Diskler",
   "Dismiss": "Kapat",
   "Display": "Ekran",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Ekran ayarları yüklenemedi. way-displays'in çalıştığından emin olun ve yeniden deneyin.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Ekran ayarları yüklenemedi. tessel-displays'in çalıştığından emin olun ve yeniden deneyin.",
   "Displays": "Ekranlar",
   "Displays are unavailable": "Ekranlar kullanılamıyor",
   "Do Not Disturb duration": "Rahatsız Etmeyin süresi",

@@ -254,7 +254,7 @@ fn blur_regions(w: &World) -> Result<(), String> {
         binding.surface_count() == 1
     }), "blur never applied (supported: {:?})", blur::compositor_supports_blur(&display));
     ensure!(blur::compositor_supports_blur(&display) == Some(true), "blur capability");
-    ensure!(blur::compositor_supports_radius(&display) == Some(true), "waydock_blur_manager_v1 not bound");
+    ensure!(blur::compositor_supports_radius(&display) == Some(true), "tessel_blur_manager_v1 not bound");
     let [x, y, width, height, corners, strength] = binding.geometry(0).ok_or("no geometry")?;
     ensure!(corners == 12 && strength == 20, "corners/strength {corners}/{strength}");
     ensure!(width >= 420 && height >= 300 && x >= 0 && y >= 0, "geometry {x},{y} {width}x{height}");
@@ -307,7 +307,7 @@ fn run_helper(program: &str, args: &[&str], stdin: &[u8]) -> (String, i32) {
 }
 
 const RUST_TOPLEVEL: &str = env!("CARGO_BIN_EXE_tessel-dock-toplevel");
-const RUST_WAYSHELL_TOPLEVEL: &str = env!("CARGO_BIN_EXE_tessel-shell-toplevel");
+const RUST_TESSEL_SHELL_TOPLEVEL: &str = env!("CARGO_BIN_EXE_tessel-shell-toplevel");
 const RUST_WORKSPACES: &str = env!("CARGO_BIN_EXE_tessel-dock-workspaces");
 const RUST_OVERVIEW: &str = env!("CARGO_BIN_EXE_tessel-overview");
 
@@ -315,7 +315,7 @@ fn compat_snapshots(_: &World) -> Result<(), String> {
     let (rust, code) = run_helper(RUST_TOPLEVEL, &["--snapshot"], b"");
     ensure!(code == 0 && rust.lines().last() == Some("{\"event\":\"ready\",\"seat\":true,\"protocol_version\":3}"), "rust snapshot {rust}");
     ensure!(rust.contains("\"title\":\"Alpha\"") && rust.contains(&format!("\"app_id\":\"{APP_ID}\"")), "no Alpha: {rust}");
-    ensure!(run_helper(RUST_WAYSHELL_TOPLEVEL, &["--snapshot"], b"").0 == rust, "tessel-shell-toplevel differs");
+    ensure!(run_helper(RUST_TESSEL_SHELL_TOPLEVEL, &["--snapshot"], b"").0 == rust, "tessel-shell-toplevel differs");
     ensure!(run_helper(RUST_TOPLEVEL, &["--bogus"], b"").1 == 2, "bad argument accepted");
     let (workspaces, code) = run_helper(RUST_WORKSPACES, &["--snapshot"], b"");
     ensure!(code == 0 && workspaces.ends_with("{\"event\":\"ready\",\"protocol_version\":1}\n"), "workspaces {workspaces}");

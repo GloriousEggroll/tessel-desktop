@@ -53,7 +53,6 @@ Requires:       ptyxis
 Requires:       xdg-desktop-portal-wlr >= 0.8.4-4
 Requires:       xdg-desktop-portal
 Requires:       greetd
-Requires:       way-displays
 Requires:       NetworkManager
 Requires:       nm-connection-editor
 Requires:       pipewire

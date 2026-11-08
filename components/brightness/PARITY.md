@@ -6,7 +6,7 @@ Tests: `cargo test -p tessel-brightness` (95 unit tests + `private_bus` end-to-e
 display), `tests/run_headless.sh` (16 GTK checks + `private_bus` again *with* a display: keyboard
 OSD and `--settings`), `tests/measure_headless.sh` (Rust vs Python time/RSS + popup screenshots).
 All hardware is fake: shell fakes for `wlr-randr`/`ddcutil`/`swayidle` as the only PATH, a fake
-sysfs (`BRIGHTNESS_MANAGER_SYSFS`), a fake way-displays socket, a fake logind on a private bus.
+sysfs (`BRIGHTNESS_MANAGER_SYSFS`), a fake tessel-displays socket, a fake logind on a private bus.
 
 Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ deviation · ❌ gap
 
@@ -35,7 +35,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 | Inhibitor guard: ListInhibitors (block + block-weak `idle`), GetSession(`$XDG_SESSION_ID`/auto) + Session Active/Remote/Type; unknown ⇒ blocked (minimal; no UPower/PPD) | ✅ | `guard::tests::*`, private_bus (fake logind, held reply) |
 | Client protocol (`BrightnessClient`): DO_NOT_AUTO_START proxy, owner watch, GetState(+Refresh), 15 s calls, busy for pending settings calls, error fallbacks | ✅ | private_bus (`tessel-brightness-status` follows state and loss of the service) |
 | ⚠ The popup uses an in-process client with the same reply semantics (no D-Bus self proxy) | ⚠ | ui_headless (fake client), private_bus |
-| way-displays IPC: socket path rules, `OP:` + YAML `CFG`, read to EOF (5 s, 16 MiB), DONE/RC/MESSAGES checks; SetScale/SetAutoScale(false) sequences; CFG_WRITE failure text; GET poll every 5 s | ✅ | `scaling_tests::*` (incl. real Unix-socket exchange), private_bus (fake daemon) |
+| tessel-displays IPC: socket path rules, `OP:` + YAML `CFG`, read to EOF (5 s, 16 MiB), DONE/RC/MESSAGES checks; SetScale/SetAutoScale(false) sequences; CFG_WRITE failure text; GET poll every 5 s | ✅ | `scaling_tests::*` (incl. real Unix-socket exchange), private_bus (fake daemon) |
 
 ## §4 Files
 | Item | | Test |

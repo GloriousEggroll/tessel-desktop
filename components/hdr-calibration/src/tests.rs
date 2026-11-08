@@ -10,7 +10,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
-use way_displays::color_config::{self, Status};
+use tessel_displays::color_config::{self, Status};
 
 /// The XDG variables are process-wide: serialize the tests that set them.
 static ENV: Mutex<()> = Mutex::new(());

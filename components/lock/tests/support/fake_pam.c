@@ -23,9 +23,9 @@ const char *fake_pam_marker = "fake-libpam-for-tessel-lock-tests";
 int pam_start(const char *service, const char *user, const struct pam_conv *conv, pam_handle_t **p) {
     const char *expected = getenv("FIXTURE_SERVICE") ? getenv("FIXTURE_SERVICE") : "tessel-lock";
     /* Hosts without the Tessel PAM services make the helper use the desktop-suite
-       ones ("waylock…"); accept that name for the same policy. */
+       ones ("tessel-lock…"); accept that name for the same policy. */
     char legacy[64] = "";
-    if (!strncmp(expected, "tessel-lock", 11)) snprintf(legacy, sizeof legacy, "waylock%s", expected + 11);
+    if (!strncmp(expected, "tessel-lock", 11)) snprintf(legacy, sizeof legacy, "tessel-lock%s", expected + 11);
     if ((strcmp(service, expected) && strcmp(service, legacy)) || !user || !*user) return PAM_SYSTEM_ERR;
     strncpy(fixture_user, user, sizeof fixture_user - 1);
     conversation = *conv; *p = (void *)1; return PAM_SUCCESS;

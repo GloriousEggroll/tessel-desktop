@@ -107,7 +107,7 @@ fn dialog(name: &str) -> Result<gtk::Window, String> {
 }
 
 fn shot(name: &str) {
-    let Ok(dir) = std::env::var("WAYARCHIVE_UI_SHOTS") else { return };
+    let Ok(dir) = std::env::var("TESSEL_ARCHIVE_UI_SHOTS") else { return };
     if dir.is_empty() {
         return;
     }
@@ -704,7 +704,7 @@ fn record_launch() -> Rc<dyn Fn(&gio::File, Option<&gio::AppInfo>)> {
 }
 
 fn run_bin(args: &[&str], cwd: &Path) -> Result<i32, String> {
-    let bin = std::env::var("WAYARCHIVE_BIN").map_err(|_| "WAYARCHIVE_BIN")?;
+    let bin = std::env::var("TESSEL_ARCHIVE_BIN").map_err(|_| "TESSEL_ARCHIVE_BIN")?;
     let mut child = std::process::Command::new(&bin).args(args).current_dir(cwd).spawn().map_err(|e| e.to_string())?;
     let started = Instant::now();
     let end = started + Duration::from_secs(60);
@@ -831,7 +831,7 @@ mod pointer {
 }
 
 fn test_real_drag_from_the_archive_into_files(f: &mut Fixture) -> Outcome {
-    let Ok(tessel_files) = std::env::var("WAYFILES_BIN") else { return Err("WAYFILES_BIN".into()) };
+    let Ok(tessel_files) = std::env::var("TESSEL_FILES_BIN") else { return Err("TESSEL_FILES_BIN".into()) };
     let path = make(&f.root, "dnd-source.zip", Kind::Zip, CreateOptions::default());
     let display = gdk::Display::default().unwrap();
     let monitor = display.monitors().item(0).and_downcast::<gdk::Monitor>().unwrap();
@@ -962,7 +962,7 @@ fn close_strays() {
 }
 
 fn main() {
-    if std::env::var("WAYARCHIVE_UI_ISOLATED_TEST").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_ARCHIVE_UI_ISOLATED_TEST").as_deref() != Ok("1") {
         println!("ui_headless: skipped (run tests/run_headless.sh for the private compositor)");
         return;
     }

@@ -58,7 +58,7 @@ cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 PATH="$R/bin:\$PATH" HOME="$R/home" KASUMI_HEADLESS=1 KASUMI_TEST_TMP="$R/tmp" KASUMI_CALLS="$CALLS" KASUMI_APP_DIR="$R/app" \
-WAYKEYS_INPUT="$R/app/tessel-keyboard-input" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory \
+TESSEL_KEYBOARD_INPUT="$R/app/tessel-keyboard-input" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory \
 GTK_USE_PORTAL=0 GDK_DEBUG=no-portals GIO_USE_VFS=local TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" \
 XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" XDG_DATA_DIRS="$R/xdg/data:/usr/share" \
 LANG=C.UTF-8 LC_ALL= LANGUAGE= DESKTOP_SUITE_LOCALE_DIR="$R/none" \

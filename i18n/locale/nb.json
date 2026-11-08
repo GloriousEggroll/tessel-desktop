@@ -491,7 +491,7 @@
   "Disks": "Disker",
   "Dismiss": "Lukk",
   "Display": "Skjerm",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Skjerminnstillingene kunne ikke lastes inn. Kontroller at way-displays kjører, og prøv igjen.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Skjerminnstillingene kunne ikke lastes inn. Kontroller at tessel-displays kjører, og prøv igjen.",
   "Displays": "Skjermer",
   "Displays are unavailable": "Skjermer er ikke tilgjengelige",
   "Do Not Disturb duration": "Varighet for Ikke forstyrr",

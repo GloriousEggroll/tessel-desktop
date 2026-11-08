@@ -1,5 +1,5 @@
-//! Displays (desktop_pages.DisplaysPage): the way-displays editor embedded
-//! (`way_displays::window::WayDisplaysApp`, embedded mode), HDR calibration
+//! Displays (desktop_pages.DisplaysPage): the tessel-displays editor embedded
+//! (`tessel_displays::window::TesselDisplaysApp`, embedded mode), HDR calibration
 //! launch and an explicit "Identify displays" overlay.
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -8,9 +8,9 @@ use gs_base::style::{empty_state, find_title, page_header, PageHeader};
 use gs_base::{Host, SettingsPage};
 use gtk::prelude::*;
 use tessel_core::tr;
-use way_displays::color_config::{self, Status};
-use way_displays::ipc;
-use way_displays::window::{ClientFactory, WayDisplaysApp};
+use tessel_displays::color_config::{self, Status};
+use tessel_displays::ipc;
+use tessel_displays::window::{ClientFactory, TesselDisplaysApp};
 
 use crate::util::label;
 
@@ -49,7 +49,7 @@ fn default_launch(command: &[String]) -> Result<(), String> {
 #[derive(Default)]
 pub struct DisplaysOptions {
     pub brightness_client_factory: Option<ClientFactory>,
-    /// `load_data=True` reads way-displays (`GET`) and the color status on a worker.
+    /// `load_data=True` reads tessel-displays (`GET`) and the color status on a worker.
     pub load_data: Option<bool>,
     pub hdr_status: Option<Status>,
     pub launch: Option<Launch>,
@@ -60,7 +60,7 @@ pub struct DisplaysPage {
     pub widget: gtk::Box,
     pub header: PageHeader,
     pub status: RefCell<gtk::Widget>,
-    pub owner: RefCell<Option<Rc<WayDisplaysApp>>>,
+    pub owner: RefCell<Option<Rc<TesselDisplaysApp>>>,
     pub hdr: RefCell<Vec<String>>,
     pub launch: RefCell<Launch>,
     pub calibrate: RefCell<Option<gtk::Button>>,
@@ -73,7 +73,7 @@ pub struct DisplaysPage {
 impl DisplaysPage {
     pub fn new(host: &Host, options: DisplaysOptions) -> Rc<Self> {
         let widget = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(12).vexpand(true).build();
-        widget.add_css_class("way-displays");
+        widget.add_css_class("tessel-displays");
         let header = page_header(&tr!("Displays"), Some(&tr!("Arrange your screens and adjust their display settings.")),
                                  Some("video-display-symbolic"));
         header.root.set_margin_top(24);
@@ -127,7 +127,7 @@ impl DisplaysPage {
             self.failed(Some("No application"));
             return;
         };
-        let owner = WayDisplaysApp::new(&application, self.factory.take(), true);
+        let owner = TesselDisplaysApp::new(&application, self.factory.take(), true);
         let content = owner.window.child();
         owner.window.set_child(gtk::Widget::NONE);
         let status = self.status.borrow().clone();
@@ -179,7 +179,7 @@ impl DisplaysPage {
     fn failed(&self, error: Option<&str>) {
         let (title, detail, icon) = match error.filter(|e| !e.is_empty()) {
             Some(error) => {
-                let mut detail = tr!("Display settings could not be loaded. Make sure way-displays is running, then try again.");
+                let mut detail = tr!("Display settings could not be loaded. Make sure tessel-displays is running, then try again.");
                 if error != tr!("Display settings could not be loaded.") {
                     detail = format!("{detail}\n{error}");
                 }
@@ -267,7 +267,7 @@ impl DisplaysPage {
             if let Some(palette) = owner.palette.take() {
                 palette.close();
             }
-            if let Some(provider) = way_displays::style::display_style(&owner.window) {
+            if let Some(provider) = tessel_displays::style::display_style(&owner.window) {
                 gtk::style_context_remove_provider_for_display(&WidgetExt::display(&owner.window), &provider);
             }
             owner.window.destroy();

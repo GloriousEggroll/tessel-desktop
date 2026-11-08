@@ -491,7 +491,7 @@
   "Disks": "Discos",
   "Dismiss": "Fechar",
   "Display": "Tela",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Não foi possível carregar as configurações de tela. Verifique se o way-displays está em execução e tente novamente.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Não foi possível carregar as configurações de tela. Verifique se o tessel-displays está em execução e tente novamente.",
   "Displays": "Telas",
   "Displays are unavailable": "As telas não estão disponíveis",
   "Do Not Disturb duration": "Duração do Não perturbe",

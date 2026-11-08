@@ -1,4 +1,4 @@
-//! The argparse grammar of wayshell_prompt.py `arguments()` (Python 3.14
+//! The argparse grammar of tessel_shell_prompt.py `arguments()` (Python 3.14
 //! argparse semantics: abbreviations, `=` values, the required mutually
 //! exclusive group, left-to-right errors, exit status 2 / help exit 0).
 
@@ -426,8 +426,8 @@ mod tests {
 
     #[test]
     fn usage_wraps_like_argparse_at_80_columns() {
-        let text = help_with_width("wayshell_prompt.py", 78);
-        assert!(text.starts_with("usage: wayshell_prompt.py [-h] (--message MESSAGE | --message-stdin | --error)\n                          [--accept-label ACCEPT_LABEL]\n"));
+        let text = help_with_width("tessel_prompt.py", 78);
+        assert!(text.starts_with("usage: tessel_prompt.py [-h] (--message MESSAGE | --message-stdin | --error)\n                        [--accept-label ACCEPT_LABEL]\n"));
     }
 
     #[test]

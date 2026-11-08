@@ -691,7 +691,7 @@
   "Display": "Bildschirm",
   "Display brightness": "Bildschirmhelligkeit",
   "Display is off or disconnected.": "Der Bildschirm ist ausgeschaltet oder nicht angeschlossen.",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Die Bildschirmeinstellungen konnten nicht geladen werden. Stellen Sie sicher, dass way-displays läuft, und versuchen Sie es erneut.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Die Bildschirmeinstellungen konnten nicht geladen werden. Stellen Sie sicher, dass tessel-displays läuft, und versuchen Sie es erneut.",
   "Display {value1}": "Bildschirm {value1}",
   "Displays": "Bildschirme",
   "Displays are dimmed. Move the pointer to restore.": "Die Bildschirme sind gedimmt. Bewegen Sie den Zeiger, um die Helligkeit wiederherzustellen.",

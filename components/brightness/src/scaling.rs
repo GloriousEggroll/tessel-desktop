@@ -1,4 +1,4 @@
-//! Asynchronous scale controls using the same way-displays IPC as its GUI
+//! Asynchronous scale controls using the same tessel-displays IPC as its GUI
 //! (`display_scaling.py`).
 //!
 //! Only explicit setters change configuration. Discovery and polling issue
@@ -28,16 +28,23 @@ pub const UNAVAILABLE: &str = "Display scaling is unavailable. Start the display
 pub fn socket_path() -> PathBuf {
     let runtime = std::env::var_os("XDG_RUNTIME_DIR").filter(|v| !v.is_empty()).map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("/tmp"));
-    let mut paths = vec![runtime.join("way-displays.sock")];
+    let mut paths = vec![runtime.join("tessel-displays.sock")];
     let terminal = std::env::var("XDG_VTNR").unwrap_or_default();
     if !terminal.is_empty() && terminal.chars().all(|c| c.is_ascii_digit()) {
-        paths.push(runtime.join(format!("way-displays.{terminal}.sock")));
+        paths.push(runtime.join(format!("tessel-displays.{terminal}.sock")));
     }
+    // A session started before tessel-displays had its own daemon keeps way-displays until logout.
+    paths.push(runtime.join("way-displays.sock"));
     paths.iter().find(|p| p.exists()).cloned().unwrap_or_else(|| paths[0].clone())
 }
 
 /// Validate a decoded reply (`DONE: true`, int `RC`, `RC == 0`).
 pub fn check_reply(result: Value) -> Result<Value, String> {
+    // Changes are answered with a sequence whose last item is the outcome.
+    let result = match result {
+        Value::Array(mut items) => items.pop().unwrap_or(Value::Null),
+        other => other,
+    };
     let valid = result.is_object() && result.get("DONE") == Some(&Value::Bool(true)) && model::integer(&result["RC"]).is_some();
     if !valid {
         return Err("The display service returned an invalid response.".into());

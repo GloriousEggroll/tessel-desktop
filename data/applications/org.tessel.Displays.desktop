@@ -6,5 +6,5 @@ Icon=wdisplays
 
 Name=Display Configuration
 GenericName=Displays Configuration
-Comment=way-display-gui displays configuration
+Comment=tessel-displays displays configuration
 Terminal=false

@@ -280,7 +280,7 @@ fn scale_identity_hash_matches_python() {
 
 fn serve(reply: Vec<u8>) -> (tempdir::Dir, std::thread::JoinHandle<Vec<u8>>) {
     let dir = tempdir::Dir::new();
-    let listener = std::os::unix::net::UnixListener::bind(dir.0.join("way-displays.sock")).unwrap();
+    let listener = std::os::unix::net::UnixListener::bind(dir.0.join("tessel-displays.sock")).unwrap();
     let handle = std::thread::spawn(move || {
         use std::io::{Read, Write};
         let (mut stream, _) = listener.accept().unwrap();

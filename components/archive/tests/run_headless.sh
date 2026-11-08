@@ -6,7 +6,7 @@
 # GIO_USE_VFS=local, private HOME and XDG config/cache/data/state, no input
 # devices (the tests drive the private compositor's virtual pointer/keyboard
 # only). Every archive fixture lives under $R. Extra arguments filter checks.
-# WAYARCHIVE_UI_SHOTS=<dir> saves screenshots there.
+# TESSEL_ARCHIVE_UI_SHOTS=<dir> saves screenshots there.
 set -eu
 AGENT=${AGENT:-archive}
 BASE=/run/user/1000/cbt/rust-$AGENT
@@ -40,14 +40,14 @@ export TMPDIR=$BASE
 BIN=$(cd "$ROOT" && cargo test -p tessel-archive --test ui_headless --no-run --message-format=json 2>/dev/null \
       | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable) | .executable')
 [ -n "$BIN" ] || { echo "build failed"; exit 1; }
-WAYFILES="$ROOT/target/debug/tessel-files"
-WAYARCHIVE="$ROOT/target/debug/tessel-archive"
+TESSEL_FILES="$ROOT/target/debug/tessel-files"
+TESSEL_ARCHIVE="$ROOT/target/debug/tessel-archive"
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
-PATH="$R/bin:\$PATH" HOME="$R/home" WAYARCHIVE_UI_ISOLATED_TEST=1 WAYARCHIVE_UI_SHOTS="${WAYARCHIVE_UI_SHOTS:-}" \
-WAYFILES_BIN="$WAYFILES" WAYARCHIVE_BIN="$WAYARCHIVE" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo \
+PATH="$R/bin:\$PATH" HOME="$R/home" TESSEL_ARCHIVE_UI_ISOLATED_TEST=1 TESSEL_ARCHIVE_UI_SHOTS="${TESSEL_ARCHIVE_UI_SHOTS:-}" \
+TESSEL_FILES_BIN="$TESSEL_FILES" TESSEL_ARCHIVE_BIN="$TESSEL_ARCHIVE" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo \
 GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0 GDK_DEBUG=no-portals GIO_USE_VFS=local TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" \
 XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" \
 XDG_DATA_DIRS="$R/xdg/data:/usr/share" DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" \

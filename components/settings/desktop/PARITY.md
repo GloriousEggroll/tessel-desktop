@@ -21,7 +21,7 @@ compares the written files (bytes + mode).
 ## Displays (DisplaysPage)
 | Item | Done | Test |
 |---|---|---|
-| Embeds `way_displays::window::WayDisplaysApp` embedded=true, child moved into page, own title hidden, 30→24 px gutter | yes | `displays_embeds_all_controls_without_applying_initial_values` |
+| Embeds `tessel_displays::window::TesselDisplaysApp` embedded=true, child moved into page, own title hidden, 30→24 px gutter | yes | `displays_embeds_all_controls_without_applying_initial_values` |
 | No write/apply on open (ipc, xwayland primary) | yes (hooks panic) | same |
 | Brightness backend kept, Apply independent | yes | `embedded_brightness_retains_existing_backend_and_apply_independence` |
 | Identify displays: explicit, 3 s, cancelled by deactivate | yes | `display_identify_is_explicit_and_deactivation_cancels_it` |
@@ -92,7 +92,7 @@ Tests: `*_search_targets_*`, lock/login tests.
 ## Pub APIs added in other crates (additive; lib + headless suites re-run green)
 - tessel-dock `ui::settings::SettingsWindow::{set_switching_mode, update_material_controls, preview_appearance, add_tray_choice}`
   (`cargo test -p tessel-dock --lib` 390 ok; `tests/run_g_headless.sh` 25 ok, 0 px screenshot diff).
-- way-displays `window::WayDisplaysApp::{push_overlay, hide_overlays}`, `style::display_style(window)` (style_window
+- tessel-displays `window::TesselDisplaysApp::{push_overlay, hide_overlays}`, `style::display_style(window)` (style_window
   stores its provider on the window) (`--lib` 29 ok; `tests/run_headless.sh` all ok).
 
 ## Gaps (honest)

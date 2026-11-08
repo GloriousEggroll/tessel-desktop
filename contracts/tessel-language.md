@@ -44,7 +44,7 @@ Polkit prompts come from the session's authentication agent (polkitman); calls r
 |---|---|---|
 | `$XDG_CONFIG_HOME/tessel/language.json` | `{"version":1,"language":"<code>","locale":"<xx_YY.UTF-8>", …other keys kept}` indent 2, `ensure_ascii=False` | **Read by every component** via `shared/suite_i18n.py:19-45` (valid only if version 1, code in LANG_NAMES, locale == LOCALE_NAMES[code]). Invalid JSON → error, never overwritten |
 | `$XDG_CONFIG_HOME/environment.d/90-tessel-language.conf` | managed block (no `LC_ALL` line: systemd rejects empty) | |
-| `$XDG_CONFIG_HOME/labwc/environment` | managed block + `LC_ALL=` | same file as way-displays primary-output block |
+| `$XDG_CONFIG_HOME/labwc/environment` | managed block + `LC_ALL=` | same file as tessel-displays primary-output block |
 | `~/.i18n` | managed block + `unset LC_ALL` (shell), `NAME=value` without `export` (Fedora lang.sh parser) | |
 | `$XDG_CONFIG_HOME/plasma-localerc` | only if it already exists: `[Translations] LANGUAGE=<list>` replaced/inserted; Formats untouched | :178-205 |
 

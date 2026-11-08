@@ -7,7 +7,7 @@
 Name:           tessel-displays
 Version:        0.1.0
 Release:        1%{?dist}
-Summary:        Tessel display settings
+Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
 Source0:        tessel-%{version}.tar.gz
@@ -27,16 +27,16 @@ BuildRequires:  pkgconfig(gtk4-wayland)
 BuildRequires:  pkgconfig(pango)
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
+BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common = %{version}-%{release}
-Requires:       way-displays
 Requires:       wlr-randr
 Requires:       libnotify
 Requires:       lcms2
 Recommends:     tessel-hdr-calibration
 
 %description
-Tessel display settings. Part of the Tessel desktop.
+Tessel display settings and the daemon that applies them. Part of the Tessel desktop.
 
 %prep
 %autosetup -n tessel-%{version} -a1
@@ -61,11 +61,15 @@ export CARGO_TARGET_DIR=%{tessel_cargo_target_dir}
 install -d %{buildroot}%{tessel_libdir} %{buildroot}%{_bindir}
 install -m755 "$CARGO_TARGET_DIR/release/tessel-displays" %{buildroot}%{tessel_libdir}/tessel-displays
 ln -s ../lib/tessel/tessel-displays %{buildroot}%{_bindir}/tessel-displays
+install -d %{buildroot}%{_userunitdir}
+sed 's|%h/.local/lib/tessel|%{tessel_libdir}|g' data/units/tessel-displays.service > %{buildroot}%{_userunitdir}/tessel-displays.service
+chmod 644 %{buildroot}%{_userunitdir}/tessel-displays.service
 install -d %{buildroot}%{_datadir}/applications
 sed -e 's|@LIBDIR@|%{tessel_libdir}|g' -e 's#^\(Exec\|TryExec\)=tessel-#\1=%{tessel_libdir}/tessel-#' data/applications/org.tessel.Displays.desktop > %{buildroot}%{_datadir}/applications/org.tessel.Displays.desktop
 chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Displays.desktop
 
 %files
+%{_userunitdir}/tessel-displays.service
 %{tessel_libdir}/tessel-displays
 %{_bindir}/tessel-displays
 %{_datadir}/applications/org.tessel.Displays.desktop

@@ -244,7 +244,7 @@ fn minimized_window_restores_and_closed_selection_is_safe() {
 }
 
 fn cli_command() -> Vec<String> {
-    std::env::var("WAYSHELL_TEST_CLI").unwrap_or_default().split_whitespace().map(str::to_string).collect()
+    std::env::var("TESSEL_SHELL_TEST_CLI").unwrap_or_default().split_whitespace().map(str::to_string).collect()
 }
 
 fn activities_stays_open_then_alt_tab_uses_normal_release() {
@@ -384,7 +384,7 @@ fn client_window(title: &str) -> i32 {
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).filter(|a| !a.starts_with("--test-threads") && a != "--nocapture").collect();
-    if std::env::var("WAYDOCK_TEST_ISOLATED").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_DOCK_TEST_ISOLATED").as_deref() != Ok("1") {
         println!("switcher_native: skipped (run tests/run_switcher_native.sh)");
         return;
     }

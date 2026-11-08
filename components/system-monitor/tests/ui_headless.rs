@@ -485,7 +485,7 @@ fn window_contract() {
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     if runtime == "/run/user/1000" || std::env::var_os("WAYLAND_DISPLAY").is_none()
-        || std::env::var_os("WAYDOCK_TEST_ISOLATED").as_deref() != Some(std::ffi::OsStr::new("1")) {
+        || std::env::var_os("TESSEL_DOCK_TEST_ISOLATED").as_deref() != Some(std::ffi::OsStr::new("1")) {
         println!("ui_headless: skipped (run components/system-monitor/tests/run_headless.sh for the private compositor)");
         return;
     }

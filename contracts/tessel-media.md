@@ -13,7 +13,7 @@ tessel-dock, so the Rust port should put the MPRIS client in a shared crate (`te
 | Item | Value | Ref |
 |---|---|---|
 | Installed script | `~/.config/waybar/scripts/tessel-media/media_manager.py` (+ copies of `media_session.py`, `lock_media*.py`, `companion_theme.py`, shared `tray_popup.py`, `gtk4_utils.py`, `suite_i18n.py`, `popup_placement.py`, ...) | install.py:25-35 |
-| Launcher | `~/.local/bin/waymedia` = `#!/bin/sh\nexec /usr/bin/python3 <target>/media_manager.py "$@"` (mode 0755) | install.py:40-41 |
+| Launcher | `~/.local/bin/tessel-media` = `#!/bin/sh\nexec /usr/bin/python3 <target>/media_manager.py "$@"` (mode 0755) | install.py:40-41 |
 | Also installs | `lock_media.py`, `lock_media_icons.py` → `~/.local/share/tessel-lock/`; `DOCK_FILES` → `~/.local/share/tessel-dock/`; `tessel-settings/settings_search.py` → `~/.local/share/tessel-settings/` | install.py:18-39 |
 | GApplication id | `org.tessel.Media`, flags `HANDLES_COMMAND_LINE` (single instance; 2nd invocation forwards argv to the primary over D-Bus `org.gtk.Application`) | media_manager.py:348 |
 | systemd unit | none. Launched on demand by tessel-dock via `systemd-run --user --quiet --collect --service-type=exec --slice=app.slice --expand-environment=no --setenv=WAYLAND_DISPLAY,DISPLAY,XAUTHORITY,XDG_RUNTIME_DIR,DBUS_SESSION_BUS_ADDRESS,XDG_CURRENT_DESKTOP,XDG_SESSION_TYPE,LABWC_PID -- /usr/bin/python3 ~/.config/waybar/scripts/tessel-media/media_manager.py --popup --popup-edge E --popup-offset N` | tessel-dock/panel_actions.py:10,28-47,76-83 |

@@ -73,12 +73,12 @@ pub fn py_splitlines(text: &str) -> Vec<&str> {
     lines
 }
 
-/// The here-document delimiter: `"WAYSHELL_PROMPT_" + sha256(launcher + "\0" +
+/// The here-document delimiter: `"TESSEL_SHELL_PROMPT_" + sha256(launcher + "\0" +
 /// "\0".join(messages))`, with `_END` appended while any message line equals it.
 pub fn delimiter(launcher: &str, messages: &[String]) -> String {
     let seed = format!("{launcher}\0{}", messages.join("\0"));
     let digest = Sha256::digest(seed.as_bytes());
-    let mut delimiter = String::from("WAYSHELL_PROMPT_");
+    let mut delimiter = String::from("TESSEL_SHELL_PROMPT_");
     for byte in digest {
         delimiter.push_str(&format!("{byte:02x}"));
     }

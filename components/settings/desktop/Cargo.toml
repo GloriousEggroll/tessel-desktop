@@ -23,7 +23,7 @@ libc.workspace = true
 indexmap = "2"
 tessel-dock = { path = "../../dock" }
 tessel-shell = { path = "../../shell" }
-way-displays = { path = "../../displays" }
+tessel-displays = { path = "../../displays" }
 tessel-tiling = { path = "../../tiling" }
 tessel-weather = { path = "../../weather" }
 

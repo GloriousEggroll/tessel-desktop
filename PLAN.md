@@ -37,7 +37,7 @@ live desktop until each Rust component reaches parity and is swapped in.
    (wayland-client + wayland-protocols): zwlr_foreign_toplevel_management_v1 v3, ext-workspace-v1,
    zxdg_output_v1, ext_foreign_toplevel_list_v1, ext_image_copy_capture_v1 /
    ext_image_capture_source_v1, plus ext_background_effect_v1 and the private
-   waydock_blur_manager_v1, which must bind on GTK's own wl_display (from gdk4-wayland).
+   tessel_blur_manager_v1, which must bind on GTK's own wl_display (from gdk4-wayland).
 8. **netman** has no mature Rust libnm: raw NetworkManager D-Bus + secret agent in zbus, and C FFI
    (libnm / VPN editor plugins) only where libnm-only logic is unavoidable.
 9. `tessel-shell.service` ExecStart is stale; the `palette.conf` drop-in is what actually runs it —
@@ -65,7 +65,7 @@ live desktop until each Rust component reaches parity and is swapped in.
 | 2 | tessel-network (netman) | 6934 | ported, gaps closed via libnm, not swapped |
 | 2 | tessel-auth (polkitman) | 663 | ported, tests pass, not swapped (swap with user present) |
 | 2 | calendar / weather / media / discovery / tiling / tessel-session | ~8.7k | ported except tessel-session; not swapped |
-| 2 | way-displays, tessel-language, tessel-session-startup (+ tessel-session) | ~3.7k | ported, not swapped |
+| 2 | tessel-displays, tessel-language, tessel-session-startup (+ tessel-session) | ~3.7k | ported, not swapped |
 | 2 | bluetooth (tessel-bluetooth.py, btpopup.py, bttransfer.py) | — | ported, not swapped |
 | 3 | tessel-shell | 4077 | ported (+prompt, capture-picker, theme); install.py entries ready (tessel-shell, tessel-prompt, tessel-capture-picker), not swapped (swap with user present) |
 | 3 | tessel-dock | 14739 | ported, tests + 0 px screenshot parity; install.py entry ready, not swapped (swap with user present) |

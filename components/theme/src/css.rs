@@ -1,4 +1,4 @@
-//! Pure palette → CSS functions of wayshell_theme.py (text byte-for-byte).
+//! Pure palette → CSS functions of tessel_shell_theme.py (text byte-for-byte).
 
 use std::fmt;
 

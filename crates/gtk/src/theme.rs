@@ -348,7 +348,7 @@ pub fn theme_css(scope: &str, entry: &MonitorPalette, is_dark: bool, options: &T
     rules.push(rule(&root, &[""], &format!("color: {fg}; {material} border-radius: {radius}px;")));
     rules.extend([
         format!("window{root}.tray-popup {{ background-image: none; background-color: transparent; border-radius: {radius}px; }}"),
-        format!("window{root}.way-displays-overlay {{ background-image: none; background-color: transparent; border-radius: 0; }}"),
+        format!("window{root}.tessel-displays-overlay {{ background-image: none; background-color: transparent; border-radius: 0; }}"),
     ]);
     rules.push(rule(&root, &["label", "image"], "color: inherit;"));
     // Each surface paints its background once: ordinary windows at the root,
@@ -713,7 +713,7 @@ impl WindowTheme {
         let entry = palette_for_geometry(palette.as_ref(), self.geometry(&window)).cloned();
         self.0.monitor_name.replace(entry.as_ref().map(|e| e.name.clone()));
         let target = if window.has_css_class("tray-popup") { "popup-surface" }
-                     else if window.has_css_class("way-displays-overlay") { "overlay-box" } else { "" };
+                     else if window.has_css_class("tessel-displays-overlay") { "overlay-box" } else { "" };
         let backdrop = window.has_css_class("desktop-applet-backdrop");
         self.0.blur.configure(entry.is_some() && palette.as_ref().is_some_and(|p| p.apps_frosted) && !backdrop,
                               palette.as_ref().map_or(50, |p| p.apps_frost_strength),

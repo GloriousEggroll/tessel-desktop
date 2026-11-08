@@ -2,7 +2,7 @@
 //! End-to-end port of test_brightness_app.py: the real `tessel-brightness`
 //! and `tessel-brightness-status` binaries on a private bus (gio::TestDBus) that is
 //! also their "system" bus, with a FAKE logind exported by this process, a
-//! FAKE way-displays IPC socket, a FAKE sysfs (`BRIGHTNESS_MANAGER_SYSFS`)
+//! FAKE tessel-displays IPC socket, a FAKE sysfs (`BRIGHTNESS_MANAGER_SYSFS`)
 //! and shell fakes for wlr-randr / ddcutil / swayidle as the only PATH.
 //! No real monitor, backlight, idle listener or display configuration is touched.
 //!
@@ -114,14 +114,14 @@ fn serve_logind(address: &str, logind: &Rc<RefCell<Logind>>) -> gio::DBusConnect
     connection
 }
 
-/// FAKE way-displays daemon on `$XDG_RUNTIME_DIR/way-displays.sock`.
+/// FAKE tessel-displays daemon on `$XDG_RUNTIME_DIR/tessel-displays.sock`.
 struct Daemon {
     data: Value,
     calls: Vec<String>,
     saved: Option<Value>,
 }
 
-fn serve_way_displays(socket: &Path, daemon: Arc<Mutex<Daemon>>) {
+fn serve_tessel_displays(socket: &Path, daemon: Arc<Mutex<Daemon>>) {
     let listener = std::os::unix::net::UnixListener::bind(socket).unwrap();
     std::thread::spawn(move || {
         use std::io::{Read, Write};
@@ -315,7 +315,7 @@ elif [ "$op" = setvcp ]; then read raw max < "$dir/$1"; echo "$2 $max" > "$dir/$
                                           "SERIAL_NUMBER": "test-monitor", "CURRENT": {"ENABLED": true, "SCALE": 1.0}}]}}),
         calls: Vec::new(), saved: None,
     }));
-    serve_way_displays(&root.join("rt/way-displays.sock"), daemon.clone());
+    serve_tessel_displays(&root.join("rt/tessel-displays.sock"), daemon.clone());
     let mut vars: Vec<(String, String)> = vec![
         ("HOME".into(), root.join("home").display().to_string()),
         ("PATH".into(), root.join("bin").display().to_string()),

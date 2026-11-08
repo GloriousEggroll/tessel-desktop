@@ -1,7 +1,7 @@
 # tessel-shell — parity with ~/tessel-bluetooth/tessel-shell (contracts/tessel-shell.md)
 
 Crates: `tessel-shell` (this crate: daemon binary `tessel-shell`, keyboard client
-`tessel-shell-cli`, library), `tessel-theme` (wayshell_theme.py), `tessel-prompt`
+`tessel-shell-cli`, library), `tessel-theme` (tessel_shell_theme.py), `tessel-prompt`
 (§11 item 9) and `tessel-capture-picker` (§11 item 10); each sibling crate has its
 own PARITY.md. Desktop/wallpaper/icons: `PARITY-desktop.md`. File operations and the
 wallpaper chooser: `PARITY-fileops.md`. This file covers the daemon core, the CLI,
@@ -27,7 +27,7 @@ They existed only to isolate parallel work; the product is built with defaults.
 | `switch-window` real-bool `reverse`; `switcher-status` field order; `show-activities` optional/validated monitor; `list-monitors` connector or `Monitor-<i+1>`; `set` (`file: null`, mode passthrough, GDK colour parse, missing file); `apply-json` silent skips | done | same + `show_activities_forwards_optional_monitor` |
 | argv grammar (client path and `do_command_line`): argparse prefixes, `--opt=v`, `-mX`, choices, required, usage + error text byte-identical, exit 2, `Invalid arguments. Use --help.`; `-h` block; `--gapplication-service`; `CLI error: …`; client prints msg/OK/monitors/status JSON | done (`cli`) | `grammar_matches_argparse`, `argparse_error_text_is_python_text` (13 cases captured from Python), `requests_match_python_payloads` |
 | `do_command_line` messages (`Unknown monitor(s): …`, `File not found: …`, `OK\n\n`, doubled list-monitors newline, printed on the daemon's stdout) | done (`app`) | integration (`tessel-shell list-monitors` via the binary) |
-| wayshell_cli.py: monitor_name rules, payload omits absent monitor, 2 s / 64 KiB / dict reply, `Tessel Shell: <err>`, help/usage text | done (`tessel-shell-cli` binary, `cli::keyboard_main`) | `monitor_name_validation`, `keyboard_client_payloads_and_errors` |
+| tessel_shell.py: monitor_name rules, payload omits absent monitor, 2 s / 64 KiB / dict reply, `Tessel Shell: <err>`, help/usage text | done (`tessel-shell-cli` binary, `cli::keyboard_main`) | `monitor_name_validation`, `keyboard_client_payloads_and_errors` |
 | Owns `com.nobaraDesktopView` (unique GApplication, HANDLES_COMMAND_LINE) | done (gtk::Application) | integration (private bus) |
 | `CLI_XML` interface | not ported (dead code in Python, per contract) | — |
 
@@ -77,7 +77,7 @@ paintable). Tests: `real_window_capture_and_overview_cleanup`, `overview_visual_
 | Daemon idle RSS / PSS (desktop layers on 2 outputs + switcher warm) | 67 MB / 37 MB | 104 MB / 67 MB |
 | … after two Activities openings | 100 MB / 58 MB | 140 MB / 91 MB |
 | Alt+Tab open latency (XTEST key → labwc keybind → CLI → switcher focused), median of 12 | 18 ms (bimodal 18/33 = frame) with `tessel-shell-cli` | 50 ms (python CLI + Python switcher) |
-| Same, Rust switcher but `python3 wayshell_cli.py` keybind | 49 ms | — |
+| Same, Rust switcher but `python3 tessel_shell.py` keybind | 49 ms | — |
 | Overview open (show → mapped / first preview), in-process capture | 9–11 ms / 16–18 ms | 32 ms / 32 ms |
 | Release binaries | tessel-shell 2.5 MB (full), tessel-shell-cli 1.6 MB (libc only) | — |
 
@@ -102,10 +102,10 @@ Runners: `tests/run_headless_switcher.sh` (`DAEMON=python` for the Python daemon
 - labwc rc.xml: repoint `A-Tab` / `A-S-Tab` to `~/.local/share/tessel-shell/tessel-shell-cli switch-window
   [--reverse]` (no Python startup: ~50 → ~18-33 ms open latency). install_switcher.py rewrites these
   keybinds to the Python path when re-run — update it in the same step.
-- Replace `~/.local/share/tessel-shell/wayshell_cli.py` with `shim/wayshell_cli.py` (execs
+- Replace `~/.local/share/tessel-shell/tessel_shell.py` with `shim/tessel_shell.py` (execs
   `tessel-shell-cli` when run, keeps `monitor_name`/`request`/`main` importable for
   tessel-shell_switcher.py and tessel-dock hot corners).
-- Readiness probe unchanged: `tessel-shell-cli switcher-status` / `wayshell_cli.py switcher-status`
+- Readiness probe unchanged: `tessel-shell-cli switcher-status` / `tessel_shell.py switcher-status`
   print JSON with `ready` and `can_activate`.
 - Prompt / capture picker: see their PARITY.md (launchers in `~/.local/bin` exec the Rust
   binaries; the prompt here-doc delimiter and xdpw `chooser_cmd` are unchanged).

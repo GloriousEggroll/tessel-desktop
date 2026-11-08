@@ -1,4 +1,4 @@
-//! Port of `~/tessel-bluetooth/tessel-shell/wayshell_prompt.py` (labwc promptCommand /
+//! Port of `~/tessel-bluetooth/tessel-shell/tessel_shell_prompt.py` (labwc promptCommand /
 //! errorCommand dialog) and the pure parts of `install_prompts.py`.
 //!
 //! labwc's action protocol is 0=yes, 254=dismiss (run neither branch), and any
@@ -21,7 +21,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use tessel_theme::WayshellTheme;
+use tessel_theme::TesselShellTheme;
 
 /// `main(argv)`: parse, run the GApplication, return the labwc exit status.
 pub fn run(argv0: &str, args: &[String]) -> i32 {
@@ -37,12 +37,12 @@ pub fn run(argv0: &str, args: &[String]) -> i32 {
     };
     let app = gtk::Application::new(Some(APPLICATION_ID), gio::ApplicationFlags::NON_UNIQUE);
     let result = Rc::new(Cell::new(if options.error { ACCEPT } else { DISMISS }));
-    let theme: Rc<RefCell<Option<Rc<WayshellTheme>>>> = Rc::default();
+    let theme: Rc<RefCell<Option<Rc<TesselShellTheme>>>> = Rc::default();
     let window: Rc<RefCell<Option<Rc<PromptWindow>>>> = Rc::default();
     {
         let (result, theme, window) = (result.clone(), theme.clone(), window.clone());
         app.connect_activate(move |app| {
-            theme.replace(Some(WayshellTheme::new(None)));
+            theme.replace(Some(TesselShellTheme::new(None)));
             let (result, quit_app) = (result.clone(), app.clone());
             let prompt = PromptWindow::new(app, options.clone(), move |code| {
                 result.set(code);

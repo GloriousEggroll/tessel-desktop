@@ -31,7 +31,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 ## §2 IPC
 | Item | | Test |
 |---|---|---|
-| `WayshellAuthListener` subclass of `PolkitAgentListener`; GTask keeps Polkit's callback/user_data in C; finish = `g_task_propagate_boolean` | ✅ | `agent::tests::native_polkit_callback_preserves_opaque_user_data`, ui_headless (same) |
+| `TesselShellAuthListener` subclass of `PolkitAgentListener`; GTask keeps Polkit's callback/user_data in C; finish = `g_task_propagate_boolean` | ✅ | `agent::tests::native_polkit_callback_preserves_opaque_user_data`, ui_headless (same) |
 | Identities stringified (`polkit_identity_to_string`), icon/details ignored | ✅ | `agent::tests::request_fields_reach_the_window…` |
 | Success → `return_boolean(TRUE)`; cancel → `G_IO_ERROR_CANCELLED "Authentication cancelled"`; closed/no identities → `"Authentication is unavailable"` | ✅ | agent tests, polkit_register (BeginAuthentication reply ok / error) |
 | `CancelAuthentication` via the cancellable, handled in an idle callback (never disconnecting inside it) | ✅ | polkit_register, `caller_cancellation_closes_prompt_and_queue` (unit + ui) |

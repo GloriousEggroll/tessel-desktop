@@ -491,7 +491,7 @@
   "Disks": "ดิสก์",
   "Dismiss": "ปิด",
   "Display": "จอแสดงผล",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "ไม่สามารถโหลดการตั้งค่าจอแสดงผลได้ ตรวจสอบว่า way-displays กำลังทำงานอยู่ แล้วลองอีกครั้ง",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "ไม่สามารถโหลดการตั้งค่าจอแสดงผลได้ ตรวจสอบว่า tessel-displays กำลังทำงานอยู่ แล้วลองอีกครั้ง",
   "Displays": "จอแสดงผล",
   "Displays are unavailable": "ไม่สามารถใช้งานจอแสดงผลได้",
   "Do Not Disturb duration": "ระยะเวลาห้ามรบกวน",

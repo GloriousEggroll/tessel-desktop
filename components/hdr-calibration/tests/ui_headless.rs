@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use way_displays::color_config::Status;
+use tessel_displays::color_config::Status;
 
 fn settle() {
     let end = Instant::now() + Duration::from_millis(200);
@@ -160,7 +160,7 @@ fn window_contract(app: &gtk::Application) {
     let window = Window::new(app, None, fake.clone());
     assert_eq!(window.window.title().as_deref(), Some("HDR Calibration"));
     assert_eq!(window.window.default_size(), (760, 840));
-    for class in ["way-displays", "tessel-hdr-calibration"] {
+    for class in ["tessel-displays", "tessel-hdr-calibration"] {
         assert!(window.window.has_css_class(class));
     }
     assert!(window.apply_button.has_css_class("primary"));

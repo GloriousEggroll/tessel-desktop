@@ -6,7 +6,7 @@
 //! underscore is dropped for helpers other crates need.
 //!
 //! - [`model`] (file_model.py)
-//!   - `FileItem` — a **`glib::Object` subclass** (`WayfilesFileItem`), so it
+//!   - `FileItem` — a **`glib::Object` subclass** (`TesselFilesFileItem`), so it
 //!     goes straight into `gio::ListStore::new::<FileItem>()`.
 //!     `FileItem::new(&file, &info)`, `FileItem::query(&file, cancellable) ->
 //!     Result<FileItem, glib::Error>`; accessors `file() info() name()

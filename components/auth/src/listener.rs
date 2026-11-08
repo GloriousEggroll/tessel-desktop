@@ -1,4 +1,4 @@
-//! `WayshellAuthListener`: a `PolkitAgentListener` subclass registered from
+//! `TesselShellAuthListener`: a `PolkitAgentListener` subclass registered from
 //! Rust (replaces libwayshell-auth-listener.so / auth_listener.c).
 //!
 //! As in the C bridge, Polkit's opaque `GAsyncReadyCallback`/`user_data` never
@@ -17,7 +17,7 @@ use std::ptr::{self, NonNull};
 use std::rc::Rc;
 use std::sync::OnceLock;
 
-pub const TYPE_NAME: &str = "WayshellAuthListener";
+pub const TYPE_NAME: &str = "TesselShellAuthListener";
 pub const OBJECT_PATH: &str = "/org/tessel/Authentication";
 const HANDLER_KEY: &str = "tessel-shell-auth-handler";
 
@@ -153,7 +153,7 @@ unsafe extern "C" fn finish(_listener: *mut ffi::PolkitAgentListener, result: *m
     gio::ffi::g_task_propagate_boolean(result as *mut GTask, error)
 }
 
-/// A `WayshellAuthListener` instance plus its Rust request handler.
+/// A `TesselShellAuthListener` instance plus its Rust request handler.
 pub struct Listener {
     object: glib::Object,
 }

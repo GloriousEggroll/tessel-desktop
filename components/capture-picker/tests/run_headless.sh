@@ -20,7 +20,7 @@ HELPER=$ROOT/target/debug/tessel-dock-toplevel
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
-CAPTURE_UI=1 CAPTURE_UI_CASE="${CAPTURE_UI_CASE:-}" WAYSHELL_CAPTURE_TOPLEVEL_HELPER="$HELPER" DESKTOP_SUITE_LOCALE_DIR=/nonexistent \
+CAPTURE_UI=1 CAPTURE_UI_CASE="${CAPTURE_UI_CASE:-}" TESSEL_SHELL_CAPTURE_TOPLEVEL_HELPER="$HELPER" DESKTOP_SUITE_LOCALE_DIR=/nonexistent \
   GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo XDG_CACHE_HOME="$R/cache" XDG_CONFIG_HOME="$R/config" \
   timeout 300 "$BIN" > "$R/log" 2>&1
 echo \$? > "$R/result"

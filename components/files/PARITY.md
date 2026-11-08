@@ -131,7 +131,7 @@ the bus test runs on `gio::TestDBus` (own dbus-daemon, no service dirs).
 
 Gaps / differences:
 - `latin_keyval(display, …)` needs GDK: the crate exposes `latin_keyval_with(keyval, keycode, to_lower, mapped)`; the lead supplies `gdk::keyval_to_lower` and `display.map_keycode`.
-- Helper: the env-var token pop (`WAYDOCK_LAUNCH_STARTUP_ID` removed) is only in `helper_main`; tests inject the token instead of mutating the process environment. The real `--application` launch path (DesktopAppInfo + transferred context) is not exercised by tests (Python mocks it too).
+- Helper: the env-var token pop (`TESSEL_DOCK_LAUNCH_STARTUP_ID` removed) is only in `helper_main`; tests inject the token instead of mutating the process environment. The real `--application` launch path (DesktopAppInfo + transferred context) is not exercised by tests (Python mocks it too).
 - `launch_with` takes `&gio::AppInfo`; tests use `launch_with_id` (a desktop id without a real AppInfo).
 - Paths and names are carried as UTF-8 (`to_string_lossy`) in the terminal helper argv and `FolderIndex` entries; Python keeps surrogate-escaped bytes. Non-UTF-8 folder names would be mangled there.
 - `FileItem` holds no extra per-row attributes (Python widgets set ad-hoc attributes on rows/list items, not on FileItem); `set_icon` is the only mutation.

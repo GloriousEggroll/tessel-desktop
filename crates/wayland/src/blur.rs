@@ -3,7 +3,7 @@
 //! re-exports this module).
 //!
 //! Uses ext_background_effect_v1 (blur region) and the private
-//! waydock_blur_manager_v1 (per-surface radius 0..40). GTK owns the display,
+//! tessel_blur_manager_v1 (per-surface radius 0..40). GTK owns the display,
 //! dispatch of its own queue, surfaces and commits: this only adds
 //! double-buffered protocol state, never roundtrips and never commits — the
 //! state lands with GTK's next frame (`queue_render`). Our globals live on a
@@ -19,25 +19,82 @@ use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
 use std::sync::Arc;
 use std::time::Duration;
-use wayland_client::protocol::{wl_compositor, wl_region, wl_registry};
+use wayland_client::protocol::{wl_compositor, wl_region, wl_registry, wl_surface::WlSurface};
 use wayland_client::{Connection, Dispatch, EventQueue, Proxy, QueueHandle, WEnum};
 use wayland_protocols::ext::background_effect::v1::client::{
     ext_background_effect_manager_v1 as effect_manager, ext_background_effect_surface_v1 as effect_surface,
 };
 
-/// Generated from protocols/waydock-blur-v1.xml (labwc's private extension).
+/// Generated from protocols/tessel-blur-v1.xml (labwc's private extension).
 #[allow(non_upper_case_globals, non_camel_case_types, unused_imports, missing_docs, clippy::all)]
-pub mod waydock_blur_v1 {
+pub mod tessel_blur_v1 {
     use wayland_client;
     use wayland_client::protocol::*;
     pub mod __interfaces {
         use wayland_client::protocol::__interfaces::*;
-        wayland_scanner::generate_interfaces!("protocols/waydock-blur-v1.xml");
+        wayland_scanner::generate_interfaces!("protocols/tessel-blur-v1.xml");
     }
     use self::__interfaces::*;
-    wayland_scanner::generate_client_code!("protocols/waydock-blur-v1.xml");
+    wayland_scanner::generate_client_code!("protocols/tessel-blur-v1.xml");
 }
-use waydock_blur_v1::{waydock_blur_manager_v1 as radius_manager, waydock_blur_surface_v1 as radius_surface};
+/// The same protocol under its old name, offered by labwc before 0.20.2-21.
+#[allow(non_upper_case_globals, non_camel_case_types, unused_imports, missing_docs, clippy::all)]
+pub mod legacy_blur_v1 {
+    use wayland_client;
+    use wayland_client::protocol::*;
+    pub mod __interfaces {
+        use wayland_client::protocol::__interfaces::*;
+        wayland_scanner::generate_interfaces!("protocols/legacy-waydock-blur-v1.xml");
+    }
+    use self::__interfaces::*;
+    wayland_scanner::generate_client_code!("protocols/legacy-waydock-blur-v1.xml");
+}
+use tessel_blur_v1::{tessel_blur_manager_v1 as radius_manager, tessel_blur_surface_v1 as radius_surface};
+use legacy_blur_v1::{waydock_blur_manager_v1 as legacy_manager, waydock_blur_surface_v1 as legacy_surface};
+
+/// The compositor's radius extension, under either name.
+#[derive(Clone)]
+enum RadiusManager {
+    Current(radius_manager::TesselBlurManagerV1),
+    Legacy(legacy_manager::WaydockBlurManagerV1),
+}
+
+impl RadiusManager {
+    fn destroy(&self) {
+        match self {
+            Self::Current(manager) => manager.destroy(),
+            Self::Legacy(manager) => manager.destroy(),
+        }
+    }
+
+    fn get_surface(&self, surface: &WlSurface, qh: &QueueHandle<Globals>) -> RadiusSurface {
+        match self {
+            Self::Current(manager) => RadiusSurface::Current(manager.get_surface(surface, qh, ())),
+            Self::Legacy(manager) => RadiusSurface::Legacy(manager.get_surface(surface, qh, ())),
+        }
+    }
+}
+
+enum RadiusSurface {
+    Current(radius_surface::TesselBlurSurfaceV1),
+    Legacy(legacy_surface::WaydockBlurSurfaceV1),
+}
+
+impl RadiusSurface {
+    fn destroy(&self) {
+        match self {
+            Self::Current(surface) => surface.destroy(),
+            Self::Legacy(surface) => surface.destroy(),
+        }
+    }
+
+    fn set_radius(&self, radius: u32) {
+        match self {
+            Self::Current(surface) => surface.set_radius(radius),
+            Self::Legacy(surface) => surface.set_radius(radius),
+        }
+    }
+}
 
 const BLUR_CAPABILITY: u32 = 1;
 const MANAGER_KEY: &str = "tessel-wayland-blur-manager";
@@ -47,7 +104,7 @@ const OWNER_KEY: &str = "tessel-dock-background-blur-owner";
 struct Globals {
     registry: Option<wl_registry::WlRegistry>,
     effects: Option<(u32, effect_manager::ExtBackgroundEffectManagerV1)>,
-    radii: Option<(u32, radius_manager::WaydockBlurManagerV1)>,
+    radii: Option<(u32, RadiusManager)>,
     capabilities: u32,
 }
 
@@ -57,8 +114,10 @@ impl Dispatch<wl_registry::WlRegistry, ()> for Globals {
             wl_registry::Event::Global { name, interface, .. } => {
                 if interface == effect_manager::ExtBackgroundEffectManagerV1::interface().name && state.effects.is_none() {
                     state.effects = Some((name, registry.bind(name, 1, qh, ())));
-                } else if interface == radius_manager::WaydockBlurManagerV1::interface().name && state.radii.is_none() {
-                    state.radii = Some((name, registry.bind(name, 1, qh, ())));
+                } else if interface == radius_manager::TesselBlurManagerV1::interface().name && state.radii.is_none() {
+                    state.radii = Some((name, RadiusManager::Current(registry.bind(name, 1, qh, ()))));
+                } else if interface == legacy_manager::WaydockBlurManagerV1::interface().name && state.radii.is_none() {
+                    state.radii = Some((name, RadiusManager::Legacy(registry.bind(name, 1, qh, ()))));
                 }
             }
             wl_registry::Event::GlobalRemove { name } => {
@@ -97,8 +156,8 @@ macro_rules! no_events {
         }
     )*};
 }
-no_events!(effect_surface::ExtBackgroundEffectSurfaceV1, radius_manager::WaydockBlurManagerV1,
-           radius_surface::WaydockBlurSurfaceV1, wl_region::WlRegion, wl_compositor::WlCompositor);
+no_events!(effect_surface::ExtBackgroundEffectSurfaceV1, radius_manager::TesselBlurManagerV1,
+           radius_surface::TesselBlurSurfaceV1, legacy_manager::WaydockBlurManagerV1, legacy_surface::WaydockBlurSurfaceV1, wl_region::WlRegion, wl_compositor::WlCompositor);
 
 /// Per-GdkDisplay protocol state (C `Manager`).
 struct Manager {
@@ -206,7 +265,7 @@ struct BlurSurface {
     surface: gdk::Surface,
     manager: Rc<Manager>,
     effect: effect_surface::ExtBackgroundEffectSurfaceV1,
-    radius: Option<radius_surface::WaydockBlurSurfaceV1>,
+    radius: Option<RadiusSurface>,
     geometry: [i32; 6],
     seen: bool,
     token: usize,
@@ -316,7 +375,7 @@ impl Group {
                 let Some(wl_surface) = wayland_surface.wl_surface() else { return };
                 let qh = manager.queue.borrow().handle();
                 let effect = effects.get_background_effect(&wl_surface, &qh, ());
-                let radius = radii.map(|r| r.get_surface(&wl_surface, &qh, ()));
+                let radius = radii.map(|r| r.get_surface(&wl_surface, &qh));
                 let token = NEXT_TOKEN.with(|t| t.replace(t.get() + 1));
                 unsafe { surface.set_data(OWNER_KEY, token) };
                 self.surfaces.push(BlurSurface { surface: surface.clone(), manager: manager.clone(), effect, radius,
@@ -539,7 +598,7 @@ pub fn compositor_supports_blur(display: &gdk::Display) -> Option<bool> {
     Some(globals.effects.is_some() && globals.capabilities & BLUR_CAPABILITY != 0)
 }
 
-/// Whether the private radius extension (waydock_blur_manager_v1) is bound.
+/// Whether the private radius extension (tessel_blur_manager_v1) is bound.
 pub fn compositor_supports_radius(display: &gdk::Display) -> Option<bool> {
     Some(manager_for(display)?.globals.borrow().radii.is_some())
 }

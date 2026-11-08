@@ -540,7 +540,7 @@ fn layout_model_positions_snaps_and_arranges() {
 fn ipc_round_trip_with_private_fake_daemon() {
     use std::io::{Read, Write};
     let dir = scratch("ipc");
-    let socket = dir.join("way-displays.sock");
+    let socket = dir.join("tessel-displays.sock");
     let listener = std::os::unix::net::UnixListener::bind(&socket).unwrap();
     let server = std::thread::spawn(move || {
         let mut requests = Vec::new();

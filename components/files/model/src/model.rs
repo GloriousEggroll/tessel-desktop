@@ -87,7 +87,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for FileItem {
-        const NAME: &'static str = "WayfilesFileItem";
+        const NAME: &'static str = "TesselFilesFileItem";
         type Type = super::FileItem;
     }
 

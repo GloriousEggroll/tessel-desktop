@@ -1069,7 +1069,7 @@ fn main() {
         println!("ui_headless: skipped (requires the private compositor: tests/run_headless.sh)");
         return;
     }
-    std::env::set_var("WAYKEYS_INPUT", tessel_keyboard::BUILT_HELPER);
+    std::env::set_var("TESSEL_KEYBOARD_INPUT", tessel_keyboard::BUILT_HELPER);
     tessel_core::i18n::initialize();
     gtk::init().expect("gtk");
     // A persistent virtual keyboard so the seat has a keyboard (wtype -s).

@@ -43,7 +43,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for Magnifier {
-        const NAME: &'static str = "WaydockMagnifier";
+        const NAME: &'static str = "TesselDockMagnifier";
         type Type = super::Magnifier;
         type ParentType = gtk::Widget;
     }

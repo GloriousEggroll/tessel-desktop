@@ -25,6 +25,7 @@ Part names are the component directory names (`components/<part>`): `dock`, `she
 | Old | New |
 |---|---|
 | `~/.config/desktop-suite/*` | `~/.config/tessel/*` |
+| `~/.config/way-displays/cfg.yaml` | `~/.config/tessel/displays/cfg.yaml` (read until the first save; the old file stays) |
 | `~/.config/waydock/` | `~/.config/tessel/dock/` |
 | `~/.config/wayshell/` | `~/.config/tessel/shell/` |
 | `~/.config/waytile/` | `~/.config/tessel/tiling/` |

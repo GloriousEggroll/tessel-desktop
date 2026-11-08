@@ -691,7 +691,7 @@
   "Display": "Pantalla",
   "Display brightness": "Brillo de la pantalla",
   "Display is off or disconnected.": "La pantalla está apagada o desconectada.",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "No se pudo cargar la configuración de pantalla. Asegúrate de que way-displays se esté ejecutando y vuelve a intentarlo.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "No se pudo cargar la configuración de pantalla. Asegúrate de que tessel-displays se esté ejecutando y vuelve a intentarlo.",
   "Display {value1}": "Pantalla {value1}",
   "Displays": "Pantallas",
   "Displays are dimmed. Move the pointer to restore.": "Las pantallas están atenuadas. Mueva el puntero para restaurar el brillo.",

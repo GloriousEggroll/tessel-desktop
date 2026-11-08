@@ -27,7 +27,7 @@ cat > "$R/run.sh" <<RUN
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export XDG_CONFIG_HOME=$R/xdg/config XDG_CACHE_HOME=$R/xdg/cache XDG_DATA_HOME=$R/xdg/data XDG_STATE_HOME=$R/xdg/state
 export GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0
-WAYKEYS_UI=1 timeout 300 "$BIN" $* > "$R/log" 2>&1; echo \$? > "$R/result"
+TESSEL_KEYBOARD_UI=1 timeout 300 "$BIN" $* > "$R/log" 2>&1; echo \$? > "$R/result"
 if [ -n "${SERVICE:-1}" ]; then sh "$ROOT/components/keyboard/tests/service_phase.sh" "$TARGET" "$R" >> "$R/log" 2>&1 || echo 1 > "$R/result"; fi
 labwc --exit
 RUN

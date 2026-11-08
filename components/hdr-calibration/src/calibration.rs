@@ -10,7 +10,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
-use way_displays::color_config::{self, ColorError, Status, Transaction};
+use tessel_displays::color_config::{self, ColorError, Status, Transaction};
 
 pub const BEGIN: &str = "<!-- tessel-hdr-calibration begin -->";
 pub const END: &str = "<!-- tessel-hdr-calibration end -->";

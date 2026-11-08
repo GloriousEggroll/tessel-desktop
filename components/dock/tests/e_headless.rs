@@ -14,7 +14,7 @@
 //! (menu launcher, menu toggle/current output, hotkey fullscreen option,
 //! window selection), test_efficiency_ui.py (menu/preview churn memory).
 //!
-//! Runs only inside tests/run_e_headless.sh (WAYDOCK_E_HEADLESS=1); anywhere
+//! Runs only inside tests/run_e_headless.sh (TESSEL_DOCK_E_HEADLESS=1); anywhere
 //! else it exits 0 without touching anything.
 
 use gtk::prelude::*;
@@ -823,7 +823,7 @@ fn output_layout() -> Result<(), String> {
 }
 
 fn main() {
-    if std::env::var("WAYDOCK_E_HEADLESS").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_DOCK_E_HEADLESS").as_deref() != Ok("1") {
         eprintln!("e_headless: skipped (run tests/run_e_headless.sh)");
         return;
     }

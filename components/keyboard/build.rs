@@ -34,5 +34,5 @@ fn main() {
         .args(pkg_config(&["--cflags", "--libs", "wayland-client", "xkbcommon"])).arg("-o").arg(&helper);
     let status = command.status().expect("a C compiler is required");
     assert!(status.success(), "building tessel-keyboard-input failed");
-    println!("cargo:rustc-env=WAYKEYS_INPUT_BUILT={}", helper.display());
+    println!("cargo:rustc-env=TESSEL_KEYBOARD_INPUT_BUILT={}", helper.display());
 }

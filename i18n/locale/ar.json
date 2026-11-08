@@ -491,7 +491,7 @@
   "Disks": "الأقراص",
   "Dismiss": "إغلاق",
   "Display": "الشاشة",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "تعذّر تحميل إعدادات الشاشة. تأكد من تشغيل way-displays ثم حاول مرة أخرى.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "تعذّر تحميل إعدادات الشاشة. تأكد من تشغيل tessel-displays ثم حاول مرة أخرى.",
   "Displays": "الشاشات",
   "Displays are unavailable": "الشاشات غير متاحة",
   "Do Not Disturb duration": "مدة عدم الإزعاج",

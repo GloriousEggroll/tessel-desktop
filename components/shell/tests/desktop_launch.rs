@@ -176,10 +176,10 @@ fn launch_helper_runs_the_entry_with_the_transferred_token() {
     let script = fake(&dir, "app.sh", &format!("printf '%s|%s' \"$XDG_ACTIVATION_TOKEN\" \"$DESKTOP_STARTUP_ID\" > '{}'", marker.display()));
     let entry = dir.join("app.desktop");
     std::fs::write(&entry, format!("[Desktop Entry]\nType=Application\nName=Fake\nExec={}\nStartupNotify=true\n", script.display())).unwrap();
-    std::env::set_var("WAYDOCK_LAUNCH_STARTUP_ID", "token-123");
+    std::env::set_var("TESSEL_DOCK_LAUNCH_STARTUP_ID", "token-123");
     let code = glib::MainContext::new().with_thread_default(|| launch::helper_main(&["--launch-file".into(), entry.display().to_string()])).unwrap();
     assert_eq!(code, 0);
-    assert!(std::env::var_os("WAYDOCK_LAUNCH_STARTUP_ID").is_none(), "the token is not inherited as-is");
+    assert!(std::env::var_os("TESSEL_DOCK_LAUNCH_STARTUP_ID").is_none(), "the token is not inherited as-is");
     let end = Instant::now() + Duration::from_secs(5);
     while !marker.exists() && Instant::now() < end {
         std::thread::sleep(Duration::from_millis(10));

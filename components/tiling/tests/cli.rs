@@ -77,7 +77,7 @@ impl Env {
         Self { root, state, stop: Arc::new(Mutex::new(false)), sleeper: Some(sleeper) }
     }
 
-    fn socket(&self) -> PathBuf { self.root.join("rt/waytile-test-0.sock") }
+    fn socket(&self) -> PathBuf { self.root.join("rt/tessel-tiling-test-0.sock") }
 
     fn serve(&self) {
         let server = UnixDatagram::bind(self.socket()).unwrap();

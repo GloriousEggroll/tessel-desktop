@@ -1,5 +1,5 @@
 //! `brightness_manager.py`: shared monitor controls for Waybar and
-//! way-displays. A unique GApplication (`org.tessel.BrightnessManager`);
+//! tessel-displays. A unique GApplication (`org.tessel.BrightnessManager`);
 //! `--check`, `--idle-dim`, `--idle-restore`, `--brightness-up/down` forward
 //! to the primary and never become one.
 

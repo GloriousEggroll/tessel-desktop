@@ -554,7 +554,7 @@ fn test_paste_folder_into_its_own_folder_asks_for_a_name(f: &mut Fixture) -> Out
     let dialog = find_window(f, "Paste Copy").unwrap();
     let entry = tile::descendants(dialog.upcast_ref()).into_iter().find_map(|w| w.downcast::<gtk::Entry>().ok()).unwrap();
     ensure_eq!(entry.text().as_str(), "Documents (copy)");
-    if let Some(shot) = std::env::var_os("WAYFILES_UI_SHOT").filter(|s| !s.is_empty()) {
+    if let Some(shot) = std::env::var_os("TESSEL_FILES_UI_SHOT").filter(|s| !s.is_empty()) {
         settle(0.3);
         let _ = std::process::Command::new("grim").arg(shot).status();
     }
@@ -1234,7 +1234,7 @@ fn checks() -> Vec<(&'static str, Check)> {
 }
 
 fn main() {
-    if std::env::var("WAYFILES_UI_ISOLATED_TEST").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_FILES_UI_ISOLATED_TEST").as_deref() != Ok("1") {
         println!("ui_headless: skipped (run tests/run_headless.sh for the private compositor)");
         return;
     }
@@ -2899,7 +2899,7 @@ fn click_menu_item(f: &Fixture, title: &str) -> Outcome {
 fn test_archive_service_submenus_screenshot(f: &mut Fixture) -> Outcome {
     archive_fixture(f)?;
     install_fake_tessel_archive();
-    let shot = std::env::var("WAYFILES_UI_SHOT").ok().filter(|s| !s.is_empty());
+    let shot = std::env::var("TESSEL_FILES_UI_SHOT").ok().filter(|s| !s.is_empty());
     for (title, first) in [("Extract", "Extract archive here"), ("Compress", "Here (as ZIP)")] {
         f.select("Pack.zip")?;
         f.right_click(&f.tile("Pack.zip").ok_or("no tile")?, false)?;

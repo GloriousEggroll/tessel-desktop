@@ -12,7 +12,7 @@ pub const SETTINGS_DESKTOP_ID: &str = "tessel-displays.desktop";
 pub const SERVICE_ENV: [&str; 19] = [
     "INVOCATION_ID", "JOURNAL_STREAM", "NOTIFY_SOCKET", "WATCHDOG_PID", "WATCHDOG_USEC", "WATCHDOG_DEVICE", "LISTEN_PID",
     "LISTEN_FDS", "LISTEN_FDNAMES", "SYSTEMD_EXEC_PID", "MAINPID", "MANAGERPID", "PIDFILE", "EXIT_CODE", "EXIT_STATUS",
-    "SERVICE_RESULT", "GIO_LAUNCHED_DESKTOP_FILE", "GIO_LAUNCHED_DESKTOP_FILE_PID", "WAYDOCK_LAUNCH_STARTUP_ID",
+    "SERVICE_RESULT", "GIO_LAUNCHED_DESKTOP_FILE", "GIO_LAUNCHED_DESKTOP_FILE_PID", "TESSEL_DOCK_LAUNCH_STARTUP_ID",
 ];
 
 /// `app_catalog.launch_command(helper, environment, unit, service_type="forking")`.
@@ -56,7 +56,7 @@ pub fn helper_command(program: PathBuf) -> Option<Vec<String>> {
 pub fn launch_environment(base: impl IntoIterator<Item = (String, String)>, startup_id: Option<String>) -> BTreeMap<String, String> {
     let mut environment: BTreeMap<String, String> = base.into_iter().filter(|(k, _)| !SERVICE_ENV.contains(&k.as_str())).collect();
     if let Some(token) = startup_id.filter(|t| !t.is_empty()) {
-        environment.insert("WAYDOCK_LAUNCH_STARTUP_ID".into(), token);
+        environment.insert("TESSEL_DOCK_LAUNCH_STARTUP_ID".into(), token);
     }
     environment
 }
@@ -74,7 +74,7 @@ mod tests {
                           SETTINGS_DESKTOP_ID.into()];
         let command = launch_command(&helper, &environment, "app-tessel-dock-0.service");
         assert_eq!(command[..11].join(" "), "/usr/bin/systemd-run --user --collect --quiet --service-type=forking --property=GuessMainPID=no --property=ExitType=cgroup --property=TimeoutStartSec=90s --slice=app.slice --expand-environment=no --unit=app-tessel-dock-0.service");
-        assert_eq!(&command[11..13], ["--setenv=WAYDOCK_LAUNCH_STARTUP_ID", "--setenv=WAYLAND_DISPLAY"]);
+        assert_eq!(&command[11..13], ["--setenv=TESSEL_DOCK_LAUNCH_STARTUP_ID", "--setenv=WAYLAND_DISPLAY"]);
         assert!(!command.iter().any(|w| w.contains("INVOCATION_ID") || w.contains("BAD-NAME")));
         assert_eq!(&command[13..], ["--", "/w/tessel-files", "--launch-helper", "--app-catalog", "--launch-desktop", "tessel-displays.desktop"]);
         let unit = unit_name();

@@ -21,8 +21,8 @@ pub const LOCK: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-shell-
 const TILING: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-tiling" } else { "\"$HOME/.local/bin/tessel-tiling\"" };
 pub const BLOCK_BEGIN: &str = "<!-- Tessel keybindings begin";
 pub const BLOCK_END: &str = "<!-- Tessel keybindings end -->";
-pub const WAYTILE_BEGIN: &str = "<!-- Tessel Tiling keyboard begin -->";
-pub const WAYTILE_END: &str = "<!-- Tessel Tiling keyboard end -->";
+pub const TESSEL_TILING_BEGIN: &str = "<!-- Tessel Tiling keyboard begin -->";
+pub const TESSEL_TILING_END: &str = "<!-- Tessel Tiling keyboard end -->";
 pub const LOCAL_AUTOSTART: &str = "autostart.local";
 pub const LOCAL_ENVIRONMENT: &str = "environment.d/90-local.env";
 
@@ -111,8 +111,8 @@ pub const SUITE_COMMANDS: [&str; 14] = [
 pub const LEGACY_MARKERS: [(&str, &str); 4] = [
     ("<!-- Desktop suite keybindings begin", BLOCK_BEGIN),
     ("<!-- Desktop suite keybindings end -->", BLOCK_END),
-    ("<!-- Waytile keyboard begin -->", WAYTILE_BEGIN),
-    ("<!-- Waytile keyboard end -->", WAYTILE_END),
+    ("<!-- Waytile keyboard begin -->", TESSEL_TILING_BEGIN),
+    ("<!-- Waytile keyboard end -->", TESSEL_TILING_END),
 ];
 pub const TERMINALS: [&str; 14] = [
     "ghostty", "lab-sensible-terminal", "x-terminal-emulator", "xdg-terminal-exec", "ptyxis", "kgx",
@@ -312,7 +312,7 @@ pub fn edit_rc(text: &str, home: &Path) -> Result<(String, Vec<String>), Error> 
     let open_end = index_from(&masked, ">", section.start())? + 1;
     let close = rindex(&masked, "</keyboard", section.start(), section.end())?;
     let block = span(&text, BLOCK_BEGIN, BLOCK_END)?;
-    let tiling = span(&text, WAYTILE_BEGIN, WAYTILE_END)?;
+    let tiling = span(&text, TESSEL_TILING_BEGIN, TESSEL_TILING_END)?;
     for span in [block, tiling].into_iter().flatten() {
         if !(open_end <= span.0 && span.1 <= close) {
             return Err("A managed keybinding block is outside the keyboard section.".into());
@@ -544,7 +544,7 @@ systemctl --user start \
   xdg-desktop-portal.service >/dev/null 2>&1
 
 # Configure monitors
-systemctl --user start way-displays.service >/dev/null 2>&1 &
+systemctl --user start tessel-displays.service >/dev/null 2>&1 &
 
 # Network and Bluetooth managers
 systemctl --user start tessel-network.service >/dev/null 2>&1 &
@@ -696,7 +696,8 @@ pub fn statement_key(statement: &str) -> Key {
 
 /// Units and programs the desktop suite started before Tessel. Their statements are
 /// the suite's, never personal: the template starts the tessel-* replacements.
-pub const LEGACY_UNITS: [&str; 18] = [
+pub const LEGACY_UNITS: [&str; 19] = [
+    "way-displays.service",
     "netman.service", "notifications.service", "power-manager.service", "power-manager-lock.service",
     "battery-manager.service", "brightness-manager.service", "wayshell.service", "polkitman.service",
     "audio-manager-loopbacks.service", "keep-awake.service", "on-screen-keyboard.service", "waydock.service",

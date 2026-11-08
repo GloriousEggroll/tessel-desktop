@@ -342,11 +342,11 @@ mod probe {
 
 #[cfg(test)]
 mod fixtures {
-    /// `WAYKEYRING_WRITE_FIXTURES=1 cargo test -p tessel-keyring write_kwallet_fixtures`
+    /// `TESSEL_KEYRING_WRITE_FIXTURES=1 cargo test -p tessel-keyring write_kwallet_fixtures`
     /// regenerates tests/fixtures/kwalletd (wallets "kdewallet" = "pw", "old" = "kpw").
     #[test]
     fn write_kwallet_fixtures() {
-        if std::env::var("WAYKEYRING_WRITE_FIXTURES").is_err() {
+        if std::env::var("TESSEL_KEYRING_WRITE_FIXTURES").is_err() {
             return;
         }
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/kwalletd");

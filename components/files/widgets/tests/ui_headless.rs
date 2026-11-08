@@ -545,7 +545,7 @@ fn large_preview_and_image_details_follow_selection_and_orientation(env: &Env) -
     eq!(f.row("Date taken"), Some("2026:09:27 10:30:00".to_string()));
     eq!(f.row("Color mode"), Some("RGB".to_string()));
     check!(f.row("File size").is_some());
-    if let Ok(path) = std::env::var("WAYFILES_PREVIEW_SCREENSHOT") {
+    if let Ok(path) = std::env::var("TESSEL_FILES_PREVIEW_SCREENSHOT") {
         let _ = std::process::Command::new("grim").arg(path).status();
     }
     write_photo(&f.root.join("Portrait.jpg"), 6);

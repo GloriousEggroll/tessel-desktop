@@ -491,7 +491,7 @@
   "Disks": "Disky",
   "Dismiss": "Zavřít",
   "Display": "Displej",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Nastavení displeje nelze načíst. Ujistěte se, že běží way-displays, a zkuste to znovu.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Nastavení displeje nelze načíst. Ujistěte se, že běží tessel-displays, a zkuste to znovu.",
   "Displays": "Obrazovky",
   "Displays are unavailable": "Displeje nejsou k dispozici",
   "Do Not Disturb duration": "Doba režimu Nerušit",

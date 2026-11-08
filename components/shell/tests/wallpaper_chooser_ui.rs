@@ -1,6 +1,6 @@
 //! Widget tests ported from ~/tessel-bluetooth/shared/test_wallpaper_chooser.py.
 //! Run ONLY inside the private nested headless labwc
-//! (tests/run_headless_fileops.sh sets WAYSHELL_FILEOPS_ISOLATED=1); under a
+//! (tests/run_headless_fileops.sh sets TESSEL_SHELL_FILEOPS_ISOLATED=1); under a
 //! plain `cargo test` this binary skips itself. All media are temporary; the
 //! fake pkexec never elevates. GTK lives on one thread, so the cases run
 //! sequentially inside a single #[test].
@@ -503,7 +503,7 @@ fn staged_selection_like_tessel_shell(c: &Case) {
 
 #[test]
 fn wallpaper_chooser_widgets() {
-    if std::env::var("WAYSHELL_FILEOPS_ISOLATED").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_SHELL_FILEOPS_ISOLATED").as_deref() != Ok("1") {
         eprintln!("skipped: requires tests/run_headless_fileops.sh (private headless labwc)");
         return;
     }

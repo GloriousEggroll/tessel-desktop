@@ -350,11 +350,11 @@ fn scaling_service_unavailable_busy_and_hotplug_cannot_write_stale_display() {
     let f = Fx::new();
     let popup = f.popup();
     let scale = row(&popup, "scale");
-    f.client.set(|s| { s["scaling"]["ready"] = false.into(); s["scaling"]["error"] = "way-displays is unavailable".into(); });
+    f.client.set(|s| { s["scaling"]["ready"] = false.into(); s["scaling"]["error"] = "tessel-displays is unavailable".into(); });
     popup.refresh();
     assert!(!scale.scale().is_sensitive());
     assert!(!popup.auto_scale.toggle.is_sensitive());
-    assert!(scale.hint().text().contains("way-displays"));
+    assert!(scale.hint().text().contains("tessel-displays"));
     assert!(row(&popup, "brightness").scale().is_sensitive());
     scale.scale().set_value(1.5);
     settle(0.25);

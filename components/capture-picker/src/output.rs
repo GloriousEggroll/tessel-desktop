@@ -10,10 +10,10 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 /// The `tessel-dock-toplevel` program (`tessel_core::paths::program`), or the
-/// path in `WAYSHELL_CAPTURE_TOPLEVEL_HELPER` (tests: an explicit helper
+/// path in `TESSEL_SHELL_CAPTURE_TOPLEVEL_HELPER` (tests: an explicit helper
 /// replaces the search).
 pub fn helper_candidates() -> Vec<PathBuf> {
-    if let Some(override_path) = std::env::var_os("WAYSHELL_CAPTURE_TOPLEVEL_HELPER") {
+    if let Some(override_path) = std::env::var_os("TESSEL_SHELL_CAPTURE_TOPLEVEL_HELPER") {
         return vec![PathBuf::from(override_path)];
     }
     let program = tessel_core::paths::program("tessel-dock-toplevel");

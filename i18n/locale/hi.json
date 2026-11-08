@@ -491,7 +491,7 @@
   "Disks": "डिस्क",
   "Dismiss": "खारिज करें",
   "Display": "डिस्प्ले",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "डिस्प्ले सेटिंग्स लोड नहीं हो सकीं। सुनिश्चित करें कि way-displays चल रहा है, फिर पुनः प्रयास करें।",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "डिस्प्ले सेटिंग्स लोड नहीं हो सकीं। सुनिश्चित करें कि tessel-displays चल रहा है, फिर पुनः प्रयास करें।",
   "Displays": "डिस्प्ले",
   "Displays are unavailable": "डिस्प्ले उपलब्ध नहीं हैं",
   "Do Not Disturb duration": "परेशान न करें की अवधि",

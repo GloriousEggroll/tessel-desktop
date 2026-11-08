@@ -6,7 +6,7 @@ use crate::color_controls::ColorControls;
 use crate::compat::brightness_client::BrightnessModel;
 use crate::layout::MonitorLayout;
 use crate::model::DesiredState;
-use crate::window::WayDisplaysApp;
+use crate::window::TesselDisplaysApp;
 use gtk::prelude::*;
 use serde_json::{json, Value};
 use std::cell::{Cell, RefCell};
@@ -26,7 +26,7 @@ pub const ROTATIONS: [(&str, &str); 4] = [
 pub struct MonitorWidget {
     pub root: gtk::Box,
     pub monitor: RefCell<Value>,
-    app: Weak<WayDisplaysApp>,
+    app: Weak<TesselDisplaysApp>,
     pub layout_area: RefCell<Option<Rc<MonitorLayout>>>,
     pub initial_enabled: Cell<bool>,
     pub initial_hdr: Cell<bool>,
@@ -105,7 +105,7 @@ pub fn mode_label(mode: &Value) -> String {
 
 impl MonitorWidget {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(monitor: Value, app: Weak<WayDisplaysApp>, primary: bool, hdr: bool, hdr_available: bool,
+    pub fn new(monitor: Value, app: Weak<TesselDisplaysApp>, primary: bool, hdr: bool, hdr_available: bool,
                layout_area: Option<Rc<MonitorLayout>>, brightness_client: Option<Rc<dyn BrightnessModel>>,
                brightness_error: &str, color_config_path: PathBuf, scale_auto: bool) -> Rc<Self> {
         let root = gtk::Box::new(gtk::Orientation::Vertical, 14);

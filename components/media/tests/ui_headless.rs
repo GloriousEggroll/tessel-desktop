@@ -97,7 +97,7 @@ fn popup_controls_live_metadata_and_capabilities() {
     settle(0.05);
     assert!(!popup.button("next").is_sensitive());
     assert!(popup.button("previous").is_sensitive());
-    shot("waymedia-popup-test.png");
+    shot("tessel-media-popup-test.png");
     player.change(&[("PlaybackStatus", s("Stopped"))]);
     settle(0.05);
     assert_eq!(popup.title.text(), "Nothing playing");
@@ -141,7 +141,7 @@ fn album_cover_updates_without_stale_art_and_video_uses_player_icon() {
     assert!(popup.album.is_visible());
     assert!(player.calls().is_empty());
     settle(0.2);
-    shot("waymedia-album-popup-test.png");
+    shot("tessel-media-album-popup-test.png");
     player.change(&[("Metadata", meta("spotify:track:fixture", "file:///missing-cover.png", "Fixture Album"))]);
     settle(0.1);
     assert_eq!(popup.visual.visible_child_name().as_deref(), Some("player"));

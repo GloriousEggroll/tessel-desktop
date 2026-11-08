@@ -4,7 +4,7 @@
 //! test_default_apps_ui.py, test_focused_title.py and test_always_tray_ui.py
 //! with a fake `SettingsApp` (Python's `appearance_settings()` harness).
 //!
-//! Runs only inside tests/run_g_headless.sh (WAYDOCK_G_HEADLESS=1, private
+//! Runs only inside tests/run_g_headless.sh (TESSEL_DOCK_G_HEADLESS=1, private
 //! XDG_RUNTIME_DIR, fake HOME); anywhere else it skips without connecting.
 
 #![allow(deprecated)] // ComboBoxText/MessageDialog mirror the Python UI.
@@ -963,7 +963,7 @@ fn show_settings_presents_one_window(app: &Rc<FakeApp>) -> R {
 }
 
 fn main() {
-    if std::env::var("WAYDOCK_G_HEADLESS").as_deref() != Ok("1")
+    if std::env::var("TESSEL_DOCK_G_HEADLESS").as_deref() != Ok("1")
         || std::env::var("XDG_RUNTIME_DIR").map(|d| d == "/run/user/1000").unwrap_or(true)
     {
         println!("g_settings_headless: skipped (run tests/run_g_headless.sh)");

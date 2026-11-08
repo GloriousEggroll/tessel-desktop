@@ -753,8 +753,8 @@ fn theme_tests(app: &gtk::Application) {
 
 // ----------------------------------------------------------------- displays
 
-use way_displays::compat::brightness_client::BrightnessModel;
-use way_displays::window::{self as wd_window, Hooks};
+use tessel_displays::compat::brightness_client::BrightnessModel;
+use tessel_displays::window::{self as wd_window, Hooks};
 
 struct FakeClient {
     on_changed: RefCell<Rc<dyn Fn()>>,
@@ -813,7 +813,7 @@ fn display_hooks() -> Hooks {
         read_labwc_primary_environment: Rc::new(|_| None),
         write_labwc_primary_environment: Rc::new(|_, _| panic!("unexpected environment write")),
         write_labwc_primary_xinitrc: Rc::new(|_, _| panic!("unexpected xinitrc write")),
-        read_labwc_hdr_config: Rc::new(|_| way_displays::labwc::HdrConfig { global: false, overrides: Default::default(),
+        read_labwc_hdr_config: Rc::new(|_| tessel_displays::labwc::HdrConfig { global: false, overrides: Default::default(),
                                                                          managed: Default::default(), text: String::new() }),
         write_labwc_hdr_overrides: Rc::new(|_, _| panic!("unexpected rc.xml write")),
         reconfigure_labwc: Rc::new(|| (true, None)),
@@ -822,11 +822,11 @@ fn display_hooks() -> Hooks {
 
 fn display_page(app: &gtk::Application) -> (Rc<TestHost>, SettingsPage, Rc<gs_desktop::displays::DisplaysPage>, Rc<FakeClient>) {
     wd_window::set_default_hooks(Some(display_hooks()));
-    way_displays::color_config::set_status_override(Some(Rc::new(Default::default)));
+    tessel_displays::color_config::set_status_override(Some(Rc::new(Default::default)));
     let monitors = gtk::gdk::Display::default().unwrap().monitors();
     let descriptions: Vec<String> = (0..monitors.n_items()).filter_map(|i| monitors.item(i).and_downcast::<gtk::gdk::Monitor>())
         .map(|m| m.description().map(|d| d.to_string()).unwrap_or_default()).collect();
-    way_displays::ipc::set_config_data(json!({"CFG": {"AUTO_SCALE": true, "CALLBACK_CMD": "notify-send saved"},
+    tessel_displays::ipc::set_config_data(json!({"CFG": {"AUTO_SCALE": true, "CALLBACK_CMD": "notify-send saved"},
         "STATE": {"HEADS": [head("DP-1", &descriptions[0]), head("HDMI-A-1", descriptions.get(1).unwrap_or(&descriptions[0]))]}}));
     let client = Rc::new(FakeClient {
         on_changed: RefCell::new(Rc::new(|| {})),
@@ -887,7 +887,7 @@ fn display_tests(app: &gtk::Application) {
         finish(&host, &page);
     });
     run("calibrate_hdr_is_offered_only_for_hdr_monitors", || {
-        let status: way_displays::color_config::Status = serde_json::from_value(json!({"compositor": {"pid": "1"},
+        let status: tessel_displays::color_config::Status = serde_json::from_value(json!({"compositor": {"pid": "1"},
             "DP-1": {"enabled": "true", "hdr_supported": "true"}, "HDMI-A-1": {"enabled": "true", "hdr_supported": "false"}})).unwrap();
         assert_eq!(gs_desktop::displays::hdr_outputs(&status), ["DP-1"]);
         let (host, page, c, _client) = display_page(app);
@@ -910,7 +910,7 @@ fn display_tests(app: &gtk::Application) {
         finish(&host, &page);
     });
     run("displays_failure_uses_the_shared_error_state", || {
-        way_displays::ipc::set_config_data(json!({"STATE": {"HEADS": []}}));
+        tessel_displays::ipc::set_config_data(json!({"STATE": {"HEADS": []}}));
         let (test_host, host) = host(app);
         let page = gs_desktop::displays::build_displays_page(&host, gs_desktop::displays::DisplaysOptions {
             load_data: Some(false), ..Default::default() });

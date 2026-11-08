@@ -1,5 +1,5 @@
 //! Agent queue / cancellation / shutdown / native-callback tests without a
-//! display: requests enter through the real `WayshellAuthListener` vfunc
+//! display: requests enter through the real `TesselShellAuthListener` vfunc
 //! (`polkit_agent_listener_initiate_authentication`, as polkitd's D-Bus call
 //! would), windows are fakes. Nothing is registered on any bus.
 

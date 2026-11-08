@@ -1,6 +1,6 @@
 //! A fake labwc tiling control socket for measurements
 //! (tests/measure_headless.sh): answers every request with a fixed ready
-//! reply at `$XDG_RUNTIME_DIR/waytile-$WAYLAND_DISPLAY.sock`. Refuses the
+//! reply at `$XDG_RUNTIME_DIR/tessel-tiling-$WAYLAND_DISPLAY.sock`. Refuses the
 //! live runtime directory.
 
 use std::os::unix::net::UnixDatagram;
@@ -9,7 +9,7 @@ fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR");
     assert!(runtime != "/run/user/1000" && !runtime.is_empty(), "refusing the live session");
     let display = std::env::var("WAYLAND_DISPLAY").expect("WAYLAND_DISPLAY");
-    let path = std::path::Path::new(&runtime).join(format!("waytile-{display}.sock"));
+    let path = std::path::Path::new(&runtime).join(format!("tessel-tiling-{display}.sock"));
     let _ = std::fs::remove_file(&path);
     let server = UnixDatagram::bind(&path).unwrap();
     if let Some(ready) = std::env::args().nth(1) {

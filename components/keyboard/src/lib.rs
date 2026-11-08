@@ -16,4 +16,4 @@ pub mod state;
 pub mod status;
 
 /// Path of the helper built from native/input.c by this crate's build script.
-pub const BUILT_HELPER: &str = env!("WAYKEYS_INPUT_BUILT");
+pub const BUILT_HELPER: &str = env!("TESSEL_KEYBOARD_INPUT_BUILT");

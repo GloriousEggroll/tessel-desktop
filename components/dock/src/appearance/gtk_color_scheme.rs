@@ -9,7 +9,7 @@
 //! `tessel-dock-colors.css` and concurrent edits are refused with `error` set.
 //! `publish(false, ..)` removes only the managed import.
 //!
-//! `select_palette` picks the monitor named by way-displays' managed block in
+//! `select_palette` picks the monitor named by tessel-displays' managed block in
 //! `labwc/environment` (parsed with shlex, never executed).
 
 use super::fsx::{self, error_text, PathError};

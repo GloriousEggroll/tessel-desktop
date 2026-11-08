@@ -17,8 +17,8 @@ use tessel_tiling::xml::{Element, Node};
 use crate::compat::{self, bytes_rstrip, bytes_strip, casefold, local_lower, os_error, strip, tag_end, value, Error, Result};
 
 pub const MAX_BYTES: usize = 2 * 1024 * 1024;
-pub const WAYTILE_BEGIN: &str = "Tessel Tiling keyboard begin";
-pub const WAYTILE_END: &str = "Tessel Tiling keyboard end";
+pub const TESSEL_TILING_BEGIN: &str = "Tessel Tiling keyboard begin";
+pub const TESSEL_TILING_END: &str = "Tessel Tiling keyboard end";
 const DOCTYPE: &str = "XML document types are not supported.";
 
 static ENV_NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z_][A-Za-z0-9_]*$").unwrap());
@@ -299,8 +299,8 @@ struct Walk<'a> {
 impl Walk<'_> {
     fn comment(&mut self, text: &str) {
         match strip(text) {
-            WAYTILE_BEGIN => self.tiling = true,
-            WAYTILE_END => self.tiling = false,
+            TESSEL_TILING_BEGIN => self.tiling = true,
+            TESSEL_TILING_END => self.tiling = false,
             _ => {}
         }
     }

@@ -109,7 +109,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for ArkContent {
-        const NAME: &'static str = "WayarchiveArkContent";
+        const NAME: &'static str = "TesselArchiveArkContent";
         type Type = super::ArkContent;
         type ParentType = gdk::ContentProvider;
     }

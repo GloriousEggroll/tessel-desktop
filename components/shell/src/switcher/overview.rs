@@ -373,7 +373,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for Stage {
-        const NAME: &'static str = "WayshellStage";
+        const NAME: &'static str = "TesselShellStage";
         type Type = super::Stage;
         type ParentType = gtk::Widget;
 

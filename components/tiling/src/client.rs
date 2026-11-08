@@ -45,16 +45,21 @@ fn runtime_dir() -> PathBuf {
 }
 
 /// The control socket's file name prefix. labwc's tiling patch creates it
-/// (rpm-sources labwc 0007), so it is the compositor's name, not a Tessel one.
-pub const SOCKET_PREFIX: &str = "waytile-";
+/// (rpm-sources labwc 0007): both sides must change together.
+pub const SOCKET_PREFIX: &str = "tessel-tiling-";
+/// The prefix before labwc 0.20.2-21, used only when the new socket is absent.
+pub const LEGACY_SOCKET_PREFIX: &str = "waytile-";
 
-/// `$XDG_RUNTIME_DIR/waytile-$WAYLAND_DISPLAY.sock` for a valid display name.
+/// `$XDG_RUNTIME_DIR/tessel-tiling-$WAYLAND_DISPLAY.sock` for a valid display name.
 pub fn socket_path(command: &str) -> Result<PathBuf, ClientError> {
     let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_default();
     if display.is_empty() || display.contains('/') || command.len() > 255 {
         return Err(ClientError::Unavailable(tr!("Tiling requires a labwc Wayland session.")));
     }
-    Ok(runtime_dir().join(format!("{SOCKET_PREFIX}{display}.sock")))
+    let runtime = runtime_dir();
+    let current = runtime.join(format!("{SOCKET_PREFIX}{display}.sock"));
+    let legacy = runtime.join(format!("{LEGACY_SOCKET_PREFIX}{display}.sock"));
+    Ok(if !current.exists() && legacy.exists() { legacy } else { current })
 }
 
 struct TemporaryDirectory(PathBuf);
@@ -161,10 +166,11 @@ pub fn compositor_pid(state: &Reply) -> Option<i64> { as_int(state.get("composit
 
 #[cfg(test)]
 mod tests {
-    /// labwc's tiling patch binds `waytile-$WAYLAND_DISPLAY.sock`; the Tessel rename
-    /// once changed this to `tessel-tiling-` and every toggle reported "sign out".
+    /// labwc's tiling patch binds these names. Changing only this side once made
+    /// every toggle report "sign out", so an older labwc's name still works.
     #[test]
-    fn the_socket_name_is_the_one_labwc_creates() {
-        assert_eq!(super::SOCKET_PREFIX, "waytile-");
+    fn the_socket_names_are_the_ones_labwc_creates() {
+        assert_eq!(super::SOCKET_PREFIX, "tessel-tiling-");
+        assert_eq!(super::LEGACY_SOCKET_PREFIX, "waytile-");
     }
 }

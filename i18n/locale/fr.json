@@ -691,7 +691,7 @@
   "Display": "Écran",
   "Display brightness": "Luminosité de l’écran",
   "Display is off or disconnected.": "L’écran est éteint ou déconnecté.",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Impossible de charger les paramètres d’affichage. Vérifiez que way-displays est en cours d’exécution, puis réessayez.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Impossible de charger les paramètres d’affichage. Vérifiez que tessel-displays est en cours d’exécution, puis réessayez.",
   "Display {value1}": "Écran {value1}",
   "Displays": "Écrans",
   "Displays are dimmed. Move the pointer to restore.": "Les écrans sont atténués. Déplacez le pointeur pour rétablir la luminosité.",

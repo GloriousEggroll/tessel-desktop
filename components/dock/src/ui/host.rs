@@ -139,7 +139,7 @@ impl TrayBackend for StatusTrayBackend {
     fn connection(&self) -> Option<gio::DBusConnection> { StatusTrayBackend::connection(self) }
 }
 
-/// The application (tessel-dock.WaydockApplication) as seen by the panel widgets.
+/// The application (tessel-dock.TesselDockApplication) as seen by the panel widgets.
 pub trait DockApp {
     /// The `gtk::Application` new surfaces belong to.
     fn application(&self) -> Option<gtk::Application>;

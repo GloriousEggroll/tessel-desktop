@@ -20,10 +20,10 @@ Tessel Shell owns four things:
 | Executable | Installed at | Started by | Notes |
 |---|---|---|---|
 | `tessel-shell` (python, GApplication) | `~/.local/share/tessel-shell/tessel-shell` (0755) | `tessel-shell.service` | Daemon, and also a CLI client (see §2.1). |
-| `wayshell_cli.py` | `~/.local/share/tessel-shell/wayshell_cli.py` | labwc `A-Tab`/`A-S-Tab` keybinds, tessel-dock hot corners | Lightweight client: no GTK import. |
+| `tessel_shell.py` | `~/.local/share/tessel-shell/tessel_shell.py` | labwc `A-Tab`/`A-S-Tab` keybinds, tessel-dock hot corners | Lightweight client: no GTK import. |
 | `tessel-shell-toplevel` (C) | `~/.local/share/tessel-shell/tessel-shell-toplevel` | spawned by the daemon (switcher backend) | Same binary as `tessel-dock/tessel-dock-toplevel` (built from `tessel-dock/toplevel_helper.c`, install_switcher.py:84). |
 | `tessel-overview` (C) | `~/.local/share/tessel-shell/tessel-overview` | spawned per Activities open | Built from `overview_capture.c` by `build_overview.py` into `$XDG_CACHE_HOME/tessel/tessel-overview`, then copied. |
-| `tessel-prompt` | `~/.local/bin/tessel-prompt` = `#!/bin/sh exec /usr/bin/python3 ~/.local/share/tessel-shell/wayshell_prompt.py "$@"` | labwc `core/promptCommand`, `core/errorCommand` | install_prompts.py:100 |
+| `tessel-prompt` | `~/.local/bin/tessel-prompt` = `#!/bin/sh exec /usr/bin/python3 ~/.local/share/tessel-shell/tessel_shell_prompt.py "$@"` | labwc `core/promptCommand`, `core/errorCommand` | install_prompts.py:100 |
 | `tessel-capture-picker` | `~/.local/bin/tessel-capture-picker` → `capture_picker.py` | xdpw `chooser_cmd` | install_capture_picker.py:45 |
 
 ### systemd user unit `tessel-shell.service`
@@ -39,7 +39,7 @@ Tessel Shell owns four things:
 - **Rust swap:** flip the ExecStart in the `palette.conf` drop-in (or a new drop-in). Do not edit the base unit.
 - The unit is not enabled. labwc `autostart:57` runs `systemctl --user start tessel-shell.service`, and
   `shutdown` runs `systemctl --user stop tessel-shell.service` (install_switcher.py:125).
-- Readiness probe used by installers: `tessel-shell switcher-status` / `wayshell_cli.py switcher-status`,
+- Readiness probe used by installers: `tessel-shell switcher-status` / `tessel_shell.py switcher-status`,
   which must print JSON with `ready` and `can_activate` true (install_switcher.py:250, shared/install_gtk4.py:332).
 - `install_switcher.verify_service_children` refuses a restart if the unit cgroup holds processes
   other than `systemd-inhibit`, `sleep`, `tessel-dock-topleve`, `tessel-shell-toplev` or glycin loaders. This means
@@ -50,16 +50,16 @@ Tessel Shell owns four things:
 
 ### labwc integration (`~/.config/labwc/`)
 - `rc.xml` keybinds (written by install_switcher.py:99-103):
-  - `A-Tab` → `/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py switch-window`
+  - `A-Tab` → `/usr/bin/python3 ~/.local/share/tessel-shell/tessel_shell.py switch-window`
   - `A-S-Tab` → `… switch-window --reverse`
 - `rc.xml <core>` (install_prompts.py:23-82):
-  - `<promptCommand>exec "$HOME"/.local/bin/tessel-prompt --message-stdin <<'WAYSHELL_PROMPT_<sha256>'\n%m\nWAYSHELL_PROMPT_<sha256></promptCommand>`
+  - `<promptCommand>exec "$HOME"/.local/bin/tessel-prompt --message-stdin <<'TESSEL_SHELL_PROMPT_<sha256>'\n%m\nTESSEL_SHELL_PROMPT_<sha256></promptCommand>`
   - `<errorCommand>sh -c 'exec "$HOME"/.local/bin/tessel-prompt --error'</errorCommand>`
-  - The delimiter is `"WAYSHELL_PROMPT_" + sha256(launcher + "\0" + "\0".join(all <prompt message>))`, with
+  - The delimiter is `"TESSEL_SHELL_PROMPT_" + sha256(launcher + "\0" + "\0".join(all <prompt message>))`, with
     `_END` appended while the delimiter collides with any message line.
 - `menu.xml`: `wayrunner --toggle` is replaced by the tessel-dock menu (install_switcher.py:108). That is not
   tessel-shell-owned.
-- Hot corners: tessel-dock.py:428 spawns `/usr/bin/python3 ~/.local/share/tessel-shell/wayshell_cli.py show-activities --monitor <connector>`.
+- Hot corners: tessel-dock.py:428 spawns `/usr/bin/python3 ~/.local/share/tessel-shell/tessel_shell.py show-activities --monitor <connector>`.
 - Wrapper `~/.config/waybar/scripts/showdesktop.sh` points to tessel-dock, not tessel-shell.
 
 ### .desktop files
@@ -72,7 +72,7 @@ Tessel Shell owns four things:
 | App | application_id | Flags |
 |---|---|---|
 | daemon | `com.nobaraDesktopView` | `HANDLES_COMMAND_LINE` (unique). Owns the session-bus name `com.nobaraDesktopView` and exports `org.gtk.Application` and `org.gtk.Actions` at `/com/nobaraDesktopView` (tessel-shell:3768). |
-| prompt | `org.tessel.Prompt` | `NON_UNIQUE` (wayshell_prompt.py:247) |
+| prompt | `org.tessel.Prompt` | `NON_UNIQUE` (tessel_shell_prompt.py:247) |
 | capture picker | `org.tessel.CapturePicker` | `NON_UNIQUE` (capture_picker.py:49) |
 
 - `tessel-login/session_transition.py:39` waits for the bus names `org.tessel.Dock` **and
@@ -109,8 +109,8 @@ Server code: tessel-shell:4136-4167 and 4016-4134.
 | `apply-json` | `json_path` | Read error → `tr('Read error: {value1}')`. Otherwise silently skips unknown monitors, bad colours and missing files, then returns `{"ok":true,"msg":"OK"}`. |
 
 Clients:
-- `wayshell_cli.py`: 2 s timeout, reply ≤ 64 KiB, reply must be a dict.
-  `monitor_name` validation: non-empty, ≤128 chars, printable, no leading/trailing whitespace (wayshell_cli.py:11).
+- `tessel_shell.py`: 2 s timeout, reply ≤ 64 KiB, reply must be a dict.
+  `monitor_name` validation: non-empty, ≤128 chars, printable, no leading/trailing whitespace (tessel_shell.py:11).
 - `tessel-shell` itself in client mode (`_cli_client`, tessel-shell:4801): 3 s timeout. It acts as a client only if the
   socket file exists. Otherwise it falls back to starting or contacting the GApplication.
 - `tessel-settings/desktop_pages.py:106` `wallpaper_request`: 8 s timeout. It sends `list-monitors`, then one
@@ -137,7 +137,7 @@ tessel-shell --gapplication-service           # never treated as CLI
 - In-daemon `do_command_line` messages differ slightly (`Unknown monitor(s): …`, `File not found: …`,
   `OK\n`, list-monitors prints `k + "\n"`, which doubles the newline). These are only reached without a socket.
 
-`wayshell_cli.py` takes the subcommands `switch-window [--reverse]`, `show-activities [--monitor M]` and
+`tessel_shell.py` takes the subcommands `switch-window [--reverse]`, `show-activities [--monitor M]` and
 `switcher-status`. `switcher-status` prints the JSON reply. A not-ok reply prints its `msg` to stderr and
 exits 1. Errors print `Tessel Shell: <err>` to stderr and exit 1.
 
@@ -156,7 +156,7 @@ exits 1. Errors print `Tessel Shell: <err>` to stderr and exit 1.
 | `zwlr_layer_shell_v1` (via gtk4-layer-shell) | desktop windows, switcher, backdrops | see §4 |
 | `zwlr_foreign_toplevel_management_unstable_v1` (v≤3) + `wl_seat` (≤7) + `wl_output` (≤4) + `zxdg_output_manager_v1` (≤3) | `tessel-shell-toplevel` helper (tessel-dock/toplevel_helper.c) | Activate, minimize, unminimize and close; the window list with outputs. |
 | `ext_foreign_toplevel_list_v1`, `ext_image_copy_capture_manager_v1`, `ext_foreign_toplevel_image_capture_source_manager_v1`, `ext_output_image_capture_source_manager_v1`, `wl_shm` | `tessel-overview` (overview_capture.c; XMLs in `protocols/`) | Activities previews |
-| `ext_background_effect_v1` (compositor blur) | `shared/libwaydock-background-blur.so` via background_blur.py, attached by WayshellTheme | Shared with tessel-gtk. Needs the GTK surface's `wl_surface`. |
+| `ext_background_effect_v1` (compositor blur) | `shared/libwaydock-background-blur.so` via background_blur.py, attached by TesselShellTheme | Shared with tessel-gtk. Needs the GTK surface's `wl_surface`. |
 | `wlr-data-control` | only indirectly, via the spawned `wl-copy` | |
 
 #### Helper stdio protocols (keep them, or reimplement in-process)
@@ -188,7 +188,7 @@ exits 1. Errors print `Tessel Shell: <err>` to stderr and exit 1.
 | `~/.config/tessel-shell/wallpapers.json` | JSON, indent=2. `{"<connector>": {"file_path": str\|null, "mode": "Fill\|Fit\|Stretch\|Center\|Tile\|Color Only", "color": "rgb(r,g,b)"\|"rgba(...)"}, "_view_prefs": {"hide_icons": bool, "show_hidden": bool}}`. The colour is `Gdk.RGBA.to_string()`. `file_path` is null for Color Only. The writer merges with the existing file (read, update keys, rewrite, non-atomic). | daemon (tessel-shell:4328, 1430, 461) | `tessel-settings/desktop_pages.py:295` (read only; writes go via the socket), `tessel-dock/wallpaper_palette.py:339` (palette from the wallpaper, file-monitored), `tessel-lock/lock_config.py:119` (`file_path` for images). `apply-json` treats `_view_prefs` as an unknown monitor and skips it. |
 | `~/.config/tessel-shell/desktop_view_order.json` (`GLib.get_user_config_dir()`) | JSON, compact. `{"<filename in ~/Desktop>": [global_x, global_y]}`. Coordinates are global compositor pixels. Example: `{"computer.desktop":[12,22],"user-home.desktop":[12,150]}`. | daemon only. `save_all_positions` skips the write when the content is unchanged, to avoid waking file monitors (tessel-shell:2732). | daemon |
 | `~/Desktop/` | directory, watched with `Gio.FileMonitor` | user/daemon | |
-| `$XDG_CACHE_HOME/tessel-dock/palette.json` | Written by tessel-dock. Validated (wayshell_theme.py:13): ≤128 KiB, `version==1`, `is_dark` bool, `apps_transparency` int 0–100 (default 5), `apps_transparency_enabled` (default False), `apps_frost_strength` 0–100, `apps_frosted`, `apps_rounded_corners` (default True), `monitors[1..64]` each with `name`, `geometry[4 ints, w,h>0]` and `background/foreground/accent` [3 × 0–255]. Malformed input means plain GTK theme. Watched with a file monitor (WATCH_MOVES, rate limit 100 ms). | tessel-dock | tessel-shell daemon, prompt, capture picker |
+| `$XDG_CACHE_HOME/tessel-dock/palette.json` | Written by tessel-dock. Validated (tessel_shell_theme.py:13): ≤128 KiB, `version==1`, `is_dark` bool, `apps_transparency` int 0–100 (default 5), `apps_transparency_enabled` (default False), `apps_frost_strength` 0–100, `apps_frosted`, `apps_rounded_corners` (default True), `monitors[1..64]` each with `name`, `geometry[4 ints, w,h>0]` and `background/foreground/accent` [3 × 0–255]. Malformed input means plain GTK theme. Watched with a file monitor (WATCH_MOVES, rate limit 100 ms). | tessel-dock | tessel-shell daemon, prompt, capture picker |
 | `~/.config/labwc/environment` and `environment.d/*.env` (sorted) | labwc env syntax | tessel-session-startup | `labwc_launch_environment()` (tessel-shell:110-185): `$VAR` and `${VAR}` expansion, **every `~` replaced with HOME**, values >1024 bytes skipped, names with NUL skipped. A fresh environment is built for every launch. |
 | `~/.config/xdg-desktop-portal-wlr/{wlroots,labwc}` | INI. `[screencast] chooser_type=dmenu`, `chooser_cmd=exec '<launcher>'` | install_capture_picker | xdpw. Inherits from the first of local/desktop, local/config, /etc/xdg/…/desktop, /etc/xdg/…/config. Only these two keys are replaced; a trailing `[screencast]` section is appended if needed (capture_portal_config.py). |
 | `$XDG_CACHE_HOME/tessel/tessel-overview` | build artefact | build_overview | installers |
@@ -300,8 +300,8 @@ asynchronously (tessel-shell:1757). Paste prefers the gnome format.
 - Card tooltip: `"{name}\n{title}"` plus `"\nMinimized"`. Fallbacks: name → `app_id` or `"Application"`; title →
   `"Untitled window"`; icon → `application-x-executable`.
 
-### Theme (`wayshell_theme.py`)
-`WayshellTheme` watches every GTK toplevel. Per window it:
+### Theme (`tessel_shell_theme.py`)
+`TesselShellTheme` watches every GTK toplevel. Per window it:
 - adds class `tessel-shell-palette-<serial>` and a provider at USER+2 priority
 - picks a monitor palette by connector, then by geometry, else uses the first entry
 - applies a variant based on marker classes:
@@ -314,9 +314,9 @@ asynchronously (tessel-shell:1757). Paste prefers the gnome format.
   keep 9999px.
 - Blur is attached via background_blur: off for the backdrop, `target_class='switcher-surface'` for the switcher,
   `include_root` false for the desktop and the backdrop.
-- The exact CSS text is in wayshell_theme.py:90-226. Port it verbatim into tessel-gtk.
+- The exact CSS text is in tessel_shell_theme.py:90-226. Port it verbatim into tessel-gtk.
 
-### Prompt (`wayshell_prompt.py`)
+### Prompt (`tessel_shell_prompt.py`)
 - `Gtk.ApplicationWindow` with class `tessel-prompt`.
   - Title: `tr("Configuration Error")` with `--error`, otherwise `tr("Confirm Action")`.
   - Size 540 (error, resizable) or 440 (not resizable). Headerbar decoration `:close`.
@@ -463,7 +463,7 @@ asynchronously (tessel-shell:1757). Paste prefers the gnome format.
 
 ## 9. Parity test cases (from tests; port as Rust tests)
 **CLI and socket**
-- shell_integration: a daemon started with a temp HOME answers `wayshell_cli.py switcher-status` with ready
+- shell_integration: a daemon started with a temp HOME answers `tessel_shell.py switcher-status` with ready
   true; socket commands are forwarded.
 - activities:20: `--monitor` is optional and validated (empty, whitespace or non-printable → argparse error).
   The forwarded payload omits `monitor` when absent.
@@ -506,7 +506,7 @@ asynchronously (tessel-shell:1757). Paste prefers the gnome format.
 - Layout is readable from small to large monitors.
 - The real capture helper is cleaned up (killed) on dismiss.
 
-**Theme** (test_wayshell_theme)
+**Theme** (test_tessel_shell_theme)
 - Malformed cache → no palette.
 - Connector selects the monitor first, then geometry, then the first entry.
 - The desktop scope themes only controls, popovers and captions; **never the wallpaper**.
@@ -551,7 +551,7 @@ asynchronously (tessel-shell:1757). Paste prefers the gnome format.
 - Trash count is async and shared.
 - Notifications are async.
 
-**Prompt** (test_wayshell_prompt)
+**Prompt** (test_tessel_shell_prompt)
 - The installer changes only the two commands and is idempotent. A home launcher is written as `"$HOME"/…`.
   `<core/>` is created or expanded.
 - Punctuation (`'`, `$`, backticks, multi-line) stays literal through `sh`.
@@ -592,12 +592,12 @@ asynchronously (tessel-shell:1757). Paste prefers the gnome format.
 | `overview.py` | 178 | Overview helper process client, preview matching, layout, animated Stage. |
 | `overview_capture.c` | 184 | ext-image-copy-capture snapshot helper (stdout JSON + base64 PNG). |
 | `build_overview.py` | 41 | wayland-scanner + cc build. |
-| `wayshell_theme.py` | 419 | Palette cache reader, per-toplevel CSS, blur attach. |
-| `wayshell_cli.py` | 70 | Socket client and monitor-name validator. |
+| `tessel_shell_theme.py` | 419 | Palette cache reader, per-toplevel CSS, blur attach. |
+| `tessel_shell.py` | 70 | Socket client and monitor-name validator. |
 | `desktop_workarea.py` | 141 | Tessel Dock workarea D-Bus client and validator. |
 | `desktop_icon_layout.py` | 92 | Pure grid placement maths. |
 | `desktop_file_ops.py` | 498 | Transfer planning, conflicts, worker copy, notify, browser lookup, TrashWatcher. |
-| `wayshell_prompt.py` | 264 | labwc prompt and error dialog. |
+| `tessel_shell_prompt.py` | 264 | labwc prompt and error dialog. |
 | `capture_picker.py` | 125 | xdpw dmenu entry, env hardening, preselect/report. |
 | `capture_picker_ui.py` | 338 | Picker window. |
 | `capture_sources.py` | 66 | Record parse and write. |
@@ -621,7 +621,7 @@ External modules loaded at runtime from `~/.local/share/tessel-shell/`:
    `labwc_launch_environment` and the palette reader + `palette_css` (into tessel-gtk). Each unit test above
    maps 1:1.
 2. **ws-cli:** add `tessel-shell.sock` server and client, plus the argv grammar. Own `com.nobaraDesktopView` on the
-   bus. Ship a `wayshell_cli` drop-in (keep the Python path in rc.xml, or have the installer repoint it).
+   bus. Ship a `tessel_shell_cli` drop-in (keep the Python path in rc.xml, or have the installer repoint it).
 3. **ws-toplevel:** reuse the tessel-dock Rust foreign-toplevel module, in-process (wayland-client
    `zwlr_foreign_toplevel_manager_v1`) or as the same helper binary. Keep the `switcher-status` fields.
 4. **ws-switcher UI:** layer-shell OVERLAY surface, backdrops, cards, keyboard/Alt policy, PipeWire mute

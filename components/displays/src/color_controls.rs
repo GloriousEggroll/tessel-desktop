@@ -131,9 +131,9 @@ fn row(parent: &gtk::Box, title: &str, control: &impl IsA<gtk::Widget>, expand: 
 }
 
 /// The installed `tessel-hdr-calibration` program, or `None` when it is not
-/// installed (`$WAY_DISPLAYS_HDR_CALIBRATION` overrides).
+/// installed (`$TESSEL_DISPLAYS_HDR_CALIBRATION` overrides).
 pub fn hdr_calibration_path() -> Option<PathBuf> {
-    if let Some(path) = std::env::var_os("WAY_DISPLAYS_HDR_CALIBRATION").filter(|v| !v.is_empty()) {
+    if let Some(path) = std::env::var_os("TESSEL_DISPLAYS_HDR_CALIBRATION").filter(|v| !v.is_empty()) {
         return Some(PathBuf::from(path)).filter(|p| p.is_file());
     }
     let program = tessel_core::paths::program("tessel-hdr-calibration");

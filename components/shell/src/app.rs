@@ -21,7 +21,7 @@ pub struct DesktopApp {
     pub switcher: RefCell<Option<Rc<WindowSwitcher>>>,
     pub server: RefCell<Option<Rc<Server>>>,
     #[cfg(feature = "theme")]
-    pub theme: RefCell<Option<Rc<tessel_theme::WayshellTheme>>>,
+    pub theme: RefCell<Option<Rc<tessel_theme::TesselShellTheme>>>,
     activated: std::cell::Cell<bool>,
 }
 
@@ -48,7 +48,7 @@ impl DesktopApp {
         std::mem::forget(self.app().hold());
         #[cfg(feature = "theme")]
         if self.theme.borrow().is_none() {
-            *self.theme.borrow_mut() = Some(tessel_theme::WayshellTheme::new(None));
+            *self.theme.borrow_mut() = Some(tessel_theme::TesselShellTheme::new(None));
         }
         #[cfg(feature = "desktop")]
         if let Some(desktops) = self.desktops.borrow().clone() {

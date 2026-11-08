@@ -1,7 +1,7 @@
 # tessel-hdr-calibration — parity with contracts/tessel-hdr-calibration.md
 
 Crate `components/hdr-calibration`, binary `tessel-hdr-calibration` (GApplication `org.desktop.HDRCalibration`,
-NON_UNIQUE). Ports hdr_calibration.py, calibration.py and correction.py. Depends on the way-displays lib
+NON_UNIQUE). Ports hdr_calibration.py, calibration.py and correction.py. Depends on the tessel-displays lib
 crate by path for `color_config` (status keyfile, `parse_colors`, `atomic_write`, `rollback`, `Transaction`)
 and `style::style_window`. **`hdr-pattern` stays the C helper** (hdr-pattern.c, built by `build.py`): it is a
 raw Wayland client using the staging color-management-v1 protocol with XRGB2101010 shm buffers, not a trivial
@@ -45,13 +45,13 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 | Reset waits for confirmation (AlertDialog) | ✅ | `worker` |
 | Active saved correction kept; unknown active correction blocks `profile()` until cleared | ✅ | `worker` |
 | Old compositor → empty page, controls insensitive | ✅ | `worker` |
-| Title, size, `way-displays` + `tessel-hdr-calibration` classes, `.primary`, app menu, defaults from status, close refused while applying | ✅ | `window_contract` |
+| Title, size, `tessel-displays` + `tessel-hdr-calibration` classes, `.primary`, app menu, defaults from status, close refused while applying | ✅ | `window_contract` |
 | Visual parity | ✅ | Main page screenshot from `run_headless.sh HDR_TEST_SCREENSHOT=…` is **byte-identical** to Python's `preview.png` (same scenario); unavailable page identical in `measure_headless.sh` |
 | Pattern child (spawn, 100 ms poll, JSON encoding check, nits recorded, cancel text, SIGTERM on close/unavailable) | ☑ | not exercised (needs the colour-managed wlroots test server; the C helper keeps `test_patterns.py`) |
 | FileChooserNative `.cube` import | ☑ | import logic tested in unit tests |
 
 ## Deviations ⚠
-1. The status keyfile is a `BTreeMap` (way-displays crate), so `compositor`/`active` objects in reports are key-sorted
+1. The status keyfile is a `BTreeMap` (tessel-displays crate), so `compositor`/`active` objects in reports are key-sorted
    rather than in file order.
 2. Error texts from Rust parsers (invalid JSON in profiles.json, XML errors inside the managed block) differ from
    Python's `json`/ElementTree messages; ValueError texts written in calibration.py/correction.py are identical.

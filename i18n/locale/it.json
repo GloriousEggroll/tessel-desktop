@@ -491,7 +491,7 @@
   "Disks": "Dischi",
   "Dismiss": "Chiudi",
   "Display": "Schermo",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Impossibile caricare le impostazioni dello schermo. Assicurati che way-displays sia in esecuzione, quindi riprova.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Impossibile caricare le impostazioni dello schermo. Assicurati che tessel-displays sia in esecuzione, quindi riprova.",
   "Displays": "Schermi",
   "Displays are unavailable": "Gli schermi non sono disponibili",
   "Do Not Disturb duration": "Durata di Non disturbare",

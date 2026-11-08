@@ -375,7 +375,7 @@ fn run_cli(cli: &[String], args: &[&str]) -> (i32, String, String) {
 /// CLIs come from the runner (Rust, or Python for cross-checks).
 fn real_daemon_starts_switcher_and_forwards_socket_commands(ui: &mut Ui) {
     let words = |v: &str| std::env::var(v).unwrap().split_whitespace().map(str::to_string).collect::<Vec<_>>();
-    let (daemon, key_cli, own_cli) = (words("WAYSHELL_DAEMON"), words("WAYSHELL_KEY_CLI"), words("WAYSHELL_DAEMON"));
+    let (daemon, key_cli, own_cli) = (words("TESSEL_SHELL_DAEMON"), words("TESSEL_SHELL_KEY_CLI"), words("TESSEL_SHELL_DAEMON"));
     let home = std::path::PathBuf::from(std::env::var("TMPDIR").unwrap()).join("home");
     let _ = std::fs::remove_dir_all(&home);
     std::fs::create_dir_all(home.join("Desktop")).unwrap();
@@ -463,7 +463,7 @@ fn real_daemon_starts_switcher_and_forwards_socket_commands(ui: &mut Ui) {
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).filter(|a| !a.starts_with("--")).collect();
-    if std::env::var("WAYDOCK_TEST_ISOLATED").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_DOCK_TEST_ISOLATED").as_deref() != Ok("1") {
         println!("switcher_ui: skipped (run tests/run_headless_switcher.sh)");
         return;
     }

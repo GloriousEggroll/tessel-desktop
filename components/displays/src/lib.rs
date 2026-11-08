@@ -1,10 +1,10 @@
-//! Displays: the `tessel-displays` GUI for the way-displays daemon and its
-//! colour helpers. The upstream way-displays
-//! daemon is not part of this crate.
+//! Displays: the `tessel-displays` window, its colour helpers and the daemon
+//! (`tessel-displays --daemon`) that applies the layout.
 pub mod brightness;
 pub mod color_config;
 pub mod color_controls;
 pub mod compat;
+pub mod daemon;
 pub mod ipc;
 pub mod labwc;
 pub mod layout;

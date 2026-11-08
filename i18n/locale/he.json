@@ -491,7 +491,7 @@
   "Disks": "דיסקים",
   "Dismiss": "סגירה",
   "Display": "תצוגה",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "לא ניתן לטעון את הגדרות התצוגה. ודאו ש-way-displays פועל ונסו שוב.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "לא ניתן לטעון את הגדרות התצוגה. ודאו ש-tessel-displays פועל ונסו שוב.",
   "Displays": "מסכים",
   "Displays are unavailable": "המסכים אינם זמינים",
   "Do Not Disturb duration": "משך מצב „נא לא להפריע”",

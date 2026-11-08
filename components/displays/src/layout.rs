@@ -4,7 +4,7 @@
 use crate::ipc;
 use crate::model::{parse_transform, LayoutModel, Meta};
 use crate::overlay::MonitorOverlay;
-use crate::window::WayDisplaysApp;
+use crate::window::TesselDisplaysApp;
 use glib::ControlFlow;
 use gtk::prelude::*;
 use serde_json::{Map, Value};
@@ -66,7 +66,7 @@ pub struct MonitorLayout {
     notebook: gtk::Notebook,
     desc_to_tab_index: BTreeMap<String, u32>,
     pub transform_overrides: Map<String, Value>,
-    app: Weak<WayDisplaysApp>,
+    app: Weak<TesselDisplaysApp>,
     drag: RefCell<Option<gtk::Box>>,
 }
 
@@ -74,7 +74,7 @@ impl MonitorLayout {
     #[allow(clippy::too_many_arguments)]
     pub fn new(monitors: &[Value], notebook: &gtk::Notebook, desc_to_tab_index: BTreeMap<String, u32>, align: Option<&str>,
                arrange: Option<&str>, order: Option<&[String]>, transform_overrides: Option<Map<String, Value>>,
-               app: Weak<WayDisplaysApp>) -> Rc<Self> {
+               app: Weak<TesselDisplaysApp>) -> Rc<Self> {
         let fixed = gtk::Fixed::new();
         fixed.set_halign(gtk::Align::Center);
         let provider = gtk::CssProvider::new();

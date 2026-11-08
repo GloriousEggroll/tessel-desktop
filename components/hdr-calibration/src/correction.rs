@@ -45,7 +45,7 @@ pub fn read_cube(path: &Path, identity: &str, mode: &str) -> Result<(Vec<u8>, St
     let (mut dim, mut count) = (0u32, 0u64);
     let mut marker = false;
     let mut found: Vec<String> = Vec::new();
-    for raw in way_displays::compat::fsx::splitlines(text) {
+    for raw in tessel_displays::compat::fsx::splitlines(text) {
         let line = raw.trim();
         if line.is_empty() {
             continue;
@@ -114,6 +114,6 @@ pub fn read_cube(path: &Path, identity: &str, mode: &str) -> Result<(Vec<u8>, St
 pub fn import_cube(path: &Path, identity: &str, mode: &str) -> Result<Map<String, Value>, CalError> {
     let (data, sha, dim) = read_cube(path, identity, mode)?;
     let target = crate::calibration::config_dir().join("corrections").join(format!("{sha}.cube"));
-    way_displays::color_config::atomic_write(&target, &data, 0o400)?;
+    tessel_displays::color_config::atomic_write(&target, &data, 0o400)?;
     Ok(json!({"path": target.to_string_lossy(), "sha256": sha, "encoding": "BT2020-PQ", "size": dim}).as_object().unwrap().clone())
 }

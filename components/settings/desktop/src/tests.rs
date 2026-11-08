@@ -342,7 +342,7 @@ fn tessel_shell_socket_protocol_bytes_and_errors() {
 
 #[test]
 fn hdr_outputs_lists_enabled_hdr_monitors_only() {
-    let status: way_displays::color_config::Status = serde_json::from_value(json!({
+    let status: tessel_displays::color_config::Status = serde_json::from_value(json!({
         "compositor": {"pid": "1"}, "DP-1": {"enabled": "true", "hdr_supported": "true"},
         "HDMI-A-1": {"enabled": "true", "hdr_supported": "false"}, "DP-2": {"enabled": "false", "hdr_supported": "true"}})).unwrap();
     assert_eq!(crate::displays::hdr_outputs(&status), ["DP-1"]);

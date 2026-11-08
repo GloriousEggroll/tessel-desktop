@@ -1,4 +1,4 @@
-//! `PromptWindow` of wayshell_prompt.py.
+//! `PromptWindow` of tessel_shell_prompt.py.
 
 use crate::cli::Options;
 use crate::{ACCEPT, DECLINE, DISMISS, TEXT_LIMIT};

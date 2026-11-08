@@ -25,7 +25,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for EntryObject {
-        const NAME: &'static str = "WayarchiveEntry";
+        const NAME: &'static str = "TesselArchiveEntry";
         type Type = super::EntryObject;
     }
 

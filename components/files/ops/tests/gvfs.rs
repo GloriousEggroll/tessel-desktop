@@ -22,11 +22,11 @@ struct Isolated {
 }
 
 fn isolated() -> Option<Isolated> {
-    if std::env::var("WAYFILES_GVFS_ISOLATED").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_FILES_GVFS_ISOLATED").as_deref() != Ok("1") {
         eprintln!("GVfs checks run only inside tests/run_gvfs.sh; skipping");
         return None;
     }
-    let root = PathBuf::from(std::env::var_os("WAYFILES_GVFS_TEST_ROOT").expect("test root"));
+    let root = PathBuf::from(std::env::var_os("TESSEL_FILES_GVFS_TEST_ROOT").expect("test root"));
     let home = PathBuf::from(std::env::var_os("HOME").expect("HOME"));
     let data = PathBuf::from(std::env::var_os("XDG_DATA_HOME").expect("XDG_DATA_HOME"));
     let bus = std::env::var("DBUS_SESSION_BUS_ADDRESS").unwrap_or_default();

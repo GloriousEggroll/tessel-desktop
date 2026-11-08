@@ -1,4 +1,4 @@
-//! The YAML of the way-displays IPC: `yaml.safe_load` of replies into JSON
+//! The YAML of the tessel-displays IPC: `yaml.safe_load` of replies into JSON
 //! values and `yaml.safe_dump(value, sort_keys=False)` (block style,
 //! indentless sequences, PyYAML's plain/single/double scalar choice).
 
@@ -193,8 +193,8 @@ mod tests {
             "ORDER": ["Mon", "yes"],
             "ARRANGE": "ROW", "ALIGN": "TOP",
             "EMPTY": [], "NONE": {},
-            "CALLBACK_CMD": "notify-send \"way-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\""}});
-        let expected = "CFG:\n  MODE:\n    Dell Inc. DELL U2720Q 1234:\n      WIDTH: 3840\n      HEIGHT: 2160\n      HZ: 59.997\n  SCALE:\n    'A: quoted display': 1.25\n  AUTO_SCALE: true\n  TRANSFORM:\n    Mon: '90'\n  DISABLED:\n    Mon B: null\n  VRR_OFF:\n  - Mon\n  ORDER:\n  - Mon\n  - 'yes'\n  ARRANGE: ROW\n  ALIGN: TOP\n  EMPTY: []\n  NONE: {}\n  CALLBACK_CMD: notify-send \"way-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"\n";
+            "CALLBACK_CMD": "notify-send \"tessel-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\""}});
+        let expected = "CFG:\n  MODE:\n    Dell Inc. DELL U2720Q 1234:\n      WIDTH: 3840\n      HEIGHT: 2160\n      HZ: 59.997\n  SCALE:\n    'A: quoted display': 1.25\n  AUTO_SCALE: true\n  TRANSFORM:\n    Mon: '90'\n  DISABLED:\n    Mon B: null\n  VRR_OFF:\n  - Mon\n  ORDER:\n  - Mon\n  - 'yes'\n  ARRANGE: ROW\n  ALIGN: TOP\n  EMPTY: []\n  NONE: {}\n  CALLBACK_CMD: notify-send \"tessel-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"\n";
         assert_eq!(safe_dump(&cfg), expected);
         assert_eq!(load(&safe_dump(&cfg)).unwrap()["CFG"]["SCALE"], json!({"A: quoted display": 1.25}));
         let multi = json!({"CALLBACK_CMD": "# a\nxrandr 'x'\n"});

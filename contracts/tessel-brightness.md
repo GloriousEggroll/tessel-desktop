@@ -2,7 +2,7 @@
 
 Source: `~/tessel-bluetooth/tessel-brightness/` (refs `file:line`, relative to that dir unless prefixed).
 Role: single resident owner of monitor hardware brightness/contrast (DDC/CI + logind backlight),
-per-monitor scaling (proxy to way-displays IPC), optional auto-dim (own swayidle child), keyboard
+per-monitor scaling (proxy to tessel-displays IPC), optional auto-dim (own swayidle child), keyboard
 brightness OSD, and the dock "Displays" popup. Live RSS ≈ 47 MB (largest wave-1/2 service).
 
 ## 1. Entry points & processes
@@ -44,7 +44,7 @@ Drop-in `tessel-brightness.service.d/50-tessel-recovery.conf` (from `tessel-sess
 
 ### Install layout (`install_waybar.py`; `install_all.py:76` step "brightness", kind=waybar, `update=False`)
 - `~/.config/waybar/scripts/tessel-brightness/`: `RUNTIME` (`install_waybar.py:35-59`): brightness_manager/backend/core/idle/client/ui/style/status/keys.py, display_scaling.py, tray_popup.py, README.md, gtk4_utils.py, companion_theme.py (from tessel-dock), adjustment_osd.py, suite_i18n.py, language_data.py, suite_catalogs.py, background_blur.py, libwaydock-background-blur.so, popup_placement.py.
-- Also installs way-displays GUI: `~/.local/share/way-displays/{tessel-displays(0755),display_style.py,companion_theme.py,background_blur.py,libwaydock-background-blur.so,suite_i18n.py,language_data.py,suite_catalogs.py}`, wrapper `~/.local/bin/tessel-displays` (`#!/bin/sh exec /usr/bin/python3 <gui> "$@"`), and `~/.local/share/applications/tessel-displays.desktop` with rewritten `Exec="…/.local/bin/tessel-displays"` (`:111-137`).
+- Also installs tessel-displays GUI: `~/.local/share/tessel-displays/{tessel-displays(0755),display_style.py,companion_theme.py,background_blur.py,libwaydock-background-blur.so,suite_i18n.py,language_data.py,suite_catalogs.py}`, wrapper `~/.local/bin/tessel-displays` (`#!/bin/sh exec /usr/bin/python3 <gui> "$@"`), and `~/.local/share/applications/tessel-displays.desktop` with rewritten `Exec="…/.local/bin/tessel-displays"` (`:111-137`).
 - Waybar (legacy, only if files exist): inserts `"custom/brightness"` after `"custom/power"` in `config*` (4 layouts) with `exec: python3 …/brightness_status.py`, `return-type: json`, `restart-interval: 3`, `on-click: … --popup --popup-edge <edge> --popup-offset 76 </dev/null >/dev/null 2>&1 &`, `on-click-right: … --settings …` (`:77-100`); CSS `#custom-brightness{.auto,.dimmed,.unavailable}` (`:40-51`).
 - Requires `swayidle ddcutil wlr-randr systemctl` on PATH at install time.
 - Preview manifest: `${XDG_STATE_HOME:-~/.local/state}/tessel/previews/tessel-brightness.json`; legacy `.waybar-install.json` in source dir. Backups `~/.config/waybar/backups/brightness-<ts>`; rollback on failed start/health (20× `--check`). Sends SIGUSR2 to any `waybar` process after install. CLI: `[--apply]` only (no `--update`; `shared/install_gtk4.py:39-49` refreshes the code later).
@@ -72,7 +72,7 @@ Drop-in `tessel-brightness.service.d/50-tessel-recovery.conf` (from `tessel-sess
 | `SetAutoDim(b)` | `→ b` | = SetSettings(current ∪ {auto_dim}) |
 | `SetSettings(s json)` | `→ b` | JSON object with exactly keys auto_dim/dim_after/dim_percent; persists, restores dim, updates swayidle |
 | `SetScale(s connector, d scale, s expected_id)` | `→ b` | expected_id = `scale_id`; scale 1.0–2.5 snapped to 0.125 |
-| `SetAutoScale(b)` | `→ b` | way-displays AUTO_SCALE |
+| `SetAutoScale(b)` | `→ b` | tessel-displays AUTO_SCALE |
 | signal `Changed(s json)` | | emitted from `_changed()` only when the JSON differs from last emission (`:183-199`); re-entrancy coalesced via idle |
 
 Errors: `org.tessel.BrightnessManager.Controls.Error` with message (ValueError/TypeError/OSError). While closing every method but GetState fails with tr("Brightness controls are restarting. Try again shortly."). Unknown method ⇒ tr("Unknown brightness command.").
@@ -92,7 +92,7 @@ Errors: `org.tessel.BrightnessManager.Controls.Error` with message (ValueError/T
    "scale": {"supported": true, "value": 1.25, "busy": false, "override": true, "error": ""}}]}
 ```
 - `ready` = idle controller exists and (hardware backend ready OR scaling ready) (`:136-137`).
-- `supported:null` = not yet probed ("Loading display controls…" in UI). Displays only known to way-displays get `id="scale:"+scale_id`, `method:"unsupported"` (`display_scaling.py:112-135`).
+- `supported:null` = not yet probed ("Loading display controls…" in UI). Displays only known to tessel-displays get `id="scale:"+scale_id`, `method:"unsupported"` (`display_scaling.py:112-135`).
 - `id` for unmatched outputs: `"unidentified:"+connector` (`brightness_backend.py:315`).
 
 ### 3.2 D-Bus consumed
@@ -104,10 +104,10 @@ Errors: `org.tessel.BrightnessManager.Controls.Error` with message (ValueError/T
 
 ### 3.3 `brightness_client.py` — shared client protocol (keep as a Python file until tessel-displays is ported)
 - `BrightnessClient(on_changed, refresh_on_connect=False)`; `Gio.DBusProxy` with `DO_NOT_AUTO_START|DO_NOT_LOAD_PROPERTIES`; watches `g-name-owner`; on owner ⇒ `GetState` (+ `Refresh` if refresh_on_connect). Methods: `set_value(connector, feature, value, expected_id=None)` (defaults to state's `id`), `set_auto_dim(b)`, `set_scale(connector, value, expected_id=None)` (defaults to `scale_id`), `set_auto_scale(b)`, `set_settings(dict)`, `refresh()`, `close()`. Call timeout 15000 ms. Initial state `{"ready":False,"displays":[],"settings":{auto_dim:False,dim_after:120,dim_percent:30}}`. Client-side `busy` = server busy OR pending settings calls. Unowned ⇒ error "Brightness controls are unavailable." (untranslated). A `False` reply sets error to scaling error / state error / "The change could not be applied."
-- **Consumers**: `way-displays/tessel-displays:741-758` loads it **by file path** (`../tessel-brightness/brightness_client.py` or `~/.config/waybar/scripts/tessel-brightness/brightness_client.py`) via importlib and constructs `BrightnessClient(cb, refresh_on_connect=True)` (TypeError fallback to 1-arg); Global Settings → Displays embeds tessel-displays window (`tessel-settings/desktop_pages.py:130-174,256,268`); `brightness_status.py`.
+- **Consumers**: `tessel-displays/tessel-displays:741-758` loads it **by file path** (`../tessel-brightness/brightness_client.py` or `~/.config/waybar/scripts/tessel-brightness/brightness_client.py`) via importlib and constructs `BrightnessClient(cb, refresh_on_connect=True)` (TypeError fallback to 1-arg); Global Settings → Displays embeds tessel-displays window (`tessel-settings/desktop_pages.py:130-174,256,268`); `brightness_status.py`.
 
 ### 3.4 Unix sockets / signals / other
-- way-displays IPC socket: `$XDG_RUNTIME_DIR/way-displays.sock`, else `way-displays.$XDG_VTNR.sock` if it exists (`display_scaling.py:26-32`). Protocol: send `OP: <GET|CFG_SET|CFG_DEL|CFG_WRITE>\n` + optional YAML `CFG: {...}`; read until EOF (5 s deadline, 16 MiB cap); YAML reply must have `DONE: true`, int `RC`; RC≠0 ⇒ error from `MESSAGES` (≤500 chars) (`:35-64`).
+- tessel-displays IPC socket: `$XDG_RUNTIME_DIR/tessel-displays.sock`, else `tessel-displays.$XDG_VTNR.sock` if it exists (`display_scaling.py:26-32`). Protocol: send `OP: <GET|CFG_SET|CFG_DEL|CFG_WRITE>\n` + optional YAML `CFG: {...}`; read until EOF (5 s deadline, 16 MiB cap); YAML reply must have `DONE: true`, int `RC`; RC≠0 ⇒ error from `MESSAGES` (≤500 chars) (`:35-64`).
   - SetScale: GET, verify target, `CFG_SET {SCALE: {<DESCRIPTION>: value}}`, `CFG_WRITE`, GET (`:202-229`).
   - SetAutoScale(false): `CFG_SET {AUTO_SCALE: false}` then `CFG_DEL {SCALE: {desc: value or 1.0 for attached heads}}`, `CFG_WRITE`.
   - CFG_WRITE failure ⇒ "Scaling changed, but the display settings could not be saved: …".
@@ -125,7 +125,7 @@ Errors: `org.tessel.BrightnessManager.Controls.Error` with message (ValueError/T
 | `/sys/class/backlight/*/{device,type,max_brightness,brightness}` | R | ranked raw<platform<firmware (`brightness_backend.py:270-294`) |
 | `${XDG_CACHE_HOME:-~/.cache}/tessel-dock/palette.json` | R (keys fallback) | `{"version":1,"monitors":[{"name":"DP-2","geometry":[x,y,w,h]}]}` ≤256 KiB (`brightness_keys.py:40-51`) — written by tessel-dock |
 | `~/.config/tessel/language.json` | R | language preference (suite_i18n) |
-| way-displays cfg (`~/.config/way-displays/cfg.yaml`) | indirect via CFG_WRITE | owned by way-displays daemon |
+| tessel-displays cfg (`~/.config/tessel-displays/cfg.yaml`) | indirect via CFG_WRITE | owned by tessel-displays daemon |
 
 No Global Settings page writes these files directly; Global Settings → Displays uses the D-Bus API through tessel-displays. Settings search entries `displays/brightness`, `displays/dim` (`tessel-settings/settings_search.py:88,90`).
 

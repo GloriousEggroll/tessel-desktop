@@ -1,4 +1,4 @@
-//! `WayDisplaysApp(Gtk.ApplicationWindow)`: the Displays window
+//! `TesselDisplaysApp(Gtk.ApplicationWindow)`: the Displays window
 //! (tessel-displays:2233-3063).
 
 use crate::color_config::{self, ColorSettings};
@@ -23,7 +23,7 @@ use tessel_core::pyjson::{py_str, truthy};
 use tessel_core::tr;
 use tessel_gtk::theme::WindowTheme;
 
-pub const DEFAULT_CALLBACK: &str = "notify-send \"way-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"";
+pub const DEFAULT_CALLBACK: &str = "notify-send \"tessel-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"";
 
 type Ipc = Rc<dyn Fn(&str, &str) -> Result<String, String>>;
 type IpcConfig = Rc<dyn Fn(&str, &Value) -> Result<String, String>>;
@@ -82,7 +82,7 @@ pub fn create_brightness_client(on_changed: Rc<dyn Fn()>) -> Result<Rc<dyn Brigh
     Ok(Rc::new(BrightnessClient::new(move || on_changed(), true)))
 }
 
-pub struct WayDisplaysApp {
+pub struct TesselDisplaysApp {
     pub window: gtk::ApplicationWindow,
     pub embedded: bool,
     initializing: Cell<bool>,
@@ -121,7 +121,7 @@ fn obj<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
     value.get(key).filter(|v| truthy(v))
 }
 
-impl WayDisplaysApp {
+impl TesselDisplaysApp {
     pub fn new(application: &gtk::Application, factory: Option<ClientFactory>, embedded: bool) -> Rc<Self> {
         let hooks = default_hooks();
         let window = gtk::ApplicationWindow::new(application);
@@ -317,7 +317,7 @@ impl WayDisplaysApp {
         let scale_overrides = obj(&cfg, "SCALE").and_then(Value::as_object).cloned().unwrap_or_default();
         self.scale_overrides.replace(scale_overrides.clone());
 
-        // Runtime monitor info; way-displays 2.0 keeps per-display overrides in keyed maps.
+        // Runtime monitor info; tessel-displays 2.0 keeps per-display overrides in keyed maps.
         let transform_overrides = obj(&cfg, "TRANSFORM").cloned().unwrap_or_else(|| json!({}));
         let full_monitors: Vec<Value> = ipc::with_config_data(|data| {
             let Some(heads) = data.get_mut("STATE").and_then(|s| s.get_mut("HEADS")).and_then(Value::as_array_mut) else {
@@ -746,14 +746,14 @@ impl WayDisplaysApp {
 
 /// Python's `MainApp(Gtk.Application)` → `do_activate`.
 pub fn run() -> glib::ExitCode {
-    let app = gtk::Application::new(Some("com.nobara.WayDisplaysApp"), gio::ApplicationFlags::empty());
-    let windows: Rc<RefCell<Vec<Rc<WayDisplaysApp>>>> = Rc::default();
+    let app = gtk::Application::new(Some("org.tessel.Displays"), gio::ApplicationFlags::empty());
+    let windows: Rc<RefCell<Vec<Rc<TesselDisplaysApp>>>> = Rc::default();
     app.connect_activate(move |app| {
         ipc::get_config_data();
-        let window = WayDisplaysApp::new(app, None, false);
+        let window = TesselDisplaysApp::new(app, None, false);
         window.window.present();
         let list = windows.clone();
-        let weak: Weak<WayDisplaysApp> = Rc::downgrade(&window);
+        let weak: Weak<TesselDisplaysApp> = Rc::downgrade(&window);
         window.window.connect_destroy(move |_| {
             list.borrow_mut().retain(|w| !Weak::ptr_eq(&Rc::downgrade(w), &weak));
         });

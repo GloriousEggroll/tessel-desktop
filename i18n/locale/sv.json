@@ -491,7 +491,7 @@
   "Disks": "Diskar",
   "Dismiss": "Stäng",
   "Display": "Skärm",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Skärminställningarna kunde inte läsas in. Kontrollera att way-displays körs och försök igen.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Skärminställningarna kunde inte läsas in. Kontrollera att tessel-displays körs och försök igen.",
   "Displays": "Bildskärmar",
   "Displays are unavailable": "Skärmar är inte tillgängliga",
   "Do Not Disturb duration": "Varaktighet för Stör ej",

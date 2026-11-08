@@ -1,4 +1,4 @@
-//! Port of test_wayshell_prompt.py `PromptConfigTests` plus protocol checks
+//! Port of test_tessel_shell_prompt.py `PromptConfigTests` plus protocol checks
 //! (plain `cargo test`; files only under $TMPDIR).
 
 use std::os::unix::fs::PermissionsExt;
@@ -106,7 +106,7 @@ fn test_review_errors() {
 fn delimiter_format_and_splitlines() {
     let launcher = "/x";
     let plain = install::delimiter(launcher, &["a".into()]);
-    assert!(plain.starts_with("WAYSHELL_PROMPT_") && plain.len() == 16 + 64);
+    assert!(plain.starts_with("TESSEL_SHELL_PROMPT_") && plain.len() == 16 + 64);
     assert_eq!(install::py_splitlines("a\r\nb\rc\u{2028}d\n"), vec!["a", "b", "c", "d"]);
     assert_eq!(install::py_splitlines(""), Vec::<&str>::new());
 }

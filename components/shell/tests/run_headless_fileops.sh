@@ -19,7 +19,7 @@ rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
-WAYSHELL_FILEOPS_ISOLATED=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory \
+TESSEL_SHELL_FILEOPS_ISOLATED=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory \
 HOME="$R/home" XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" TMPDIR="$R/tmp" \
 timeout 180 "$BIN" --nocapture --test-threads=1 > "$R/log" 2>&1; echo \$? > "$R/result"
 labwc --exit

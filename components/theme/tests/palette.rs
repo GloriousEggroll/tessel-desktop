@@ -1,4 +1,4 @@
-//! Port of test_wayshell_theme.py `PaletteTests` (pure; plain `cargo test`).
+//! Port of test_tessel_shell_theme.py `PaletteTests` (pure; plain `cargo test`).
 
 use serde_json::{json, Value};
 use std::path::PathBuf;

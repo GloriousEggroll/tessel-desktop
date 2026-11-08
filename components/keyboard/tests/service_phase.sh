@@ -18,7 +18,7 @@ measure() { # label command...
   ready $pid; end=$(now); sleep 3
   echo "measure $label: ready_ms=$(( (end-start)/1000000 )) idle_rss_kb=$(rss $pid)"
   "$@" --quit; wait $pid; }
-export WAYKEYS_INPUT=$(ls -t "$TARGET"/build/tessel-keyboard-*/out/tessel-keyboard-input | head -1)
+export TESSEL_KEYBOARD_INPUT=$(ls -t "$TARGET"/build/tessel-keyboard-*/out/tessel-keyboard-input | head -1)
 "$TARGET/tessel-keyboard" --background & pid=$!
 ready $pid; rc=$?; check "background publishes state" "[ $rc -eq 0 ]"
 # A primary started with a bad flag stays held; forwarded ones exit 2.

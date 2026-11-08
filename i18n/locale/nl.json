@@ -491,7 +491,7 @@
   "Disks": "Schijven",
   "Dismiss": "Sluiten",
   "Display": "Beeldscherm",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "De beeldscherminstellingen konden niet worden geladen. Controleer of way-displays actief is en probeer het opnieuw.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "De beeldscherminstellingen konden niet worden geladen. Controleer of tessel-displays actief is en probeer het opnieuw.",
   "Displays": "Beeldschermen",
   "Displays are unavailable": "Beeldschermen zijn niet beschikbaar",
   "Do Not Disturb duration": "Duur van Niet storen",

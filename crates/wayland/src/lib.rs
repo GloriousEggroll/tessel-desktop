@@ -1,7 +1,7 @@
 //! Wayland protocol layer of Tessel (PLAN.md rule 7): foreign
 //! toplevels (wlr v3), ext-workspace, xdg-output, ext-foreign-toplevel-list +
 //! ext-image-copy-capture, and — on GTK's own wl_display — compositor blur
-//! (ext-background-effect + waydock_blur_manager_v1). Replaces tessel-dock's
+//! (ext-background-effect + tessel_blur_manager_v1). Replaces tessel-dock's
 //! `toplevel_helper.c` / `workspace_helper.c`, tessel-shell's `overview_capture.c`
 //! and shared/background_blur.c. See crates/README.md.
 

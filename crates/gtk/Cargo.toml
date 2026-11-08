@@ -8,7 +8,7 @@ build = "build.rs"
 
 [dependencies]
 tessel-core.workspace = true
-# Compositor blur (ext-background-effect + waydock_blur_manager_v1) on GTK's wl_display.
+# Compositor blur (ext-background-effect + tessel_blur_manager_v1) on GTK's wl_display.
 tessel-wayland = { workspace = true, features = ["gtk"] }
 glib.workspace = true
 gio.workspace = true

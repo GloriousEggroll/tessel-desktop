@@ -3,7 +3,7 @@
 //! test_monitor_overlay.py with a fake brightness client. Runs only inside the
 //! private nested headless labwc (tests/run_headless.sh); under plain
 //! `cargo test` it skips itself. No DDC, backlight, real D-Bus service or
-//! way-displays socket is used: every daemon call is a recording fake.
+//! tessel-displays socket is used: every daemon call is a recording fake.
 
 use gtk::glib;
 use gtk::prelude::*;
@@ -14,13 +14,13 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use way_displays::brightness::BrightnessControls;
-use way_displays::color_config;
-use way_displays::compat::brightness_client::BrightnessModel;
-use way_displays::ipc;
-use way_displays::labwc::HdrConfig;
-use way_displays::overlay::MonitorOverlay;
-use way_displays::window::{self, Hooks, WayDisplaysApp};
+use tessel_displays::brightness::BrightnessControls;
+use tessel_displays::color_config;
+use tessel_displays::compat::brightness_client::BrightnessModel;
+use tessel_displays::ipc;
+use tessel_displays::labwc::HdrConfig;
+use tessel_displays::overlay::MonitorOverlay;
+use tessel_displays::window::{self, Hooks, TesselDisplaysApp};
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -188,7 +188,7 @@ struct Fx {
     app: gtk::Application,
     client: Rc<FakeClient>,
     widgets: Rc<RefCell<Vec<Rc<BrightnessControls>>>>,
-    windows: RefCell<Vec<Rc<WayDisplaysApp>>>,
+    windows: RefCell<Vec<Rc<TesselDisplaysApp>>>,
 }
 
 impl Fx {
@@ -217,19 +217,19 @@ impl Fx {
         controls
     }
 
-    fn window(&self) -> Rc<WayDisplaysApp> {
+    fn window(&self) -> Rc<TesselDisplaysApp> {
         self.window_with(json!({"CFG": {"AUTO_SCALE": false, "CUSTOM_KEEP": {"untouched": true}},
                                 "STATE": {"HEADS": [monitor("DP-1", 1920), monitor("HDMI-A-1", 1600)]}}))
     }
 
-    fn window_with(&self, data: Value) -> Rc<WayDisplaysApp> {
+    fn window_with(&self, data: Value) -> Rc<TesselDisplaysApp> {
         ipc::set_config_data(data);
         let client = self.client.clone();
         let factory: window::ClientFactory = Box::new(move |on_changed| {
             client.on_changed.replace(on_changed);
             Ok(client as Rc<dyn BrightnessModel>)
         });
-        let window = WayDisplaysApp::new(&self.app, Some(factory), false);
+        let window = TesselDisplaysApp::new(&self.app, Some(factory), false);
         self.windows.borrow_mut().push(window.clone());
         window.window.present();
         settle(0.06);
@@ -277,8 +277,8 @@ fn apply_runs_primary_command_and_updates_startup_script(app: &gtk::Application)
         let mut hooks = window.hooks.borrow_mut();
         recording(&mut hooks, Rc::default(), writes.clone());
         hooks.get_config_data = Rc::new(|| true);
-        hooks.write_labwc_primary_environment = Rc::new(way_displays::primary::write_labwc_primary_environment);
-        hooks.write_labwc_primary_xinitrc = Rc::new(way_displays::primary::write_labwc_primary_xinitrc);
+        hooks.write_labwc_primary_environment = Rc::new(tessel_displays::primary::write_labwc_primary_environment);
+        hooks.write_labwc_primary_xinitrc = Rc::new(tessel_displays::primary::write_labwc_primary_xinitrc);
         let log = applied.clone();
         hooks.apply_xwayland_primary_output = Rc::new(move |o| {
             log.borrow_mut().push(o.map(String::from));
@@ -647,7 +647,7 @@ fn window_follows_live_dock_palette_without_changing_display_settings(app: &gtk:
     let binding = attach(&window.window, Some(&client));
     window.palette.replace(Some(binding.clone()));
     settle(0.06);
-    assert!(window.window.has_css_class("way-displays"));
+    assert!(window.window.has_css_class("tessel-displays"));
     assert_eq!(binding.monitor_name().as_deref(), Some(output.connector().unwrap().as_str()));
     let rgb = |c: gtk::gdk::RGBA| ((c.red() * 255.0).round() as i32, (c.green() * 255.0).round() as i32, (c.blue() * 255.0).round() as i32);
     assert_eq!(rgb(window.window.color()), (201, 211, 221));
@@ -692,7 +692,7 @@ fn window_contract(app: &gtk::Application) {
     first["DESCRIPTION"] = json!(output.description().map(|d| d.to_string()).unwrap_or_default());
     let window = f.window_with(json!({"CFG": {}, "STATE": {"HEADS": [first, monitor("HDMI-A-1", 1600)]}}));
     assert_eq!(window.window.title().as_deref(), Some("Displays"));
-    assert!(window.window.has_css_class("way-displays"));
+    assert!(window.window.has_css_class("tessel-displays"));
     assert_eq!(window.monitors_notebook.n_pages(), 2);
     let tab = window.monitors_notebook.tab_label(&window.monitors_notebook.nth_page(Some(0)).unwrap()).and_downcast::<gtk::Label>().unwrap();
     assert_eq!(tab.text(), "Example Display (DP-1)");
@@ -716,9 +716,9 @@ fn window_contract(app: &gtk::Application) {
     let errors = Rc::new(RefCell::new(Vec::new()));
     let sink = errors.clone();
     provider.connect_parsing_error(move |_, _, e| sink.borrow_mut().push(e.to_string()));
-    provider.load_from_string(way_displays::style::CSS);
-    provider.load_from_string(way_displays::overlay::OVERLAY_CSS);
-    provider.load_from_string(way_displays::layout::LAYOUT_CSS);
+    provider.load_from_string(tessel_displays::style::CSS);
+    provider.load_from_string(tessel_displays::overlay::OVERLAY_CSS);
+    provider.load_from_string(tessel_displays::layout::LAYOUT_CSS);
     assert!(errors.borrow().is_empty(), "{:?}", errors.borrow());
     println!("ok window_contract");
 }
@@ -833,14 +833,14 @@ fn output_corner_ignores_reserved_top_and_left_and_stays_above_fullscreen(app: &
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     if runtime == "/run/user/1000" || std::env::var_os("WAYLAND_DISPLAY").is_none()
-        || std::env::var_os("WAY_DISPLAYS_UI_ISOLATED_TEST").is_none() {
+        || std::env::var_os("TESSEL_DISPLAYS_UI_ISOLATED_TEST").is_none() {
         println!("ui_headless: skipped (run components/displays/tests/run_headless.sh for the private compositor)");
         return;
     }
     tessel_core::i18n::initialize();
     gtk::init().expect("display");
     gtk::Settings::default().unwrap().set_gtk_application_prefer_dark_theme(true);
-    let app = gtk::Application::new(Some("org.waydisplays.BrightnessTests"), gio::ApplicationFlags::NON_UNIQUE);
+    let app = gtk::Application::new(Some("org.tessel.Displays.BrightnessTests"), gio::ApplicationFlags::NON_UNIQUE);
     app.register(gio::Cancellable::NONE).unwrap();
     connector_matching_refresh_and_unsupported_contrast(&app);
     apply_runs_primary_command_and_updates_startup_script(&app);

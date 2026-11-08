@@ -24,8 +24,8 @@ cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 export GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0
-export XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" WAYDOCK_TEST_ISOLATED=1
-export WAYSHELL_DAEMON="$DAEMONCMD" WAYSHELL_KEY_CLI="$KEYCLI" DBUS_SYSTEM_BUS_ADDRESS=unix:path=/no-tessel-shell-test-system-bus
+export XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" TESSEL_DOCK_TEST_ISOLATED=1
+export TESSEL_SHELL_DAEMON="$DAEMONCMD" TESSEL_SHELL_KEY_CLI="$KEYCLI" DBUS_SYSTEM_BUS_ADDRESS=unix:path=/no-tessel-shell-test-system-bus
 export PATH="$R/fakebin:\$PATH"
 timeout 240 "$BIN" $* > "$R/log" 2>&1; echo \$? > "$R/result"
 [ -n "${EXTRA:-}" ] && timeout 60 ${EXTRA:-true} >> "$R/log" 2>&1

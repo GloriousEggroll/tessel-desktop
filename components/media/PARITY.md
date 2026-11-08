@@ -1,6 +1,6 @@
 # tessel-media — parity with contracts/tessel-media.md
 
-Crate `components/media`: binary `tessel-media` (= `media_manager.py` / `waymedia`)
+Crate `components/media`: binary `tessel-media` (= `media_manager.py` / `tessel-media`)
 and a library holding the MPRIS client (`mpris`: lock_media.LockMedia + media_session
 .MediaSession), player icons (`icons`: lock_media_icons), album art (`art`: lock_media_art)
 and Tessel Dock's `dock_status::MediaStatus` (tessel-dock/media_status.py) for reuse by the tessel-dock

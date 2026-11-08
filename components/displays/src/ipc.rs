@@ -1,4 +1,4 @@
-//! The way-displays daemon socket (tessel-displays:542-594) and the module
+//! The tessel-displays daemon socket (tessel-displays:542-594) and the module
 //! global `CONFIG_DATA`.
 
 use crate::compat::yaml;
@@ -33,16 +33,18 @@ pub fn cfg() -> Value {
     config_data().get("CFG").cloned().unwrap_or_else(|| json!({}))
 }
 
-/// First existing of `way-displays.sock` and `way-displays.$XDG_VTNR.sock`.
+/// First existing of `tessel-displays.sock` and `tessel-displays.$XDG_VTNR.sock`.
 pub fn socket_path() -> PathBuf {
     let runtime = std::env::var("XDG_RUNTIME_DIR").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "/tmp".into());
     let runtime = PathBuf::from(runtime);
-    let mut paths = vec![runtime.join("way-displays.sock")];
+    let mut paths = vec![runtime.join("tessel-displays.sock")];
     if let Ok(vt) = std::env::var("XDG_VTNR") {
         if !vt.is_empty() {
-            paths.push(runtime.join(format!("way-displays.{vt}.sock")));
+            paths.push(runtime.join(format!("tessel-displays.{vt}.sock")));
         }
     }
+    // A session started before tessel-displays had its own daemon keeps way-displays until logout.
+    paths.push(runtime.join("way-displays.sock"));
     paths.iter().find(|p| p.exists()).cloned().unwrap_or_else(|| paths[0].clone())
 }
 
@@ -61,7 +63,7 @@ pub fn ipc_operation_at(socket: &Path, operation: &str, payload: &str) -> Result
     let mut client = match UnixStream::connect(socket) {
         Ok(client) => client,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            println!("way-displays socket {} not found. Is the server running?", socket.display());
+            println!("tessel-displays socket {} not found. Is the server running?", socket.display());
             return Ok(String::new());
         }
         Err(error) => return Err(os(error)),

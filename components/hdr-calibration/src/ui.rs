@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
 use std::sync::Arc;
 use tessel_core::tr;
-use way_displays::color_config::Status;
+use tessel_displays::color_config::Status;
 
 pub const STYLE: &str = r#"
 .tessel-hdr-calibration .hdr-section { padding: 16px; border-radius: 12px; }
@@ -148,7 +148,7 @@ impl Window {
             .default_width(760).default_height(840).build();
         let header = gtk::HeaderBar::new();
         window.set_titlebar(Some(&header));
-        let theme = way_displays::style::style_window(&window, false);
+        let theme = tessel_displays::style::style_window(&window, false);
         window.add_css_class("tessel-hdr-calibration");
         let css = gtk::CssProvider::new();
         css.load_from_string(STYLE);

@@ -52,7 +52,7 @@ Restart=on-failure RestartSec=2 TimeoutStartSec=15
 - Reject/close/Escape → `org.bluez.Error.Rejected` "Rejected by user" (`CANCELED` constant defined but unused). New request dismisses (rejects) the previous prompt. Device name: `Properties.Get(org.bluez.Device1, Alias)` sync 2 s; fallback path tail `dev_AA_BB…` → `AA:BB:…` (:176-183).
 
 ### Native ABI: libwayshell-auth-listener.so (auth_listener.c)
-- GType `WayshellAuthListener` subclass of `PolkitAgentListener`; exported C fn `void tessel-shell_auth_register_type(void)` (g_type_ensure) (auth_listener.c:43).
+- GType `TesselShellAuthListener` subclass of `PolkitAgentListener`; exported C fn `void tessel-shell_auth_register_type(void)` (g_type_ensure) (auth_listener.c:43).
 - Overrides `initiate_authentication` → creates `GTask(listener, cancellable, callback, user_data)` and emits signal **`authenticate`** `(GTask task, gchar* action_id, gchar* message, gchar* cookie, GStrv identity_strings, GCancellable cancellable)`; identities stringified with `polkit_identity_to_string` (e.g. `unix-user:tcrider`); icon_name & details ignored (:11-25,36-38).
 - `initiate_authentication_finish` → `g_task_propagate_boolean` (:27-30).
 - Python completes with `task.return_boolean(True)` (conversation done) or `task.return_error(G_IO_ERROR_CANCELLED, "Authentication cancelled" | "Authentication is unavailable")` (authentication_manager.py:239-241,287-293). Polkit's opaque callback/user_data must stay in C (test_native_callback.c verifies original user_data survives success and cancel). A Rust port can implement the PolkitAgentListener subclass directly (glib subclassing) — the .so is then unnecessary.

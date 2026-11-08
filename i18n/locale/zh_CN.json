@@ -673,7 +673,7 @@
   "Disks": "磁盘",
   "Dismiss": "关闭",
   "Display": "显示器",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "无法加载显示设置。请确认 way-displays 正在运行，然后重试。",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "无法加载显示设置。请确认 tessel-displays 正在运行，然后重试。",
   "Displays": "显示器",
   "Displays are unavailable": "显示器不可用",
   "Do Not Disturb duration": "免打扰持续时间",

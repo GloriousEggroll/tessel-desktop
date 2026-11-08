@@ -1,4 +1,4 @@
-//! Port of test_wayshell_prompt.py `PromptUITests`. Runs only inside the
+//! Port of test_tessel_shell_prompt.py `PromptUITests`. Runs only inside the
 //! private nested headless labwc (tests/run_headless.sh); under a plain
 //! `cargo test` it skips itself.
 #![allow(deprecated)]
@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 use tessel_prompt::{arguments, PromptWindow, ACCEPT, DECLINE, DISMISS, TEXT_LIMIT};
-use tessel_theme::WayshellTheme;
+use tessel_theme::TesselShellTheme;
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -290,7 +290,7 @@ fn test_prompt_follows_live_shell_palette() {
         "background": [25, 20, 30], "foreground": [225, 230, 235], "accent": [190, 50, 90]}]});
     std::fs::write(&path, data.to_string()).unwrap();
     let window = case.window(&["--message", "Themed fixture"], None);
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     for accent in [[190, 50, 90], [40, 120, 80]] {
         data["monitors"][0]["accent"] = json!(accent);
         std::fs::write(&path, data.to_string()).unwrap();
@@ -307,7 +307,7 @@ fn test_prompt_follows_live_shell_palette() {
 }
 
 fn main() {
-    if std::env::var("WAYSHELL_UI_ISOLATED").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_SHELL_UI_ISOLATED").as_deref() != Ok("1") {
         println!("ui_headless: skipped (run tests/run_headless.sh for the private compositor)");
         return;
     }

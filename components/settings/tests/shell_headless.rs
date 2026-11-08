@@ -345,7 +345,7 @@ fn async_page_errors_use_the_shared_error_state() {
     let f = fixture(false);
     f.window.show_section("displays").unwrap();
     settle(0.05);
-    let page = f.window.show_page_error("displays", "way-displays is not running.", Some("Displays are unavailable"),
+    let page = f.window.show_page_error("displays", "tessel-displays is not running.", Some("Displays are unavailable"),
                                         "dialog-warning-symbolic").unwrap();
     assert!(Rc::ptr_eq(&f.window.page("displays").unwrap(), &page));
     let state = page.error_state.borrow().clone().unwrap();

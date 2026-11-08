@@ -11,7 +11,7 @@ rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/tmp" "$R/bin" "$R/xdg/config" "$R/xdg
 printf '<labwc_config/>\n' > "$R/cfg/rc.xml"
 # No standard service dirs: the private bus must never D-Bus-activate a real portal, gvfs or other session service.
 sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_session_servicedirs/d" /usr/share/dbus-1/session.conf > "$R/d.conf"
-for tool in way-displays wlr-randr kscreen-doctor xrandr hdr-pattern; do
+for tool in tessel-displays wlr-randr kscreen-doctor xrandr hdr-pattern; do
   printf '#!/bin/sh\necho "%s $*" >> %s/calls.log\nexit 1\n' "$tool" "$R" > "$R/bin/$tool"; chmod +x "$R/bin/$tool"
 done
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)

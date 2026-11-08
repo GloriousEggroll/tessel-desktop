@@ -6,7 +6,7 @@
 //! preview / pin / drop cases of test_dock_ui.py and test_utility_ui.py.
 //!
 //! Runs only inside the private headless labwc of tests/run_f1_headless.sh
-//! (WAYDOCK_F1_HEADLESS=1, private XDG_RUNTIME_DIR, private bus with no
+//! (TESSEL_DOCK_F1_HEADLESS=1, private XDG_RUNTIME_DIR, private bus with no
 //! service directories); anywhere else it skips without connecting. Every
 //! host, backend, launch and audio source is fake.
 
@@ -1193,7 +1193,7 @@ fn native_preview_close_targets_one_window(monitor: &gdk::Monitor) -> Result<(),
 
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
-    if std::env::var("WAYDOCK_F1_HEADLESS").as_deref() != Ok("1") || runtime == "/run/user/1000" || std::env::var("WAYLAND_DISPLAY").is_err() {
+    if std::env::var("TESSEL_DOCK_F1_HEADLESS").as_deref() != Ok("1") || runtime == "/run/user/1000" || std::env::var("WAYLAND_DISPLAY").is_err() {
         println!("f1_ui_headless: skipped (run tests/run_f1_headless.sh)");
         return;
     }

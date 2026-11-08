@@ -673,7 +673,7 @@
   "Disks": "ディスク",
   "Dismiss": "閉じる",
   "Display": "ディスプレイ",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "ディスプレイ設定を読み込めませんでした。way-displays が実行中であることを確認してから、もう一度お試しください。",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "ディスプレイ設定を読み込めませんでした。tessel-displays が実行中であることを確認してから、もう一度お試しください。",
   "Displays": "ディスプレイ",
   "Displays are unavailable": "ディスプレイを利用できません",
   "Do Not Disturb duration": "おやすみモードの継続時間",

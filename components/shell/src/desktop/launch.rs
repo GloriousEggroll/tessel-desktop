@@ -24,7 +24,7 @@ pub const HELPER_MODES: [&str; 3] = ["--launch-desktop", "--launch-file", "--ope
 pub const SERVICE_ENV: [&str; 19] = [
     "INVOCATION_ID", "JOURNAL_STREAM", "NOTIFY_SOCKET", "WATCHDOG_PID", "WATCHDOG_USEC", "WATCHDOG_DEVICE", "LISTEN_PID",
     "LISTEN_FDS", "LISTEN_FDNAMES", "SYSTEMD_EXEC_PID", "MAINPID", "MANAGERPID", "PIDFILE", "EXIT_CODE", "EXIT_STATUS",
-    "SERVICE_RESULT", "GIO_LAUNCHED_DESKTOP_FILE", "GIO_LAUNCHED_DESKTOP_FILE_PID", "WAYDOCK_LAUNCH_STARTUP_ID",
+    "SERVICE_RESULT", "GIO_LAUNCHED_DESKTOP_FILE", "GIO_LAUNCHED_DESKTOP_FILE_PID", "TESSEL_DOCK_LAUNCH_STARTUP_ID",
 ];
 
 pub const SYSTEMD_RUN: &str = "/usr/bin/systemd-run";
@@ -272,7 +272,7 @@ pub fn launch_environment(context: Option<&gio::AppLaunchContext>, info: Option<
         }
     }
     if let Some(token) = &token {
-        environment.insert("WAYDOCK_LAUNCH_STARTUP_ID".into(), token.clone());
+        environment.insert("TESSEL_DOCK_LAUNCH_STARTUP_ID".into(), token.clone());
     }
     (environment, token)
 }
@@ -342,7 +342,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for TransferredLaunchContext {
-        const NAME: &'static str = "WayshellTransferredLaunchContext";
+        const NAME: &'static str = "TesselShellTransferredLaunchContext";
         type Type = super::TransferredLaunchContext;
         type ParentType = gio::AppLaunchContext;
     }
@@ -399,11 +399,11 @@ impl TransferredLaunchContext {
 
 /// `_run_launch_helper(mode, target)`; Err is the message Python prints.
 pub fn run_launch_helper(mode: &str, target: &str) -> Result<(), String> {
-    let token = std::env::var("WAYDOCK_LAUNCH_STARTUP_ID").ok();
+    let token = std::env::var("TESSEL_DOCK_LAUNCH_STARTUP_ID").ok();
     #[allow(unused_unsafe)]
     // SAFETY: the helper is single-threaded at this point.
     unsafe {
-        std::env::remove_var("WAYDOCK_LAUNCH_STARTUP_ID")
+        std::env::remove_var("TESSEL_DOCK_LAUNCH_STARTUP_ID")
     };
     let context = TransferredLaunchContext::new(token);
     let main_loop = glib::MainLoop::new(Some(&glib::MainContext::ref_thread_default()), false);

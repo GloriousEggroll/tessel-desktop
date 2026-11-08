@@ -1,5 +1,5 @@
 //! `BrightnessControls`: immediate monitor controls shared with the brightness
-//! popup; deliberately independent of the way-displays YAML
+//! popup; deliberately independent of the tessel-displays YAML
 //! (tessel-displays:761-997).
 
 use crate::compat::brightness_client::BrightnessModel;

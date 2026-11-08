@@ -491,7 +491,7 @@
   "Disks": "Диски",
   "Dismiss": "Закрити",
   "Display": "Екран",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Не вдалося завантажити параметри дисплея. Переконайтеся, що way-displays запущено, і спробуйте ще раз.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Не вдалося завантажити параметри дисплея. Переконайтеся, що tessel-displays запущено, і спробуйте ще раз.",
   "Displays": "Екрани",
   "Displays are unavailable": "Дисплеї недоступні",
   "Do Not Disturb duration": "Тривалість режиму «Не турбувати»",

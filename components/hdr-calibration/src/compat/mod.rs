@@ -1,6 +1,6 @@
-//! Helpers missing from tessel-core / way-displays (upstream candidates):
+//! Helpers missing from tessel-core / tessel-displays (upstream candidates):
 //! `etree` (ElementTree parse → indent → tostring round trip), `lock`
-//! (way-displays' private `color_config::locked`), `resolve` (non-strict
+//! (tessel-displays' private `color_config::locked`), `resolve` (non-strict
 //! `Path.resolve()`), `iso_utc_now`, `time_ns`.
 pub mod etree;
 

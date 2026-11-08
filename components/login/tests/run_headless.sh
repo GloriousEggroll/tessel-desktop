@@ -18,13 +18,13 @@ sed -e "s|<listen>.*</listen>|<listen>unix:tmpdir=$R</listen>|" -e "/<standard_s
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 BIN=$(cd "$ROOT" && env -u TMPDIR cargo test -p tessel-login --test ui_headless --no-run --message-format=json 2>/dev/null \
       | jq -r 'select(.reason == "compiler-artifact" and .target.name == "ui_headless" and .executable != null) | .executable')
-WAYKEYS=$(ls -t "$ROOT"/target/debug/build/tessel-keyboard-*/out/tessel-keyboard-input | head -1)
+TESSEL_KEYBOARD=$(ls -t "$ROOT"/target/debug/build/tessel-keyboard-*/out/tessel-keyboard-input | head -1)
 rm -f "$R/result"
 cat > "$R/run.sh" <<RUN
 #!/bin/sh
 case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit; exit 1;; esac
 LANG=C.UTF-8 HOME="$R/home" DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" LOGIN_UI_ISOLATED_TEST=1 GREETD_SOCK="$R/never-greetd.sock" \
-WAYKEYS_INPUT="$WAYKEYS" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory \
+TESSEL_KEYBOARD_INPUT="$TESSEL_KEYBOARD" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory \
 GTK_USE_PORTAL=0 GDK_DEBUG=no-portals GIO_USE_VFS=local TMPDIR="$R/tmp" XDG_CONFIG_HOME="$R/xdg/config" \
 XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" XDG_STATE_HOME="$R/xdg/state" XDG_CONFIG_DIRS="$R/none" \
 XDG_DATA_DIRS="$R/xdg/data:/usr/share" timeout 600 "$BIN" $* > "$R/log" 2>&1; echo \$? > "$R/result"

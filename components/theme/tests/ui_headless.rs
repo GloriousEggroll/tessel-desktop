@@ -1,4 +1,4 @@
-//! Port of test_wayshell_theme.py `ThemeUITests`. Runs only inside the private
+//! Port of test_tessel_shell_theme.py `ThemeUITests`. Runs only inside the private
 //! nested headless labwc (tests/run_headless.sh, two outputs); under a plain
 //! `cargo test` it skips itself.
 #![allow(deprecated)]
@@ -8,7 +8,7 @@ use gtk::{cairo, gdk, gio, glib};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
-use tessel_theme::{palette_css, set_window_monitor, Colors, CssOptions, WayshellTheme};
+use tessel_theme::{palette_css, set_window_monitor, Colors, CssOptions, TesselShellTheme};
 
 fn snapshot() -> Value {
     json!({
@@ -148,7 +148,7 @@ fn test_live_wallpaper_accent_colors_controls_and_chooses_readable_text() {
     popup.set_parent(&button);
     popup.popup();
     settle(0.06);
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     let filled = progress.first_child().unwrap().first_child().unwrap();
     assert_eq!(filled.css_name(), "progress");
     for (accent, foreground) in [(json!([220, 80, 95]), (16, 17, 20)), (json!([30, 100, 45]), (255, 255, 255))] {
@@ -185,7 +185,7 @@ fn test_live_updates_scope_desktop_and_remove_destroyed_windows() {
     settle(0.06);
     let untouched_color = color(&desktop_label);
     let untouched_alpha = alpha(&desktop);
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     settle(0.06);
     assert_eq!(color(&desktop_label), untouched_color);
     assert_eq!(color(&settings_label), rgb(&snapshot()["monitors"][0]["foreground"]));
@@ -266,7 +266,7 @@ fn test_square_setting_flattens_controls_and_restores_local_styles() {
     for widget in widgets.iter().chain(&round_widgets) {
         widget.add_css_class("corner-probe");
     }
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     for enabled in [true, false, true, false] {
         data["apps_rounded_corners"] = json!(enabled);
         write(&path, &data);
@@ -353,7 +353,7 @@ fn test_desktop_captions_selection_and_menu_controls_follow_each_monitor() {
         popovers.push(popup);
         fixtures.push((desktop, captions, selection, row, check, entry, desktop_alpha));
     }
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     for update in [false, true] {
         if update {
             data["monitors"][0]["accent"] = json!([40, 120, 180]);
@@ -413,7 +413,7 @@ fn test_frosted_updates_keep_alpha_independent_and_foreground_opaque() {
     window.set_child(Some(&label));
     window.present();
     settle(0.06);
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     for strength in [0, 25, 50, 100] {
         for (enabled, amount, expected) in [(true, 0, 255), (true, 5, 242), (true, 50, 128), (true, 100, 0), (false, 100, 255)] {
             data["apps_transparency_enabled"] = json!(enabled);
@@ -471,7 +471,7 @@ fn test_marker_class_change_requeues_and_switcher_blur_target() {
     let window = gtk::Window::new();
     window.present();
     settle(0.06);
-    let theme = WayshellTheme::new(Some(path.clone()));
+    let theme = TesselShellTheme::new(Some(path.clone()));
     settle(0.06);
     let (class, _) = theme.window_provider(&window).unwrap();
     assert!(class.starts_with("tessel-shell-palette-") && window.has_css_class(&class));
@@ -489,7 +489,7 @@ fn test_marker_class_change_requeues_and_switcher_blur_target() {
 }
 
 fn main() {
-    if std::env::var("WAYSHELL_UI_ISOLATED").as_deref() != Ok("1") {
+    if std::env::var("TESSEL_SHELL_UI_ISOLATED").as_deref() != Ok("1") {
         println!("ui_headless: skipped (run tests/run_headless.sh for the private compositor)");
         return;
     }

@@ -39,8 +39,8 @@ case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit;
 OUTER=\$WAYLAND_DISPLAY
 [ -n "\$DISPLAY" ] || { echo "no private Xwayland DISPLAY"; labwc --exit; exit 1; }
 export GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo GSETTINGS_BACKEND=memory GTK_USE_PORTAL=0
-export XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" WAYDOCK_TEST_ISOLATED=1
-export WAYSHELL_TEST_CLI="$CLICMD" DBUS_SYSTEM_BUS_ADDRESS=unix:path=/no-tessel-shell-test-system-bus
+export XDG_CONFIG_HOME="$R/xdg/config" XDG_CACHE_HOME="$R/xdg/cache" XDG_DATA_HOME="$R/xdg/data" TESSEL_DOCK_TEST_ISOLATED=1
+export TESSEL_SHELL_TEST_CLI="$CLICMD" DBUS_SYSTEM_BUS_ADDRESS=unix:path=/no-tessel-shell-test-system-bus
 ls "\$XDG_RUNTIME_DIR" > "$R/before"
 WLR_BACKENDS=x11 WLR_X11_OUTPUTS=1 labwc -C "$R/inner" > "$R/inner.log" 2>&1 &
 INNER=\$!

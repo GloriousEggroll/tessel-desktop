@@ -406,12 +406,12 @@ fn environment_and_startup_token_are_forwarded_without_dock_service_metadata() {
     let context = Context::default();
     let (environment, token) = launch_environment(Some(&context), Some(&startup_info(true)), &[], &[]);
     assert_eq!(token.as_deref(), Some("activation-token"));
-    assert_eq!(environment.get("WAYDOCK_LAUNCH_STARTUP_ID").map(String::as_str), Some("activation-token"));
+    assert_eq!(environment.get("TESSEL_DOCK_LAUNCH_STARTUP_ID").map(String::as_str), Some("activation-token"));
     assert_eq!(environment.get("WAYLAND_DISPLAY").map(String::as_str), Some("wayland-test"));
     assert_eq!(environment.get("DISPLAY").map(String::as_str), Some(":2"));
     assert_eq!(environment.get("CUSTOM").map(String::as_str), Some("a=b $value"));
     assert_eq!(environment.get("DBUS_SESSION_BUS_ADDRESS").map(String::as_str), Some("unix:path=/test/session"));
-    assert!(!environment.keys().any(|k| SERVICE_ENV.contains(&k) && k != "WAYDOCK_LAUNCH_STARTUP_ID"));
+    assert!(!environment.keys().any(|k| SERVICE_ENV.contains(&k) && k != "TESSEL_DOCK_LAUNCH_STARTUP_ID"));
     assert!(!environment.contains_key("NOEQUALS"));
     assert_eq!(*context.requests.borrow(), 1);
     // On Wayland the X11 DISPLAY is kept, never replaced by the socket.
@@ -447,7 +447,7 @@ fn async_success_returns_after_service_start_and_keeps_context() {
     let command = spawner.last_argv();
     assert_eq!(command[command.len() - 2..], s(&["--launch-desktop", "app.desktop"]));
     let environment = spawner.last_environment().unwrap();
-    assert!(environment.contains(&("WAYDOCK_LAUNCH_STARTUP_ID".into(), "activation-token".into())));
+    assert!(environment.contains(&("TESSEL_DOCK_LAUNCH_STARTUP_ID".into(), "activation-token".into())));
     assert!(!environment.iter().any(|(k, _)| k == "INVOCATION_ID"));
     for (key, _) in &environment {
         assert!(command.contains(&format!("--setenv={key}")));
@@ -553,12 +553,12 @@ fn helper_missing_desktop_or_invalid_mode_fails_without_launch() {
 #[test]
 #[ignore]
 fn helper_child_process() {
-    if std::env::var_os("WAYDOCK_CORE_HELPER_CHILD").is_none() {
+    if std::env::var_os("TESSEL_DOCK_CORE_HELPER_CHILD").is_none() {
         return;
     }
-    let target = std::env::var("WAYDOCK_CORE_HELPER_TARGET").unwrap();
+    let target = std::env::var("TESSEL_DOCK_CORE_HELPER_TARGET").unwrap();
     let status = run_launch_helper("--launch-file", &target);
-    assert!(std::env::var_os("WAYDOCK_LAUNCH_STARTUP_ID").is_none());
+    assert!(std::env::var_os("TESSEL_DOCK_LAUNCH_STARTUP_ID").is_none());
     std::process::exit(status);
 }
 
@@ -567,16 +567,16 @@ fn helper_launches_synthetic_desktop_file_with_token() {
     let dir = TempDir::new();
     let capture = dir.join("captured.txt");
     let script = dir.join("record.sh");
-    std::fs::write(&script, format!("#!/bin/sh\nprintf '%s|%s' \"$DESKTOP_STARTUP_ID\" \"$WAYDOCK_LAUNCH_STARTUP_ID\" > '{}'\n", capture.display())).unwrap();
+    std::fs::write(&script, format!("#!/bin/sh\nprintf '%s|%s' \"$DESKTOP_STARTUP_ID\" \"$TESSEL_DOCK_LAUNCH_STARTUP_ID\" > '{}'\n", capture.display())).unwrap();
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
     let desktop = dir.join("synthetic.desktop");
     std::fs::write(&desktop, format!("[Desktop Entry]\nType=Application\nName=Synthetic\nExec={}\nStartupNotify=true\nDBusActivatable=false\n", script.display())).unwrap();
     let output = std::process::Command::new(std::env::current_exe().unwrap())
         .args(["core::app_catalog_tests::helper_child_process", "--exact", "--ignored", "--nocapture", "--test-threads=1"])
-        .env("WAYDOCK_CORE_HELPER_CHILD", "1")
-        .env("WAYDOCK_CORE_HELPER_TARGET", &desktop)
-        .env("WAYDOCK_LAUNCH_STARTUP_ID", "synthetic-startup-token")
+        .env("TESSEL_DOCK_CORE_HELPER_CHILD", "1")
+        .env("TESSEL_DOCK_CORE_HELPER_TARGET", &desktop)
+        .env("TESSEL_DOCK_LAUNCH_STARTUP_ID", "synthetic-startup-token")
         .env("DBUS_SESSION_BUS_ADDRESS", format!("unix:path={}", dir.join("no-bus").display()))
         .env_remove("WAYLAND_DISPLAY")
         .env_remove("DISPLAY")

@@ -501,7 +501,7 @@ impl ScalingRow {
         let shown = self.0.pending.get().or(self.0.submitted.get()).or(state.value);
         self.0.syncing.set(true);
         // Preserve an existing custom scale without snapping it on refresh.
-        // New adjustments still use the same 100–250% stops as way-displays.
+        // New adjustments still use the same 100–250% stops as tessel-displays.
         self.0.scale.set_range(shown.map_or(1.0, |s| s.min(1.0)), shown.map_or(2.5, |s| s.max(2.5)));
         if let Some(shown) = shown {
             self.0.scale.set_value(shown);

@@ -9,7 +9,7 @@
 //!   `publish(is_dark, transparency, &monitors, &AppOptions) -> bool`, `error`.
 //!   Entries come from [`palette_state::monitor_entry`].
 //! - [`gtk_color_scheme::GtkColorScheme`] — `new(None)` (= `$XDG_CONFIG_HOME`),
-//!   `select_palette(&[Value]) -> Option<&Value>` (way-displays primary output
+//!   `select_palette(&[Value]) -> Option<&Value>` (tessel-displays primary output
 //!   block of `labwc/environment`), `publish(enabled, is_dark, Option<&Value>,
 //!   colored) -> bool` (`publish(false, ..)` = disable), `error`.
 //! - [`window_buttons::WindowButtons`] — `new(WindowButtonsOptions)`,

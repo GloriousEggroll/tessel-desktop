@@ -673,7 +673,7 @@
   "Disks": "磁碟",
   "Dismiss": "關閉",
   "Display": "顯示器",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "無法載入顯示設定。請確認 way-displays 正在執行，然後再試一次。",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "無法載入顯示設定。請確認 tessel-displays 正在執行，然後再試一次。",
   "Displays": "顯示器",
   "Displays are unavailable": "顯示器無法使用",
   "Do Not Disturb duration": "勿擾模式持續時間",

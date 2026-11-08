@@ -22,7 +22,7 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for FileTile {
-        const NAME: &'static str = "WayfilesFileTile";
+        const NAME: &'static str = "TesselFilesFileTile";
         type Type = super::FileTile;
         type ParentType = gtk::Box;
     }

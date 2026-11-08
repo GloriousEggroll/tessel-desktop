@@ -491,7 +491,7 @@
   "Disks": "Disk",
   "Dismiss": "Tutup",
   "Display": "Layar",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Pengaturan layar tidak dapat dimuat. Pastikan way-displays berjalan, lalu coba lagi.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Pengaturan layar tidak dapat dimuat. Pastikan tessel-displays berjalan, lalu coba lagi.",
   "Displays": "Layar",
   "Displays are unavailable": "Layar tidak tersedia",
   "Do Not Disturb duration": "Durasi Jangan Ganggu",

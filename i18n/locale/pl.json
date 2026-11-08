@@ -491,7 +491,7 @@
   "Disks": "Dyski",
   "Dismiss": "Zamknij",
   "Display": "Ekran",
-  "Display settings could not be loaded. Make sure way-displays is running, then try again.": "Nie można wczytać ustawień ekranu. Upewnij się, że way-displays działa, i spróbuj ponownie.",
+  "Display settings could not be loaded. Make sure tessel-displays is running, then try again.": "Nie można wczytać ustawień ekranu. Upewnij się, że tessel-displays działa, i spróbuj ponownie.",
   "Displays": "Ekrany",
   "Displays are unavailable": "Ekrany są niedostępne",
   "Do Not Disturb duration": "Czas trwania trybu Nie przeszkadzać",

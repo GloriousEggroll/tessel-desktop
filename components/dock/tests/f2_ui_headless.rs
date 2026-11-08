@@ -5,7 +5,7 @@
 //! test_default_apps_ui (indicator parts), test_tray_coordinates (UI part) and
 //! the indicator/clock/workspace parts of test_bar_activities_ui.
 //!
-//! Runs only inside tests/run_f2_headless.sh (WAYDOCK_F2_HEADLESS=1 and a
+//! Runs only inside tests/run_f2_headless.sh (TESSEL_DOCK_F2_HEADLESS=1 and a
 //! private XDG_RUNTIME_DIR); anywhere else it skips without connecting.
 
 
@@ -1917,7 +1917,7 @@ fn dbusmenu_popover_from_right_click_and_item_click() -> TestResult {
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_default();
-    if std::env::var("WAYDOCK_F2_HEADLESS").as_deref() != Ok("1") || runtime == "/run/user/1000" || display.is_empty() {
+    if std::env::var("TESSEL_DOCK_F2_HEADLESS").as_deref() != Ok("1") || runtime == "/run/user/1000" || display.is_empty() {
         println!("f2_ui_headless: skipped (run tests/run_f2_headless.sh)");
         return;
     }
