@@ -59,7 +59,6 @@ Requires:       nm-connection-editor
 Requires:       pipewire
 Requires:       wireplumber
 Requires:       polkit
-Requires:       papirus-icon-theme
 
 %description
 Installs every part of the Tessel desktop and the programs it runs on: the labwc

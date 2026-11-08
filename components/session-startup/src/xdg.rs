@@ -157,9 +157,11 @@ pub fn plan(home: &Path, config_dirs: Option<Vec<PathBuf>>) -> Result<Vec<FileEn
     let shutdown = config.join("labwc/shutdown");
     let environment = config.join("labwc/environment");
     let mut changes = vec![(startup, text.into_bytes(), 0o755)];
-    let shutdown_text = block(&fsops::read_text(&shutdown)?, STOP_BEGIN, STOP_END, STOP_BLOCK, None)?;
+    // A new user has neither of these yet.
+    let read_if_exists = |path: &Path| if path.exists() { fsops::read_text(path) } else { Ok(String::new()) };
+    let shutdown_text = block(&read_if_exists(&shutdown)?, STOP_BEGIN, STOP_END, STOP_BLOCK, None)?;
     changes.push((shutdown, shutdown_text.into_bytes(), 0o755));
-    let environment_text = desktop_identity(&fsops::read_text(&environment)?);
+    let environment_text = desktop_identity(&read_if_exists(&environment)?);
     changes.push((environment, environment_text.into_bytes(), 0o644));
     changes.push((config.join("systemd/user").join(TARGET), TARGET_UNIT.as_bytes().to_vec(), 0o644));
     let config_dirs = config_dirs.unwrap_or_else(|| {
@@ -273,6 +275,19 @@ mod tests {
         for text in [ENV_BEGIN.to_owned(), ENV_END.to_owned(), format!("{ENV_END}\n{ENV_BEGIN}")] {
             assert!(block(&text, ENV_BEGIN, ENV_END, ENV_BLOCK, None).is_err(), "{text}");
         }
+    }
+
+    #[test]
+    fn a_new_user_without_shutdown_or_environment_files_is_planned() {
+        let home = std::env::temp_dir().join(format!("tessel-xdg-new-user-{}", std::process::id()));
+        std::fs::create_dir_all(home.join(".config/labwc")).unwrap();
+        std::fs::write(home.join(".config/labwc/autostart"), "# Keep systemd's graphical session active for desktop portals.\n").unwrap();
+        let planned = plan(&home, Some(Vec::new()));
+        std::fs::remove_dir_all(&home).unwrap();
+        let shutdown = home.join(".config/labwc/shutdown");
+        let planned = planned.unwrap();
+        let (_, text, _) = planned.iter().find(|(path, _, _)| *path == shutdown).unwrap();
+        assert!(String::from_utf8_lossy(text).contains(STOP_BEGIN));
     }
 
     #[test]

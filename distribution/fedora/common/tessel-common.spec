@@ -13,7 +13,8 @@ BuildArch:      noarch
 
 Requires:       glib2
 Requires:       hicolor-icon-theme
-Requires:       papirus-icon-theme
+Requires:       papirus-icon-theme-dark
+Requires:       papirus-icon-theme-light
 Requires:       wlrctl
 
 %description
