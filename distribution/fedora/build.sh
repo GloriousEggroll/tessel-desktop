@@ -49,8 +49,11 @@ else
     folders+=(tessel-meta)
 fi
 
-"${mock[@]}" --clean
-"${mock[@]}" --init
+# A partial build keeps the chroot and its compiled crates; a full one starts clean.
+if [ "$#" -eq 0 ] || [ ! -d "/var/lib/mock/nobara-44-x86_64-tessel/root" ]; then
+    "${mock[@]}" --clean
+    "${mock[@]}" --init
+fi
 for folder in "${folders[@]}"; do
     spec=$(echo "$here/$folder"/*.spec)
     name=$(basename "$spec" .spec)

@@ -29,6 +29,7 @@ BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 
 Requires:       tessel-common = %{version}-%{release}
+Requires:       gtk4-layer-shell
 
 %description
 Tessel calculator. Part of the Tessel desktop.

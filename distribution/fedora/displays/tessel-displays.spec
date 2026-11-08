@@ -32,6 +32,7 @@ Requires:       tessel-common = %{version}-%{release}
 Requires:       way-displays
 Requires:       wlr-randr
 Requires:       libnotify
+Requires:       lcms2
 Recommends:     tessel-hdr-calibration
 
 %description

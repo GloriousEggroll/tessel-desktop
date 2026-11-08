@@ -30,6 +30,7 @@ BuildRequires:  rust
 
 Requires:       tessel-common = %{version}-%{release}
 Requires:       labwc >= 0.20.2-17
+Requires:       lcms2
 
 %description
 Tessel HDR calibration. Part of the Tessel desktop.

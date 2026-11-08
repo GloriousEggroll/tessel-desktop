@@ -36,6 +36,7 @@ Requires:       ptyxis
 Requires:       wl-clipboard
 Requires:       /usr/bin/ffprobe
 Requires:       tessel-wayland-helpers
+Requires:       wireplumber-libs
 Recommends:     mpv
 Recommends:     mpvpaper
 Recommends:     tessel-files

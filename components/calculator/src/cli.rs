@@ -129,10 +129,10 @@ pub fn arguments(argv: &[String]) -> Result<Options, Exit> {
 /// `--check`: `{"ready", "application_id", "gtk4", "layer_shell", "calculator", "error"}`.
 pub fn check() -> String {
     let (mut gtk4, mut layer_shell, mut calculator, mut message) = (false, false, false, String::new());
-    let handle = unsafe { libc::dlopen(c"libgtk4-layer-shell.so".as_ptr(), libc::RTLD_NOW | libc::RTLD_GLOBAL) };
+    let handle = unsafe { libc::dlopen(c"libgtk4-layer-shell.so.0".as_ptr(), libc::RTLD_NOW | libc::RTLD_GLOBAL) };
     if handle.is_null() {
         let text = unsafe { libc::dlerror() };
-        message = if text.is_null() { "libgtk4-layer-shell.so: cannot open shared object file".into() }
+        message = if text.is_null() { "libgtk4-layer-shell.so.0: cannot open shared object file".into() }
                   else { unsafe { std::ffi::CStr::from_ptr(text) }.to_string_lossy().into_owned() };
     } else {
         layer_shell = true;

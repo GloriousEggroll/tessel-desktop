@@ -33,6 +33,11 @@ Requires:       tessel-common = %{version}-%{release}
 Requires:       pipewire
 Requires:       pipewire-utils
 Requires:       wireplumber
+Requires:       gstreamer1
+Requires:       gstreamer1-plugins-base
+Requires:       gstreamer1-plugins-good
+Requires:       pipewire-gstreamer
+Requires:       wireplumber-libs
 
 %description
 Tessel audio manager and PipeWire loopbacks. Part of the Tessel desktop.

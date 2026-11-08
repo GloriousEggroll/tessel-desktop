@@ -32,6 +32,7 @@ BuildRequires:  systemd-rpm-macros
 Requires:       tessel-common = %{version}-%{release}
 Requires:       NetworkManager
 Requires:       nm-connection-editor
+Requires:       NetworkManager-libnm
 Recommends:     wireguard-tools
 Recommends:     NetworkManager-openvpn
 

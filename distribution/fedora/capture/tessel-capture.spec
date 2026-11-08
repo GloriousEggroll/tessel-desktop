@@ -37,6 +37,8 @@ Requires:       /usr/bin/ffprobe
 Requires:       xdg-desktop-portal
 Requires:       xdg-desktop-portal-wlr >= 0.8.4-4
 Requires:       tessel-capture-picker
+Requires:       libxkbcommon
+Requires:       vulkan-loader
 Recommends:     pulseaudio-utils
 
 %description

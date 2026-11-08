@@ -36,6 +36,15 @@ BuildRequires:  rust
 
 Requires:       tessel-common = %{version}-%{release}
 Requires:       tessel-settings
+Requires:       NetworkManager-libnm
+Requires:       gstreamer1
+Requires:       gstreamer1-plugins-base
+Requires:       gstreamer1-plugins-good
+Requires:       lcms2
+Requires:       libxkbcommon
+Requires:       pipewire-gstreamer
+Requires:       vulkan-loader
+Requires:       wireplumber-libs
 
 %description
 Tessel welcome screen. Part of the Tessel desktop.

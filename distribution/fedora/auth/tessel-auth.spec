@@ -26,6 +26,7 @@ BuildRequires:  pkgconfig(gtk4-layer-shell-0)
 BuildRequires:  pkgconfig(gtk4-wayland)
 BuildRequires:  pkgconfig(pango)
 BuildRequires:  pkgconfig(wayland-client)
+BuildRequires:  polkit-libs
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 

@@ -39,6 +39,7 @@ Requires:       gvfs
 Requires:       tar
 Requires:       gzip
 Requires:       xdg-utils
+Requires:       poppler-glib
 Recommends:     tessel-archive
 Recommends:     zstd
 Recommends:     zip

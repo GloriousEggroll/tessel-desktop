@@ -43,6 +43,15 @@ Requires:       pipewire-utils
 Requires:       wlr-randr
 Requires:       wlsunset
 Requires:       systemd
+Requires:       NetworkManager-libnm
+Requires:       gstreamer1
+Requires:       gstreamer1-plugins-base
+Requires:       gstreamer1-plugins-good
+Requires:       lcms2
+Requires:       libxkbcommon
+Requires:       pipewire-gstreamer
+Requires:       vulkan-loader
+Requires:       wireplumber-libs
 Recommends:     flatpak
 Recommends:     brightnessctl
 Recommends:     playerctl

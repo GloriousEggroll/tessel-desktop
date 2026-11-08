@@ -29,6 +29,7 @@ BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 
 Requires:       tessel-common = %{version}-%{release}
+Requires:       lcms2
 
 %description
 Tessel picture viewer. Part of the Tessel desktop.
