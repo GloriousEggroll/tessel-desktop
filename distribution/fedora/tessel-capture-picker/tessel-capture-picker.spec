@@ -29,7 +29,7 @@ BuildRequires:  pkgconfig(pango)
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       xdg-desktop-portal-wlr >= 0.8.4-4
 Requires:       xdg-desktop-portal
 Requires:       tessel-wayland-helpers

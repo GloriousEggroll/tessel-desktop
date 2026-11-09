@@ -31,7 +31,7 @@ BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       libnotify
 Requires:       tessel-wayland-helpers
 

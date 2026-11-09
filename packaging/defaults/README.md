@@ -22,7 +22,7 @@ Paths below mirror the install root.
 | Login and lock PAM stacks | `etc/pam.d/tessel-login-auth`, `etc/pam.d/tessel-lock`, `etc/pam.d/tessel-lock-password`, `etc/pam.d/tessel-lock-fingerprint`, `etc/security/tessel-login-faillock.conf` | Lock and login share `tessel-login-auth`, which includes `system-auth` live, and one failed-attempt policy. |
 | Screen-share picker | `etc/xdg/xdg-desktop-portal-wlr/labwc`, `etc/xdg/xdg-desktop-portal-wlr/wlroots` | Points xdg-desktop-portal-wlr at the packaged `tessel-capture-picker`. A user's `~/.config/xdg-desktop-portal-wlr` wins. |
 | Secret Service portal | `usr/share/xdg-desktop-portal/portals/tessel-keyring.portal` | Serves `org.freedesktop.impl.portal.Secret` from tessel-keyring. |
-| First login keybindings | `usr/share/tessel/labwc/rc.xml` | Copied to `~/.config/labwc/rc.xml` when missing, so `tessel-configure-session` has a file to add the shortcuts to. |
+| New user labwc configuration | `labwc/rc.xml`, `labwc/menu.xml` | Built into `tessel-configure-session`, which writes them when a user has none, with `@BIN@` and `@SHELL_BIN@` set for the install type. Holds what the session does not manage: Alt+Tab, Super, screenshot keys, prompts, mouse bindings, workspaces and menus. Existing files are not replaced. |
 
 Session startup also repairs a missing icon theme at login (falls back to Papirus-Dark when the
 configured theme is not installed), so removing a theme package never leaves the desktop without icons.

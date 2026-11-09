@@ -34,7 +34,7 @@ BuildRequires:  pkgconfig(wayland-scanner)
 BuildRequires:  pkgconfig(xkbcommon)
 BuildRequires:  rust
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       tessel-settings
 Requires:       NetworkManager-libnm
 Requires:       gstreamer1

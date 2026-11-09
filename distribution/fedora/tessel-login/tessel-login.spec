@@ -34,7 +34,7 @@ BuildRequires:  pkgconfig(xkbcommon)
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       greetd
 Requires:       labwc >= 0.20.2-17
 Requires:       /usr/bin/dbus-run-session

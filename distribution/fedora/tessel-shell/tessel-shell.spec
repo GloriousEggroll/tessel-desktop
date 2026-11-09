@@ -30,7 +30,7 @@ BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       labwc >= 0.20.2-17
 Requires:       ptyxis
 Requires:       wl-clipboard

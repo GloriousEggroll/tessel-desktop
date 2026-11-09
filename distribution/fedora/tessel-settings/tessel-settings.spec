@@ -35,7 +35,7 @@ BuildRequires:  pkgconfig(xkbcommon)
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       glib2
 Requires:       libinput
 Requires:       pciutils

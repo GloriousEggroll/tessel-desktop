@@ -29,7 +29,7 @@ BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 
 %description
 Tessel Keep Awake idle inhibitor. Part of the Tessel desktop.

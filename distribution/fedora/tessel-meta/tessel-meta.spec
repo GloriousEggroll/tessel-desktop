@@ -1,51 +1,51 @@
 # Installs the complete Tessel desktop. It ships no files of its own.
 Name:           tessel-meta
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        The complete Tessel desktop
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
 BuildArch:      noarch
 
-Requires:       tessel-common = %{version}-%{release}
-Requires:       tessel-archive = %{version}-%{release}
-Requires:       tessel-audio = %{version}-%{release}
-Requires:       tessel-auth = %{version}-%{release}
-Requires:       tessel-battery = %{version}-%{release}
-Requires:       tessel-bluetooth = %{version}-%{release}
-Requires:       tessel-brightness = %{version}-%{release}
-Requires:       tessel-calculator = %{version}-%{release}
-Requires:       tessel-calendar = %{version}-%{release}
-Requires:       tessel-capture = %{version}-%{release}
-Requires:       tessel-capture-picker = %{version}-%{release}
-Requires:       tessel-clipboard = %{version}-%{release}
-Requires:       tessel-displays = %{version}-%{release}
-Requires:       tessel-dock = %{version}-%{release}
-Requires:       tessel-files = %{version}-%{release}
-Requires:       tessel-hdr-calibration = %{version}-%{release}
-Requires:       tessel-keep-awake = %{version}-%{release}
-Requires:       tessel-keyboard = %{version}-%{release}
-Requires:       tessel-keyring = %{version}-%{release}
-Requires:       tessel-language = %{version}-%{release}
-Requires:       tessel-lock = %{version}-%{release}
-Requires:       tessel-login = %{version}-%{release}
-Requires:       tessel-media = %{version}-%{release}
-Requires:       tessel-network = %{version}-%{release}
-Requires:       tessel-network-discovery = %{version}-%{release}
-Requires:       tessel-notifications = %{version}-%{release}
-Requires:       tessel-pictures = %{version}-%{release}
-Requires:       tessel-power = %{version}-%{release}
-Requires:       tessel-prompt = %{version}-%{release}
-Requires:       tessel-session = %{version}-%{release}
-Requires:       tessel-session-startup = %{version}-%{release}
-Requires:       tessel-settings = %{version}-%{release}
-Requires:       tessel-shell = %{version}-%{release}
-Requires:       tessel-system-monitor = %{version}-%{release}
-Requires:       tessel-text-editor = %{version}-%{release}
-Requires:       tessel-tiling = %{version}-%{release}
-Requires:       tessel-wayland-helpers = %{version}-%{release}
-Requires:       tessel-weather = %{version}-%{release}
-Requires:       tessel-welcome = %{version}-%{release}
+Requires:       tessel-common >= %{version}
+Requires:       tessel-archive >= %{version}
+Requires:       tessel-audio >= %{version}
+Requires:       tessel-auth >= %{version}
+Requires:       tessel-battery >= %{version}
+Requires:       tessel-bluetooth >= %{version}
+Requires:       tessel-brightness >= %{version}
+Requires:       tessel-calculator >= %{version}
+Requires:       tessel-calendar >= %{version}
+Requires:       tessel-capture >= %{version}
+Requires:       tessel-capture-picker >= %{version}
+Requires:       tessel-clipboard >= %{version}
+Requires:       tessel-displays >= %{version}
+Requires:       tessel-dock >= %{version}
+Requires:       tessel-files >= %{version}
+Requires:       tessel-hdr-calibration >= %{version}
+Requires:       tessel-keep-awake >= %{version}
+Requires:       tessel-keyboard >= %{version}
+Requires:       tessel-keyring >= %{version}
+Requires:       tessel-language >= %{version}
+Requires:       tessel-lock >= %{version}
+Requires:       tessel-login >= %{version}
+Requires:       tessel-media >= %{version}
+Requires:       tessel-network >= %{version}
+Requires:       tessel-network-discovery >= %{version}
+Requires:       tessel-notifications >= %{version}
+Requires:       tessel-pictures >= %{version}
+Requires:       tessel-power >= %{version}
+Requires:       tessel-prompt >= %{version}
+Requires:       tessel-session >= %{version}
+Requires:       tessel-session-startup >= %{version}-2
+Requires:       tessel-settings >= %{version}
+Requires:       tessel-shell >= %{version}
+Requires:       tessel-system-monitor >= %{version}
+Requires:       tessel-text-editor >= %{version}
+Requires:       tessel-tiling >= %{version}
+Requires:       tessel-wayland-helpers >= %{version}
+Requires:       tessel-weather >= %{version}
+Requires:       tessel-welcome >= %{version}
 
 Requires:       labwc >= 0.20.2-17
 Requires:       labwc-session
@@ -66,5 +66,8 @@ compositor, the Ptyxis terminal and the xdg-desktop-portal-wlr screen-share port
 %files
 
 %changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Allow Tessel packages to update one at a time
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

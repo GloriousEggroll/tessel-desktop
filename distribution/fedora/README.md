@@ -23,12 +23,19 @@ to its component's spec.**
 Every spec takes the same two sources, which `build.sh` makes: `tessel-<version>.tar.gz` (the
 source tree) and `tessel-<version>-vendor.tar.xz` (the Rust crates, so builds need no network).
 
+## Updating one package
+
+Packages require each other by version, not release, so a fix needs only the packages it changes.
+Raise `Release:` in those specs, build them with `build.sh <folder> ...` and submit those SRPMs. If a
+package needs another's fix, require that release explicitly, as `tessel-meta` does.
+Raise `Version:` in every spec together, because every package requires at least that version.
+
 ## What differs from `tools/install.py`
 
 - Programs are in `/usr/lib/tessel`, linked from `/usr/bin`. Specs set `TESSEL_PACKAGED=1` at build
   time, which points generated configuration at those paths (`tessel_core::paths::PACKAGED`).
 - The session entry runs `tessel-session-launch`, which sets up each user's labwc files once per
-  package version, then starts labwc. A user with a `~/.local` install is left alone.
+  package release, then starts labwc. A user with a `~/.local` install is left alone.
 - `tessel-login` is installed but not enabled:
   `systemctl enable --force tessel-login.service` switches the login screen at the next boot.
 - `tessel-keyring` conflicts with `gnome-keyring`: both own the `org.freedesktop.secrets` activation file.

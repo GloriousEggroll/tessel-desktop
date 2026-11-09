@@ -32,7 +32,7 @@ BuildRequires:  pkgconfig(xkbcommon)
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 
 %description
 Tessel on-screen keyboard. Part of the Tessel desktop.

@@ -32,7 +32,6 @@ install -d %{buildroot}%{tessel_libdir} %{buildroot}%{_datadir}/tessel/locale
 install -m644 i18n/locale/*.json %{buildroot}%{_datadir}/tessel/locale/
 install -Dm644 branding/tessel-logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/tessel.svg
 install -Dm644 branding/tessel-symbolic.svg %{buildroot}%{_datadir}/icons/hicolor/symbolic/apps/tessel-symbolic.svg
-install -Dm644 $D/usr/share/tessel/labwc/rc.xml %{buildroot}%{_datadir}/tessel/labwc/rc.xml
 install -Dm644 $D/usr/share/glib-2.0/schemas/90_tessel.gschema.override %{buildroot}%{_datadir}/glib-2.0/schemas/90_tessel.gschema.override
 install -Dm644 $D/usr/share/applications/labwc-mimeapps.list %{buildroot}%{_datadir}/applications/labwc-mimeapps.list
 install -Dm644 $D/etc/gtk-3.0/settings.ini %{buildroot}%{_sysconfdir}/gtk-3.0/settings.ini
@@ -47,7 +46,6 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %dir %{tessel_libdir}
 %dir %{_datadir}/tessel
 %{_datadir}/tessel/locale
-%{_datadir}/tessel/labwc
 %{_datadir}/icons/hicolor/scalable/apps/tessel.svg
 %{_datadir}/icons/hicolor/symbolic/apps/tessel-symbolic.svg
 %{_datadir}/glib-2.0/schemas/90_tessel.gschema.override

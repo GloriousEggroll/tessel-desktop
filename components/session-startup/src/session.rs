@@ -933,6 +933,31 @@ pub fn split_environment(current: &str, local: &str) -> (String, String) {
     (text, format!("{prefix}\n{}", personal.concat()))
 }
 
+/// Complete labwc files for a user who has none. An existing file is never
+/// replaced by these; it only gets the managed changes above.
+const DEFAULT_RC: &str = include_str!("../../../packaging/defaults/labwc/rc.xml");
+const DEFAULT_MENU: &str = include_str!("../../../packaging/defaults/labwc/menu.xml");
+
+/// Program paths for a default file: `(labwc expands "~", a shell expands "$HOME")`.
+const DEFAULT_PATHS: (&str, &str) = if tessel_core::paths::PACKAGED {
+    ("/usr/bin", "/usr/bin")
+} else {
+    ("~/.local/bin", "\"$HOME\"/.local/bin")
+};
+
+pub fn default_file(template: &str, (bin, shell_bin): (&str, &str)) -> String {
+    template.replace("@SHELL_BIN@", shell_bin).replace("@BIN@", bin)
+}
+
+/// The existing file, or the default for a user who has none. `None`: something
+/// else is at that path, which is left alone.
+fn labwc_file(path: &Path, template: &str) -> Result<Option<String>, Error> {
+    if path.is_file() {
+        return fsops::read_text(path).map(Some);
+    }
+    Ok((std::fs::symlink_metadata(path).is_err()).then(|| default_file(template, DEFAULT_PATHS)))
+}
+
 /// ([(path, bytes, mode)], notes) for every file this installer manages.
 pub fn plan(home: &Path) -> Result<(Vec<FileEntry>, Vec<String>), Error> {
     let labwc = home.join(".config/labwc");
@@ -940,14 +965,14 @@ pub fn plan(home: &Path) -> Result<(Vec<FileEntry>, Vec<String>), Error> {
     let mut notes = Vec::new();
 
     let rc = labwc.join("rc.xml");
-    if rc.is_file() {
-        let (text, skipped) = edit_rc(&fsops::read_text(&rc)?, home)?;
+    if let Some(current) = labwc_file(&rc, DEFAULT_RC)? {
+        let (text, skipped) = edit_rc(&current, home)?;
         files.push((rc.clone(), text.into_bytes(), fsops::mode_or(&rc, 0o644)?));
         notes.extend(skipped.iter().map(|key| format!("Kept your own binding for {key}; the suite shortcut for it is not installed.")));
     }
     let menu = labwc.join("menu.xml");
-    if menu.is_file() {
-        files.push((menu.clone(), edit_menu(&fsops::read_text(&menu)?, home)?.into_bytes(), fsops::mode_or(&menu, 0o644)?));
+    if let Some(current) = labwc_file(&menu, DEFAULT_MENU)? {
+        files.push((menu.clone(), edit_menu(&current, home)?.into_bytes(), fsops::mode_or(&menu, 0o644)?));
     }
     let read_if_exists = |path: &Path| -> Result<String, Error> {
         if path.exists() {
@@ -1115,4 +1140,78 @@ pub fn main(args: &[String], prog: &str, options: &Options) -> Result<i32, Error
     println!("Installed. No applications or services were started, stopped or restarted.");
     println!("Backup: {}", backup.display());
     Ok(0)
+}
+
+#[cfg(test)]
+mod new_user_tests {
+    use super::*;
+
+    fn home(name: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!("tessel-new-user-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&path);
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    fn file(files: &[FileEntry], name: &str) -> String {
+        let (_, data, _) = files.iter().find(|(path, _, _)| path.file_name().is_some_and(|n| n == name)).unwrap();
+        String::from_utf8(data.clone()).unwrap()
+    }
+
+    #[test]
+    fn a_new_user_gets_complete_labwc_files() {
+        let home = home("complete");
+        let (files, _) = plan(&home).unwrap();
+        let rc = file(&files, "rc.xml");
+        let menu = file(&files, "menu.xml");
+        std::fs::remove_dir_all(&home).unwrap();
+        for wanted in ["key=\"A-Tab\"", "tessel-shell-cli switch-window --reverse", "key=\"Super_L\" onRelease=\"yes\"", "tessel-dock --menu-hotkey",
+                       "key=\"Print\"", "tessel-capture --toggle-recording", "tessel-prompt --message-stdin", "tessel-prompt --error", "button=\"A-Left\"",
+                       "menu=\"right-click-menu\"", "<cornerRadius>12</cornerRadius>", "tessel-action terminal", "key=\"W-l\"", "<name>4</name>"] {
+            assert!(rc.contains(wanted), "{wanted} missing:\n{rc}");
+        }
+        for text in [&rc, &menu] {
+            assert!(!text.contains('@'), "an unfilled path:\n{text}");
+            xml::parse(text).unwrap();
+        }
+        assert!(menu.contains("id=\"client-menu\"") && menu.contains("id=\"right-click-menu\"") && menu.contains("tessel-dock --menu"));
+    }
+
+    #[test]
+    fn defaults_use_the_paths_of_the_install_type() {
+        let local = default_file(DEFAULT_RC, ("~/.local/bin", "\"$HOME\"/.local/bin"));
+        assert!(local.contains("command=\"~/.local/bin/tessel-dock --menu-hotkey\""));
+        assert!(local.contains("exec \"$HOME\"/.local/bin/tessel-prompt --message-stdin"));
+        let packaged = default_file(DEFAULT_RC, ("/usr/bin", "/usr/bin"));
+        assert!(packaged.contains("command=\"/usr/bin/tessel-dock --menu-hotkey\""));
+        assert!(packaged.contains("<command>/usr/bin/tessel-capture --capture screen</command>"));
+        assert!(!packaged.contains(".local") && !packaged.contains("$HOME"));
+    }
+
+    #[test]
+    fn setting_up_twice_changes_nothing() {
+        let home = home("twice");
+        let (files, _) = plan(&home).unwrap();
+        for (path, data, mode) in &files {
+            fsops::atomic_write(path, data, *mode).unwrap();
+        }
+        let (again, _) = plan(&home).unwrap();
+        let unchanged = |name: &str| file(&files, name) == file(&again, name);
+        let same = unchanged("rc.xml") && unchanged("menu.xml");
+        std::fs::remove_dir_all(&home).unwrap();
+        assert!(same);
+    }
+
+    #[test]
+    fn an_existing_config_keeps_its_own_choices() {
+        let home = home("existing");
+        let labwc = home.join(".config/labwc");
+        std::fs::create_dir_all(&labwc).unwrap();
+        std::fs::write(labwc.join("rc.xml"), "<labwc_config><keyboard><default/><keybind key=\"Print\"><action name=\"Execute\" command=\"my-shot\"/></keybind></keyboard></labwc_config>").unwrap();
+        let (files, _) = plan(&home).unwrap();
+        let rc = file(&files, "rc.xml");
+        std::fs::remove_dir_all(&home).unwrap();
+        assert!(rc.contains("my-shot") && rc.contains("key=\"W-l\""), "{rc}");
+        assert!(!rc.contains("tessel-capture") && !rc.contains("A-Tab") && !rc.contains("promptCommand"), "defaults must not be merged in:\n{rc}");
+    }
 }

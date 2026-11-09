@@ -54,8 +54,12 @@ impl Action {
 fn media_keys_use_playerctl() {
     let Some(t) = action() else { return };
     t.tool("playerctl");
-    t.run(&["next"], &[]);
-    assert_eq!(t.log(), "playerctl next\n");
+    // The player comes from the session bus: list one that is playing.
+    let gdbus = t.bin.join("gdbus");
+    fs::write(&gdbus, "#!/bin/sh\ncase \"$*\" in\n  *ListNames*) echo \"(['org.freedesktop.DBus', 'org.mpris.MediaPlayer2.spotify'],)\" ;;\n  *PlaybackStatus*) echo \"(<'Playing'>,)\" ;;\nesac\n").unwrap();
+    chmod(&gdbus, 0o755);
+    t.run(&["next"], &[("XDG_RUNTIME_DIR", t.home.to_str().unwrap())]);
+    assert_eq!(t.log(), "playerctl --player=spotify next\n");
 }
 
 #[test]

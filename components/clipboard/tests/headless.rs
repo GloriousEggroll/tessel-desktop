@@ -163,6 +163,10 @@ fn main() {
         replace::run(&args[2]);
         return;
     }
+    if args.len() < 3 {
+        println!("skipped: run components/clipboard/tests/run_headless.sh (private headless labwc)");
+        return;
+    }
     let (binary, scratch) = (PathBuf::from(&args[1]), PathBuf::from(&args[2]));
     std::fs::create_dir_all(&scratch).unwrap();
     let settings = scratch.join("clipboard.json");

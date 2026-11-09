@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <core>
+    <gap>0</gap>
+    <promptCommand>exec @SHELL_BIN@/tessel-prompt --message-stdin &lt;&lt;'TESSEL_PROMPT_END_7f3a9c1e5d2b4860'
+%m
+TESSEL_PROMPT_END_7f3a9c1e5d2b4860</promptCommand>
+    <errorCommand>sh -c 'exec @SHELL_BIN@/tessel-prompt --error'</errorCommand>
+  </core>
+  <desktops>
+    <names>
+      <name>1</name>
+      <name>2</name>
+      <name>3</name>
+      <name>4</name>
+    </names>
+  </desktops>
+  <keyboard>
+    <default />
+    <keybind key="A-Tab"><action name="Execute" command="@BIN@/tessel-shell-cli switch-window"/></keybind>
+    <keybind key="A-S-Tab"><action name="Execute" command="@BIN@/tessel-shell-cli switch-window --reverse"/></keybind>
+    <keybind key="Super_L" onRelease="yes"><action name="Execute" command="@BIN@/tessel-dock --menu-hotkey"/></keybind>
+    <keybind key="A-F9"><action name="Execute"><command>@BIN@/tessel-capture --toggle-recording</command></action></keybind>
+    <keybind key="Print"><action name="Execute"><command>@BIN@/tessel-capture --capture screen</command></action></keybind>
+    <keybind key="C-Print"><action name="Execute"><command>@BIN@/tessel-capture --capture area</command></action></keybind>
+    <keybind key="S-Print"><action name="Execute"><command>@BIN@/tessel-capture --capture window</command></action></keybind>
+    <keybind key="A-Print"><action name="Execute"><command>@BIN@/tessel-capture --capture workspace</command></action></keybind>
+  </keyboard>
+  <mouse>
+    <default />
+    <!-- Move any window, including fullscreen windows, with Alt+left-drag. -->
+    <context name="Frame">
+      <mousebind button="A-Left" action="Press">
+        <action name="Focus"/>
+        <action name="Raise"/>
+      </mousebind>
+      <mousebind button="A-Left" action="Drag">
+        <action name="Move"/>
+      </mousebind>
+    </context>
+    <!-- A desktop right click outside Tessel's desktop surface. -->
+    <context name="Root">
+      <mousebind button="Right" action="Press">
+        <action name="ShowMenu" menu="right-click-menu"/>
+      </mousebind>
+    </context>
+  </mouse>
+</labwc_config>

@@ -30,7 +30,7 @@ BuildRequires:  polkit-libs
 BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
-Requires:       tessel-common = %{version}-%{release}
+Requires:       tessel-common >= %{version}
 Requires:       polkit
 
 %description
