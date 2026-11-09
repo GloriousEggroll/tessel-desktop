@@ -4,7 +4,7 @@
 
 Name:           tessel-common
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel desktop: translations, logo and system defaults
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -56,5 +56,8 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %config(noreplace) %{_sysconfdir}/security/tessel-login-faillock.conf
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Translations for the display settings confirmation
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

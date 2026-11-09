@@ -6,7 +6,7 @@
 
 Name:           tessel-clipboard
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel clipboard: keeps copied content after its application closes
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -68,5 +68,8 @@ install -Dm644 packaging/defaults/usr/lib/systemd/user-preset/90-tessel.preset %
 %{_userpresetdir}/90-tessel.preset
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Require tessel-common by version, so it can update on its own
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

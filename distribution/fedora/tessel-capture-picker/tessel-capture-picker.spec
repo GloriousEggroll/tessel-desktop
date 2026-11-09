@@ -6,7 +6,7 @@
 
 Name:           tessel-capture-picker
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel screen-share picker
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -71,5 +71,8 @@ install -Dm644 packaging/defaults/etc/xdg/xdg-desktop-portal-wlr/wlroots %{build
 %config(noreplace) %{_sysconfdir}/xdg/xdg-desktop-portal-wlr/wlroots
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Require tessel-common by version, so it can update on its own
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package
