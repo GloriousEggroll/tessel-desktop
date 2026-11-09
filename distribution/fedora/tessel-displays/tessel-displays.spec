@@ -54,7 +54,7 @@ export TESSEL_PACKAGED=1
 export CARGO_TARGET_DIR=%{tessel_cargo_target_dir}
 export CARGO_HOME=%{_builddir}/cargo-home
 export RUSTFLAGS="-Clink-arg=-Wl,-z,relro -Clink-arg=-Wl,-z,now"
-cargo build --release --offline --locked -p way-displays
+cargo build --release --offline --locked -p tessel-displays
 
 %install
 export CARGO_TARGET_DIR=%{tessel_cargo_target_dir}
