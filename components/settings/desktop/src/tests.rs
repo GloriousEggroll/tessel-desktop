@@ -142,6 +142,17 @@ fn previous_layout_bytes_are_sorted_indented_and_ascii() {
 }
 
 #[test]
+fn shipped_presets_name_no_monitors() {
+    let (presets, problems) = load_presets();
+    assert!(problems.is_empty(), "{problems:?}");
+    assert_eq!(presets.len(), 4);
+    for preset in &presets {
+        assert_eq!(preset.dock["hot_corners"], json!({}), "{}", preset.name);
+        assert_eq!(preset.dock["monitor_overrides"], json!({}), "{}", preset.name);
+    }
+}
+
+#[test]
 fn shipped_win_preset_is_valid_and_excludes_wallpapers_and_pins() {
     let (presets, problems) = load_presets();
     assert!(problems.is_empty(), "{problems:?}");
