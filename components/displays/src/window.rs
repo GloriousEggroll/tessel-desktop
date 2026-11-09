@@ -16,6 +16,7 @@ use gtk::prelude::*;
 use serde_json::{json, Map, Value};
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
 use std::time::Duration;
@@ -42,6 +43,63 @@ pub struct Hooks {
     pub read_labwc_hdr_config: Rc<dyn Fn(&Path) -> HdrConfig>,
     pub write_labwc_hdr_overrides: Rc<dyn Fn(&Path, &BTreeMap<String, bool>) -> (bool, Option<String>)>,
     pub reconfigure_labwc: Rc<dyn Fn() -> (bool, Option<String>)>,
+    /// How long Apply waits for Keep Changes before reverting. 0 keeps at once.
+    pub confirm_seconds: u32,
+}
+
+/// Seconds a user has to keep new display settings. Anything else reverts them,
+/// including a screen too broken to show the question.
+pub const CONFIRM_SECONDS: u32 = 10;
+
+/// Everything Apply changed, to put back unless it is kept.
+#[derive(Clone)]
+struct Undo {
+    before: Value,
+    applied: Value,
+    enabled: Vec<(String, bool)>,
+    /// labwc's files as they were: path, content (`None`: did not exist), mode.
+    files: Vec<(PathBuf, Option<Vec<u8>>, u32)>,
+    reconfigure: bool,
+    primary: Option<String>,
+    hdr_managed: BTreeMap<String, bool>,
+    hdr_overrides: BTreeMap<String, bool>,
+}
+
+struct Trial {
+    undo: Undo,
+    dialog: gtk::Window,
+    countdown: gtk::Label,
+    seconds_left: Cell<u32>,
+    timer: Cell<Option<glib::SourceId>>,
+    root: gtk::Window,
+    root_close: Cell<Option<glib::SignalHandlerId>>,
+    _theme: WindowTheme,
+}
+
+fn snapshot_files(paths: &[PathBuf]) -> Vec<(PathBuf, Option<Vec<u8>>, u32)> {
+    paths.iter().map(|path| {
+        // A linked file is restored through the link, as it was written.
+        let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.clone());
+        let content = std::fs::read(&path).ok();
+        let mode = std::fs::metadata(&path).map(|m| m.permissions().mode() & 0o7777).unwrap_or(0o644);
+        (path, content, mode)
+    }).collect()
+}
+
+fn restore_files(files: &[(PathBuf, Option<Vec<u8>>, u32)]) {
+    for (path, content, mode) in files {
+        let current = std::fs::read(path).ok();
+        if current == *content {
+            continue;
+        }
+        let result = match content {
+            Some(content) => color_config::atomic_write(path, content, *mode).map_err(|e| e.to_string()),
+            None => std::fs::remove_file(path).map_err(|e| e.to_string()),
+        };
+        if let Err(error) = result {
+            println!("Failed to restore {}: {error}", path.display());
+        }
+    }
 }
 
 impl Default for Hooks {
@@ -58,6 +116,7 @@ impl Default for Hooks {
             read_labwc_hdr_config: Rc::new(labwc::read_labwc_hdr_config),
             write_labwc_hdr_overrides: Rc::new(labwc::write_labwc_hdr_overrides),
             reconfigure_labwc: Rc::new(labwc::reconfigure_labwc),
+            confirm_seconds: CONFIRM_SECONDS,
         }
     }
 }
@@ -113,6 +172,7 @@ pub struct TesselDisplaysApp {
     auto_scale_enabled: Cell<bool>,
     scale_overrides: RefCell<Map<String, Value>>,
     pub save_btn: gtk::Button,
+    trial: RefCell<Option<Rc<Trial>>>,
     pub hooks: RefCell<Hooks>,
     pub arrange_mode: RefCell<String>,
 }
@@ -173,7 +233,7 @@ impl TesselDisplaysApp {
             labwc_hdr_available: hdr_available, layout_area: RefCell::new(None), layout_frame,
             notify_toggle: gtk::Switch::new(), callback_entry: gtk::Entry::new(), callback_handler: RefCell::new(None),
             auto_scale_switch: gtk::Switch::new(), auto_scale_enabled: Cell::new(false), scale_overrides: RefCell::new(Map::new()),
-            save_btn, hooks: RefCell::new(hooks), arrange_mode: RefCell::new(String::new()),
+            save_btn, trial: RefCell::new(None), hooks: RefCell::new(hooks), arrange_mode: RefCell::new(String::new()),
         });
 
         let weak = Rc::downgrade(&this);
@@ -532,8 +592,16 @@ impl TesselDisplaysApp {
     }
 
     pub fn save_config(self: &Rc<Self>) {
-        let data = ipc::config_data();
+        if self.trial.borrow().is_some() {
+            return;
+        }
         let hooks = self.hooks.borrow().clone();
+        let confirm = hooks.confirm_seconds > 0;
+        if confirm {
+            // What a revert returns to is what is in effect, not an old read.
+            (hooks.get_config_data)();
+        }
+        let data = ipc::config_data();
         let widgets = self.monitor_widgets.borrow().clone();
         let mut color_changes: BTreeMap<String, ColorSettings> = BTreeMap::new();
         for widget in &widgets {
@@ -575,6 +643,16 @@ impl TesselDisplaysApp {
         let mut reconfigure = false;
         let environment = self.labwc_environment_path.borrow().clone();
         let primary_name = self.primary_output_name.borrow().clone();
+        let before = data.get("CFG").filter(|v| truthy(v)).cloned().unwrap_or_else(|| json!({}));
+        let files = if confirm {
+            snapshot_files(&[self.labwc_config_path.borrow().clone(), environment.clone(), environment.with_file_name("xinitrc")])
+        } else {
+            Vec::new()
+        };
+        let primary_before = primary::split_primary_callback(&before.get("CALLBACK_CMD").map(py_str).unwrap_or_default()).1
+            .or_else(|| (hooks.read_labwc_primary_environment)(&environment));
+        let hdr_managed = self.labwc_managed_hdr_overrides.borrow().clone();
+        let hdr_overrides = self.labwc_hdr_overrides.borrow().clone();
         let (ok, error, _) = (hooks.write_labwc_primary_xinitrc)(&environment.with_file_name("xinitrc"), primary_name.as_deref());
         if !ok {
             println!("Failed to update Labwc primary-output xinitrc: {}", error.unwrap_or_default());
@@ -603,11 +681,13 @@ impl TesselDisplaysApp {
             match color_config::write_colors(&self.labwc_config_path.borrow(), &color_changes) {
                 Ok(tx) => transaction = Some(tx),
                 Err(error) => {
+                    restore_files(&files);
                     self.color_error(&error.to_string());
                     return;
                 }
             }
         }
+        let labwc_changed = reconfigure || transaction.is_some();
         if reconfigure || transaction.is_some() {
             let (ok, error) = (hooks.reconfigure_labwc)();
             let mut error = error.unwrap_or_else(|| "None".into());
@@ -620,6 +700,7 @@ impl TesselDisplaysApp {
                     if let Err(rollback) = color_config::rollback(tx) {
                         error = format!("{error} {rollback}");
                     }
+                    restore_files(&files);
                     self.color_error(&error);
                     return;
                 }
@@ -634,12 +715,24 @@ impl TesselDisplaysApp {
                 (hooks.ipc_config_operation)("CFG_DEL", &plan.del_cfg)?;
             }
             (hooks.ipc_config_operation)("CFG_SET", &plan.cfg)?;
-            (hooks.ipc_operation)("CFG_WRITE", "")?;
+            if !confirm {
+                (hooks.ipc_operation)("CFG_WRITE", "")?;
+            }
             Ok::<(), String>(())
         })();
+        let undo = Undo {
+            before, applied: plan.cfg.clone(),
+            enabled: plan.enabled_changed.iter().filter_map(|index| {
+                states[*index].as_ref().map(|state| (widgets[*index].desc(), state.enabled))
+            }).collect(),
+            files, reconfigure: labwc_changed, primary: primary_before, hdr_managed, hdr_overrides,
+        };
         if let Err(error) = result {
             // Python raised here: the rest of the Apply did not run.
             eprintln!("Traceback (most recent call last):\n  save_config\n{error}");
+            if confirm {
+                self.undo_changes(undo);
+            }
             return;
         }
         for widget in &widgets {
@@ -681,6 +774,156 @@ impl TesselDisplaysApp {
             }
             ControlFlow::Break
         });
+        if confirm {
+            self.start_trial(undo, hooks.confirm_seconds);
+        }
+    }
+
+    /// Ask whether to keep what Apply just did. The timer holds the window, so it
+    /// reverts even if the question never reaches a working screen.
+    fn start_trial(self: &Rc<Self>, undo: Undo, seconds: u32) {
+        let root = self.save_btn.root().and_downcast::<gtk::Window>().unwrap_or_else(|| self.window.clone().upcast());
+        let dialog = gtk::Window::builder().title(tr!("Displays")).modal(true).transient_for(&root).resizable(false).build();
+        dialog.set_application(root.application().as_ref());
+        let theme = style_window(&dialog, false);
+        let content = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(12).margin_start(24).margin_end(24)
+            .margin_top(24).margin_bottom(24).width_request(380).build();
+        let title = gtk::Label::builder().label(tr!("Keep these display settings?")).xalign(0.0).wrap(true).build();
+        title.add_css_class("page-title");
+        let body = gtk::Label::builder().label(tr!("Your previous settings will come back when the countdown ends, unless you choose Keep Changes."))
+            .xalign(0.0).wrap(true).max_width_chars(44).build();
+        let countdown = gtk::Label::new(Some(&seconds.to_string()));
+        countdown.add_css_class("page-title");
+        let revert = gtk::Button::with_label(&tr!("Revert"));
+        let keep = gtk::Button::with_label(&tr!("Keep Changes"));
+        keep.add_css_class("primary");
+        let buttons = gtk::Box::builder().orientation(gtk::Orientation::Horizontal).spacing(8).halign(gtk::Align::End).build();
+        buttons.append(&revert);
+        buttons.append(&keep);
+        content.append(&title);
+        content.append(&body);
+        content.append(&countdown);
+        content.append(&buttons);
+        dialog.set_child(Some(&content));
+        // Enter or a stray key press must never keep a setting.
+        dialog.set_default_widget(Some(&revert));
+        GtkWindowExt::set_focus(&dialog, Some(&revert));
+
+        let this = self.clone();
+        revert.connect_clicked(move |_| this.revert_display_changes());
+        let this = self.clone();
+        keep.connect_clicked(move |_| this.keep_display_changes());
+        let this = self.clone();
+        dialog.connect_close_request(move |_| {
+            this.revert_display_changes();
+            glib::Propagation::Stop
+        });
+        let escape = gtk::EventControllerKey::new();
+        let this = self.clone();
+        escape.connect_key_pressed(move |_, key, _, _| {
+            if key == gtk::gdk::Key::Escape {
+                this.revert_display_changes();
+                return glib::Propagation::Stop;
+            }
+            glib::Propagation::Proceed
+        });
+        dialog.add_controller(escape);
+        let this = self.clone();
+        let root_close = root.connect_close_request(move |_| {
+            this.revert_display_changes();
+            glib::Propagation::Proceed
+        });
+
+        let trial = Rc::new(Trial {
+            undo, dialog: dialog.clone(), countdown, seconds_left: Cell::new(seconds), timer: Cell::new(None), root,
+            root_close: Cell::new(Some(root_close)), _theme: theme,
+        });
+        let this = self.clone();
+        let ticking = trial.clone();
+        let timer = glib::timeout_add_local(Duration::from_secs(1), move || {
+            let left = ticking.seconds_left.get().saturating_sub(1);
+            ticking.seconds_left.set(left);
+            ticking.countdown.set_text(&left.to_string());
+            if left > 0 {
+                return ControlFlow::Continue;
+            }
+            // This source ends by returning Break.
+            ticking.timer.take();
+            this.revert_display_changes();
+            ControlFlow::Break
+        });
+        trial.timer.set(Some(timer));
+        self.trial.replace(Some(trial));
+        dialog.present();
+    }
+
+    /// The question while new display settings are on trial.
+    pub fn trial_dialog(&self) -> Option<gtk::Window> {
+        self.trial.borrow().as_ref().map(|trial| trial.dialog.clone())
+    }
+
+    fn end_trial(&self) -> Option<Rc<Trial>> {
+        let trial = self.trial.borrow_mut().take()?;
+        if let Some(timer) = trial.timer.take() {
+            timer.remove();
+        }
+        if let Some(handler) = trial.root_close.take() {
+            glib::prelude::ObjectExt::disconnect(&trial.root, handler);
+        }
+        trial.dialog.destroy();
+        Some(trial)
+    }
+
+    pub fn keep_display_changes(self: &Rc<Self>) {
+        if self.end_trial().is_some() {
+            let write = self.hooks.borrow().ipc_operation.clone();
+            if let Err(error) = write("CFG_WRITE", "") {
+                eprintln!("Failed to save display settings: {error}");
+            }
+        }
+    }
+
+    pub fn revert_display_changes(self: &Rc<Self>) {
+        if let Some(trial) = self.end_trial() {
+            self.undo_changes(trial.undo.clone());
+        }
+    }
+
+    fn undo_changes(self: &Rc<Self>, undo: Undo) {
+        let hooks = self.hooks.borrow().clone();
+        // What is in effect now, in case the Apply stopped part way.
+        let after = if (hooks.get_config_data)() {
+            ipc::config_data().get("CFG").cloned().unwrap_or(undo.applied)
+        } else {
+            undo.applied
+        };
+        let (set, del) = model::revert_plan(&undo.before, &after, &undo.enabled);
+        // Each runs regardless: put back as much as possible.
+        if del.as_object().is_some_and(|m| !m.is_empty()) {
+            if let Err(error) = (hooks.ipc_config_operation)("CFG_DEL", &del) {
+                eprintln!("Failed to revert display settings: {error}");
+            }
+        }
+        if let Err(error) = (hooks.ipc_config_operation)("CFG_SET", &set) {
+            eprintln!("Failed to revert display settings: {error}");
+        }
+        restore_files(&undo.files);
+        if undo.reconfigure {
+            let (ok, error) = (hooks.reconfigure_labwc)();
+            if !ok {
+                println!("Failed to reload Labwc configuration: {}", error.unwrap_or_default());
+            }
+        }
+        self.labwc_managed_hdr_overrides.replace(undo.hdr_managed);
+        self.labwc_hdr_overrides.replace(undo.hdr_overrides);
+        self.primary_output_name.replace(undo.primary);
+        self.apply_primary_output();
+        (hooks.get_config_data)();
+        self.new_configs.set(1);
+        self.load_monitor_data();
+        self.reload_layout();
+        self.new_configs.set(0);
+        self.save_btn.set_sensitive(false);
     }
 
     pub fn reload_layout(self: &Rc<Self>) {

@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: تعذّر تغيير المزامنة التكيفية.",
   "The compositor refused the display layout: {details}": "رفض المؤلِّف تخطيط الشاشة: {details}",
   "Could not write {path}: {error}": "تعذّرت كتابة {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "سيُحتفظ بتخطيط الشاشة الحالي: تعذّرت قراءة {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "سيُحتفظ بتخطيط الشاشة الحالي: تعذّرت قراءة {path}: {error}",
+  "Keep these display settings?": "هل تريد الاحتفاظ بإعدادات الشاشة هذه؟",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "ستعود إعداداتك السابقة عند انتهاء العد التنازلي، ما لم تختر «الاحتفاظ بالتغييرات».",
+  "Keep Changes": "الاحتفاظ بالتغييرات",
+  "Revert": "تراجع"
 }

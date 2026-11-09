@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: अडैप्टिव सिंक नहीं बदला जा सका।",
   "The compositor refused the display layout: {details}": "कम्पोज़िटर ने डिस्प्ले लेआउट अस्वीकार किया: {details}",
   "Could not write {path}: {error}": "{path} में नहीं लिखा जा सका: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "मौजूदा डिस्प्ले लेआउट रखा जा रहा है: {path} नहीं पढ़ा जा सका: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "मौजूदा डिस्प्ले लेआउट रखा जा रहा है: {path} नहीं पढ़ा जा सका: {error}",
+  "Keep these display settings?": "क्या इन डिस्प्ले सेटिंग को रखना है?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "काउंटडाउन समाप्त होने पर आपकी पिछली सेटिंग वापस आ जाएँगी, जब तक कि आप बदलाव रखें न चुनें।",
+  "Keep Changes": "बदलाव रखें",
+  "Revert": "वापस लाएँ"
 }

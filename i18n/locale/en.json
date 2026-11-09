@@ -80,5 +80,9 @@
   "Turn on Bluetooth to discover and connect your devices.": "Turn on Bluetooth to discover and connect your devices.",
   "When trusted, the device can connect and bond automatically.": "When trusted, the device can connect and bond automatically.",
   "Write a note to send to this device.": "Write a note to send to this device.",
-  "Yes": "Yes"
+  "Yes": "Yes",
+  "Keep these display settings?": "Keep these display settings?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.",
+  "Keep Changes": "Keep Changes",
+  "Revert": "Revert"
 }

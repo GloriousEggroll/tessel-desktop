@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: mukautuvaa synkronointia ei voitu muuttaa.",
   "The compositor refused the display layout: {details}": "Kompositori hylkäsi näyttöjen asettelun: {details}",
   "Could not write {path}: {error}": "Tiedostoon {path} ei voitu kirjoittaa: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Nykyinen näyttöjen asettelu säilytetään: tiedostoa {path} ei voitu lukea: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Nykyinen näyttöjen asettelu säilytetään: tiedostoa {path} ei voitu lukea: {error}",
+  "Keep these display settings?": "Säilytetäänkö nämä näyttöasetukset?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Aiemmat asetukset palautetaan, kun lähtölaskenta päättyy, ellet valitse Säilytä muutokset.",
+  "Keep Changes": "Säilytä muutokset",
+  "Revert": "Palauta"
 }

@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: לא ניתן לשנות את הסנכרון המסתגל.",
   "The compositor refused the display layout: {details}": "הקומפוזיטור דחה את פריסת התצוגה: {details}",
   "Could not write {path}: {error}": "לא ניתן לכתוב אל {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "פריסת התצוגה הנוכחית נשמרת: לא ניתן לקרוא את {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "פריסת התצוגה הנוכחית נשמרת: לא ניתן לקרוא את {path}: {error}",
+  "Keep these display settings?": "לשמור את הגדרות התצוגה האלה?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "ההגדרות הקודמות יחזרו בסיום הספירה לאחור, אלא אם תבחרו באפשרות שמירת השינויים.",
+  "Keep Changes": "שמירת השינויים",
+  "Revert": "ביטול השינויים"
 }

@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: az adaptív szinkronizálás nem módosítható.",
   "The compositor refused the display layout: {details}": "A kompozitor elutasította a kijelzők elrendezését: {details}",
   "Could not write {path}: {error}": "A(z) {path} nem írható: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "A jelenlegi kijelzőelrendezés megmarad: a(z) {path} nem olvasható: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "A jelenlegi kijelzőelrendezés megmarad: a(z) {path} nem olvasható: {error}",
+  "Keep these display settings?": "Megtartja ezeket a kijelzőbeállításokat?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "A visszaszámlálás végén visszaállnak a korábbi beállítások, hacsak nem a Módosítások megtartása lehetőséget választja.",
+  "Keep Changes": "Módosítások megtartása",
+  "Revert": "Visszaállítás"
 }

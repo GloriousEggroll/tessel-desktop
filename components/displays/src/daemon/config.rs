@@ -357,6 +357,10 @@ impl Cfg {
         merged.transforms.retain(|(name, _)| !from.transform_keys.contains(name));
         merged.vrr_off.retain(|name| !from.vrr_off.contains(name));
         merged.disabled.retain(|(name, _)| !from.disabled.iter().any(|(other, _)| other == name));
+        // Any ORDER in a removal means no saved order at all.
+        if !from.order.is_empty() {
+            merged.order.clear();
+        }
         // Any CALLBACK_CMD in a removal means no callback at all.
         if from.callback.is_some() {
             merged.callback.clear();

@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: adaptívnu synchronizáciu sa nepodarilo zmeniť.",
   "The compositor refused the display layout: {details}": "Kompozitor odmietol rozloženie displejov: {details}",
   "Could not write {path}: {error}": "Nedá sa zapísať {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Ponecháva sa aktuálne rozloženie displejov: {path} sa nedá prečítať: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Ponecháva sa aktuálne rozloženie displejov: {path} sa nedá prečítať: {error}",
+  "Keep these display settings?": "Ponechať tieto nastavenia obrazovky?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Po skončení odpočítavania sa vrátia predchádzajúce nastavenia, ak nezvolíte Ponechať zmeny.",
+  "Keep Changes": "Ponechať zmeny",
+  "Revert": "Vrátiť späť"
 }

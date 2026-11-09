@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: sincronizarea adaptivă nu a putut fi modificată.",
   "The compositor refused the display layout: {details}": "Compozitorul a refuzat aranjamentul ecranelor: {details}",
   "Could not write {path}: {error}": "Nu s-a putut scrie {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Se păstrează aranjamentul actual al ecranelor: {path} nu a putut fi citit: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Se păstrează aranjamentul actual al ecranelor: {path} nu a putut fi citit: {error}",
+  "Keep these display settings?": "Păstrați aceste setări ale ecranului?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Setările anterioare vor reveni la sfârșitul numărătorii inverse, dacă nu alegeți Păstrează modificările.",
+  "Keep Changes": "Păstrează modificările",
+  "Revert": "Revenire"
 }

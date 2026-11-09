@@ -157,6 +157,7 @@ fn test_hooks() -> Hooks {
         ipc_operation: Rc::new(|op, _| panic!("No display daemon calls in UI tests ({op})")),
         ipc_config_operation: Rc::new(|op, _| panic!("No display daemon calls in UI tests ({op})")),
         get_config_data: Rc::new(|| panic!("No display daemon calls in UI tests (GET)")),
+        confirm_seconds: 0,
         get_xwayland_primary_output: Rc::new(|| None),
         apply_xwayland_primary_output: Rc::new(|_| (true, None)),
         read_labwc_primary_environment: Rc::new(|_| None),
@@ -590,6 +591,184 @@ fn automatic_scaling_removes_only_that_displays_scale(app: &gtk::Application) {
     println!("ok automatic_scaling_removes_only_that_displays_scale");
 }
 
+struct TestDir(PathBuf);
+
+impl TestDir {
+    fn new() -> Self {
+        static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let number = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let folder = PathBuf::from(std::env::var("TMPDIR").unwrap()).join(format!("trial-{}-{number}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        Self(folder)
+    }
+
+    fn path(&self) -> &std::path::Path {
+        &self.0
+    }
+}
+
+impl Drop for TestDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+/// A window on trial: a scale changed, Apply pressed, one second to answer.
+fn window_on_trial(f: &Fx, seconds: u32, operations: Rc<RefCell<Vec<(String, Value)>>>, writes: Rc<RefCell<Vec<String>>>,
+                   reconfigures: Rc<Cell<u32>>, folder: &std::path::Path) -> Rc<TesselDisplaysApp> {
+    let window = f.window();
+    {
+        let mut hooks = window.hooks.borrow_mut();
+        recording(&mut hooks, operations, writes);
+        hooks.confirm_seconds = seconds;
+        hooks.get_config_data = Rc::new(|| true);
+        hooks.apply_xwayland_primary_output = Rc::new(|_| (true, None));
+        hooks.reconfigure_labwc = Rc::new(move || {
+            reconfigures.set(reconfigures.get() + 1);
+            (true, None)
+        });
+        hooks.write_labwc_primary_xinitrc = Rc::new(tessel_displays::primary::write_labwc_primary_xinitrc);
+        hooks.write_labwc_primary_environment = Rc::new(tessel_displays::primary::write_labwc_primary_environment);
+        hooks.read_labwc_primary_environment = Rc::new(tessel_displays::primary::read_labwc_primary_environment);
+        hooks.write_labwc_hdr_overrides = Rc::new(tessel_displays::labwc::write_labwc_hdr_overrides);
+    }
+    window.labwc_environment_path.replace(folder.join("environment"));
+    window.labwc_config_path.replace(folder.join("rc.xml"));
+    std::fs::write(folder.join("rc.xml"), "<labwc_config>\n</labwc_config>\n").unwrap();
+    std::fs::write(folder.join("xinitrc"), "#!/bin/sh\nxrandr --output OLD --primary\ntrue\n").unwrap();
+    let target = window.monitor_widgets.borrow()[1].clone();
+    target.primary_switch.set_active(true);
+    window.save_config();
+    window
+}
+
+fn apply_waits_for_keep_changes_before_saving(app: &gtk::Application) {
+    let f = Fx::new(app);
+    let folder = TestDir::new();
+    let (operations, writes, reconfigures): (Rc<RefCell<Vec<(String, Value)>>>, Rc<RefCell<Vec<String>>>, Rc<Cell<u32>>) = Default::default();
+    let window = window_on_trial(&f, 30, operations.clone(), writes.clone(), reconfigures.clone(), folder.path());
+    assert!(window.trial_dialog().is_some(), "Apply asks");
+    assert!(writes.borrow().iter().all(|op| op != "CFG_WRITE"), "nothing is saved yet");
+    assert!(operations.borrow().iter().any(|(op, _)| op == "CFG_SET"), "the settings are live");
+    let dialog = window.trial_dialog().unwrap();
+    assert!(dialog.is_modal());
+    window.save_config();
+    assert_eq!(window.trial_dialog().as_ref(), Some(&dialog), "a second Apply does not stack");
+    window.keep_display_changes();
+    assert!(window.trial_dialog().is_none());
+    assert_eq!(writes.borrow().last().map(String::as_str), Some("CFG_WRITE"));
+    assert!(std::fs::read_to_string(folder.path().join("xinitrc")).unwrap().contains("HDMI-A-1"), "labwc's files stay changed");
+    let count = operations.borrow().len();
+    settle(0.3);
+    assert_eq!(operations.borrow().len(), count, "nothing reverts after Keep Changes");
+    println!("ok apply_waits_for_keep_changes_before_saving");
+}
+
+fn no_answer_reverts_after_the_countdown(app: &gtk::Application) {
+    let f = Fx::new(app);
+    let folder = TestDir::new();
+    let (operations, writes, reconfigures): (Rc<RefCell<Vec<(String, Value)>>>, Rc<RefCell<Vec<String>>>, Rc<Cell<u32>>) = Default::default();
+    let window = window_on_trial(&f, 1, operations.clone(), writes.clone(), reconfigures.clone(), folder.path());
+    let reconfigured = reconfigures.get();
+    assert!(window.trial_dialog().is_some());
+    assert!(wait(|| window.trial_dialog().is_none()), "the countdown ends it");
+    assert!(writes.borrow().iter().all(|op| op != "CFG_WRITE"), "a reverted setting is never saved");
+    let ops = operations.borrow();
+    let (op, cfg) = ops.last().unwrap();
+    assert_eq!(op, "CFG_SET");
+    assert_eq!(cfg["CUSTOM_KEEP"], json!({"untouched": true}));
+    let text = std::fs::read_to_string(folder.path().join("xinitrc")).unwrap();
+    assert!(text.contains("--output OLD") && !text.contains("HDMI-A-1"), "{text}");
+    assert!(!folder.path().join("environment").exists() || !std::fs::read_to_string(folder.path().join("environment")).unwrap().contains("HDMI-A-1"));
+    assert!(reconfigures.get() >= reconfigured);
+    assert!(!window.save_btn.is_sensitive());
+    println!("ok no_answer_reverts_after_the_countdown");
+}
+
+fn closing_the_question_or_the_window_reverts(app: &gtk::Application) {
+    let f = Fx::new(app);
+    for close_window in [false, true] {
+        let folder = TestDir::new();
+        let (operations, writes, reconfigures): (Rc<RefCell<Vec<(String, Value)>>>, Rc<RefCell<Vec<String>>>, Rc<Cell<u32>>) = Default::default();
+        let window = window_on_trial(&f, 30, operations.clone(), writes.clone(), reconfigures, folder.path());
+        let count = operations.borrow().len();
+        if close_window {
+            window.window.close();
+        } else {
+            window.trial_dialog().unwrap().close();
+        }
+        assert!(wait(|| window.trial_dialog().is_none()));
+        assert!(operations.borrow().len() > count, "reverted");
+        assert!(writes.borrow().iter().all(|op| op != "CFG_WRITE"));
+        assert!(std::fs::read_to_string(folder.path().join("xinitrc")).unwrap().contains("--output OLD"));
+    }
+    println!("ok closing_the_question_or_the_window_reverts");
+}
+
+fn the_question_belongs_to_the_window_hosting_an_embedded_page(app: &gtk::Application) {
+    let f = Fx::new(app);
+    ipc::set_config_data(json!({"CFG": {"AUTO_SCALE": false}, "STATE": {"HEADS": [monitor("DP-1", 1920)]}}));
+    let client = f.client.clone();
+    let factory: window::ClientFactory = Box::new(move |on_changed| {
+        client.on_changed.replace(on_changed);
+        Ok(client.clone() as Rc<dyn BrightnessModel>)
+    });
+    let page = TesselDisplaysApp::new(app, Some(factory), true);
+    // As Global Settings does: the content moves out into its own window.
+    let content = page.window.child().unwrap();
+    page.window.set_child(None::<&gtk::Widget>);
+    let host = gtk::ApplicationWindow::new(app);
+    host.set_child(Some(&content));
+    host.present();
+    settle(0.06);
+    let folder = TestDir::new();
+    let operations: Rc<RefCell<Vec<(String, Value)>>> = Rc::default();
+    {
+        let mut hooks = page.hooks.borrow_mut();
+        recording(&mut hooks, operations.clone(), Rc::default());
+        hooks.confirm_seconds = 30;
+        hooks.get_config_data = Rc::new(|| true);
+        hooks.apply_xwayland_primary_output = Rc::new(|_| (true, None));
+    }
+    page.labwc_environment_path.replace(folder.path().join("environment"));
+    page.labwc_config_path.replace(folder.path().join("rc.xml"));
+    page.save_config();
+    let dialog = page.trial_dialog().unwrap();
+    assert_eq!(dialog.transient_for().as_ref(), Some(host.upcast_ref::<gtk::Window>()));
+    let count = operations.borrow().len();
+    host.close();
+    assert!(wait(|| page.trial_dialog().is_none()), "closing Global Settings reverts");
+    assert!(operations.borrow().len() > count);
+    println!("ok the_question_belongs_to_the_window_hosting_an_embedded_page");
+}
+
+fn a_failed_apply_reverts_without_asking(app: &gtk::Application) {
+    let f = Fx::new(app);
+    let folder = TestDir::new();
+    let window = f.window();
+    let operations: Rc<RefCell<Vec<(String, Value)>>> = Rc::default();
+    {
+        let mut hooks = window.hooks.borrow_mut();
+        recording(&mut hooks, operations.clone(), Rc::default());
+        let log = operations.clone();
+        let first = Cell::new(true);
+        hooks.ipc_config_operation = Rc::new(move |op, cfg| {
+            log.borrow_mut().push((op.to_owned(), cfg.clone()));
+            if first.replace(false) { Err("daemon refused".into()) } else { Ok(String::new()) }
+        });
+        hooks.confirm_seconds = 30;
+        hooks.get_config_data = Rc::new(|| true);
+        hooks.apply_xwayland_primary_output = Rc::new(|_| (true, None));
+    }
+    window.labwc_environment_path.replace(folder.path().join("environment"));
+    window.labwc_config_path.replace(folder.path().join("rc.xml"));
+    window.save_config();
+    assert!(window.trial_dialog().is_none());
+    assert_eq!(operations.borrow().last().unwrap().0, "CFG_SET", "the revert ran");
+    assert!(operations.borrow().len() >= 2);
+    println!("ok a_failed_apply_reverts_without_asking");
+}
+
 fn vrr_uses_desired_state_when_runtime_is_temporarily_off(app: &gtk::Application) {
     let f = Fx::new(app);
     let window = f.window();
@@ -858,6 +1037,11 @@ fn main() {
     hdr_report_distinguishes_metadata_white_target_and_measurement(&app);
     vrr_changes_in_two_stale_editors_preserve_the_other_monitor(&app);
     automatic_scaling_removes_only_that_displays_scale(&app);
+    apply_waits_for_keep_changes_before_saving(&app);
+    no_answer_reverts_after_the_countdown(&app);
+    closing_the_question_or_the_window_reverts(&app);
+    a_failed_apply_reverts_without_asking(&app);
+    the_question_belongs_to_the_window_hosting_an_embedded_page(&app);
     vrr_uses_desired_state_when_runtime_is_temporarily_off(&app);
     full_window_brightness_changes_preserve_apply_and_monitor_configuration(&app);
     window_follows_live_dock_palette_without_changing_display_settings(&app);

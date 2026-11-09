@@ -2110,5 +2110,9 @@
   "{name}: could not change adaptive sync.": "{name}: アダプティブ同期を変更できませんでした。",
   "The compositor refused the display layout: {details}": "コンポジターがディスプレイ配置を拒否しました: {details}",
   "Could not write {path}: {error}": "{path} に書き込めませんでした: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "現在のディスプレイ配置を維持します: {path} を読み取れませんでした: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "現在のディスプレイ配置を維持します: {path} を読み取れませんでした: {error}",
+  "Keep these display settings?": "このディスプレイ設定を維持しますか?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "「変更を維持」を選択しない限り、カウントダウンが終わると以前の設定に戻ります。",
+  "Keep Changes": "変更を維持",
+  "Revert": "元に戻す"
 }

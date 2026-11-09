@@ -2110,5 +2110,9 @@
   "{name}: could not change adaptive sync.": "{name}：無法變更自適應同步。",
   "The compositor refused the display layout: {details}": "合成器拒絕了顯示器配置：{details}",
   "Could not write {path}: {error}": "無法寫入 {path}：{error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "保留目前的顯示器配置：無法讀取 {path}：{error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "保留目前的顯示器配置：無法讀取 {path}：{error}",
+  "Keep these display settings?": "要保留這些顯示設定嗎?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "倒數結束時將還原先前的設定,除非您選擇「保留變更」。",
+  "Keep Changes": "保留變更",
+  "Revert": "還原"
 }

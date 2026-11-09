@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: ไม่สามารถเปลี่ยนการซิงค์แบบปรับได้",
   "The compositor refused the display layout: {details}": "คอมโพสิเตอร์ปฏิเสธการจัดวางจอแสดงผล: {details}",
   "Could not write {path}: {error}": "ไม่สามารถเขียน {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "คงการจัดวางจอแสดงผลปัจจุบันไว้: ไม่สามารถอ่าน {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "คงการจัดวางจอแสดงผลปัจจุบันไว้: ไม่สามารถอ่าน {path}: {error}",
+  "Keep these display settings?": "เก็บการตั้งค่าจอแสดงผลนี้ไว้หรือไม่",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "การตั้งค่าก่อนหน้าจะกลับมาเมื่อการนับถอยหลังสิ้นสุด เว้นแต่คุณจะเลือกเก็บการเปลี่ยนแปลง",
+  "Keep Changes": "เก็บการเปลี่ยนแปลง",
+  "Revert": "ย้อนกลับ"
 }

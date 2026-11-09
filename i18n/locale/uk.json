@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: не вдалося змінити адаптивну синхронізацію.",
   "The compositor refused the display layout: {details}": "Композитор відхилив розташування дисплеїв: {details}",
   "Could not write {path}: {error}": "Не вдалося записати {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Зберігається поточне розташування дисплеїв: не вдалося прочитати {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Зберігається поточне розташування дисплеїв: не вдалося прочитати {path}: {error}",
+  "Keep these display settings?": "Зберегти ці налаштування екрана?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Коли зворотний відлік закінчиться, повернуться попередні налаштування, якщо ви не виберете «Зберегти зміни».",
+  "Keep Changes": "Зберегти зміни",
+  "Revert": "Повернути"
 }

@@ -563,3 +563,40 @@ fn ipc_round_trip_with_private_fake_daemon() {
     assert!(!ipc::get_config_data_from(|| Ok("- a list".into())));
     assert_eq!(ipc::config_data(), json!({}));
 }
+
+// ------------------------------------------------------- reverting an Apply
+
+#[test]
+fn revert_restores_values_and_removes_what_apply_added() {
+    let before = json!({"AUTO_SCALE": true, "ARRANGE": "ROW", "SCALE": {"A": 2.0}, "MODE": {"A": {"WIDTH": 1920}},
+                        "TRANSFORM": null, "VRR_OFF": ["A"], "ORDER": [], "DISABLED": {"!^eDP-[0-9]": {"IF": [{"LID": "CLOSED"}]}}});
+    let after = json!({"AUTO_SCALE": false, "ARRANGE": "COLUMN", "SCALE": {"A": 1.25, "B": 1.5}, "MODE": {"A": {"WIDTH": 2880}, "B": {"WIDTH": 800}},
+                       "TRANSFORM": {"A": "90"}, "VRR_OFF": ["A", "B"], "ORDER": ["B", "A"], "CALLBACK_CMD": "x",
+                       "DISABLED": {"!^eDP-[0-9]": {"IF": [{"LID": "CLOSED"}]}, "B": null}});
+    let (set, del) = crate::model::revert_plan(&before, &after, &[]);
+    assert_eq!(set["AUTO_SCALE"], json!(true));
+    assert_eq!(set["ARRANGE"], "ROW");
+    assert_eq!(set["SCALE"], json!({"A": 2.0}));
+    assert_eq!(set["MODE"], json!({"A": {"WIDTH": 1920}}));
+    assert!(set.get("TRANSFORM").is_none() && set.get("ORDER").is_none(), "nothing empty is sent");
+    assert_eq!(del, json!({"SCALE": {"B": 1.5}, "MODE": {"B": {"WIDTH": 800}}, "TRANSFORM": {"A": "90"}, "VRR_OFF": ["B"],
+                           "ORDER": ["B", "A"], "CALLBACK_CMD": "", "DISABLED": {"B": null}}));
+}
+
+#[test]
+fn revert_keeps_a_false_setting() {
+    let (set, _) = crate::model::revert_plan(&json!({"AUTO_SCALE": false}), &json!({"AUTO_SCALE": true}), &[]);
+    assert_eq!(set["AUTO_SCALE"], json!(false));
+}
+
+#[test]
+fn revert_switches_a_display_under_the_lid_rule_back_by_name() {
+    let rule = json!({"!^eDP-[0-9]": {"IF": [{"LID": "CLOSED"}]}});
+    let config = json!({"DISABLED": rule});
+    let (_, del) = crate::model::revert_plan(&config, &config, &[("Panel".to_owned(), false)]);
+    assert_eq!(del["DISABLED"], json!({"Panel": null}), "turned off by Apply: back on");
+    let (set, del) = crate::model::revert_plan(&config, &config, &[("Panel".to_owned(), true)]);
+    assert!(set["DISABLED"].as_object().unwrap().contains_key("Panel"), "turned on by Apply: back off");
+    assert!(del.get("DISABLED").is_none());
+    assert!(set["DISABLED"].as_object().unwrap().contains_key("!^eDP-[0-9]"), "the rule is kept");
+}

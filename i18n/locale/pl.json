@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: nie można zmienić synchronizacji adaptacyjnej.",
   "The compositor refused the display layout: {details}": "Kompozytor odrzucił układ ekranów: {details}",
   "Could not write {path}: {error}": "Nie można zapisać {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Pozostaje bieżący układ ekranów: nie można odczytać {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Pozostaje bieżący układ ekranów: nie można odczytać {path}: {error}",
+  "Keep these display settings?": "Zachować te ustawienia ekranu?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Po zakończeniu odliczania wrócą poprzednie ustawienia, chyba że wybierzesz Zachowaj zmiany.",
+  "Keep Changes": "Zachowaj zmiany",
+  "Revert": "Przywróć"
 }

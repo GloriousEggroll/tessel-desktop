@@ -6,7 +6,7 @@
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -75,6 +75,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Displays.desktop
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
+- Apply asks for 10 seconds whether to keep display settings, and reverts them otherwise
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - Saving in Global Settings no longer turns off a laptop's internal screen
 

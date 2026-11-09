@@ -46,3 +46,9 @@ Window (title, ≤980×780 default, headerbar, `.page-title/.subtitle`, Apply `.
 ## Gaps ❌
 - **Global Settings embeds the Python module** (`TesselDisplaysApp(embedded=True)`, `CONFIG_DATA`, widget tree): the Python files must stay installed until GS is ported. `embedded` exists in the Rust API but nothing consumes it.
 - `install_color.py` / `install_waybar.py` steps are not part of this crate.
+
+## Beyond the Python tool
+
+- Apply is a trial: settings go live but are not saved, and a question counts down from 10 seconds. Only Keep Changes saves (`CFG_WRITE`). Revert, Escape, closing the question or the window, or no answer put back the daemon settings and labwc's `rc.xml`, `environment` and `xinitrc`. A failed Apply reverts without asking. Tests: `ui_headless`, `tests/run_trial_headless.sh` (real daemon).
+- Brightness, contrast and dimming apply as the slider moves and are not part of the trial.
+- `CFG_DEL` with `ORDER` clears the saved order, so a revert can return to having none.

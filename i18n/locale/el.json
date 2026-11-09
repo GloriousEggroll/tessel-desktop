@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: δεν ήταν δυνατή η αλλαγή του προσαρμοστικού συγχρονισμού.",
   "The compositor refused the display layout: {details}": "Ο συνθέτης απέρριψε τη διάταξη οθονών: {details}",
   "Could not write {path}: {error}": "Δεν ήταν δυνατή η εγγραφή του {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Διατηρείται η τρέχουσα διάταξη οθονών: δεν ήταν δυνατή η ανάγνωση του {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Διατηρείται η τρέχουσα διάταξη οθονών: δεν ήταν δυνατή η ανάγνωση του {path}: {error}",
+  "Keep these display settings?": "Διατήρηση αυτών των ρυθμίσεων οθόνης;",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Οι προηγούμενες ρυθμίσεις θα επανέλθουν όταν λήξει η αντίστροφη μέτρηση, εκτός αν επιλέξετε Διατήρηση αλλαγών.",
+  "Keep Changes": "Διατήρηση αλλαγών",
+  "Revert": "Επαναφορά"
 }

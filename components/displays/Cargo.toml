@@ -32,3 +32,8 @@ roxmltree = "0.20"
 name = "ui_headless"
 path = "tests/ui_headless.rs"
 harness = false
+
+[[test]]
+name = "trial_real_daemon"
+path = "tests/trial_real_daemon.rs"
+harness = false

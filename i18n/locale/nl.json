@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: kan adaptieve synchronisatie niet wijzigen.",
   "The compositor refused the display layout: {details}": "De compositor heeft de beeldschermindeling geweigerd: {details}",
   "Could not write {path}: {error}": "Kan {path} niet schrijven: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "De huidige beeldschermindeling blijft behouden: {path} kan niet worden gelezen: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "De huidige beeldschermindeling blijft behouden: {path} kan niet worden gelezen: {error}",
+  "Keep these display settings?": "Deze beeldscherminstellingen behouden?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Je vorige instellingen komen terug wanneer het aftellen eindigt, tenzij je Wijzigingen behouden kiest.",
+  "Keep Changes": "Wijzigingen behouden",
+  "Revert": "Terugzetten"
 }

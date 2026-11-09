@@ -584,3 +584,59 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
     SavePlan { cfg: Value::Object(cfg), del_cfg: Value::Object(del_cfg), hdr_overrides, hdr_changed,
                enabled_changed: enabled_changed_list }
 }
+
+/// The `(CFG_SET, CFG_DEL)` requests that put `before` back while `after` is in
+/// effect. `enabled` lists the displays Apply switched: `(description, now on)`.
+/// A request only merges into the daemon's settings, so anything Apply added has
+/// to be removed by name. A display under a conditional rule (the lid rule) was
+/// switched by name without changing any saved list, and is switched back by name.
+pub fn revert_plan(before: &Value, after: &Value, enabled: &[(String, bool)]) -> (Value, Value) {
+    let mut set = Map::new();
+    if let Some(map) = before.as_object() {
+        for (key, value) in map {
+            if truthy(value) || matches!(value, Value::Bool(_) | Value::Number(_)) {
+                set.insert(key.clone(), value.clone());
+            }
+        }
+    }
+    let mut del = Map::new();
+    for key in ["SCALE", "MODE", "TRANSFORM", "DISABLED"] {
+        let saved = before.get(key).and_then(Value::as_object);
+        let mut added = Map::new();
+        if let Some(current) = after.get(key).and_then(Value::as_object) {
+            for (name, value) in current {
+                if !saved.is_some_and(|map| map.contains_key(name)) {
+                    added.insert(name.clone(), value.clone());
+                }
+            }
+        }
+        if !added.is_empty() {
+            del.insert(key.into(), Value::Object(added));
+        }
+    }
+    for (description, now_on) in enabled {
+        let saved = before.get("DISABLED").and_then(Value::as_object).is_some_and(|map| map.contains_key(description));
+        if *now_on && !saved {
+            let entry = set.entry("DISABLED").or_insert_with(|| json!({}));
+            entry[description.as_str()] = Value::Null;
+        } else if !now_on {
+            let entry = del.entry("DISABLED").or_insert_with(|| json!({}));
+            entry[description.as_str()] = Value::Null;
+        }
+    }
+    let list = |config: &Value| -> Vec<Value> { config.get("VRR_OFF").and_then(Value::as_array).cloned().unwrap_or_default() };
+    let saved_vrr = list(before);
+    let added_vrr: Vec<Value> = list(after).into_iter().filter(|item| !saved_vrr.contains(item)).collect();
+    if !added_vrr.is_empty() {
+        del.insert("VRR_OFF".into(), Value::Array(added_vrr));
+    }
+    if !before.get("ORDER").is_some_and(truthy) {
+        if let Some(order) = after.get("ORDER").filter(|v| truthy(v)) {
+            del.insert("ORDER".into(), order.clone());
+        }
+    }
+    if !before.get("CALLBACK_CMD").is_some_and(truthy) && after.get("CALLBACK_CMD").is_some_and(truthy) {
+        del.insert("CALLBACK_CMD".into(), json!(""));
+    }
+    (Value::Object(set), Value::Object(del))
+}

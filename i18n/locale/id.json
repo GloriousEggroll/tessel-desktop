@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: tidak dapat mengubah sinkronisasi adaptif.",
   "The compositor refused the display layout: {details}": "Kompositor menolak tata letak layar: {details}",
   "Could not write {path}: {error}": "Tidak dapat menulis {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Tata letak layar saat ini dipertahankan: {path} tidak dapat dibaca: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Tata letak layar saat ini dipertahankan: {path} tidak dapat dibaca: {error}",
+  "Keep these display settings?": "Pertahankan pengaturan layar ini?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Pengaturan sebelumnya akan kembali saat hitung mundur berakhir, kecuali Anda memilih Pertahankan Perubahan.",
+  "Keep Changes": "Pertahankan Perubahan",
+  "Revert": "Kembalikan"
 }

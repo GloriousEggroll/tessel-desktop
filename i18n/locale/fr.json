@@ -2263,5 +2263,9 @@
   "{name}: could not change adaptive sync.": "{name} : impossible de modifier la synchronisation adaptative.",
   "The compositor refused the display layout: {details}": "Le compositeur a refusé la disposition des écrans : {details}",
   "Could not write {path}: {error}": "Impossible d’écrire {path} : {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "La disposition actuelle des écrans est conservée : impossible de lire {path} : {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "La disposition actuelle des écrans est conservée : impossible de lire {path} : {error}",
+  "Keep these display settings?": "Conserver ces paramètres d'affichage ?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Vos paramètres précédents seront rétablis à la fin du compte à rebours, sauf si vous choisissez Conserver les modifications.",
+  "Keep Changes": "Conserver les modifications",
+  "Revert": "Rétablir"
 }

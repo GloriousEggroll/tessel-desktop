@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: không thể thay đổi đồng bộ thích ứng.",
   "The compositor refused the display layout: {details}": "Trình tổng hợp đã từ chối bố cục màn hình: {details}",
   "Could not write {path}: {error}": "Không thể ghi {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Giữ nguyên bố cục màn hình hiện tại: không thể đọc {path}: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Giữ nguyên bố cục màn hình hiện tại: không thể đọc {path}: {error}",
+  "Keep these display settings?": "Giữ các cài đặt màn hình này?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Cài đặt trước đó sẽ được khôi phục khi đếm ngược kết thúc, trừ khi bạn chọn Giữ thay đổi.",
+  "Keep Changes": "Giữ thay đổi",
+  "Revert": "Hoàn nguyên"
 }

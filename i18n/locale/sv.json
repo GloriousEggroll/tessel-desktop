@@ -1928,5 +1928,9 @@
   "{name}: could not change adaptive sync.": "{name}: kunde inte ändra adaptiv synkronisering.",
   "The compositor refused the display layout: {details}": "Kompositören avvisade skärmlayouten: {details}",
   "Could not write {path}: {error}": "Kunde inte skriva {path}: {error}",
-  "Keeping the current display layout: {path} could not be read: {error}": "Behåller den aktuella skärmlayouten: {path} kunde inte läsas: {error}"
+  "Keeping the current display layout: {path} could not be read: {error}": "Behåller den aktuella skärmlayouten: {path} kunde inte läsas: {error}",
+  "Keep these display settings?": "Vill du behålla de här skärminställningarna?",
+  "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Dina tidigare inställningar kommer tillbaka när nedräkningen är slut, om du inte väljer Behåll ändringar.",
+  "Keep Changes": "Behåll ändringar",
+  "Revert": "Återställ"
 }
