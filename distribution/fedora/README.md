@@ -12,7 +12,8 @@ is its own device with its own installer. labwc, Ptyxis and xdg-desktop-portal-w
 
 ## Building
 
-    distribution/fedora/build.sh              # everything
+    distribution/fedora/build.sh              # everything, each in a clean chroot as on COPR
+    FAST=1 distribution/fedora/build.sh       # one shared chroot: quick, but hides missing BuildRequires
     distribution/fedora/build.sh dock shell   # only these
 
 The results land in `build-fedora/` (not tracked by git): `RPMS/`, `SRPMS/`, `logs/<package>/` and `sources/`.

@@ -6,7 +6,7 @@
 
 Name:           tessel-welcome
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel welcome screen
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -82,5 +82,8 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Welcome.desktop
 %{_datadir}/applications/org.tessel.Welcome.desktop
 
 %changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Rebuild with the 32-bit fixes in tessel-capture and tessel-shell
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

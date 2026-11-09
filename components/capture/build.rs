@@ -16,6 +16,12 @@ fn main() {
         println!("cargo:warning=pipewire-devel is not installed; libcapture-pipewire.so is not built");
         return;
     };
+    // Headers from other projects are not ours to hold to -Werror: PipeWire's
+    // warn on 32-bit architectures. -isystem keeps -Werror for our own code.
+    let flags: Vec<String> = flags.into_iter().flat_map(|flag| match flag.strip_prefix("-I") {
+        Some(directory) => vec!["-isystem".to_owned(), directory.to_owned()],
+        None => vec![flag],
+    }).collect();
     let out = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     let library = out.join("libcapture-pipewire.so");
     let compiler = cc::Build::new().get_compiler();

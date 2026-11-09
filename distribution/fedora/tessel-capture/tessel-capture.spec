@@ -6,7 +6,7 @@
 
 Name:           tessel-capture
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel screenshots and screen recording
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -85,5 +85,8 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.ScreenRecorder.desktop
 %{_datadir}/applications/org.tessel.ScreenRecorder.desktop
 
 %changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Build on 32-bit: warnings in PipeWire headers are not errors
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

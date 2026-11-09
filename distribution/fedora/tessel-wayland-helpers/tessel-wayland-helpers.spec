@@ -6,7 +6,7 @@
 
 Name:           tessel-wayland-helpers
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel Wayland helpers: toplevels, workspaces and overview
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -16,6 +16,7 @@ Source1:        tessel-%{version}-vendor.tar.xz
 BuildRequires:  cargo
 BuildRequires:  gcc
 BuildRequires:  pkgconfig(cairo)
+BuildRequires:  pkgconfig(cairo-gobject)
 BuildRequires:  pkgconfig(gio-2.0)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(gobject-2.0)
@@ -69,5 +70,8 @@ ln -s ../lib/tessel/tessel-shell-toplevel %{buildroot}%{_bindir}/tessel-shell-to
 %{_bindir}/tessel-shell-toplevel
 
 %changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Add the missing cairo-gobject build dependency
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

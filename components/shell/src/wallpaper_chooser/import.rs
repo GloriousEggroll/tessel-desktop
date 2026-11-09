@@ -533,7 +533,7 @@ impl Importer {
         if kind != libc::S_IFREG && kind != libc::S_IFLNK {
             return Err(RemovalError::Error("Only wallpaper files can be removed.".into()));
         }
-        let own: Identity = (st.st_dev, st.st_ino);
+        let own: Identity = (u64::from(st.st_dev), u64::from(st.st_ino)); // 32 bits wide on some architectures
         let changed = || RemovalError::Error("This wallpaper changed. Select it again before removing it.".into());
         if expected_identity.is_some_and(|expected| expected != own) {
             return Err(changed());
