@@ -45,7 +45,7 @@ Restart=on-failure  RestartSec=2
 - SIGTERM/SIGINT ⇒ `quit()`; shutdown closes backend & popup (`:65-66,189-203`).
 
 ### Install layout (`install_waybar.py`, `install_all.py:74` step "battery", kind=waybar, supports `--update`)
-- `~/.config/waybar/scripts/tessel-battery/`: `battery_manager.py, battery_status.py, battery_ui.py, tray_popup.py, README.md, gtk4_utils.py, companion_theme.py, suite_i18n.py, language_data.py, suite_catalogs.py, background_blur.py, libwaydock-background-blur.so, popup_placement.py` (`:28-53`).
+- `~/.config/waybar/scripts/tessel-battery/`: `battery_manager.py, battery_status.py, battery_ui.py, tray_popup.py, README.md, gtk4_utils.py, companion_theme.py, suite_i18n.py, language_data.py, suite_catalogs.py, background_blur.py, libtessel-dock-background-blur.so, popup_placement.py` (`:28-53`).
 - Requires tessel-power installed first: `~/.config/waybar/scripts/tessel-power/{power_backend,power_battery_ui,power_charge_limits,power_style}.py` (`:30,150-155`).
 - Legacy Waybar edit (only if configs exist): replace native `"battery"` with `"custom/battery"` `{exec: python3 …/battery_status.py, return-type: json, restart-interval: 3, format "{}", escape, tooltip, on-click: … --popup --popup-edge <edge> --popup-offset 76 </dev/null >/dev/null 2>&1 &, on-click-right: … --settings …}` (`:87-128`); CSS `#custom-battery{.plugged #69a7ff,.full #8fd6ab,.low #e3b66b,.critical #e05d65,.unavailable}` (`:31-44`).
 - CLI `[--apply|--update]`; manifest `${XDG_STATE_HOME:-~/.local/state}/tessel/previews/tessel-battery.json`; legacy `.waybar-install.json` (sources/installed sha256 map); backup `~/.config/waybar/backups/battery-<ts>`; health = 20× `--check`; rollback; SIGUSR2 to `waybar` processes (`:206-327`).

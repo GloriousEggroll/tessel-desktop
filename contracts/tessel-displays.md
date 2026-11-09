@@ -10,7 +10,7 @@ behaviour and socket protocol and reads its configuration file format. The GUI i
 
 | Item | Value | Ref |
 |---|---|---|
-| Script | `~/.local/share/tessel-displays/tessel-displays` (0755) + `display_style.py`, `companion_theme.py`, `background_blur.py`, `libwaydock-background-blur.so`, `suite_i18n.py`, `language_data.py`, `suite_catalogs.py`, `color_config.py`, `color_controls.py` | tessel-brightness/install_waybar.py:111-125; install_color.py:11-12 |
+| Script | `~/.local/share/tessel-displays/tessel-displays` (0755) + `display_style.py`, `companion_theme.py`, `background_blur.py`, `libtessel-dock-background-blur.so`, `suite_i18n.py`, `language_data.py`, `suite_catalogs.py`, `color_config.py`, `color_controls.py` | tessel-brightness/install_waybar.py:111-125; install_color.py:11-12 |
 | Launcher | `~/.local/bin/tessel-displays` = `#!/bin/sh\nexec /usr/bin/python3 ~/.local/share/tessel-displays/tessel-displays "$@"` | install_waybar.py:126 |
 | System copy | `/usr/bin/tessel-displays` (older RPM build; not touched) | |
 | .desktop | `~/.local/share/applications/tessel-displays.desktop` (copy of `tessel-displays/tessel-displays.desktop` with `Exec="<launcher>"` desktop-escaped): `Name=Display Configuration`, `GenericName=Displays Configuration`, `Icon=wdisplays`, `Categories=GTK;Settings;DesktopSettings;HardwareSettings;` | install_waybar.py:127-134 |

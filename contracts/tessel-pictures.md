@@ -7,7 +7,7 @@ D-Bus API of its own; independent of Capture / Screen Recorder. Nothing else in 
 ## 1. Entry points
 | Item | Value | Ref |
 |---|---|---|
-| Installer | `desktop-apps/install.py --only tessel-pictures [--apply]` (root via pkexec): copies the `picture_*.py` modules + shared `gtk4_utils.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libwaydock-background-blur.so app_menu.py` + `companion_theme.py` to `/usr/local/lib/tessel/tessel-pictures/` | desktop-apps/install.py |
+| Installer | `desktop-apps/install.py --only tessel-pictures [--apply]` (root via pkexec): copies the `picture_*.py` modules + shared `gtk4_utils.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libtessel-dock-background-blur.so app_menu.py` + `companion_theme.py` to `/usr/local/lib/tessel/tessel-pictures/` | desktop-apps/install.py |
 | Launcher | `/usr/local/bin/tessel-pictures` = `#!/bin/sh\n# Tessel standalone application\nexec /usr/bin/python3 "/usr/local/lib/tessel/tessel-pictures/picture_viewer.py" "$@"` | install.py:47-50 |
 | .desktop | `/usr/share/applications/org.tessel.Pictures.desktop`: `Name=Pictures`, `GenericName=Picture Viewer`, `Comment=Browse, compare and edit images`, `Exec=/usr/local/bin/tessel-pictures %U`, `Icon=image-x-generic`, `Categories=Graphics;Viewer;Photography;`, Keywords, `MimeType=` 13 image + 8 video types (copy in `components/pictures/data/`), `StartupNotify=true`, **`StartupWMClass=org.tessel.Pictures`** | org.tessel.Pictures.desktop |
 | GApplication | id **`org.tessel.Pictures`**, `HANDLES_COMMAND_LINE` (unique; a second launch forwards argv), `GLib.set_prgname(id)` | picture_viewer.py:25-58 |

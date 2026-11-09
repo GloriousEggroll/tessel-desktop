@@ -1,7 +1,7 @@
 # tessel-auth (polkitman): parity with contracts/tessel-auth.md
 
 Crate `components/auth`: binary `tessel-auth` (replaces
-`authentication_manager.py` + `bluetooth_agent.py` + `libwayshell-auth-listener.so`).
+`authentication_manager.py` + `bluetooth_agent.py` + `libtessel-shell-auth-listener.so`).
 
 Tests:
 - `cargo test -p tessel-auth`: unit tests, `private_bus` (real binary, fake BlueZ),

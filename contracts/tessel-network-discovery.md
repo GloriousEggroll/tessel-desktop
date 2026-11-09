@@ -11,7 +11,7 @@ shared by the binary and tessel-dock.
 
 | Item | Value | Ref |
 |---|---|---|
-| Installed dir | `~/.config/waybar/scripts/tessel-network-discovery/` (`discovery_backend.py`, `discovery_manager.py`, `discovery_browse.py`, shared `gtk4_utils.py popup_placement.py tray_popup.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libwaydock-background-blur.so`, `companion_theme.py`, `LICENSE`) | install.py:15-34 |
+| Installed dir | `~/.config/waybar/scripts/tessel-network-discovery/` (`discovery_backend.py`, `discovery_manager.py`, `discovery_browse.py`, shared `gtk4_utils.py popup_placement.py tray_popup.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libtessel-dock-background-blur.so`, `companion_theme.py`, `LICENSE`) | install.py:15-34 |
 | Launcher | `~/.local/bin/tessel-network-discovery` → `exec /usr/bin/python3 <dir>/discovery_manager.py "$@"` (0755) | install.py:38-40 |
 | .desktop | `~/.local/share/applications/org.tessel.NetworkDiscovery.desktop`: `Name=Discover Network Devices`, `Comment=Enable or disable Avahi network discovery`, `Exec="<launcher>" --popup`, `Icon=network-workgroup`, `Terminal=false`, `Categories=Settings;Network;`, `Keywords=Avahi;Discovery;mDNS;Zeroconf;Network;` (validated with `desktop-file-validate`) | install.py:41-45,131 |
 | Dock files also installed | `dock_config.py panel_actions.py panel_ui.py status_backend.py discovery_backend.py` → `~/.local/share/tessel-dock/` | install.py:15,35-37 |

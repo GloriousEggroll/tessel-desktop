@@ -10,7 +10,7 @@ and shared `tray_popup.py` / `popup_placement.py` (`PointerMonitor`).
 
 | Item | Value | Ref |
 |---|---|---|
-| Installed dir | `~/.config/waybar/scripts/tessel-session/` (`session_manager.py`, `session_backend.py`, `session_end.py` + shared `tray_popup.py popup_placement.py gtk4_utils.py suite_i18n.py suite_catalogs.py language_data.py background_blur.py libwaydock-background-blur.so companion_theme.py README.md`) | shared/install_gtk4.py:21,58 |
+| Installed dir | `~/.config/waybar/scripts/tessel-session/` (`session_manager.py`, `session_backend.py`, `session_end.py` + shared `tray_popup.py popup_placement.py gtk4_utils.py suite_i18n.py suite_catalogs.py language_data.py background_blur.py libtessel-dock-background-blur.so companion_theme.py README.md`) | shared/install_gtk4.py:21,58 |
 | Installer | `python3 shared/install_gtk4.py --apply` (no own installer) | README |
 | GApplication id | `org.tessel.Session`, `HANDLES_COMMAND_LINE`; `do_local_command_line` returns `(False, argv, 0)` so every invocation is forwarded to the primary | session_manager.py:284,296-297 |
 | systemd unit / autostart / .desktop | none; process lives only while the popup or an action is in progress | README |

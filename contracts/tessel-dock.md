@@ -15,7 +15,7 @@ user-facing spec for behaviour and must stay true.
 
 | Item | Value | Ref |
 |---|---|---|
-| Runtime dir | `~/.local/share/tessel-dock/` — all `RUNTIME` modules + shared (`suite_i18n.py`, `language_data.py`, `suite_catalogs.py`, `clock_preferences.py`, `background_blur.py`, `libwaydock-background-blur.so`, `service_settings.py`), `icons/tessel-dock-app-menu-symbolic.svg`, `tessel-dock-toplevel`, `tessel-dock-workspaces`, `papirus-icons/` (private icon mirrors) | install.py:25-37, 239-262; papirus_palette.py:137 |
+| Runtime dir | `~/.local/share/tessel-dock/` — all `RUNTIME` modules + shared (`suite_i18n.py`, `language_data.py`, `suite_catalogs.py`, `clock_preferences.py`, `background_blur.py`, `libtessel-dock-background-blur.so`, `service_settings.py`), `icons/tessel-dock-app-menu-symbolic.svg`, `tessel-dock-toplevel`, `tessel-dock-workspaces`, `papirus-icons/` (private icon mirrors) | install.py:25-37, 239-262; papirus_palette.py:137 |
 | Launcher | `~/.local/bin/tessel-dock` = `#!/bin/sh\nexec /usr/bin/python3 <runtime>/tessel-dock.py "$@"` | install.py:263-264 |
 | systemd unit | `~/.config/systemd/user/tessel-dock.service`: `Type=notify`, `NotifyAccess=main`, `TimeoutStartSec=30`, `Environment=GDK_BACKEND=wayland`, `ExecStart=/usr/bin/python3 %h/.local/share/tessel-dock/tessel-dock.py`, `Restart=on-failure`, `RestartSec=1`, `After=`/`PartOf=graphical-session.target`, **no [Install]** (static; installer removes any enablement) | install.py:265-269 |
 | .desktop | `~/.local/share/applications/tessel-dock.desktop`: Name=Dock Settings, `Exec="<launcher>" --settings`, Icon=preferences-desktop, Categories=Settings;DesktopSettings; | install.py:270-273 |
@@ -110,7 +110,7 @@ When another process owns the watcher: call its `RegisterStatusNotifierHost(<own
 | `zwlr_layer_shell_v1` (via gtk4-layer-shell) | every surface | see §6 |
 | `zwlr_foreign_toplevel_manager_v1` (≤v3), `wl_seat` (≤v7), `wl_output` (≤v4), `zxdg_output_manager_v1` (≤v3) | `tessel-dock-toplevel` helper | window list/activate/minimize/unminimize/close |
 | `ext_workspace_manager_v1` v1 (+wl_output, xdg-output) | `tessel-dock-workspaces` helper | workspaces per output group |
-| `ext_background_effect_manager_v1` + custom `waydock_blur_manager_v1` (`shared/protocols/waydock-blur-v1.xml`, `set_radius`) | `libwaydock-background-blur.so` (shared/background_blur.c), shares GTK's wl_display | blur under dock/popups; bundled labwc patch |
+| `ext_background_effect_manager_v1` + custom `tessel_blur_manager_v1` (`shared/protocols/tessel-blur-v1.xml`, `set_radius`) | `libtessel-dock-background-blur.so` (shared/background_blur.c), shares GTK's wl_display | blur under dock/popups; bundled labwc patch |
 | X11 (Xwayland) via libX11 ctypes in subprocess | fullscreen_guard.py `--probe` | `_NET_ACTIVE_WINDOW`, `_NET_CLIENT_LIST`, `_NET_WM_STATE(_FULLSCREEN/_MAXIMIZED_*)`, `_NET_FRAME_EXTENTS`, `_MOTIF_WM_HINTS`, `_NET_WM_NAME`; only local `DISPLAY` (`:N`/`unix:N`), total deadline, ≤512 clients |
 
 ### 4.1 Helper stdio protocol (must be preserved if the Rust port keeps the helpers, or re-implemented in-process)

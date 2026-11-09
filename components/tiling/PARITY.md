@@ -30,7 +30,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 ## §2 Control socket client (`client`)
 | Item | | Test |
 |---|---|---|
-| Path `$XDG_RUNTIME_DIR/waytile-$WAYLAND_DISPLAY.sock (labwc's name; keep it)` (fallback `/run/user/<uid>`), reject empty/`/` display or >255-byte command | ✅ | cli status test (`../x`) |
+| Path `$XDG_RUNTIME_DIR/tessel-tiling-$WAYLAND_DISPLAY.sock (labwc's name; older labwc: waytile-)` (fallback `/run/user/<uid>`), reject empty/`/` display or >255-byte command | ✅ | cli status test (`../x`) |
 | stat: owner uid + S_ISSOCK, else "not owned" | ✅ | cli status test (regular file) |
 | reply socket in `mkdtemp(wt-…)/reply`, 1.5 s timeout, recv 65536, cleaned up | ✅ | cli status test (no `wt-*` leftovers) |
 | connect error is an OSError (`[Errno 111] Connection refused`, not sign-out) | ✅ | cli status test |

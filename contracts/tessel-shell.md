@@ -156,7 +156,7 @@ exits 1. Errors print `Tessel Shell: <err>` to stderr and exit 1.
 | `zwlr_layer_shell_v1` (via gtk4-layer-shell) | desktop windows, switcher, backdrops | see §4 |
 | `zwlr_foreign_toplevel_management_unstable_v1` (v≤3) + `wl_seat` (≤7) + `wl_output` (≤4) + `zxdg_output_manager_v1` (≤3) | `tessel-shell-toplevel` helper (tessel-dock/toplevel_helper.c) | Activate, minimize, unminimize and close; the window list with outputs. |
 | `ext_foreign_toplevel_list_v1`, `ext_image_copy_capture_manager_v1`, `ext_foreign_toplevel_image_capture_source_manager_v1`, `ext_output_image_capture_source_manager_v1`, `wl_shm` | `tessel-overview` (overview_capture.c; XMLs in `protocols/`) | Activities previews |
-| `ext_background_effect_v1` (compositor blur) | `shared/libwaydock-background-blur.so` via background_blur.py, attached by TesselShellTheme | Shared with tessel-gtk. Needs the GTK surface's `wl_surface`. |
+| `ext_background_effect_v1` (compositor blur) | `shared/libtessel-dock-background-blur.so` via background_blur.py, attached by TesselShellTheme | Shared with tessel-gtk. Needs the GTK surface's `wl_surface`. |
 | `wlr-data-control` | only indirectly, via the spawned `wl-copy` | |
 
 #### Helper stdio protocols (keep them, or reimplement in-process)

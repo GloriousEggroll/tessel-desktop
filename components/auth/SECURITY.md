@@ -18,7 +18,7 @@
 ## What differs
 | Area | Python | Rust |
 |---|---|---|
-| Native bridge | `libwayshell-auth-listener.so` loaded with ctypes from the install dir (0644, user-writable dir) | Listener GType registered in-process (`src/listener.rs`). There is no loadable .so for an attacker to swap in the user's dir, but the binary itself lives in that same user-writable dir, so this is not a privilege boundary. |
+| Native bridge | `libtessel-shell-auth-listener.so` loaded with ctypes from the install dir (0644, user-writable dir) | Listener GType registered in-process (`src/listener.rs`). There is no loadable .so for an attacker to swap in the user's dir, but the binary itself lives in that same user-writable dir, so this is not a privilege boundary. |
 | Password in the entry | `Gtk.Entry` with a normal `GtkEntryBuffer` (heap; old text is not zeroed) | `GtkPasswordEntryBuffer`: GTK's non-swappable secure memory, zeroed when text is deleted |
 | Copy handed to polkit | `entry.get_text()` → immutable Python `str`, never wiped; it lives until GC (and interned copies may persist) | One copy into `Secret` (exact capacity, no reallocation), passed to `polkit_agent_session_response`, then overwritten with volatile writes. The entry is cleared before the response is sent. |
 | polkit cookie | Python `str`; `request['cookie'] = ''` only drops the reference | `Secret`, zeroed when the request finishes and on drop |

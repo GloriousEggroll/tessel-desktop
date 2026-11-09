@@ -100,7 +100,7 @@ None spawned by tessel-keep-awake.
 `shared/suite_i18n.py` (`initialize()` then `translate`), English-source-keyed catalogs `shared/locale/<code>.json` (installed copy `~/.local/share/tessel/locale` fallback). Strings: all `tr()` in `keep_awake.py:46-47`, `keep_awake_ui.py:73-141`, `keep_awake_client.py:13` ("Keep Awake is not running in this session."). Keep the untranslated literals listed in §2.3 byte-identical (dock tooltips/tests compare).
 
 ## 8. Install layout
-Files under `~/.config/waybar/scripts/tessel-keep-awake/`: `keep_awake.py`, `keep_awake_backend.py`, `keep_awake_ui.py`, `keep_awake_client.py`, `tray_popup.py`, `companion_theme.py`, `gtk4_utils.py`, `popup_placement.py`, `service_settings.py`, `suite_i18n.py`, `language_data.py`, `suite_catalogs.py`, `background_blur.py`, `libwaydock-background-blur.so`.
+Files under `~/.config/waybar/scripts/tessel-keep-awake/`: `keep_awake.py`, `keep_awake_backend.py`, `keep_awake_ui.py`, `keep_awake_client.py`, `tray_popup.py`, `companion_theme.py`, `gtk4_utils.py`, `popup_placement.py`, `service_settings.py`, `suite_i18n.py`, `language_data.py`, `suite_catalogs.py`, `background_blur.py`, `libtessel-dock-background-blur.so`.
 Installers: `tessel-shell/install_switcher.py:82-92` (primary) and `shared/install_gtk4.py:41-52` (refresh; copies all non-test `*.py`). `install_gtk4.py --apply` checks `keep_awake.py --status` (`ready`), and if it was `active` before the restart runs `--enable` afterwards (`shared/install_gtk4.py:296-345`); its child audit tolerates `systemd-inhibit`/`sleep` children of the unit (`:267`).
 Legacy wrapper scripts (`~/.config/waybar/scripts/idle_inhibit.sh` → `--status`, `toggle_idle_inhibit.sh` → `--toggle`) generated at `tessel-shell/install_switcher.py:130-135`.
 

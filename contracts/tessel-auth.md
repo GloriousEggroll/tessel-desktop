@@ -23,8 +23,8 @@ Restart=on-failure RestartSec=2 TimeoutStartSec=15
 - Drop-in `tessel-auth.service.d/50-tessel-recovery.conf` (configure_session.py): StartLimitBurst=5/60s, `OnFailure=tessel-failed@%n.service`, RestartSec=1, `EnvironmentFile=-%h/.config/labwc/environment.d/90-local.env`. Failure label 'Authentication agent' (tessel-session-startup/desktop_suite_failed.py:26). Listed in configure_session.py:581, configure.py:18, install_gtk4.py:22 UNITS.
 
 ### Install layout (shared/install_gtk4.py:176-182; no own installer)
-`~/.local/share/tessel-auth/`: authentication_manager.py, bluetooth_agent.py, libwayshell-auth-listener.so (0644), companion_theme.py (from tessel-dock/), gtk4_utils.py, suite_i18n.py, language_data.py, suite_catalogs.py (+ background_blur.py, libwaydock-background-blur.so present in live dir via themed-dir logic :183-). Unit copied to `~/.config/systemd/user/tessel-auth.service`. Installer backs up the old service and restores it if startup fails (README).
-- `build.py`: `cc -O2 -shared -fPIC -Wall -Wextra -Werror auth_listener.c -o libwayshell-auth-listener.so $(pkg-config --cflags --libs polkit-agent-1)`; built before install, never at startup (build.py:1-16).
+`~/.local/share/tessel-auth/`: authentication_manager.py, bluetooth_agent.py, libtessel-shell-auth-listener.so (0644), companion_theme.py (from tessel-dock/), gtk4_utils.py, suite_i18n.py, language_data.py, suite_catalogs.py (+ background_blur.py, libtessel-dock-background-blur.so present in live dir via themed-dir logic :183-). Unit copied to `~/.config/systemd/user/tessel-auth.service`. Installer backs up the old service and restores it if startup fails (README).
+- `build.py`: `cc -O2 -shared -fPIC -Wall -Wextra -Werror auth_listener.c -o libtessel-shell-auth-listener.so $(pkg-config --cflags --libs polkit-agent-1)`; built before install, never at startup (build.py:1-16).
 - Path quirk: `sys.path[:0] = [ROOT/'shared', ROOT/'tessel-dock']` with ROOT = `~/.local/share` (:11-12) — i.e. `~/.local/share/tessel-dock/{companion_theme,suite_i18n}.py` **take precedence** over the local copies. (Irrelevant for Rust; note when comparing behaviour.)
 
 ## 2. IPC
@@ -51,7 +51,7 @@ Restart=on-failure RestartSec=2 TimeoutStartSec=15
 | other | | error `org.bluez.Error.Rejected` "Unsupported request" |
 - Reject/close/Escape → `org.bluez.Error.Rejected` "Rejected by user" (`CANCELED` constant defined but unused). New request dismisses (rejects) the previous prompt. Device name: `Properties.Get(org.bluez.Device1, Alias)` sync 2 s; fallback path tail `dev_AA_BB…` → `AA:BB:…` (:176-183).
 
-### Native ABI: libwayshell-auth-listener.so (auth_listener.c)
+### Native ABI: libtessel-shell-auth-listener.so (auth_listener.c)
 - GType `TesselShellAuthListener` subclass of `PolkitAgentListener`; exported C fn `void tessel-shell_auth_register_type(void)` (g_type_ensure) (auth_listener.c:43).
 - Overrides `initiate_authentication` → creates `GTask(listener, cancellable, callback, user_data)` and emits signal **`authenticate`** `(GTask task, gchar* action_id, gchar* message, gchar* cookie, GStrv identity_strings, GCancellable cancellable)`; identities stringified with `polkit_identity_to_string` (e.g. `unix-user:tcrider`); icon_name & details ignored (:11-25,36-38).
 - `initiate_authentication_finish` → `g_task_propagate_boolean` (:27-30).

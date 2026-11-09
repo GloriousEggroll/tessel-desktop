@@ -334,8 +334,8 @@ Without the `gtk` feature it links only GLib/GIO (status-stream binaries).
 wayland-client 0.31 on the **system backend** (libwayland-client), so the same
 code can run on its own connection or on GTK's `wl_display`. Protocols come from
 wayland-protocols / wayland-protocols-wlr (XMLs identical to ~/tessel-bluetooth's
-vendored copies); the private `waydock_blur_manager_v1` is generated with
-wayland-scanner from `protocols/waydock-blur-v1.xml`. Features: `glib`
+vendored copies); the private `tessel_blur_manager_v1` is generated with
+wayland-scanner from `protocols/tessel-blur-v1.xml`. Features: `glib`
 (default, GSource), `capture-png` (default, cairo PNG thumbnails for
 `tessel-overview`), `gtk` (gdk4-wayland: blur, GTK-display clients, textures).
 Build needs wayland-client (and cairo for `capture-png`) dev files.
@@ -416,7 +416,7 @@ connection on GTK's wl_display), `gtk_wl_surface(&impl IsA<Native>) -> Option<Wl
 ### `blur` (feature `gtk`; re-exported as `suite_gtk::blur`)
 Rust port of background_blur.c/.py with the same API (see tessel-gtk above).
 Per GdkDisplay it binds `ext_background_effect_manager_v1` v1 and
-`waydock_blur_manager_v1` v1 on a private queue of GTK's connection; per mapped
+`tessel_blur_manager_v1` v1 on a private queue of GTK's connection; per mapped
 native (root via `target_class`/whole window, popovers via their `contents`) it
 creates one effect object (one owner per wl_surface, data key
 `tessel-dock-background-blur-owner`), a rounded region (`rounded_region_rects`) and

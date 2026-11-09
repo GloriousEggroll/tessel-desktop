@@ -1,5 +1,5 @@
 //! `TesselShellAuthListener`: a `PolkitAgentListener` subclass registered from
-//! Rust (replaces libwayshell-auth-listener.so / auth_listener.c).
+//! Rust (replaces libtessel-shell-auth-listener.so / auth_listener.c).
 //!
 //! As in the C bridge, Polkit's opaque `GAsyncReadyCallback`/`user_data` never
 //! leave C: `initiate_authentication` wraps them in a `GTask` owned by the

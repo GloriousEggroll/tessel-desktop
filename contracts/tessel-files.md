@@ -18,7 +18,7 @@ already ported as `components/shell/src/wallpaper_chooser/media_chooser.rs`.
 
 | Item | Value | Ref |
 |---|---|---|
-| Installer | `desktop-apps/install.py [--apply] [--only tessel-files]` (root, pkexec) and the older `tessel-files/install.py [--apply]`: copy every non-test `*.py` (not `install*.py`) to `/usr/local/lib/tessel/tessel-files/`, plus shared `gtk4_utils.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libwaydock-background-blur.so app_menu.py` and tessel-dock `companion_theme.py app_catalog.py dock_appearance.py` | desktop-apps/install.py:15-60, tessel-files/install.py |
+| Installer | `desktop-apps/install.py [--apply] [--only tessel-files]` (root, pkexec) and the older `tessel-files/install.py [--apply]`: copy every non-test `*.py` (not `install*.py`) to `/usr/local/lib/tessel/tessel-files/`, plus shared `gtk4_utils.py suite_i18n.py language_data.py suite_catalogs.py background_blur.py libtessel-dock-background-blur.so app_menu.py` and tessel-dock `companion_theme.py app_catalog.py dock_appearance.py` | desktop-apps/install.py:15-60, tessel-files/install.py |
 | Launcher | `/usr/local/bin/tessel-files` (0755) = `#!/bin/sh\n# Tessel standalone application\nexec /usr/bin/python3 "/usr/local/lib/tessel/tessel-files/file_manager.py" "$@"\n` | desktop-apps/install.py:48-51 |
 | .desktop | `/usr/share/applications/org.tessel.Files.desktop` (`Exec=/usr/local/bin/tessel-files %U`, `Icon=system-file-manager`, `StartupWMClass=org.tessel.Files`, `MimeType=inode/directory;`, actions `NewWindow` (`--new-window`), `Home` (`--home`)) | org.tessel.Files.desktop |
 | GApplication | id `org.tessel.Files`, flags `HANDLES_COMMAND_LINE` (unique; a second launch forwards its argv to the primary) | files_ui.py:65-67 |

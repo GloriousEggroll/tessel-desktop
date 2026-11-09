@@ -60,7 +60,7 @@
 - **Custom wayland-client bindings needed:**
   - zwlr_foreign_toplevel_management_v1 (v3), ext-workspace-v1 and zxdg_output_v1 (tessel-dock, tessel-shell switcher).
   - ext_foreign_toplevel_list_v1, ext_image_copy_capture_v1, ext_image_capture_source_v1 and wl_shm (tessel-shell overview).
-  - ext_background_effect_v1 and the private `waydock_blur_manager_v1` (shared/protocols/waydock-blur-v1.xml). These must bind on GTK's own wl_display, in tessel-gtk.
+  - ext_background_effect_v1 and the private `tessel_blur_manager_v1` (shared/protocols/tessel-blur-v1.xml). These must bind on GTK's own wl_display, in tessel-gtk.
   - The X11 fullscreen probe needs x11rb.
   - Layer-shell stays on gtk4-layer-shell.
 

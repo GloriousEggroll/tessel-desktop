@@ -12,7 +12,7 @@ pub struct SevenZip;
 
 /// Used for read operations when no password is known: 7-Zip must never
 /// prompt; a wrong-password answer then means "a password is needed".
-const NO_PASSWORD: &str = "-pwayarchive-no-password";
+const NO_PASSWORD: &str = "-ptessel-archive-no-password";
 
 fn password_arg(ctx: &Ctx) -> String {
     match &ctx.password {
