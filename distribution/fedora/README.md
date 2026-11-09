@@ -21,13 +21,25 @@ A full build ends with `check.sh`, which fails if a program, unit or desktop fil
 repository is in no package or in more than one. **A new program, unit or desktop file must be added
 to its component's spec.**
 
-Every spec takes the same two sources, which `build.sh` makes: `tessel-<version>.tar.gz` (the
-source tree) and `tessel-<version>-vendor.tar.xz` (the Rust crates, so builds need no network).
+## Sources
+
+Specs fetch their sources from https://github.com/GloriousEggroll/tessel-desktop:
+
+- `Source0`: `archive/<commit>/tessel-desktop-<commit>.tar.gz`, the tree at the spec's `%commit`;
+- `Source1`: `releases/download/vendor-<lock>/tessel-desktop-vendor-<lock>.tar.xz`, the Rust crates
+  for that commit's `Cargo.lock` (`<lock>` is the first 12 hex digits of its SHA-256), so builds need
+  no network. GitHub does not make this file: upload the one `build.sh` leaves in
+  `build-fedora/sources/` to a release with the tag `vendor-<lock>`. It only changes with `Cargo.lock`.
+
+`build.sh` makes both files from the local repository under those names, so the commit must be
+in the local repository; push it before submitting the SRPMs. `TREE=1 build.sh` builds the working
+tree instead, for testing only.
 
 ## Updating one package
 
 Packages require each other by version, not release, so a fix needs only the packages it changes.
-Raise `Release:` in those specs, build them with `build.sh <folder> ...` and submit those SRPMs. If a
+Commit the fix, point those specs at it with `set-commit.sh <commit> <folder> ...`, raise their
+`Release:`, build them with `build.sh <folder> ...`, push, and submit those SRPMs. If a
 package needs another's fix, require that release explicitly, as `tessel-meta` does.
 Raise `Version:` in every spec together, because every package requires at least that version.
 

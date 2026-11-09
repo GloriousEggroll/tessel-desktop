@@ -4,14 +4,20 @@
 %global tessel_libdir %{_prefix}/lib/tessel
 %{!?tessel_cargo_target_dir:%global tessel_cargo_target_dir %{_builddir}/tessel-target}
 
+# Sources come from GitHub: the commit this package is built from, and the
+# vendored crates for that commit's Cargo.lock (see README.md, "Sources").
+# build.sh overrides both to build the working tree.
+%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?vendorlock:%global vendorlock ace8d23feae6}
+
 Name:           tessel-weather
 Version:        0.1.0
 Release:        2%{?dist}
 Summary:        Tessel weather
 License:        GPL-3.0-or-later
-URL:            https://nobaraproject.org
-Source0:        tessel-%{version}.tar.gz
-Source1:        tessel-%{version}-vendor.tar.xz
+URL:            https://github.com/GloriousEggroll/tessel-desktop
+Source0:        %{url}/archive/%{commit}/tessel-desktop-%{commit}.tar.gz
+Source1:        %{url}/releases/download/vendor-%{vendorlock}/tessel-desktop-vendor-%{vendorlock}.tar.xz
 
 BuildRequires:  cargo
 BuildRequires:  gcc
@@ -36,7 +42,7 @@ Recommends:     geoclue2
 Tessel weather. Part of the Tessel desktop.
 
 %prep
-%autosetup -n tessel-%{version} -a1
+%autosetup -n tessel-desktop-%{commit} -a1
 cat >> .cargo/config.toml <<'EOF'
 
 [source.crates-io]

@@ -2,6 +2,7 @@
 # Build every Tessel RPM in a clean Nobara mock chroot.
 #
 #   distribution/fedora/build.sh [folder ...]     all folders, or only the named ones
+#   TREE=1 distribution/fedora/build.sh ...       the working tree instead of each spec's commit
 #
 # Results: build-fedora/RPMS, build-fedora/SRPMS, build-fedora/logs/<package>.
 # MOCK_CONFIG picks the mock configuration (default: nobara-44-x86_64 in rpm-sources).
@@ -22,22 +23,55 @@ target=/var/tmp/tessel-target
 
 mkdir -p "$out/RPMS" "$out/SRPMS" "$out/logs" "$sources"
 
-# The working tree, including uncommitted changes to tracked files.
-tree=$(git -C "$repo" stash create)
-git -C "$repo" archive --prefix="tessel-$version/" -o "$sources/tessel-$version.tar.gz" "${tree:-HEAD}"
-
-# Vendored crates, remade only when Cargo.lock changes. The Windows import
-# libraries are large and never used on Linux; cargo only verifies crates it builds.
-vendor=$sources/tessel-$version-vendor.tar.xz
-lock=$(sha256sum "$repo/Cargo.lock" | cut -d' ' -f1)
-if [ ! -f "$vendor" ] || [ "$(cat "$vendor.lock" 2>/dev/null)" != "$lock" ]; then
-    work=$(mktemp -d -p "$sources")
-    (cd "$repo" && cargo vendor --locked --versioned-dirs "$work/vendor" >/dev/null)
-    find "$work/vendor" -path '*/windows*' \( -name '*.a' -o -name '*.lib' \) -delete
-    tar -C "$work" -cJf "$vendor" vendor
-    rm -rf "$work"
-    echo "$lock" > "$vendor.lock"
+# Sources. Each spec names the GitHub commit it builds and the vendored crates for
+# that commit's Cargo.lock; both are made here from the local repository under the
+# names GitHub serves, so builds need no network and match what COPR fetches.
+# TREE=1 builds the working tree instead, including uncommitted changes to tracked
+# files, by overriding the spec's commit (for testing only: never submit those SRPMs).
+defines=()
+if [ -n "${TREE:-}" ]; then
+    tree=$(git -C "$repo" stash create)
+    tree=${tree:-$(git -C "$repo" rev-parse HEAD)}
+    defines=(--define "commit $tree" --define "vendorlock $(sha256sum "$repo/Cargo.lock" | cut -c1-12)")
 fi
+
+# Source0 and Source1 of a spec, as rpm sees them with the overrides above.
+spec_sources() { rpmspec -P "${defines[@]}" "$1" | sed -n 's/^Source[01]:[[:space:]]*//p'; }
+
+make_sources() {
+    local url commit lock work
+    for url in $(spec_sources "$1"); do
+        case $url in
+        */archive/*)
+            commit=${url%/*}; commit=${commit##*/}
+            [ -f "$sources/${url##*/}" ] && continue
+            git -C "$repo" cat-file -e "$commit^{commit}" 2>/dev/null ||
+                { echo "commit $commit (from $1) is not in this repository" >&2; exit 1; }
+            git -C "$repo" archive --prefix="tessel-desktop-$commit/" -o "$sources/${url##*/}" "$commit"
+            ;;
+        */releases/download/*)
+            # The vendored crates. The Windows import libraries are large and never
+            # used on Linux; cargo only verifies crates it builds.
+            [ -f "$sources/${url##*/}" ] && continue
+            lock=${url##*-}; lock=${lock%.tar.xz}
+            commit=$(spec_sources "$1" | sed -n 's|.*/archive/\([^/]*\)/.*|\1|p')
+            work=$(mktemp -d -p "$sources")
+            if [ "$(sha256sum "$repo/Cargo.lock" | cut -c1-12)" = "$lock" ]; then
+                (cd "$repo" && cargo vendor --locked --versioned-dirs "$work/vendor" >/dev/null)
+            else
+                mkdir "$work/src"
+                git -C "$repo" archive "$commit" | tar -C "$work/src" -x
+                [ "$(sha256sum "$work/src/Cargo.lock" | cut -c1-12)" = "$lock" ] ||
+                    { echo "$1: vendorlock $lock is not the Cargo.lock of $commit" >&2; exit 1; }
+                (cd "$work/src" && cargo vendor --locked --versioned-dirs "$work/vendor" >/dev/null)
+            fi
+            find "$work/vendor" -path '*/windows*' \( -name '*.a' -o -name '*.lib' \) -delete
+            tar -C "$work" -cJf "$sources/${url##*/}" vendor
+            rm -rf "$work"
+            ;;
+        esac
+    done
+}
 
 # Component folders first (tessel-common has no compiled code), tessel-meta last.
 if [ "$#" -gt 0 ]; then
@@ -60,13 +94,14 @@ for folder in "${folders[@]}"; do
     name=$(basename "$spec" .spec)
     echo "==> $name"
     rm -f "$out/SRPMS/$name-$version-"*.src.rpm "$out/RPMS/$name-$version-"*.rpm
-    rpmbuild -bs "$spec" --define "_sourcedir $sources" --define "_srcrpmdir $out/SRPMS" --define "dist .fc44" >/dev/null
+    make_sources "$spec"
+    rpmbuild -bs "$spec" "${defines[@]}" --define "_sourcedir $sources" --define "_srcrpmdir $out/SRPMS" --define "dist .fc44" >/dev/null
     rm -rf "${out:?}/logs/$name"
     if [ -n "$fast" ]; then
-        "${mock[@]}" --no-clean --no-cleanup-after --define "tessel_cargo_target_dir $target" \
+        "${mock[@]}" "${defines[@]}" --no-clean --no-cleanup-after --define "tessel_cargo_target_dir $target" \
             --resultdir "$out/logs/$name" --rebuild "$out/SRPMS/$name-$version-"*.src.rpm
     else
-        "${mock[@]}" --resultdir "$out/logs/$name" --rebuild "$out/SRPMS/$name-$version-"*.src.rpm
+        "${mock[@]}" "${defines[@]}" --resultdir "$out/logs/$name" --rebuild "$out/SRPMS/$name-$version-"*.src.rpm
     fi
     mv "$out/logs/$name/"*.rpm "$out/RPMS/" 2>/dev/null || :
     rm -f "$out/RPMS/"*.src.rpm

@@ -4,7 +4,7 @@ Version:        0.1.0
 Release:        2%{?dist}
 Summary:        The complete Tessel desktop
 License:        GPL-3.0-or-later
-URL:            https://nobaraproject.org
+URL:            https://github.com/GloriousEggroll/tessel-desktop
 BuildArch:      noarch
 
 Requires:       tessel-common >= %{version}

@@ -2,13 +2,19 @@
 # directory and the system defaults (packaging/defaults/README.md).
 %global tessel_libdir %{_prefix}/lib/tessel
 
+# Sources come from GitHub: the commit this package is built from, and the
+# vendored crates for that commit's Cargo.lock (see README.md, "Sources").
+# build.sh overrides both to build the working tree.
+%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?vendorlock:%global vendorlock ace8d23feae6}
+
 Name:           tessel-common
 Version:        0.1.0
 Release:        2%{?dist}
 Summary:        Tessel desktop: translations, logo and system defaults
 License:        GPL-3.0-or-later
-URL:            https://nobaraproject.org
-Source0:        tessel-%{version}.tar.gz
+URL:            https://github.com/GloriousEggroll/tessel-desktop
+Source0:        %{url}/archive/%{commit}/tessel-desktop-%{commit}.tar.gz
 BuildArch:      noarch
 
 Requires:       glib2
@@ -22,7 +28,7 @@ Translations, the logo, the program directory and the system defaults shared by
 every part of the Tessel desktop.
 
 %prep
-%autosetup -n tessel-%{version}
+%autosetup -n tessel-desktop-%{commit}
 
 %build
 
