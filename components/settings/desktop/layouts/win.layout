@@ -96,16 +96,7 @@
     "hide_delay_ms": 500,
     "hide_on_fullscreen": true,
     "hot_corner_delay_ms": 150,
-    "hot_corners": {
-      "DP-2": [
-        "top_left",
-        "bottom_left"
-      ],
-      "HDMI-A-1": [
-        "top_right",
-        "bottom_right"
-      ]
-    },
+    "hot_corners": {},
     "hover_scale": 1.0,
     "icon_size": 40,
     "magnification": false,
@@ -113,16 +104,7 @@
     "menu_hotkey_fullscreen": false,
     "mode": "bar",
     "monitor": "all",
-    "monitor_overrides": {
-      "DP-2": {
-        "edge": "bottom",
-        "alignment": "center"
-      },
-      "HDMI-A-1": {
-        "edge": "bottom",
-        "alignment": "center"
-      }
-    },
+    "monitor_overrides": {},
     "reveal_delay_ms": 120,
     "rounded_corners": true,
     "separate_app_dock": false,

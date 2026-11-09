@@ -6,7 +6,7 @@
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -67,14 +67,20 @@ chmod 644 %{buildroot}%{_userunitdir}/tessel-displays.service
 install -d %{buildroot}%{_datadir}/applications
 sed -e 's|@LIBDIR@|%{tessel_libdir}|g' -e 's#^\(Exec\|TryExec\)=tessel-#\1=%{tessel_libdir}/tessel-#' data/applications/org.tessel.Displays.desktop > %{buildroot}%{_datadir}/applications/org.tessel.Displays.desktop
 chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Displays.desktop
+install -Dm644 packaging/defaults/etc/tessel/displays/cfg.yaml %{buildroot}%{_sysconfdir}/tessel/displays/cfg.yaml
 
 %files
+%dir %{_sysconfdir}/tessel/displays
+%config(noreplace) %{_sysconfdir}/tessel/displays/cfg.yaml
 %{_userunitdir}/tessel-displays.service
 %{tessel_libdir}/tessel-displays
 %{_bindir}/tessel-displays
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
+- Ship Tessel's own display defaults instead of relying on way-displays' file
+
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
 - Automatic scale suits the screen size instead of making laptop panels far too large
 

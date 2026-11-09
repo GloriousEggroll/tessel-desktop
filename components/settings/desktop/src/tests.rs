@@ -111,6 +111,7 @@ fn a_new_user_starts_on_the_win_layout() {
     let win = presets.iter().find(|p| p.key == "win").unwrap();
     let config = tessel_dock::core::config::new_user_config();
     assert_eq!(config.mode, "bar");
+    assert!(config.hot_corners.is_empty() && config.monitor_overrides.is_empty(), "no one else's monitor names");
     assert!(crate::layout_presets::matches(win, &config, win.workspaces, win.gapless, None), "Desktop Layout should show Win as current");
 }
 

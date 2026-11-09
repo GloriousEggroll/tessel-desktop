@@ -1,0 +1,3 @@
+# Tessel's display defaults, used until a user saves their own settings in
+# Global Settings > Displays (~/.config/tessel/displays/cfg.yaml).
+AUTO_SCALE: true

@@ -531,6 +531,16 @@ DISABLED:
     }
 
     #[test]
+    fn tessels_defaults_are_read_before_way_displays_and_add_only_auto_scale() {
+        let text = include_str!("../../../../packaging/defaults/etc/tessel/displays/cfg.yaml");
+        assert_eq!(Cfg::load(text).unwrap(), Cfg { auto_scale: true, ..Default::default() });
+        let candidates = read_candidates();
+        let at = |path: &str| candidates.iter().position(|c| c == &PathBuf::from(path)).unwrap();
+        assert_eq!(candidates[0], config_path());
+        assert!(at("/etc/tessel/displays/cfg.yaml") < at("/etc/way-displays/cfg.yaml"));
+    }
+
+    #[test]
     fn defaults_keep_nobaras_choices() {
         let cfg = Cfg::load("").unwrap();
         assert!(!cfg.auto_scale, "Nobara's way-displays did not auto-scale unless asked");
