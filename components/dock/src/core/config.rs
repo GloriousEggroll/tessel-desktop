@@ -914,17 +914,32 @@ pub struct ConfigStore {
     pub path: PathBuf,
     /// Last load/save problem (`str(error)` in Python); empty when fine.
     pub error: String,
+    /// A missing file means a new user, who starts on [`new_user_config`].
+    new_user_layout: bool,
+}
+
+/// The Win layout of Global Settings > Desktop Layout, which a new user starts on.
+const NEW_USER_LAYOUT: &str = include_str!("../../../settings/desktop/layouts/win.layout");
+
+/// The default settings with [`NEW_USER_LAYOUT`] applied.
+pub fn new_user_config() -> DockConfig {
+    let layout: Value = serde_json::from_str(NEW_USER_LAYOUT).unwrap_or_default();
+    let mut values = DockConfig::default().to_value();
+    if let (Some(values), Some(dock)) = (values.as_object_mut(), layout["dock"].as_object()) {
+        values.extend(dock.iter().map(|(key, value)| (key.clone(), value.clone())));
+    }
+    DockConfig::from_value(&values).unwrap_or_default()
 }
 
 impl Default for ConfigStore {
     fn default() -> Self {
-        Self::new(default_path())
+        Self { new_user_layout: true, ..Self::new(default_path()) }
     }
 }
 
 impl ConfigStore {
     pub fn new(path: impl Into<PathBuf>) -> Self {
-        Self { path: path.into(), error: String::new() }
+        Self { path: path.into(), error: String::new(), new_user_layout: false }
     }
 
     /// Read settings; only a missing file triggers defaults and the Cairo
@@ -934,7 +949,10 @@ impl ConfigStore {
         self.error.clear();
         match self.read() {
             Ok(config) => config,
-            Err(None) => DockConfig { pins: catalog.map(|c| initial_pins(c, cairo_dir)).unwrap_or_default(), ..DockConfig::default() },
+            Err(None) => {
+                let start = if self.new_user_layout { new_user_config() } else { DockConfig::default() };
+                DockConfig { pins: catalog.map(|c| initial_pins(c, cairo_dir)).unwrap_or_default(), ..start }
+            }
             Err(Some(error)) => {
                 self.error = error;
                 DockConfig::default()

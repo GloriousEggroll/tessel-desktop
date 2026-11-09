@@ -105,6 +105,16 @@ fn preset(values: Value) -> Preset {
 }
 
 #[test]
+fn a_new_user_starts_on_the_win_layout() {
+    let (presets, problems) = crate::layout_presets::load_presets();
+    assert!(problems.is_empty(), "{problems:?}");
+    let win = presets.iter().find(|p| p.key == "win").unwrap();
+    let config = tessel_dock::core::config::new_user_config();
+    assert_eq!(config.mode, "bar");
+    assert!(crate::layout_presets::matches(win, &config, win.workspaces, win.gapless, None), "Desktop Layout should show Win as current");
+}
+
+#[test]
 fn previous_layout_round_trips_and_changes_are_described() {
     let config = config_with(json!({"edge": "bottom", "icon_size": 40}));
     let folder = scratch("previous");

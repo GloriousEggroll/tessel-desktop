@@ -52,3 +52,5 @@ Window (title, ≤980×780 default, headerbar, `.page-title/.subtitle`, Apply `.
 - Apply is a trial: settings go live but are not saved, and a question counts down from 10 seconds. Only Keep Changes saves (`CFG_WRITE`). Revert, Escape, closing the question or the window, or no answer put back the daemon settings and labwc's `rc.xml`, `environment` and `xinitrc`. A failed Apply reverts without asking. Tests: `ui_headless`, `tests/run_trial_headless.sh` (real daemon).
 - Brightness, contrast and dimming apply as the slider moves and are not part of the trial.
 - `CFG_DEL` with `ORDER` clears the saved order, so a revert can return to having none.
+
+Intentional difference from way-displays: automatic scale aims for 135 dpi under 20 inches and 110 dpi above when `AUTO_SCALE_DPI` is 96, and stops at 2.5 without `AUTO_SCALE_MAX`. way-displays divided by 96, which made laptop panels far too large (2.75 on a 13 inch 2880×1920).

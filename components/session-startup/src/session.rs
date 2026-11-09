@@ -937,6 +937,7 @@ pub fn split_environment(current: &str, local: &str) -> (String, String) {
 /// replaced by these; it only gets the managed changes above.
 const DEFAULT_RC: &str = include_str!("../../../packaging/defaults/labwc/rc.xml");
 const DEFAULT_MENU: &str = include_str!("../../../packaging/defaults/labwc/menu.xml");
+const NEW_USER_TILING: &str = "{\"gapless\": true, \"gapped_spacing\": 10}\n";
 
 /// Program paths for a default file: `(labwc expands "~", a shell expands "$HOME")`.
 const DEFAULT_PATHS: (&str, &str) = if tessel_core::paths::PACKAGED {
@@ -965,6 +966,12 @@ pub fn plan(home: &Path) -> Result<(Vec<FileEntry>, Vec<String>), Error> {
     let mut notes = Vec::new();
 
     let rc = labwc.join("rc.xml");
+    // A new user's rc.xml has no window gap and starts on the Win layout, so the
+    // tiling switch has to say so. Anyone with an rc.xml keeps what they have.
+    let tiling = home.join(".config/tessel/tiling/config.json");
+    if std::fs::symlink_metadata(&rc).is_err() && std::fs::symlink_metadata(&tiling).is_err() {
+        files.push((tiling, NEW_USER_TILING.as_bytes().to_vec(), 0o600));
+    }
     if let Some(current) = labwc_file(&rc, DEFAULT_RC)? {
         let (text, skipped) = edit_rc(&current, home)?;
         files.push((rc.clone(), text.into_bytes(), fsops::mode_or(&rc, 0o644)?));
@@ -1186,6 +1193,21 @@ mod new_user_tests {
         assert!(packaged.contains("command=\"/usr/bin/tessel-dock --menu-hotkey\""));
         assert!(packaged.contains("<command>/usr/bin/tessel-capture --capture screen</command>"));
         assert!(!packaged.contains(".local") && !packaged.contains("$HOME"));
+    }
+
+    #[test]
+    fn only_a_new_user_starts_without_window_gaps() {
+        let home = home("gapless");
+        let tiling = home.join(".config/tessel/tiling/config.json");
+        let (files, _) = plan(&home).unwrap();
+        assert_eq!(file(&files, "config.json"), NEW_USER_TILING);
+        for (path, data, mode) in &files {
+            fsops::atomic_write(path, data, *mode).unwrap();
+        }
+        std::fs::remove_file(&tiling).unwrap();
+        let (again, _) = plan(&home).unwrap();
+        std::fs::remove_dir_all(&home).unwrap();
+        assert!(!again.iter().any(|(path, _, _)| *path == tiling), "someone with an rc.xml keeps their gaps");
     }
 
     #[test]

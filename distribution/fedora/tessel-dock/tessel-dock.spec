@@ -94,6 +94,7 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %changelog
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - Require tessel-common by version, so it can update on its own
+- New users start on the Win layout
 
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

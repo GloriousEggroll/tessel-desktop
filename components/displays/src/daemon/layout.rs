@@ -2,7 +2,7 @@
 //! Wayland in it. Compatible with the way-displays layout rules (MIT,
 //! Copyright 2021 Alexander Courtis), so saved layouts come out the same.
 
-use super::config::{Align, Arrange, Cfg, Condition, LidCondition, ModeChoice, Round};
+use super::config::{Align, Arrange, Cfg, Condition, LidCondition, ModeChoice, Round, SCREEN_SIZE_DPI};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Mode {
@@ -108,24 +108,41 @@ fn fixed_scale(cfg: &Cfg, scale: f64) -> i32 {
     (rounded * (256.0 / base)) as i32
 }
 
+/// Pixel density that looks right at scale 1, by how far away a screen is used.
+const CLOSE_SCREEN_DPI: f64 = 135.0;
+const FAR_SCREEN_DPI: f64 = 110.0;
+const CLOSE_SCREEN_MAX_INCHES: f64 = 20.0;
+/// The highest automatic scale without an AUTO_SCALE_MAX, and the top of the Displays slider.
+const AUTO_SCALE_CEILING: f64 = 2.5;
+
 fn auto_scale(cfg: &Cfg, head: &Head, mode: &Mode) -> i32 {
     if head.width_mm == 0 || head.height_mm == 0 {
         return fixed_scale(cfg, 1.0);
     }
-    let horizontal = f64::from(mode.width) / f64::from(head.width_mm) * 25.4;
-    let vertical = f64::from(mode.height) / f64::from(head.height_mm) * 25.4;
+    let (width_mm, height_mm) = (f64::from(head.width_mm), f64::from(head.height_mm));
+    let horizontal = f64::from(mode.width) / width_mm * 25.4;
+    let vertical = f64::from(mode.height) / height_mm * 25.4;
     let dpi = (horizontal + vertical) / 2.0;
-    let base = cfg.round_base as i64;
-    let dpi_base = i64::from(cfg.dpi);
-    let dpi_min = (dpi_base / base * (cfg.auto_min * base as f64).ceil() as i64).max(dpi_base / base) as f64;
-    let dpi_max = (dpi_base / base * (cfg.auto_max * base as f64) as i64) as f64;
-    let mut clamped = dpi;
-    if clamped < dpi_min {
-        clamped = dpi_min;
-    } else if dpi_min <= dpi_max && clamped > dpi_max {
-        clamped = dpi_max;
-    }
-    fixed_scale(cfg, clamped / dpi_base as f64)
+    let inches = width_mm.hypot(height_mm) / 25.4;
+    let target = if cfg.dpi != SCREEN_SIZE_DPI {
+        f64::from(cfg.dpi)
+    } else if inches < CLOSE_SCREEN_MAX_INCHES {
+        CLOSE_SCREEN_DPI
+    } else {
+        FAR_SCREEN_DPI
+    };
+    let base = f64::from(cfg.round_base);
+    let min = ((cfg.auto_min * base).ceil() / base).max(1.0 / base);
+    let max = if cfg.auto_max > 0.0 { (cfg.auto_max * base).floor() / base } else { AUTO_SCALE_CEILING };
+    let scale = dpi / target;
+    let clamped = if scale < min {
+        min
+    } else if min <= max && scale > max {
+        max
+    } else {
+        scale
+    };
+    fixed_scale(cfg, clamped)
 }
 
 fn greatest_first(modes: &[Mode]) -> Vec<Mode> {
@@ -406,19 +423,42 @@ mod tests {
 
     #[test]
     fn auto_scale_follows_dpi_within_its_limits() {
-        // 3840 wide on 600 mm and 2160 on 340 mm: about 162 dpi, so 1.625 (162/96 = 1.69 → 1.75).
+        // 3840 wide on 600 mm and 2160 on 340 mm: about 162 dpi on a 27 inch screen.
         let heads = pair();
         let mut cfg = Cfg { auto_scale: true, ..Default::default() };
         let mode = heads[0].modes[1];
-        assert_eq!(auto_scale(&cfg, &heads[0], &mode), 448);
-        cfg.auto_max = 1.5;
-        assert_eq!(auto_scale(&cfg, &heads[0], &mode), 384);
+        assert_eq!(auto_scale(&cfg, &heads[0], &mode), 384, "162 / 110 rounds to 1.5");
+        cfg.auto_max = 1.25;
+        assert_eq!(auto_scale(&cfg, &heads[0], &mode), 320);
         cfg.auto_max = -1.0;
         cfg.auto_min = 2.0;
         assert_eq!(auto_scale(&cfg, &heads[0], &mode), 512);
         let mut unknown = heads[0].clone();
         unknown.width_mm = 0;
         assert_eq!(auto_scale(&cfg, &unknown, &mode), 256, "no physical size means scale 1");
+    }
+
+    #[test]
+    fn auto_scale_suits_the_size_of_the_screen() {
+        let cfg = Cfg { auto_scale: true, ..Default::default() };
+        let scale = |width, height, width_mm, height_mm| {
+            let mut screen = pair()[0].clone();
+            (screen.width_mm, screen.height_mm) = (width_mm, height_mm);
+            auto_scale(&cfg, &screen, &mode(1, width, height, 60000))
+        };
+        assert_eq!(scale(2880, 1920, 280, 190), 480, "a 13 inch laptop that way-displays' formula put at 2.75 is 1.875");
+        assert_eq!(scale(1920, 1080, 344, 194), 256, "15.6 inch 1080p");
+        assert_eq!(scale(1920, 1080, 531, 299), 256, "24 inch 1080p never goes below 1");
+        assert_eq!(scale(5120, 2880, 600, 340), 512, "27 inch 5K");
+        assert_eq!(scale(7680, 4320, 300, 170), 640, "stays within the Displays slider");
+    }
+
+    #[test]
+    fn a_chosen_auto_scale_dpi_is_used_for_every_screen() {
+        let cfg = Cfg { auto_scale: true, dpi: 120, auto_max: 3.0, ..Default::default() };
+        let mut laptop = pair()[0].clone();
+        (laptop.width_mm, laptop.height_mm) = (280, 190);
+        assert_eq!(auto_scale(&cfg, &laptop, &mode(1, 2880, 1920, 60000)), 544, "259 / 120 rounds to 2.125");
     }
 
     #[test]

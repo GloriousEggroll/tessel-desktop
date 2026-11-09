@@ -15,6 +15,9 @@ const OLD_DEFAULT_CALLBACKS: [&str; 2] = [
 ];
 /// The internal panel, turned off with the lid closed unless DISABLED says otherwise.
 pub const LAPTOP_PANEL: &str = "!^eDP-[0-9]";
+/// AUTO_SCALE_DPI meaning "choose by screen size". It is way-displays' default, which
+/// every saved file and /etc/way-displays/cfg.yaml carry, so it does not show a choice.
+pub const SCREEN_SIZE_DPI: i32 = 96;
 const HEADER: &str = "# Tessel display layout. Global Settings > Displays writes this file.\n";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,7 +87,7 @@ impl Default for Cfg {
     fn default() -> Self {
         Self {
             arrange: Arrange::Row, align: Align::Top, order: Vec::new(), scaling: true, round_base: 8, round: Round::Nearest,
-            auto_scale: false, dpi: 96, auto_min: 1.0, auto_max: -1.0, scales: Vec::new(), modes: Vec::new(), transforms: Vec::new(),
+            auto_scale: false, dpi: SCREEN_SIZE_DPI, auto_min: 1.0, auto_max: -1.0, scales: Vec::new(), modes: Vec::new(), transforms: Vec::new(),
             vrr_off: Vec::new(), callback: DEFAULT_CALLBACK.into(), lid_monitor: true, threshold: Level::Warning,
             disabled: vec![(LAPTOP_PANEL.into(), vec![Condition { lid: Some(LidCondition::Closed), ..Default::default() }])],
         }

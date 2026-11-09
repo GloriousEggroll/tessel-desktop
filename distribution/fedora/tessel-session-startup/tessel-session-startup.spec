@@ -6,7 +6,7 @@
 
 Name:           tessel-session-startup
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tessel session: labwc configuration, autostart and login entry
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -107,6 +107,9 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %config(noreplace) %{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
+- New users start without window gaps, as the Win layout has
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - A new user gets complete labwc configuration: Alt+Tab, Super, screenshots, dialogs, mouse, menu
 

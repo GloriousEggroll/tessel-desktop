@@ -6,7 +6,7 @@
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -101,6 +101,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- New users start on the Win layout
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Displays: Apply asks for 10 seconds whether to keep display settings, and reverts them otherwise
 

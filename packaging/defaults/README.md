@@ -23,6 +23,8 @@ Paths below mirror the install root.
 | Screen-share picker | `etc/xdg/xdg-desktop-portal-wlr/labwc`, `etc/xdg/xdg-desktop-portal-wlr/wlroots` | Points xdg-desktop-portal-wlr at the packaged `tessel-capture-picker`. A user's `~/.config/xdg-desktop-portal-wlr` wins. |
 | Secret Service portal | `usr/share/xdg-desktop-portal/portals/tessel-keyring.portal` | Serves `org.freedesktop.impl.portal.Secret` from tessel-keyring. |
 | New user labwc configuration | `labwc/rc.xml`, `labwc/menu.xml` | Built into `tessel-configure-session`, which writes them when a user has none, with `@BIN@` and `@SHELL_BIN@` set for the install type. Holds what the session does not manage: Alt+Tab, Super, screenshot keys, prompts, mouse bindings, workspaces and menus. Existing files are not replaced. |
+| New users start on the Win layout | `components/settings/desktop/layouts/win.layout` | `ConfigStore::default()` in the dock uses it when `~/.config/tessel/dock/config.json` is missing. `tessel-configure-session` writes `~/.config/tessel/tiling/config.json` (gapless) for a user with no `rc.xml`. Existing settings are not changed. |
+| Automatic display scale | built in (`components/displays/src/daemon/layout.rs`) | With `AUTO_SCALE_DPI: 96`, screens under 20 inches aim for 135 dpi and larger ones for 110 dpi, up to 2.5 unless `AUTO_SCALE_MAX` says otherwise. Any other `AUTO_SCALE_DPI` is used as given. |
 
 Session startup also repairs a missing icon theme at login (falls back to Papirus-Dark when the
 configured theme is not installed), so removing a theme package never leaves the desktop without icons.
