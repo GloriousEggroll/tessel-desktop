@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Tämä näyttö ei salli kirkkauden muuttamista, kun HDR on käytössä. Poista HDR käytöstä tästä näytöstä säätääksesi sitä.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Tämä näyttö ei salli kontrastin muuttamista, kun HDR on käytössä. Poista HDR käytöstä tästä näytöstä säätääksesi sitä.",
   "See this PC's hardware and software.": "Näytä tämän tietokoneen laitteisto ja ohjelmisto.",
-  "System Information could not be opened": "Järjestelmätietoja ei voitu avata"
+  "System Information could not be opened": "Järjestelmätietoja ei voitu avata",
+  "Display settings": "Näytön asetukset",
+  "Display warning": "Näytön varoitus",
+  "Display error": "Näytön virhe",
+  "Display changes applied.": "Näytön muutokset otettiin käyttöön.",
+  "{name}: reapplying settings.": "{name}: asetuksia otetaan uudelleen käyttöön.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: mukautuva synkronointi päällä.",
+  "{name}: adaptive sync off.": "{name}: mukautuva synkronointi pois päältä.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: skaalaus {scale} sijainnissa {x}, {y}.",
+  "{name}: off.": "{name}: pois päältä.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Näytön muutokset peruttiin. Yritetään uudelleen (yritys {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Näytön muutokset peruttiin {retries} yrityksen jälkeen.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: tilaa {width}x{height}, {hz} Hz ei voitu asettaa. Kokeillaan toista tilaa.",
+  "{name}: could not change adaptive sync.": "{name}: mukautuvaa synkronointia ei voitu muuttaa.",
+  "The compositor refused the display layout: {details}": "Kompositori hylkäsi näyttöjen asettelun: {details}",
+  "Could not write {path}: {error}": "Tiedostoon {path} ei voitu kirjoittaa: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Nykyinen näyttöjen asettelu säilytetään: tiedostoa {path} ei voitu lukea: {error}"
 }

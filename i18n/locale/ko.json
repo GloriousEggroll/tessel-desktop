@@ -2093,5 +2093,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 밝기를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "이 디스플레이는 HDR이 켜져 있는 동안 대비를 변경할 수 없습니다. 조정하려면 이 디스플레이의 HDR을 끄세요.",
   "See this PC's hardware and software.": "이 PC의 하드웨어와 소프트웨어를 확인합니다.",
-  "System Information could not be opened": "시스템 정보를 열 수 없습니다"
+  "System Information could not be opened": "시스템 정보를 열 수 없습니다",
+  "Display settings": "디스플레이 설정",
+  "Display warning": "디스플레이 경고",
+  "Display error": "디스플레이 오류",
+  "Display changes applied.": "디스플레이 변경 사항을 적용했습니다.",
+  "{name}: reapplying settings.": "{name}: 설정을 다시 적용하는 중입니다.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz}Hz.",
+  "{name}: adaptive sync on.": "{name}: 적응형 동기화 켜짐.",
+  "{name}: adaptive sync off.": "{name}: 적응형 동기화 꺼짐.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: 배율 {scale}, 위치 {x}, {y}.",
+  "{name}: off.": "{name}: 꺼짐.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "디스플레이 변경이 취소되었습니다. 다시 시도하는 중입니다({attempt}번째 시도).",
+  "Display changes were cancelled after {retries} retries.": "디스플레이 변경이 {retries}번 시도 후 취소되었습니다.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: {width}x{height}, {hz}Hz를 설정할 수 없습니다. 다른 모드를 시도합니다.",
+  "{name}: could not change adaptive sync.": "{name}: 적응형 동기화를 변경할 수 없습니다.",
+  "The compositor refused the display layout: {details}": "컴포지터가 디스플레이 배치를 거부했습니다: {details}",
+  "Could not write {path}: {error}": "{path}에 쓸 수 없습니다: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "현재 디스플레이 배치를 유지합니다: {path}을(를) 읽을 수 없습니다: {error}"
 }

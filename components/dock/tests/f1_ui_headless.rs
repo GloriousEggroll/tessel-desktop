@@ -971,10 +971,8 @@ fn drag_hides_backdrops_and_drop_pins(monitor: &gdk::Monitor) -> Result<(), Stri
     Ok(())
 }
 
-/// dock_ui.py `pin_drop_index`: a button's middle is its translated origin
-/// plus half of `get_allocated_width()` (which adds the CSS margin, border
-/// and padding), not half of `width()`.
-fn drop_index_uses_margin_box(monitor: &gdk::Monitor) -> Result<(), String> {
+/// A button's middle is what the user sees: CSS margins must not move it.
+fn drop_index_uses_visible_middle(monitor: &gdk::Monitor) -> Result<(), String> {
     let fake = fake(monitor, base_catalog());
     let first = children(&fake.pinned_box)[0].clone();
     first.add_css_class("f1-wide-box");
@@ -984,12 +982,13 @@ fn drop_index_uses_margin_box(monitor: &gdk::Monitor) -> Result<(), String> {
     settle(0.15);
     let panel = fake.pinned_box.clone().upcast::<gtk::Widget>();
     let origin = translate(&first, &panel, 0.0, 0.0).ok_or("translate")?.0;
+    let width = first.width() as f64;
     #[allow(deprecated)]
-    let (border, margin) = (first.width() as f64, first.allocated_width() as f64);
-    ensure!(margin >= border + 40.0, "allocated width adds the CSS box: {margin} vs {border}");
-    let between = origin + (border / 2.0 + margin / 2.0) / 2.0;
-    ensure!(drag::pin_index_at(&*fake, between, 1.0) == 0, "index at {between} (origin {origin}, {border}/{margin})");
-    ensure!(drag::pin_index_at(&*fake, origin + margin / 2.0 + 1.0, 1.0) == 1, "past the margin-box middle");
+    let allocated = first.allocated_width() as f64;
+    ensure!(allocated >= width + 40.0, "the margins are in effect: {allocated} vs {width}");
+    let between = origin + width * 0.4;
+    ensure!(drag::pin_index_at(&*fake, between, 1.0) == 0, "index at {between} (origin {origin}, width {width})");
+    ensure!(drag::pin_index_at(&*fake, origin + width * 0.6, 1.0) == 1, "past the visible middle");
     let text = DropValue::Text("tessel-dock-app:files.desktop".into());
     ensure!(drag::dropped(&*fake, &panel, &text, between, 1.0), "drop");
     ensure!(fake.last() == Some(("place-pin".into(), "files.desktop|browser.desktop".into())), "{:?}", fake.last());
@@ -1222,7 +1221,7 @@ fn main() {
         ("category_keyboard_filters_grid", Box::new({ let m = m.clone(); move || category_keyboard_filters_grid(&m) })),
         ("native_dismissal_pin_and_keyboard", Box::new({ let m = m.clone(); move || native_dismissal_pin_and_keyboard(&m, &ms) })),
         ("drag_hides_backdrops_and_drop_pins", Box::new({ let m = m.clone(); move || drag_hides_backdrops_and_drop_pins(&m) })),
-        ("drop_index_uses_margin_box", Box::new({ let m = m.clone(); move || drop_index_uses_margin_box(&m) })),
+        ("drop_index_uses_visible_middle", Box::new({ let m = m.clone(); move || drop_index_uses_visible_middle(&m) })),
         ("menu_reuses_icon_paintables", Box::new({ let m = m.clone(); move || menu_reuses_icon_paintables(&m) })),
         ("preview_activates_exact_window", Box::new({ let m = m.clone(); move || preview_activates_exact_window(&m) })),
         ("preview_minimizes_focused_and_restores", Box::new({ let m = m.clone(); move || preview_minimizes_focused_and_restores(&m) })),

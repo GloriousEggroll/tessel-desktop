@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej neumožňuje meniť jas, keď je zapnuté HDR. Ak ho chcete upraviť, vypnite pre tento displej HDR.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej neumožňuje meniť kontrast, keď je zapnuté HDR. Ak ho chcete upraviť, vypnite pre tento displej HDR.",
   "See this PC's hardware and software.": "Zobraziť hardvér a softvér tohto počítača.",
-  "System Information could not be opened": "Informácie o systéme sa nepodarilo otvoriť"
+  "System Information could not be opened": "Informácie o systéme sa nepodarilo otvoriť",
+  "Display settings": "Nastavenia displeja",
+  "Display warning": "Varovanie displeja",
+  "Display error": "Chyba displeja",
+  "Display changes applied.": "Zmeny displeja boli použité.",
+  "{name}: reapplying settings.": "{name}: opätovné použitie nastavení.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} pri {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: adaptívna synchronizácia zapnutá.",
+  "{name}: adaptive sync off.": "{name}: adaptívna synchronizácia vypnutá.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: mierka {scale} na pozícii {x}, {y}.",
+  "{name}: off.": "{name}: vypnuté.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Zmeny displeja boli zrušené. Nový pokus (pokus {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Zmeny displeja boli zrušené po {retries} pokusoch.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: nedá sa nastaviť {width}x{height} pri {hz} Hz. Skúša sa iný režim.",
+  "{name}: could not change adaptive sync.": "{name}: adaptívnu synchronizáciu sa nepodarilo zmeniť.",
+  "The compositor refused the display layout: {details}": "Kompozitor odmietol rozloženie displejov: {details}",
+  "Could not write {path}: {error}": "Nedá sa zapísať {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Ponecháva sa aktuálne rozloženie displejov: {path} sa nedá prečítať: {error}"
 }

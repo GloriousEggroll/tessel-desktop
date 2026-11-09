@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "HDR चालू होने पर यह डिस्प्ले चमक बदलने की अनुमति नहीं देता। इसे समायोजित करने के लिए इस डिस्प्ले के लिए HDR बंद करें।",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR चालू होने पर यह डिस्प्ले कंट्रास्ट बदलने की अनुमति नहीं देता। इसे समायोजित करने के लिए इस डिस्प्ले के लिए HDR बंद करें।",
   "See this PC's hardware and software.": "इस पीसी का हार्डवेयर और सॉफ़्टवेयर देखें।",
-  "System Information could not be opened": "सिस्टम जानकारी नहीं खोली जा सकी"
+  "System Information could not be opened": "सिस्टम जानकारी नहीं खोली जा सकी",
+  "Display settings": "डिस्प्ले सेटिंग्स",
+  "Display warning": "डिस्प्ले चेतावनी",
+  "Display error": "डिस्प्ले त्रुटि",
+  "Display changes applied.": "डिस्प्ले बदलाव लागू किए गए।",
+  "{name}: reapplying settings.": "{name}: सेटिंग्स फिर से लागू की जा रही हैं।",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz} Hz पर।",
+  "{name}: adaptive sync on.": "{name}: अडैप्टिव सिंक चालू।",
+  "{name}: adaptive sync off.": "{name}: अडैप्टिव सिंक बंद।",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: स्केल {scale}, स्थिति {x}, {y} पर।",
+  "{name}: off.": "{name}: बंद।",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "डिस्प्ले बदलाव रद्द हुए। फिर से कोशिश की जा रही है (प्रयास {attempt})।",
+  "Display changes were cancelled after {retries} retries.": "{retries} प्रयासों के बाद डिस्प्ले बदलाव रद्द हुए।",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: {width}x{height}, {hz} Hz सेट नहीं हो सका। दूसरा मोड आज़माया जा रहा है।",
+  "{name}: could not change adaptive sync.": "{name}: अडैप्टिव सिंक नहीं बदला जा सका।",
+  "The compositor refused the display layout: {details}": "कम्पोज़िटर ने डिस्प्ले लेआउट अस्वीकार किया: {details}",
+  "Could not write {path}: {error}": "{path} में नहीं लिखा जा सका: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "मौजूदा डिस्प्ले लेआउट रखा जा रहा है: {path} नहीं पढ़ा जा सका: {error}"
 }

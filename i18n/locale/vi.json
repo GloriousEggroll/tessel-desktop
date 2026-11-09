@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Màn hình này không cho phép thay đổi độ sáng khi HDR đang bật. Hãy tắt HDR cho màn hình này để điều chỉnh.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Màn hình này không cho phép thay đổi độ tương phản khi HDR đang bật. Hãy tắt HDR cho màn hình này để điều chỉnh.",
   "See this PC's hardware and software.": "Xem phần cứng và phần mềm của máy tính này.",
-  "System Information could not be opened": "Không thể mở Thông tin hệ thống"
+  "System Information could not be opened": "Không thể mở Thông tin hệ thống",
+  "Display settings": "Cài đặt màn hình",
+  "Display warning": "Cảnh báo màn hình",
+  "Display error": "Lỗi màn hình",
+  "Display changes applied.": "Đã áp dụng thay đổi màn hình.",
+  "{name}: reapplying settings.": "{name}: đang áp dụng lại cài đặt.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} ở {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: đã bật đồng bộ thích ứng.",
+  "{name}: adaptive sync off.": "{name}: đã tắt đồng bộ thích ứng.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: tỷ lệ {scale} tại vị trí {x}, {y}.",
+  "{name}: off.": "{name}: tắt.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Thay đổi màn hình đã bị hủy. Đang thử lại (lần thử {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Thay đổi màn hình đã bị hủy sau {retries} lần thử.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: không thể đặt {width}x{height} ở {hz} Hz. Đang thử chế độ khác.",
+  "{name}: could not change adaptive sync.": "{name}: không thể thay đổi đồng bộ thích ứng.",
+  "The compositor refused the display layout: {details}": "Trình tổng hợp đã từ chối bố cục màn hình: {details}",
+  "Could not write {path}: {error}": "Không thể ghi {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Giữ nguyên bố cục màn hình hiện tại: không thể đọc {path}: {error}"
 }

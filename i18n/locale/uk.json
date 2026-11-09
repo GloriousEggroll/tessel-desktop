@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Цей дисплей не дозволяє змінювати яскравість, поки увімкнено HDR. Вимкніть HDR для цього дисплея, щоб її налаштувати.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Цей дисплей не дозволяє змінювати контрастність, поки увімкнено HDR. Вимкніть HDR для цього дисплея, щоб її налаштувати.",
   "See this PC's hardware and software.": "Переглянути обладнання та програми цього комп’ютера.",
-  "System Information could not be opened": "Не вдалося відкрити відомості про систему"
+  "System Information could not be opened": "Не вдалося відкрити відомості про систему",
+  "Display settings": "Налаштування дисплея",
+  "Display warning": "Попередження дисплея",
+  "Display error": "Помилка дисплея",
+  "Display changes applied.": "Зміни дисплея застосовано.",
+  "{name}: reapplying settings.": "{name}: повторне застосування налаштувань.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz} Гц.",
+  "{name}: adaptive sync on.": "{name}: адаптивну синхронізацію ввімкнено.",
+  "{name}: adaptive sync off.": "{name}: адаптивну синхронізацію вимкнено.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: масштаб {scale}, положення {x}, {y}.",
+  "{name}: off.": "{name}: вимкнено.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Зміни дисплея скасовано. Повторна спроба (спроба {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Зміни дисплея скасовано після спроб: {retries}.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: не вдалося встановити {width}x{height}, {hz} Гц. Пробуємо інший режим.",
+  "{name}: could not change adaptive sync.": "{name}: не вдалося змінити адаптивну синхронізацію.",
+  "The compositor refused the display layout: {details}": "Композитор відхилив розташування дисплеїв: {details}",
+  "Could not write {path}: {error}": "Не вдалося записати {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Зберігається поточне розташування дисплеїв: не вдалося прочитати {path}: {error}"
 }

@@ -294,10 +294,11 @@ fn test_square_setting_flattens_controls_and_restores_local_styles() {
 }
 
 fn test_desktop_captions_selection_and_menu_controls_follow_each_monitor() {
-    let settings = gtk::Settings::default().unwrap();
-    let previous_theme = settings.gtk_theme_name();
-    // This is the theme whose native modelbutton hover border leaked blue.
-    settings.set_gtk_theme_name(Some("Nobara"));
+    // A theme can draw its own hover border on menu rows (one once leaked blue
+    // through the palette). Stand in for it, whichever themes are installed.
+    let native = gtk::CssProvider::new();
+    native.load_from_string("popover modelbutton:hover { border: 1px solid rgb(0, 0, 255); }");
+    gtk::style_context_add_provider_for_display(&gdk::Display::default().unwrap(), &native, gtk::STYLE_PROVIDER_PRIORITY_THEME);
     let dir = scratch("captions");
     let path = dir.join("palette.json");
     let mut data = snapshot();
@@ -389,7 +390,7 @@ fn test_desktop_captions_selection_and_menu_controls_follow_each_monitor() {
     for window in &windows {
         window.destroy();
     }
-    settings.set_gtk_theme_name(previous_theme.as_deref());
+    gtk::style_context_remove_provider_for_display(&gdk::Display::default().unwrap(), &native);
     settle(0.06);
     let _ = std::fs::remove_dir_all(dir);
 }

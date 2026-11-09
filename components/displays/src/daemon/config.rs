@@ -6,7 +6,13 @@ use crate::compat::yaml;
 use serde_json::{json, Map, Value};
 use std::path::PathBuf;
 
-pub const DEFAULT_CALLBACK: &str = "notify-send \"tessel-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"";
+/// CALLBACK_TITLE and CALLBACK_MSG are translated; CALLBACK_LEVEL is not, so scripts can test it.
+pub const DEFAULT_CALLBACK: &str = "notify-send \"${CALLBACK_TITLE}\" \"${CALLBACK_MSG}\"";
+/// Earlier defaults, which saved configurations may still contain.
+const OLD_DEFAULT_CALLBACKS: [&str; 2] = [
+    "notify-send \"way-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"",
+    "notify-send \"tessel-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"",
+];
 /// The internal panel, turned off with the lid closed unless DISABLED says otherwise.
 pub const LAPTOP_PANEL: &str = "!^eDP-[0-9]";
 const HEADER: &str = "# Tessel display layout. Global Settings > Displays writes this file.\n";
@@ -262,7 +268,9 @@ impl Cfg {
         if let Some(align) = partial.align { cfg.align = align; }
         if let Some(scaling) = partial.scaling { cfg.scaling = scaling; }
         if let Some(auto_scale) = partial.auto_scale { cfg.auto_scale = auto_scale; }
-        if let Some(callback) = partial.callback { cfg.callback = callback; }
+        if let Some(callback) = partial.callback {
+            cfg.callback = OLD_DEFAULT_CALLBACKS.iter().fold(callback, |text, old| text.replace(old, DEFAULT_CALLBACK));
+        }
         cfg.order = partial.order;
         cfg.scales = partial.scales;
         cfg.modes = partial.modes;
@@ -495,6 +503,16 @@ DISABLED:
         assert!(cfg.callback.starts_with("# way-displays-gui primary output begin\n") && cfg.callback.ends_with("fi\n"));
         assert_eq!(cfg.threshold, Level::Info);
         assert!(cfg.disabled.is_empty(), "an empty DISABLED turns the default lid rule off");
+    }
+
+    #[test]
+    fn a_saved_default_notification_becomes_the_translated_one() {
+        let file = "CALLBACK_CMD: \"# way-displays-gui primary output begin\\nxrandr\\n# end\\nnotify-send \\\"way-displays ${CALLBACK_LEVEL}\\\" \\\"${CALLBACK_MSG}\\\"\"\n";
+        let cfg = Cfg::load(file).unwrap();
+        assert!(cfg.callback.starts_with("# way-displays-gui primary output begin\nxrandr\n"), "{}", cfg.callback);
+        assert!(cfg.callback.ends_with(DEFAULT_CALLBACK), "{}", cfg.callback);
+        let own = "CALLBACK_CMD: my-script \"${CALLBACK_LEVEL}\"\n";
+        assert_eq!(Cfg::load(own).unwrap().callback, "my-script \"${CALLBACK_LEVEL}\"");
     }
 
     #[test]

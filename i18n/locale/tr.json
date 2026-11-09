@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Bu ekran HDR açıkken parlaklığın değiştirilmesine izin vermiyor. Ayarlamak için bu ekranda HDR'yi kapatın.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Bu ekran HDR açıkken kontrastın değiştirilmesine izin vermiyor. Ayarlamak için bu ekranda HDR'yi kapatın.",
   "See this PC's hardware and software.": "Bu bilgisayarın donanımını ve yazılımını görün.",
-  "System Information could not be opened": "Sistem Bilgileri açılamadı"
+  "System Information could not be opened": "Sistem Bilgileri açılamadı",
+  "Display settings": "Ekran ayarları",
+  "Display warning": "Ekran uyarısı",
+  "Display error": "Ekran hatası",
+  "Display changes applied.": "Ekran değişiklikleri uygulandı.",
+  "{name}: reapplying settings.": "{name}: ayarlar yeniden uygulanıyor.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: uyarlanabilir eşitleme açık.",
+  "{name}: adaptive sync off.": "{name}: uyarlanabilir eşitleme kapalı.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: {x}, {y} konumunda {scale} ölçek.",
+  "{name}: off.": "{name}: kapalı.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Ekran değişiklikleri iptal edildi. Yeniden deneniyor ({attempt}. deneme).",
+  "Display changes were cancelled after {retries} retries.": "Ekran değişiklikleri {retries} denemeden sonra iptal edildi.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: {width}x{height}, {hz} Hz ayarlanamadı. Başka bir mod deneniyor.",
+  "{name}: could not change adaptive sync.": "{name}: uyarlanabilir eşitleme değiştirilemedi.",
+  "The compositor refused the display layout: {details}": "Birleştirici ekran düzenini reddetti: {details}",
+  "Could not write {path}: {error}": "{path} yazılamadı: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Geçerli ekran düzeni korunuyor: {path} okunamadı: {error}"
 }

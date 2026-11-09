@@ -23,7 +23,7 @@ use tessel_core::pyjson::{py_str, truthy};
 use tessel_core::tr;
 use tessel_gtk::theme::WindowTheme;
 
-pub const DEFAULT_CALLBACK: &str = "notify-send \"tessel-displays ${CALLBACK_LEVEL}\" \"${CALLBACK_MSG}\"";
+pub use crate::daemon::config::DEFAULT_CALLBACK;
 
 type Ipc = Rc<dyn Fn(&str, &str) -> Result<String, String>>;
 type IpcConfig = Rc<dyn Fn(&str, &Value) -> Result<String, String>>;

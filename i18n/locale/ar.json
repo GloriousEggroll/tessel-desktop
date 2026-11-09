@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "لا تسمح هذه الشاشة بتغيير السطوع أثناء تشغيل HDR. أوقف HDR لهذه الشاشة لضبطه.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "لا تسمح هذه الشاشة بتغيير التباين أثناء تشغيل HDR. أوقف HDR لهذه الشاشة لضبطه.",
   "See this PC's hardware and software.": "اعرض عتاد هذا الحاسوب وبرامجه.",
-  "System Information could not be opened": "تعذّر فتح معلومات النظام"
+  "System Information could not be opened": "تعذّر فتح معلومات النظام",
+  "Display settings": "إعدادات الشاشة",
+  "Display warning": "تحذير الشاشة",
+  "Display error": "خطأ في الشاشة",
+  "Display changes applied.": "تم تطبيق تغييرات الشاشة.",
+  "{name}: reapplying settings.": "{name}: جارٍ إعادة تطبيق الإعدادات.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: ‏{width}x{height} بتردد {hz} هرتز.",
+  "{name}: adaptive sync on.": "{name}: المزامنة التكيفية مفعّلة.",
+  "{name}: adaptive sync off.": "{name}: المزامنة التكيفية معطّلة.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: المقياس {scale} في الموضع {x}، {y}.",
+  "{name}: off.": "{name}: متوقفة.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "أُلغيت تغييرات الشاشة. جارٍ إعادة المحاولة (المحاولة {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "أُلغيت تغييرات الشاشة بعد {retries} محاولات.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: تعذّر ضبط {width}x{height} بتردد {hz} هرتز. جارٍ تجربة وضع آخر.",
+  "{name}: could not change adaptive sync.": "{name}: تعذّر تغيير المزامنة التكيفية.",
+  "The compositor refused the display layout: {details}": "رفض المؤلِّف تخطيط الشاشة: {details}",
+  "Could not write {path}: {error}": "تعذّرت كتابة {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "سيُحتفظ بتخطيط الشاشة الحالي: تعذّرت قراءة {path}: {error}"
 }

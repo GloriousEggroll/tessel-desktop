@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Acest ecran nu permite modificarea luminozității cât timp HDR este activat. Dezactivați HDR pentru acest ecran pentru a o ajusta.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Acest ecran nu permite modificarea contrastului cât timp HDR este activat. Dezactivați HDR pentru acest ecran pentru a-l ajusta.",
   "See this PC's hardware and software.": "Vezi componentele hardware și software ale acestui PC.",
-  "System Information could not be opened": "Informațiile despre sistem nu au putut fi deschise"
+  "System Information could not be opened": "Informațiile despre sistem nu au putut fi deschise",
+  "Display settings": "Setări ecran",
+  "Display warning": "Avertisment ecran",
+  "Display error": "Eroare ecran",
+  "Display changes applied.": "Modificările ecranului au fost aplicate.",
+  "{name}: reapplying settings.": "{name}: se reaplică setările.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} la {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: sincronizare adaptivă activată.",
+  "{name}: adaptive sync off.": "{name}: sincronizare adaptivă dezactivată.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: scară {scale} la poziția {x}, {y}.",
+  "{name}: off.": "{name}: oprit.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Modificările ecranului au fost anulate. Se reîncearcă (încercarea {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Modificările ecranului au fost anulate după {retries} încercări.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: nu s-a putut seta {width}x{height} la {hz} Hz. Se încearcă alt mod.",
+  "{name}: could not change adaptive sync.": "{name}: sincronizarea adaptivă nu a putut fi modificată.",
+  "The compositor refused the display layout: {details}": "Compozitorul a refuzat aranjamentul ecranelor: {details}",
+  "Could not write {path}: {error}": "Nu s-a putut scrie {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Se păstrează aranjamentul actual al ecranelor: {path} nu a putut fi citit: {error}"
 }

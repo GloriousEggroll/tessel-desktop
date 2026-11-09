@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Esta tela não permite alterar o brilho enquanto o HDR está ativado. Desative o HDR desta tela para ajustá-lo.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Esta tela não permite alterar o contraste enquanto o HDR está ativado. Desative o HDR desta tela para ajustá-lo.",
   "See this PC's hardware and software.": "Veja o hardware e o software deste PC.",
-  "System Information could not be opened": "Não foi possível abrir as Informações do sistema"
+  "System Information could not be opened": "Não foi possível abrir as Informações do sistema",
+  "Display settings": "Configurações de tela",
+  "Display warning": "Aviso de tela",
+  "Display error": "Erro de tela",
+  "Display changes applied.": "As alterações de tela foram aplicadas.",
+  "{name}: reapplying settings.": "{name}: reaplicando as configurações.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} a {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: sincronização adaptativa ativada.",
+  "{name}: adaptive sync off.": "{name}: sincronização adaptativa desativada.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: escala {scale} na posição {x}, {y}.",
+  "{name}: off.": "{name}: desligada.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "As alterações de tela foram canceladas. Tentando novamente (tentativa {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "As alterações de tela foram canceladas após {retries} tentativas.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: não foi possível definir {width}x{height} a {hz} Hz. Tentando outro modo.",
+  "{name}: could not change adaptive sync.": "{name}: não foi possível alterar a sincronização adaptativa.",
+  "The compositor refused the display layout: {details}": "O compositor recusou o layout das telas: {details}",
+  "Could not write {path}: {error}": "Não foi possível gravar {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Mantendo o layout atual das telas: não foi possível ler {path}: {error}"
 }

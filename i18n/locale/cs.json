@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej nedovoluje měnit jas, když je zapnuté HDR. Chcete-li jej upravit, vypněte pro tento displej HDR.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Tento displej nedovoluje měnit kontrast, když je zapnuté HDR. Chcete-li jej upravit, vypněte pro tento displej HDR.",
   "See this PC's hardware and software.": "Zobrazit hardware a software tohoto počítače.",
-  "System Information could not be opened": "Informace o systému nelze otevřít"
+  "System Information could not be opened": "Informace o systému nelze otevřít",
+  "Display settings": "Nastavení displeje",
+  "Display warning": "Varování displeje",
+  "Display error": "Chyba displeje",
+  "Display changes applied.": "Změny displeje byly použity.",
+  "{name}: reapplying settings.": "{name}: opětovné použití nastavení.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} při {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: adaptivní synchronizace zapnuta.",
+  "{name}: adaptive sync off.": "{name}: adaptivní synchronizace vypnuta.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: měřítko {scale} na pozici {x}, {y}.",
+  "{name}: off.": "{name}: vypnuto.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Změny displeje byly zrušeny. Nový pokus (pokus {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Změny displeje byly zrušeny po {retries} pokusech.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: nelze nastavit {width}x{height} při {hz} Hz. Zkouší se jiný režim.",
+  "{name}: could not change adaptive sync.": "{name}: adaptivní synchronizaci nelze změnit.",
+  "The compositor refused the display layout: {details}": "Kompozitor odmítl rozložení displejů: {details}",
+  "Could not write {path}: {error}": "Nelze zapsat {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Zůstává aktuální rozložení displejů: {path} nelze přečíst: {error}"
 }

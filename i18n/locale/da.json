@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Denne skærm tillader ikke at ændre lysstyrken, mens HDR er slået til. Slå HDR fra for denne skærm for at justere den.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Denne skærm tillader ikke at ændre kontrasten, mens HDR er slået til. Slå HDR fra for denne skærm for at justere den.",
   "See this PC's hardware and software.": "Se denne pc's hardware og software.",
-  "System Information could not be opened": "Systeminformation kunne ikke åbnes"
+  "System Information could not be opened": "Systeminformation kunne ikke åbnes",
+  "Display settings": "Skærmindstillinger",
+  "Display warning": "Skærmadvarsel",
+  "Display error": "Skærmfejl",
+  "Display changes applied.": "Skærmændringerne er anvendt.",
+  "{name}: reapplying settings.": "{name}: anvender indstillinger igen.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} ved {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: adaptiv synkronisering til.",
+  "{name}: adaptive sync off.": "{name}: adaptiv synkronisering fra.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: skalering {scale} på position {x}, {y}.",
+  "{name}: off.": "{name}: slukket.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Skærmændringerne blev annulleret. Prøver igen (forsøg {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Skærmændringerne blev annulleret efter {retries} forsøg.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: kunne ikke indstille {width}x{height} ved {hz} Hz. Prøver en anden tilstand.",
+  "{name}: could not change adaptive sync.": "{name}: kunne ikke ændre adaptiv synkronisering.",
+  "The compositor refused the display layout: {details}": "Compositoren afviste skærmlayoutet: {details}",
+  "Could not write {path}: {error}": "Kunne ikke skrive {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Beholder det nuværende skærmlayout: {path} kunne ikke læses: {error}"
 }

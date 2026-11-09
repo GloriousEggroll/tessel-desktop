@@ -2246,5 +2246,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Dieser Bildschirm lässt keine Änderung der Helligkeit zu, solange HDR aktiv ist. Schalten Sie HDR für diesen Bildschirm aus, um sie anzupassen.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Dieser Bildschirm lässt keine Änderung des Kontrasts zu, solange HDR aktiv ist. Schalten Sie HDR für diesen Bildschirm aus, um ihn anzupassen.",
   "See this PC's hardware and software.": "Hardware und Software dieses PCs anzeigen.",
-  "System Information could not be opened": "Systeminformationen konnten nicht geöffnet werden"
+  "System Information could not be opened": "Systeminformationen konnten nicht geöffnet werden",
+  "Display settings": "Bildschirmeinstellungen",
+  "Display warning": "Bildschirmwarnung",
+  "Display error": "Bildschirmfehler",
+  "Display changes applied.": "Bildschirmänderungen wurden angewendet.",
+  "{name}: reapplying settings.": "{name}: Einstellungen werden erneut angewendet.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} bei {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: Adaptive Synchronisierung an.",
+  "{name}: adaptive sync off.": "{name}: Adaptive Synchronisierung aus.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: Skalierung {scale} an Position {x}, {y}.",
+  "{name}: off.": "{name}: aus.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Bildschirmänderungen wurden abgebrochen. Neuer Versuch (Versuch {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Bildschirmänderungen wurden nach {retries} Versuchen abgebrochen.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: {width}x{height} bei {hz} Hz konnte nicht eingestellt werden. Ein anderer Modus wird versucht.",
+  "{name}: could not change adaptive sync.": "{name}: Adaptive Synchronisierung konnte nicht geändert werden.",
+  "The compositor refused the display layout: {details}": "Der Compositor hat das Bildschirmlayout abgelehnt: {details}",
+  "Could not write {path}: {error}": "{path} konnte nicht geschrieben werden: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Das aktuelle Bildschirmlayout bleibt erhalten: {path} konnte nicht gelesen werden: {error}"
 }

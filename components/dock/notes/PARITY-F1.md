@@ -30,7 +30,7 @@ private bus without service dirs, wlrctl/wtype only inside it). Both pass.
 | `position_popup` arithmetic (edge margin, alignment, anchor, clamps, app-dock origin/min) | yes | `popup_margins_follow_position_popup`, edge margin asserted in `grid_placement…` |
 | test_app_popup_style.py | yes | `app_menu::popup_style_tests::*` (against `appearance::style`) |
 
-| Fix-up: `pin_drop_index` middle = translated origin + `get_allocated_width()/2` (CSS margin box) | yes | `drop_index_uses_margin_box` |
+| Deviation: `pin_drop_index` middle = translated origin + half the visible width (Python added the CSS margins, which put the middle too far along) | yes | `drop_index_uses_visible_middle` |
 | Fix-up: menu tile icons reuse cached paintables (`popup::menu_icon_image`; GTK 4.22 re-loads leak per open) | yes | `menu_reuses_icon_paintables`, e_headless `menu_churn_does_not_grow_memory` |
 
 ## Gaps / notes (honest)

@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Ez a kijelző nem engedi a fényerő módosítását, amíg a HDR be van kapcsolva. A beállításához kapcsolja ki a HDR-t ennél a kijelzőnél.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Ez a kijelző nem engedi a kontraszt módosítását, amíg a HDR be van kapcsolva. A beállításához kapcsolja ki a HDR-t ennél a kijelzőnél.",
   "See this PC's hardware and software.": "A számítógép hardverének és szoftverének megtekintése.",
-  "System Information could not be opened": "A rendszerinformáció nem nyitható meg"
+  "System Information could not be opened": "A rendszerinformáció nem nyitható meg",
+  "Display settings": "Kijelzőbeállítások",
+  "Display warning": "Kijelzőfigyelmeztetés",
+  "Display error": "Kijelzőhiba",
+  "Display changes applied.": "A kijelzőmódosítások érvénybe léptek.",
+  "{name}: reapplying settings.": "{name}: a beállítások újbóli alkalmazása.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: adaptív szinkronizálás be.",
+  "{name}: adaptive sync off.": "{name}: adaptív szinkronizálás ki.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: {scale} méretezés a(z) {x}, {y} helyen.",
+  "{name}: off.": "{name}: kikapcsolva.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "A kijelzőmódosítások megszakadtak. Újrapróbálkozás ({attempt}. próbálkozás).",
+  "Display changes were cancelled after {retries} retries.": "A kijelzőmódosítások {retries} próbálkozás után megszakadtak.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: a(z) {width}x{height}, {hz} Hz nem állítható be. Másik mód kipróbálása.",
+  "{name}: could not change adaptive sync.": "{name}: az adaptív szinkronizálás nem módosítható.",
+  "The compositor refused the display layout: {details}": "A kompozitor elutasította a kijelzők elrendezését: {details}",
+  "Could not write {path}: {error}": "A(z) {path} nem írható: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "A jelenlegi kijelzőelrendezés megmarad: a(z) {path} nem olvasható: {error}"
 }

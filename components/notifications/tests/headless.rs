@@ -402,6 +402,12 @@ fn settings_lists_seen_and_muted_apps_with_mute_switches(ui: &mut Ui) {
 }
 
 fn icon_images_stay_compact_and_real_images_use_the_picture(ui: &mut Ui) {
+    // The sender's icon must exist for this to mean anything, whichever themes are installed.
+    let icons = std::env::temp_dir().join(format!("tessel-notifications-icons-{}", std::process::id()));
+    std::fs::create_dir_all(&icons).unwrap();
+    std::fs::write(icons.join("system-software-update-symbolic.svg"),
+                   "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\"/></svg>").unwrap();
+    gtk::IconTheme::for_display(&gdk::Display::default().unwrap()).add_search_path(&icons);
     let view = ui.toast();
     // An icon name in the image hint is an icon, not content.
     view.update(&[notification(1, json!({"icon": "", "app_name": "Nobody", "image_path": "dialog-warning-symbolic"}))]);

@@ -12,6 +12,7 @@ pub mod layout;
 
 use config::{Cfg, Level, Partial};
 use glib::ControlFlow;
+use tessel_core::tr;
 use layout::{Head, Lid, Mode, Plan};
 use serde_json::{json, Map, Value};
 use std::cell::RefCell;
@@ -108,7 +109,13 @@ impl Daemon {
             return;
         }
         let mut command = std::process::Command::new("/bin/sh");
+        let title = match level {
+            Level::Warning => tr!("Display warning"),
+            Level::Error => tr!("Display error"),
+            _ => tr!("Display settings"),
+        };
         command.args(["-c", &self.cfg.callback]).env("CALLBACK_MSG", message).env("CALLBACK_LEVEL", level.name())
+            .env("CALLBACK_TITLE", title)
             .stdin(std::process::Stdio::null());
         // SAFETY: only async-signal-safe calls between fork and exec.
         unsafe {
@@ -143,9 +150,10 @@ impl Daemon {
                 self.phase = Phase::Idle;
                 self.retries += 1;
                 if self.retries <= MAX_CANCELLED_RETRIES {
-                    self.log(Level::Warning, &format!("Changes cancelled, retrying (attempt {})", self.retries));
+                    let message = tr!("Display changes were cancelled. Retrying (attempt {attempt}).", attempt = self.retries.to_string());
+                    self.log(Level::Warning, &message);
                 } else {
-                    let message = format!("Changes cancelled after {MAX_CANCELLED_RETRIES} retries");
+                    let message = tr!("Display changes were cancelled after {retries} retries.", retries = MAX_CANCELLED_RETRIES.to_string());
                     self.log(Level::Warning, &message);
                     self.callback(Level::Warning, &message);
                     self.blocked = true;
@@ -188,7 +196,8 @@ impl Daemon {
         }
         let summary = std::mem::take(&mut self.summary);
         self.log(Level::Info, &format!("Changes successful: {summary}"));
-        self.callback(Level::Info, if summary.is_empty() { "Changes successful" } else { &summary });
+        let message = if summary.is_empty() { tr!("Display changes applied.") } else { summary };
+        self.callback(Level::Info, &message);
         self.delta = Delta::None;
     }
 
@@ -203,7 +212,8 @@ impl Daemon {
                     head.modes_failed.push(mode);
                     // The current mode may be misreported after a failure.
                     head.cur.mode = None;
-                    let message = format!("{name}: could not set {}x{}@{}Hz, trying another mode", mode.width, mode.height, mode.hz());
+                    let message = tr!("{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.", name = name.as_str(),
+                                      width = mode.width.to_string(), height = mode.height.to_string(), hz = mode.hz().to_string());
                     self.log(Level::Error, &message);
                     self.callback(Level::Error, &message);
                 }
@@ -211,14 +221,14 @@ impl Daemon {
             Delta::Vrr(id) => {
                 let Some(head) = self.head_mut(id) else { return };
                 head.vrr_failed = true;
-                let message = format!("{}: could not change adaptive sync", head.name);
+                let message = tr!("{name}: could not change adaptive sync.", name = head.name.as_str());
                 self.log(Level::Warning, &message);
                 self.callback(Level::Warning, &message);
             }
             Delta::None => {
                 // Not fatal: exiting would only repeat this through the service's
                 // restarts. Wait until something changes instead.
-                let message = format!("The compositor refused the display layout: {}", self.summary);
+                let message = tr!("The compositor refused the display layout: {details}", details = self.summary.as_str());
                 self.log(Level::Error, &message);
                 self.callback(Level::Error, &message);
                 self.blocked = true;
@@ -239,7 +249,7 @@ impl Daemon {
             Plan::Reapply(index) => {
                 let head = &mut self.heads[index];
                 head.reapply = false;
-                self.summary = format!("{}: reapplying", head.name);
+                self.summary = tr!("{name}: reapplying settings.", name = head.name.as_str());
                 if let Some(proxy) = self.head_proxies.get(&head.id) {
                     configuration.disable_head(proxy);
                 }
@@ -256,7 +266,11 @@ impl Daemon {
                 let head = &self.heads[index];
                 let Some(proxy) = self.head_proxies.get(&head.id) else { return configuration.destroy() };
                 self.delta = Delta::Vrr(head.id);
-                self.summary = format!("{}: adaptive sync {}", head.name, if head.des.vrr { "on" } else { "off" });
+                self.summary = if head.des.vrr {
+                    tr!("{name}: adaptive sync on.", name = head.name.as_str())
+                } else {
+                    tr!("{name}: adaptive sync off.", name = head.name.as_str())
+                };
                 let state = if head.des.vrr { AdaptiveSyncState::Enabled } else { AdaptiveSyncState::Disabled };
                 configuration.enable_head(proxy, qh, ()).set_adaptive_sync(state);
             }
@@ -270,10 +284,11 @@ impl Daemon {
                         change.set_scale(f64::from(head.des.scale) / 256.0);
                         change.set_position(head.des.x, head.des.y);
                         change.set_transform(transform(head.des.transform));
-                        summary.push(format!("{}: scale {} at {},{}", head.name, f64::from(head.des.scale) / 256.0, head.des.x, head.des.y));
+                        summary.push(tr!("{name}: scale {scale} at position {x}, {y}.", name = head.name.as_str(), scale = (f64::from(head.des.scale) / 256.0).to_string(),
+                                         x = head.des.x.to_string(), y = head.des.y.to_string()));
                     } else {
                         configuration.disable_head(proxy);
-                        summary.push(format!("{}: off", head.name));
+                        summary.push(tr!("{name}: off.", name = head.name.as_str()));
                     }
                 }
                 self.summary = summary.join("\n");
@@ -438,7 +453,10 @@ impl Daemon {
                 self.file_text = text;
                 self.log(Level::Info, &format!("Wrote {}", path.display()));
             }
-            Err(error) => self.log(Level::Error, &format!("Could not write {}: {error}", path.display())),
+            Err(error) => {
+                let message = tr!("Could not write {path}: {error}", path = path.display().to_string(), error = error.to_string());
+                self.log(Level::Error, &message);
+            }
         }
     }
 
@@ -455,14 +473,18 @@ impl Daemon {
                 self.cfg = cfg;
                 self.blocked = false;
             }
-            Err(error) => self.log(Level::Error, &format!("Keeping the current layout: {} does not parse: {error}", path.display())),
+            Err(error) => {
+                let message = tr!("Keeping the current display layout: {path} could not be read: {error}", path = path.display().to_string(), error = error);
+                self.log(Level::Error, &message);
+            }
         }
     }
 }
 
 fn describe_mode(head: &Head, mode_id: u32) -> String {
     match head.modes.iter().find(|mode| mode.id == mode_id) {
-        Some(mode) => format!("{}: {}x{}@{}Hz", head.name, mode.width, mode.height, mode.hz()),
+        Some(mode) => tr!("{name}: {width}x{height} at {hz} Hz.", name = head.name.as_str(), width = mode.width.to_string(),
+                          height = mode.height.to_string(), hz = mode.hz().to_string()),
         None => head.name.clone(),
     }
 }
@@ -842,4 +864,45 @@ pub fn run() -> i32 {
     let _ = std::fs::remove_file(&socket);
     drop(inotify);
     0
+}
+
+#[cfg(test)]
+mod tests {
+    /// Every message the daemon can show, in every language, with its placeholders intact.
+    const MESSAGES: [&str; 17] = [
+        "Display settings", "Display warning", "Display error", "Display changes applied.", "{name}: reapplying settings.",
+        "{name}: {width}x{height} at {hz} Hz.", "{name}: adaptive sync on.", "{name}: adaptive sync off.",
+        "{name}: scale {scale} at position {x}, {y}.", "{name}: off.", "Display changes were cancelled. Retrying (attempt {attempt}).",
+        "Display changes were cancelled after {retries} retries.", "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.",
+        "{name}: could not change adaptive sync.", "The compositor refused the display layout: {details}",
+        "Could not write {path}: {error}", "Keeping the current display layout: {path} could not be read: {error}",
+    ];
+
+    fn placeholders(text: &str) -> std::collections::BTreeSet<&str> {
+        text.split('{').skip(1).filter_map(|part| part.split_once('}').map(|(name, _)| name)).collect()
+    }
+
+    #[test]
+    fn messages_are_translated_into_every_language() {
+        let source = include_str!("mod.rs");
+        for message in MESSAGES {
+            assert!(source.matches(message).count() >= 2, "{message} is not used");
+        }
+        let directory = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../i18n/locale");
+        let mut languages = 0;
+        for entry in std::fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.file_stem().is_some_and(|stem| stem == "en") {
+                continue;
+            }
+            languages += 1;
+            let catalog: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+            for message in MESSAGES {
+                let text = catalog[message].as_str().unwrap_or_else(|| panic!("{}: {message}", path.display()));
+                assert_ne!(text, message, "{}", path.display());
+                assert_eq!(placeholders(text), placeholders(message), "{}: {message}", path.display());
+            }
+        }
+        assert_eq!(languages, 30);
+    }
 }

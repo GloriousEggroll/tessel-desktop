@@ -2093,5 +2093,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "このディスプレイは HDR がオンの間、明るさを変更できません。調整するには、このディスプレイの HDR をオフにしてください。",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "このディスプレイは HDR がオンの間、コントラストを変更できません。調整するには、このディスプレイの HDR をオフにしてください。",
   "See this PC's hardware and software.": "この PC のハードウェアとソフトウェアを表示します。",
-  "System Information could not be opened": "システム情報を開けませんでした"
+  "System Information could not be opened": "システム情報を開けませんでした",
+  "Display settings": "ディスプレイ設定",
+  "Display warning": "ディスプレイの警告",
+  "Display error": "ディスプレイのエラー",
+  "Display changes applied.": "ディスプレイの変更を適用しました。",
+  "{name}: reapplying settings.": "{name}: 設定を再適用しています。",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}、{hz} Hz。",
+  "{name}: adaptive sync on.": "{name}: アダプティブ同期オン。",
+  "{name}: adaptive sync off.": "{name}: アダプティブ同期オフ。",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: 拡大率 {scale}、位置 {x}, {y}。",
+  "{name}: off.": "{name}: オフ。",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "ディスプレイの変更がキャンセルされました。再試行しています（{attempt} 回目）。",
+  "Display changes were cancelled after {retries} retries.": "ディスプレイの変更は {retries} 回の再試行後にキャンセルされました。",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: {width}x{height}、{hz} Hz を設定できませんでした。別のモードを試しています。",
+  "{name}: could not change adaptive sync.": "{name}: アダプティブ同期を変更できませんでした。",
+  "The compositor refused the display layout: {details}": "コンポジターがディスプレイ配置を拒否しました: {details}",
+  "Could not write {path}: {error}": "{path} に書き込めませんでした: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "現在のディスプレイ配置を維持します: {path} を読み取れませんでした: {error}"
 }

@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Dit scherm staat het wijzigen van de helderheid niet toe terwijl HDR aan staat. Zet HDR uit voor dit scherm om deze aan te passen.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Dit scherm staat het wijzigen van het contrast niet toe terwijl HDR aan staat. Zet HDR uit voor dit scherm om dit aan te passen.",
   "See this PC's hardware and software.": "Bekijk de hardware en software van deze pc.",
-  "System Information could not be opened": "Systeeminformatie kon niet worden geopend"
+  "System Information could not be opened": "Systeeminformatie kon niet worden geopend",
+  "Display settings": "Beeldscherminstellingen",
+  "Display warning": "Beeldschermwaarschuwing",
+  "Display error": "Beeldschermfout",
+  "Display changes applied.": "Beeldschermwijzigingen toegepast.",
+  "{name}: reapplying settings.": "{name}: instellingen opnieuw toepassen.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} op {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: adaptieve synchronisatie aan.",
+  "{name}: adaptive sync off.": "{name}: adaptieve synchronisatie uit.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: schaal {scale} op positie {x}, {y}.",
+  "{name}: off.": "{name}: uit.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Beeldschermwijzigingen geannuleerd. Opnieuw proberen (poging {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Beeldschermwijzigingen geannuleerd na {retries} pogingen.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: kan {width}x{height} op {hz} Hz niet instellen. Een andere modus wordt geprobeerd.",
+  "{name}: could not change adaptive sync.": "{name}: kan adaptieve synchronisatie niet wijzigen.",
+  "The compositor refused the display layout: {details}": "De compositor heeft de beeldschermindeling geweigerd: {details}",
+  "Could not write {path}: {error}": "Kan {path} niet schrijven: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "De huidige beeldschermindeling blijft behouden: {path} kan niet worden gelezen: {error}"
 }

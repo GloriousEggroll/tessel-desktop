@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Este ecrã não permite alterar o brilho enquanto o HDR está ativado. Desative o HDR deste ecrã para o ajustar.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Este ecrã não permite alterar o contraste enquanto o HDR está ativado. Desative o HDR deste ecrã para o ajustar.",
   "See this PC's hardware and software.": "Ver o hardware e o software deste PC.",
-  "System Information could not be opened": "Não foi possível abrir as Informações do sistema"
+  "System Information could not be opened": "Não foi possível abrir as Informações do sistema",
+  "Display settings": "Definições de ecrã",
+  "Display warning": "Aviso de ecrã",
+  "Display error": "Erro de ecrã",
+  "Display changes applied.": "As alterações de ecrã foram aplicadas.",
+  "{name}: reapplying settings.": "{name}: a reaplicar as definições.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} a {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: sincronização adaptativa ativada.",
+  "{name}: adaptive sync off.": "{name}: sincronização adaptativa desativada.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: escala {scale} na posição {x}, {y}.",
+  "{name}: off.": "{name}: desligado.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "As alterações de ecrã foram canceladas. A tentar novamente (tentativa {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "As alterações de ecrã foram canceladas após {retries} tentativas.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: não foi possível definir {width}x{height} a {hz} Hz. A tentar outro modo.",
+  "{name}: could not change adaptive sync.": "{name}: não foi possível alterar a sincronização adaptativa.",
+  "The compositor refused the display layout: {details}": "O compositor recusou a disposição dos ecrãs: {details}",
+  "Could not write {path}: {error}": "Não foi possível escrever {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "A manter a disposição atual dos ecrãs: não foi possível ler {path}: {error}"
 }

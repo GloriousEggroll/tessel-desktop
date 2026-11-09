@@ -77,9 +77,9 @@ pub fn pin_index_at(host: &dyn DropHost, x: f64, y: f64) -> usize {
         .filter(|(button, _)| button.get_visible())
         .map(|(button, _)| {
             translate(&button, &panel, 0.0, 0.0).map(|point| {
-                // Python's get_allocated_width/height: the margin box.
-                #[allow(deprecated)]
-                let extent = if horizontal { button.allocated_width() } else { button.allocated_height() };
+                // The origin is the button's visible edge, so its middle is half of
+                // the visible size (the allocated size would add its CSS margins).
+                let extent = if horizontal { button.width() } else { button.height() };
                 (if horizontal { point.0 } else { point.1 }, extent as f64)
             })
         })

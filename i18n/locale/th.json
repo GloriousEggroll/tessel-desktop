@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "จอแสดงผลนี้ไม่อนุญาตให้เปลี่ยนความสว่างขณะเปิด HDR ปิด HDR สำหรับจอแสดงผลนี้เพื่อปรับค่า",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "จอแสดงผลนี้ไม่อนุญาตให้เปลี่ยนคอนทราสต์ขณะเปิด HDR ปิด HDR สำหรับจอแสดงผลนี้เพื่อปรับค่า",
   "See this PC's hardware and software.": "ดูฮาร์ดแวร์และซอฟต์แวร์ของพีซีเครื่องนี้",
-  "System Information could not be opened": "ไม่สามารถเปิดข้อมูลระบบได้"
+  "System Information could not be opened": "ไม่สามารถเปิดข้อมูลระบบได้",
+  "Display settings": "การตั้งค่าจอแสดงผล",
+  "Display warning": "คำเตือนจอแสดงผล",
+  "Display error": "ข้อผิดพลาดของจอแสดงผล",
+  "Display changes applied.": "ใช้การเปลี่ยนแปลงจอแสดงผลแล้ว",
+  "{name}: reapplying settings.": "{name}: กำลังใช้การตั้งค่าอีกครั้ง",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} ที่ {hz} Hz",
+  "{name}: adaptive sync on.": "{name}: เปิดการซิงค์แบบปรับได้",
+  "{name}: adaptive sync off.": "{name}: ปิดการซิงค์แบบปรับได้",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: สเกล {scale} ที่ตำแหน่ง {x}, {y}",
+  "{name}: off.": "{name}: ปิด",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "การเปลี่ยนแปลงจอแสดงผลถูกยกเลิก กำลังลองอีกครั้ง (ครั้งที่ {attempt})",
+  "Display changes were cancelled after {retries} retries.": "การเปลี่ยนแปลงจอแสดงผลถูกยกเลิกหลังจากลอง {retries} ครั้ง",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: ไม่สามารถตั้งค่า {width}x{height} ที่ {hz} Hz กำลังลองโหมดอื่น",
+  "{name}: could not change adaptive sync.": "{name}: ไม่สามารถเปลี่ยนการซิงค์แบบปรับได้",
+  "The compositor refused the display layout: {details}": "คอมโพสิเตอร์ปฏิเสธการจัดวางจอแสดงผล: {details}",
+  "Could not write {path}: {error}": "ไม่สามารถเขียน {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "คงการจัดวางจอแสดงผลปัจจุบันไว้: ไม่สามารถอ่าน {path}: {error}"
 }

@@ -2246,5 +2246,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Esta pantalla no permite cambiar el brillo mientras HDR está activado. Desactiva HDR en esta pantalla para ajustarlo.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Esta pantalla no permite cambiar el contraste mientras HDR está activado. Desactiva HDR en esta pantalla para ajustarlo.",
   "See this PC's hardware and software.": "Consulta el hardware y el software de este equipo.",
-  "System Information could not be opened": "No se pudo abrir la información del sistema"
+  "System Information could not be opened": "No se pudo abrir la información del sistema",
+  "Display settings": "Ajustes de pantalla",
+  "Display warning": "Aviso de pantalla",
+  "Display error": "Error de pantalla",
+  "Display changes applied.": "Se aplicaron los cambios de pantalla.",
+  "{name}: reapplying settings.": "{name}: volviendo a aplicar los ajustes.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} a {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: sincronización adaptativa activada.",
+  "{name}: adaptive sync off.": "{name}: sincronización adaptativa desactivada.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: escala {scale} en la posición {x}, {y}.",
+  "{name}: off.": "{name}: apagada.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Se cancelaron los cambios de pantalla. Reintentando (intento {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Se cancelaron los cambios de pantalla tras {retries} intentos.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: no se pudo establecer {width}x{height} a {hz} Hz. Probando otro modo.",
+  "{name}: could not change adaptive sync.": "{name}: no se pudo cambiar la sincronización adaptativa.",
+  "The compositor refused the display layout: {details}": "El compositor rechazó la disposición de pantallas: {details}",
+  "Could not write {path}: {error}": "No se pudo escribir {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Se mantiene la disposición de pantallas actual: no se pudo leer {path}: {error}"
 }

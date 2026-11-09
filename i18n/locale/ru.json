@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Этот дисплей не позволяет изменять яркость, пока включён HDR. Отключите HDR для этого дисплея, чтобы её настроить.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Этот дисплей не позволяет изменять контрастность, пока включён HDR. Отключите HDR для этого дисплея, чтобы её настроить.",
   "See this PC's hardware and software.": "Просмотр оборудования и программ этого компьютера.",
-  "System Information could not be opened": "Не удалось открыть сведения о системе"
+  "System Information could not be opened": "Не удалось открыть сведения о системе",
+  "Display settings": "Настройки дисплея",
+  "Display warning": "Предупреждение дисплея",
+  "Display error": "Ошибка дисплея",
+  "Display changes applied.": "Изменения дисплея применены.",
+  "{name}: reapplying settings.": "{name}: повторное применение настроек.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height}, {hz} Гц.",
+  "{name}: adaptive sync on.": "{name}: адаптивная синхронизация включена.",
+  "{name}: adaptive sync off.": "{name}: адаптивная синхронизация выключена.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: масштаб {scale}, положение {x}, {y}.",
+  "{name}: off.": "{name}: выключен.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Изменения дисплея отменены. Повторная попытка (попытка {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Изменения дисплея отменены после попыток: {retries}.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: не удалось установить {width}x{height}, {hz} Гц. Пробуем другой режим.",
+  "{name}: could not change adaptive sync.": "{name}: не удалось изменить адаптивную синхронизацию.",
+  "The compositor refused the display layout: {details}": "Композитор отклонил расположение дисплеев: {details}",
+  "Could not write {path}: {error}": "Не удалось записать {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Сохраняется текущее расположение дисплеев: не удалось прочитать {path}: {error}"
 }

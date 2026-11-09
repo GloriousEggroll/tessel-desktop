@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Αυτή η οθόνη δεν επιτρέπει την αλλαγή φωτεινότητας όταν το HDR είναι ενεργό. Απενεργοποιήστε το HDR για αυτή την οθόνη για να τη ρυθμίσετε.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Αυτή η οθόνη δεν επιτρέπει την αλλαγή αντίθεσης όταν το HDR είναι ενεργό. Απενεργοποιήστε το HDR για αυτή την οθόνη για να τη ρυθμίσετε.",
   "See this PC's hardware and software.": "Δείτε το υλικό και το λογισμικό αυτού του υπολογιστή.",
-  "System Information could not be opened": "Δεν ήταν δυνατό το άνοιγμα των πληροφοριών συστήματος"
+  "System Information could not be opened": "Δεν ήταν δυνατό το άνοιγμα των πληροφοριών συστήματος",
+  "Display settings": "Ρυθμίσεις οθόνης",
+  "Display warning": "Προειδοποίηση οθόνης",
+  "Display error": "Σφάλμα οθόνης",
+  "Display changes applied.": "Οι αλλαγές οθόνης εφαρμόστηκαν.",
+  "{name}: reapplying settings.": "{name}: επανεφαρμογή ρυθμίσεων.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} στα {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: προσαρμοστικός συγχρονισμός ενεργός.",
+  "{name}: adaptive sync off.": "{name}: προσαρμοστικός συγχρονισμός ανενεργός.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: κλίμακα {scale} στη θέση {x}, {y}.",
+  "{name}: off.": "{name}: απενεργοποιημένη.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Οι αλλαγές οθόνης ακυρώθηκαν. Νέα προσπάθεια (προσπάθεια {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Οι αλλαγές οθόνης ακυρώθηκαν μετά από {retries} προσπάθειες.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: δεν ήταν δυνατός ο ορισμός {width}x{height} στα {hz} Hz. Δοκιμή άλλης λειτουργίας.",
+  "{name}: could not change adaptive sync.": "{name}: δεν ήταν δυνατή η αλλαγή του προσαρμοστικού συγχρονισμού.",
+  "The compositor refused the display layout: {details}": "Ο συνθέτης απέρριψε τη διάταξη οθονών: {details}",
+  "Could not write {path}: {error}": "Δεν ήταν δυνατή η εγγραφή του {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Διατηρείται η τρέχουσα διάταξη οθονών: δεν ήταν δυνατή η ανάγνωση του {path}: {error}"
 }

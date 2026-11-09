@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Layar ini tidak mengizinkan perubahan kecerahan saat HDR aktif. Matikan HDR untuk layar ini agar dapat menyesuaikannya.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Layar ini tidak mengizinkan perubahan kontras saat HDR aktif. Matikan HDR untuk layar ini agar dapat menyesuaikannya.",
   "See this PC's hardware and software.": "Lihat perangkat keras dan perangkat lunak PC ini.",
-  "System Information could not be opened": "Informasi Sistem tidak dapat dibuka"
+  "System Information could not be opened": "Informasi Sistem tidak dapat dibuka",
+  "Display settings": "Pengaturan layar",
+  "Display warning": "Peringatan layar",
+  "Display error": "Kesalahan layar",
+  "Display changes applied.": "Perubahan layar diterapkan.",
+  "{name}: reapplying settings.": "{name}: menerapkan ulang pengaturan.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} pada {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: sinkronisasi adaptif aktif.",
+  "{name}: adaptive sync off.": "{name}: sinkronisasi adaptif nonaktif.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: skala {scale} di posisi {x}, {y}.",
+  "{name}: off.": "{name}: mati.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Perubahan layar dibatalkan. Mencoba lagi (percobaan {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Perubahan layar dibatalkan setelah {retries} percobaan.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: tidak dapat mengatur {width}x{height} pada {hz} Hz. Mencoba mode lain.",
+  "{name}: could not change adaptive sync.": "{name}: tidak dapat mengubah sinkronisasi adaptif.",
+  "The compositor refused the display layout: {details}": "Kompositor menolak tata letak layar: {details}",
+  "Could not write {path}: {error}": "Tidak dapat menulis {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Tata letak layar saat ini dipertahankan: {path} tidak dapat dibaca: {error}"
 }

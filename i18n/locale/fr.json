@@ -2246,5 +2246,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Cet écran ne permet pas de modifier la luminosité lorsque le HDR est activé. Désactivez le HDR pour cet écran afin de la régler.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Cet écran ne permet pas de modifier le contraste lorsque le HDR est activé. Désactivez le HDR pour cet écran afin de le régler.",
   "See this PC's hardware and software.": "Voir le matériel et les logiciels de ce PC.",
-  "System Information could not be opened": "Impossible d’ouvrir les informations système"
+  "System Information could not be opened": "Impossible d’ouvrir les informations système",
+  "Display settings": "Paramètres d’affichage",
+  "Display warning": "Avertissement d’affichage",
+  "Display error": "Erreur d’affichage",
+  "Display changes applied.": "Les modifications d’affichage ont été appliquées.",
+  "{name}: reapplying settings.": "{name} : nouvelle application des paramètres.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name} : {width}x{height} à {hz} Hz.",
+  "{name}: adaptive sync on.": "{name} : synchronisation adaptative activée.",
+  "{name}: adaptive sync off.": "{name} : synchronisation adaptative désactivée.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name} : échelle {scale} à la position {x}, {y}.",
+  "{name}: off.": "{name} : éteint.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Les modifications d’affichage ont été annulées. Nouvel essai (essai {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Les modifications d’affichage ont été annulées après {retries} essais.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name} : impossible de définir {width}x{height} à {hz} Hz. Essai d’un autre mode.",
+  "{name}: could not change adaptive sync.": "{name} : impossible de modifier la synchronisation adaptative.",
+  "The compositor refused the display layout: {details}": "Le compositeur a refusé la disposition des écrans : {details}",
+  "Could not write {path}: {error}": "Impossible d’écrire {path} : {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "La disposition actuelle des écrans est conservée : impossible de lire {path} : {error}"
 }

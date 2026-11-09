@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Den här skärmen tillåter inte att ljusstyrkan ändras medan HDR är på. Stäng av HDR för den här skärmen för att justera den.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Den här skärmen tillåter inte att kontrasten ändras medan HDR är på. Stäng av HDR för den här skärmen för att justera den.",
   "See this PC's hardware and software.": "Visa datorns maskinvara och programvara.",
-  "System Information could not be opened": "Systeminformation kunde inte öppnas"
+  "System Information could not be opened": "Systeminformation kunde inte öppnas",
+  "Display settings": "Skärminställningar",
+  "Display warning": "Skärmvarning",
+  "Display error": "Skärmfel",
+  "Display changes applied.": "Skärmändringarna har tillämpats.",
+  "{name}: reapplying settings.": "{name}: tillämpar inställningarna igen.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} vid {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: adaptiv synkronisering på.",
+  "{name}: adaptive sync off.": "{name}: adaptiv synkronisering av.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: skala {scale} på position {x}, {y}.",
+  "{name}: off.": "{name}: av.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Skärmändringarna avbröts. Försöker igen (försök {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Skärmändringarna avbröts efter {retries} försök.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: kunde inte ställa in {width}x{height} vid {hz} Hz. Provar ett annat läge.",
+  "{name}: could not change adaptive sync.": "{name}: kunde inte ändra adaptiv synkronisering.",
+  "The compositor refused the display layout: {details}": "Kompositören avvisade skärmlayouten: {details}",
+  "Could not write {path}: {error}": "Kunde inte skriva {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Behåller den aktuella skärmlayouten: {path} kunde inte läsas: {error}"
 }

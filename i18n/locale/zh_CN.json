@@ -2093,5 +2093,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "HDR 开启时，此显示器不允许更改亮度。要调整亮度，请关闭此显示器的 HDR。",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "HDR 开启时，此显示器不允许更改对比度。要调整对比度，请关闭此显示器的 HDR。",
   "See this PC's hardware and software.": "查看此电脑的硬件和软件。",
-  "System Information could not be opened": "无法打开系统信息"
+  "System Information could not be opened": "无法打开系统信息",
+  "Display settings": "显示设置",
+  "Display warning": "显示器警告",
+  "Display error": "显示器错误",
+  "Display changes applied.": "显示器更改已应用。",
+  "{name}: reapplying settings.": "{name}：正在重新应用设置。",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}：{width}x{height}，{hz} Hz。",
+  "{name}: adaptive sync on.": "{name}：自适应同步已开启。",
+  "{name}: adaptive sync off.": "{name}：自适应同步已关闭。",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}：缩放 {scale}，位置 {x}, {y}。",
+  "{name}: off.": "{name}：已关闭。",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "显示器更改已取消。正在重试（第 {attempt} 次）。",
+  "Display changes were cancelled after {retries} retries.": "显示器更改在重试 {retries} 次后已取消。",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}：无法设置 {width}x{height}，{hz} Hz。正在尝试其他模式。",
+  "{name}: could not change adaptive sync.": "{name}：无法更改自适应同步。",
+  "The compositor refused the display layout: {details}": "合成器拒绝了显示器布局：{details}",
+  "Could not write {path}: {error}": "无法写入 {path}：{error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "保留当前显示器布局：无法读取 {path}：{error}"
 }

@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "Questo schermo non consente di modificare la luminosità mentre l'HDR è attivo. Disattiva l'HDR per questo schermo per regolarla.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "Questo schermo non consente di modificare il contrasto mentre l'HDR è attivo. Disattiva l'HDR per questo schermo per regolarlo.",
   "See this PC's hardware and software.": "Mostra l’hardware e il software di questo PC.",
-  "System Information could not be opened": "Impossibile aprire Informazioni di sistema"
+  "System Information could not be opened": "Impossibile aprire Informazioni di sistema",
+  "Display settings": "Impostazioni schermo",
+  "Display warning": "Avviso schermo",
+  "Display error": "Errore schermo",
+  "Display changes applied.": "Modifiche allo schermo applicate.",
+  "{name}: reapplying settings.": "{name}: riapplicazione delle impostazioni.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: {width}x{height} a {hz} Hz.",
+  "{name}: adaptive sync on.": "{name}: sincronizzazione adattiva attiva.",
+  "{name}: adaptive sync off.": "{name}: sincronizzazione adattiva disattivata.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: scala {scale} alla posizione {x}, {y}.",
+  "{name}: off.": "{name}: spento.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "Modifiche allo schermo annullate. Nuovo tentativo (tentativo {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "Modifiche allo schermo annullate dopo {retries} tentativi.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: impossibile impostare {width}x{height} a {hz} Hz. Si prova un'altra modalità.",
+  "{name}: could not change adaptive sync.": "{name}: impossibile modificare la sincronizzazione adattiva.",
+  "The compositor refused the display layout: {details}": "Il compositore ha rifiutato la disposizione degli schermi: {details}",
+  "Could not write {path}: {error}": "Impossibile scrivere {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "Viene mantenuta la disposizione attuale degli schermi: impossibile leggere {path}: {error}"
 }

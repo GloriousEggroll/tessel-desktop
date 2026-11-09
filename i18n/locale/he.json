@@ -1911,5 +1911,22 @@
   "This display doesn't allow changing brightness while HDR is on. Turn off HDR for this display to adjust it.": "מסך זה אינו מאפשר לשנות את הבהירות כאשר HDR פועל. כבו את HDR עבור מסך זה כדי לכוונן אותה.",
   "This display doesn't allow changing contrast while HDR is on. Turn off HDR for this display to adjust it.": "מסך זה אינו מאפשר לשנות את הניגודיות כאשר HDR פועל. כבו את HDR עבור מסך זה כדי לכוונן אותה.",
   "See this PC's hardware and software.": "הצגת החומרה והתוכנה של מחשב זה.",
-  "System Information could not be opened": "לא ניתן לפתוח את מידע המערכת"
+  "System Information could not be opened": "לא ניתן לפתוח את מידע המערכת",
+  "Display settings": "הגדרות תצוגה",
+  "Display warning": "אזהרת תצוגה",
+  "Display error": "שגיאת תצוגה",
+  "Display changes applied.": "שינויי התצוגה הוחלו.",
+  "{name}: reapplying settings.": "{name}: ההגדרות מוחלות מחדש.",
+  "{name}: {width}x{height} at {hz} Hz.": "{name}: ‏{width}x{height} ב-{hz} הרץ.",
+  "{name}: adaptive sync on.": "{name}: סנכרון מסתגל פעיל.",
+  "{name}: adaptive sync off.": "{name}: סנכרון מסתגל כבוי.",
+  "{name}: scale {scale} at position {x}, {y}.": "{name}: קנה מידה {scale} במיקום {x}, {y}.",
+  "{name}: off.": "{name}: כבוי.",
+  "Display changes were cancelled. Retrying (attempt {attempt}).": "שינויי התצוגה בוטלו. מתבצע ניסיון חוזר (ניסיון {attempt}).",
+  "Display changes were cancelled after {retries} retries.": "שינויי התצוגה בוטלו אחרי {retries} ניסיונות.",
+  "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.": "{name}: לא ניתן להגדיר {width}x{height} ב-{hz} הרץ. מתבצע ניסיון במצב אחר.",
+  "{name}: could not change adaptive sync.": "{name}: לא ניתן לשנות את הסנכרון המסתגל.",
+  "The compositor refused the display layout: {details}": "הקומפוזיטור דחה את פריסת התצוגה: {details}",
+  "Could not write {path}: {error}": "לא ניתן לכתוב אל {path}: {error}",
+  "Keeping the current display layout: {path} could not be read: {error}": "פריסת התצוגה הנוכחית נשמרת: לא ניתן לקרוא את {path}: {error}"
 }
