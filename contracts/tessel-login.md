@@ -17,7 +17,7 @@ tessel-keyboard-input` (install_login.py:107-118).
 
 | Actor / asset | Rule |
 |---|---|
-| Greeter process | Runs as `greetd` (greetd.toml `[default_session] user = "greetd"`), in its own `dbus-run-session` bus, under a private labwc (`--config-dir /etc/tessel-login/labwc`, `XDG_CONFIG_HOME=XDG_CONFIG_DIRS=/etc/tessel-login`, `umask 077`). It has **no privilege**: it never authenticates, never reads shadow, never runs `su`/PAM. |
+| Greeter process | Runs as `greetd` (tessel-config.toml `[default_session] user = "greetd"`), in its own `dbus-run-session` bus, under a private labwc (`--config-dir /etc/tessel-login/labwc`, `XDG_CONFIG_HOME=XDG_CONFIG_DIRS=/etc/tessel-login`, `umask 077`). It has **no privilege**: it never authenticates, never reads shadow, never runs `su`/PAM. |
 | greetd | Owns PAM (`service = "tessel-login"`), account checks, credentials, logind registration and user session creation. The greeter only relays prompts/answers. |
 | Session start | `start_session` is sent **only** from state `ready`, which is reached **only** by a `success` reply to a `create_session`/`post_auth_message_response` of the **current generation**; the UI may call `start_session(generation)` only with the generation captured at the `authenticated` event (after the 250 ms fade). Any stale, cancelled or mismatched generation is a no-op. |
 | Fail closed | Malformed frames (size 0 or > 1 MiB, non-JSON, non-object, `type` not in `success/error/auth_message`), socket loss, connect/IO timeouts, unknown `auth_message_type`, or a non-`success` reply in reset/start phases → state `error` (or `idle` for unsupported prompts) with a generic message; never a session. A GUI/compositor crash cannot start a session (greetd needs `start_session`). |
@@ -120,8 +120,8 @@ Fields/defaults: `picture="/usr/share/wallpapers/nobara-winds1.webp"`, `placemen
 |---|---|---|
 | `/usr/local/lib/tessel-login/{login_ui,login_model,login_settings_helper,login_protocol,login_transition,session_transition}.py`, `README.md`, shared/lock/OSK modules | 0644 | repo |
 | `/usr/local/lib/tessel-login/start-greeter`, `start-session`, `tessel-keyboard-input` | 0755 | repo |
-| `/etc/systemd/system/tessel-login.service` | 0644 | `Type=simple`, `ExecStart=/usr/bin/greetd --config /etc/tessel-login/greetd.toml`, Restart=always, LimitCORE=0, UMask=0077, `Alias=display-manager.service`, Conflicts getty@tty1/greetd/sddm/gdm/lightdm/plasmalogin |
-| `/etc/tessel-login/greetd.toml` | 0644 | vt=1, switch, `service="tessel-login"`, `source_profile=true`, `runfile=/run/tessel-login.run`, greeter `command=/usr/local/lib/tessel-login/start-greeter`, `user="greetd"`, `service="greetd-greeter"` |
+| `/etc/systemd/system/tessel-login.service` | 0644 | `Type=simple`, `ExecStart=/usr/bin/greetd --config /etc/greetd/tessel-config.toml`, Restart=always, LimitCORE=0, UMask=0077, `Alias=display-manager.service`, Conflicts getty@tty1/greetd/sddm/gdm/lightdm/plasmalogin |
+| `/etc/greetd/tessel-config.toml` | 0644 | vt=1, switch, `service="tessel-login"`, `source_profile=true`, `runfile=/run/tessel-login.run`, greeter `command=/usr/local/lib/tessel-login/start-greeter`, `user="greetd"`, `service="greetd-greeter"` |
 | `/etc/tessel-login/labwc/rc.xml` 0644, `/etc/tessel-login/labwc/autostart` 0755 | | private compositor config |
 | `/etc/polkit-1/rules.d/50-tessel-login-power.rules` | 0644 | §1 |
 | `/etc/pam.d/tessel-login`, `/etc/pam.d/tessel-lock` | 0644 | repo |

@@ -37,6 +37,10 @@ Raise `Version:` in every spec together, because every package requires at least
   time, which points generated configuration at those paths (`tessel_core::paths::PACKAGED`).
 - The session entry runs `tessel-session-launch`, which sets up each user's labwc files once per
   package release, then starts labwc. A user with a `~/.local` install is left alone.
-- `tessel-login` is installed but not enabled:
-  `systemctl enable --force tessel-login.service` switches the login screen at the next boot.
+- `tessel-login` runs its own greetd instance with `/etc/greetd/tessel-config.toml`. greetd's own
+  service and `/etc/greetd/config.toml` are not changed. A first install enables it when no display
+  manager is enabled, or in place of `greetd.service`; another display manager is left alone.
+  Updates never change this choice, and it takes effect at the next boot.
+  - To use the Tessel login screen: `systemctl enable --force tessel-login.service`
+  - To use normal greetd: `systemctl disable tessel-login.service`, then `systemctl enable --force greetd.service`
 - `tessel-keyring` conflicts with `gnome-keyring`: both own the `org.freedesktop.secrets` activation file.

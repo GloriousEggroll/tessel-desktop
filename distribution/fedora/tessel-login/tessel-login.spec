@@ -6,7 +6,7 @@
 
 Name:           tessel-login
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tessel login screen (greetd greeter)
 License:        GPL-3.0-or-later
 URL:            https://nobaraproject.org
@@ -39,6 +39,8 @@ Requires:       greetd
 Requires:       labwc >= 0.20.2-17
 Requires:       /usr/bin/dbus-run-session
 Requires:       pam
+Requires(post): coreutils
+Requires(post): systemd
 Requires:       tessel-keyboard
 Recommends:     at-spi2-core
 Recommends:     orca
@@ -75,11 +77,28 @@ for script in tessel-start-greeter tessel-start-session; do
     install -Dm755 $script %{buildroot}%{tessel_libdir}/$script
 done
 install -Dm644 packaging/defaults/etc/pam.d/tessel-login %{buildroot}%{_sysconfdir}/pam.d/tessel-login
-install -Dm644 packaging/defaults/etc/tessel/login/greetd.toml %{buildroot}%{_sysconfdir}/tessel/login/greetd.toml
+install -Dm644 packaging/defaults/etc/greetd/tessel-config.toml %{buildroot}%{_sysconfdir}/greetd/tessel-config.toml
 install -Dm644 packaging/defaults/etc/tessel/login/appearance.json %{buildroot}%{_sysconfdir}/tessel/login/appearance.json
 install -Dm644 packaging/defaults/etc/tessel/login/labwc/rc.xml %{buildroot}%{_sysconfdir}/tessel/login/labwc/rc.xml
 install -Dm755 packaging/defaults/etc/tessel/login/labwc/autostart %{buildroot}%{_sysconfdir}/tessel/login/labwc/autostart
 install -Dm644 packaging/defaults/usr/lib/systemd/system/tessel-login.service %{buildroot}%{_unitdir}/tessel-login.service
+
+%post
+# First install only, so a user's later choice is never undone by an update.
+# Takes over from greetd, whose own service and configuration stay untouched.
+# Another display manager is left alone. The running login is never restarted.
+if [ "$1" -eq 1 ]; then
+    manager=$(readlink /etc/systemd/system/display-manager.service 2>/dev/null) || manager=
+    case "${manager##*/}" in
+        ""|greetd.service)
+            systemctl --no-reload disable greetd.service >/dev/null 2>&1 || :
+            systemctl --no-reload enable --force tessel-login.service >/dev/null 2>&1 || :
+            ;;
+        *)
+            echo "tessel-login: keeping ${manager##*/}. To use the Tessel login screen: systemctl enable --force tessel-login.service"
+            ;;
+    esac
+fi
 
 %preun
 # Never stopped here: stopping the login screen would end every open session.
@@ -97,12 +116,16 @@ fi
 %dir %{_sysconfdir}/tessel
 %dir %{_sysconfdir}/tessel/login
 %dir %{_sysconfdir}/tessel/login/labwc
-%config(noreplace) %{_sysconfdir}/tessel/login/greetd.toml
+%config(noreplace) %{_sysconfdir}/greetd/tessel-config.toml
 %config(noreplace) %{_sysconfdir}/tessel/login/appearance.json
 %config(noreplace) %{_sysconfdir}/tessel/login/labwc/rc.xml
 %config(noreplace) %{_sysconfdir}/tessel/login/labwc/autostart
 %{_unitdir}/tessel-login.service
 
 %changelog
+* Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
+- Use /etc/greetd/tessel-config.toml, separate from greetd's own configuration
+- Enable the login screen on first install, unless another display manager is in use
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-1
 - First package

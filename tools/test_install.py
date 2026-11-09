@@ -205,15 +205,28 @@ class SystemInstall(unittest.TestCase):
         new = self.root / "etc/tessel/login"
         self.assertIn('"default_session": "tessel"', (new / "appearance.json").read_text())
         self.assertEqual((new / "labwc/rc.xml").read_text(), "<labwc_config/>\n")
-        greetd = (new / "greetd.toml").read_text()
+        config = self.root / "etc/greetd/tessel-config.toml"
+        greetd = config.read_text()
         self.assertIn('command = "/usr/local/lib/tessel/tessel-start-greeter"', greetd)
         self.assertIn('service = "waylogin"', greetd)
-        self.assertIn("--config /etc/tessel/login/greetd.toml", unit.read_text())
+        self.assertIn("--config /etc/greetd/tessel-config.toml", unit.read_text())
         for name in install.LOGIN_PROGRAMS + ("tessel-start-greeter", "tessel-start-session"):
             self.assertTrue(os.access(self.root / "usr/local/lib/tessel" / name, os.X_OK), name)
         run(["--system", "--root", str(self.root), "--rollback"])
         self.assertIn("--config /etc/waylogin/greetd.toml", unit.read_text())
-        self.assertFalse((new / "greetd.toml").exists())
+        self.assertFalse(config.exists())
+
+    def test_login_screen_moves_an_earlier_tessel_configuration(self):
+        new = self.root / "etc/tessel/login"
+        new.mkdir(parents=True)
+        (new / "greetd.toml").write_text('[general]\nservice = "mine"\n')
+        unit = self.root / "etc/systemd/system/waylogin.service"
+        unit.parent.mkdir(parents=True)
+        unit.write_text("[Service]\nExecStart=/usr/bin/greetd --config /etc/tessel/login/greetd.toml\n")
+        fake_build(self.tmp / "t2", list(install.LOGIN_PROGRAMS) + ["tessel-keyring", "tessel-keyring-prompt"], self.tmp / "log")
+        run(["--system", "--root", str(self.root), "--target-dir", str(self.tmp / "t2"), "--apply", "--only", "login"])
+        self.assertIn('service = "mine"', (self.root / "etc/greetd/tessel-config.toml").read_text())
+        self.assertIn("--config /etc/greetd/tessel-config.toml", unit.read_text())
 
     def test_pam_lines_are_added_once(self):
         fresh = "auth include waylogin-auth\nsession include system-auth\n"

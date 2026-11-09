@@ -316,15 +316,18 @@ def system_plan(root, parts, target_dir):
         for name in ("labwc/rc.xml", "labwc/autostart"):
             if (old / name).is_file() and not (new / name).exists():
                 plan.write(new / name, (old / name).read_bytes(), (old / name).stat().st_mode & 0o7777)
-        if (old / "greetd.toml").is_file():
-            text = (old / "greetd.toml").read_text()
-            text = text.replace("/usr/local/lib/waylogin/start-greeter", "/usr/local/lib/tessel/tessel-start-greeter")
-            text = text.replace('runfile = "/run/waylogin.run"', 'runfile = "/run/tessel-login.run"')
-            plan.write(new / "greetd.toml", text.encode(), 0o644)
+        for config in (new / "greetd.toml", old / "greetd.toml"):
+            if config.is_file():
+                text = config.read_text()
+                text = text.replace("/usr/local/lib/waylogin/start-greeter", "/usr/local/lib/tessel/tessel-start-greeter")
+                text = text.replace('runfile = "/run/waylogin.run"', 'runfile = "/run/tessel-login.run"')
+                plan.write(root / "etc/greetd/tessel-config.toml", text.encode(), 0o644)
+                break
         unit = root / "etc/systemd/system/waylogin.service"
         if unit.is_file():
             text = unit.read_text()
-            new_text = text.replace("--config /etc/waylogin/greetd.toml", "--config /etc/tessel/login/greetd.toml")
+            new_text = text.replace("--config /etc/waylogin/greetd.toml", "--config /etc/greetd/tessel-config.toml")
+            new_text = new_text.replace("--config /etc/tessel/login/greetd.toml", "--config /etc/greetd/tessel-config.toml")
             new_text = new_text.replace("Description=Waylogin Python Wayland Login Manager", "Description=Tessel login screen")
             if new_text != text:
                 plan.write(unit, new_text.encode(), unit.stat().st_mode & 0o7777)

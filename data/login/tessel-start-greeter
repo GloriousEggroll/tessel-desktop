@@ -1,5 +1,5 @@
 #!/bin/sh
-# The Tessel login screen (greetd's greeter command, /etc/tessel/login/greetd.toml).
+# The Tessel login screen (greetd's greeter command, /etc/greetd/tessel-config.toml).
 # No user desktop autostart, portals, terminal shortcuts, or X11 fallback.
 unset DISPLAY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS
 export GDK_BACKEND=wayland
