@@ -66,8 +66,8 @@ fn copy2(source: &Path, target: &Path) -> Result<()> {
         let times = [libc::timespec { tv_sec: 0, tv_nsec: 0 }; 2];
         let mut times = times;
         use std::os::unix::fs::MetadataExt;
-        times[0] = libc::timespec { tv_sec: metadata.atime(), tv_nsec: metadata.atime_nsec() };
-        times[1] = libc::timespec { tv_sec: metadata.mtime(), tv_nsec: metadata.mtime_nsec() };
+        times[0] = libc::timespec { tv_sec: metadata.atime() as libc::time_t, tv_nsec: metadata.atime_nsec() as _ };
+        times[1] = libc::timespec { tv_sec: metadata.mtime() as libc::time_t, tv_nsec: metadata.mtime_nsec() as _ };
         if let Ok(c) = std::ffi::CString::new(target.as_os_str().as_encoded_bytes()) {
             // SAFETY: valid NUL-terminated path and a two-element timespec array.
             unsafe { libc::utimensat(libc::AT_FDCWD, c.as_ptr(), times.as_ptr(), 0) };
