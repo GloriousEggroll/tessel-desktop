@@ -163,6 +163,38 @@ fn scaled_length(cfg: &Cfg, scale: i32, length: i32) -> i32 {
     (f64::from(length) * base / factor).floor() as i32
 }
 
+/// A request naming a head under a conditional DISABLED rule is a manual choice
+/// for now, not a change to the rule. It lasts until the rule agrees. A request
+/// naming the rule itself is about the rule: Global Settings sends every saved
+/// rule back on each Apply, and that must not switch the head.
+pub fn apply_disabled_overrides(cfg: &Cfg, heads: &mut [Head], command: &str, requested: &mut Vec<(String, Vec<Condition>)>) {
+    let is_rule = |name: &str| cfg.disabled.iter().any(|(rule, _)| rule == name);
+    let mut handled = Vec::new();
+    for head in heads {
+        let conditional = cfg.disabled.iter().any(|(name, conditions)| !conditions.is_empty() && matches(head, name));
+        if !conditional {
+            continue;
+        }
+        let named: Vec<String> = requested.iter().filter(|(name, _)| !is_rule(name) && matches(head, name)).map(|(name, _)| name.clone()).collect();
+        for name in named {
+            handled.push(name);
+            let toggle = match command {
+                "CFG_TOGGLE" => true,
+                "CFG_DEL" => !head.cur.enabled,
+                "CFG_SET" => head.cur.enabled,
+                _ => false,
+            };
+            if toggle {
+                head.override_enabled = match head.override_enabled {
+                    None => Some(!head.cur.enabled),
+                    Some(_) => None,
+                };
+            }
+        }
+    }
+    requested.retain(|(name, _)| !handled.contains(name));
+}
+
 /// Fill in `des` and `scaled` for every head.
 pub fn desire(cfg: &Cfg, heads: &mut [Head], lid: Lid) {
     let snapshot: Vec<Head> = heads.to_vec();
@@ -409,6 +441,33 @@ mod tests {
         assert_eq!(find_mode(&Cfg::default(), &none), Some(11), "largest without a preferred mode");
         none.modes.clear();
         assert_eq!(find_mode(&Cfg::default(), &none), None);
+    }
+
+    #[test]
+    fn saving_the_lid_rule_back_leaves_the_panel_on() {
+        let cfg = Cfg::default();
+        let mut heads = vec![head(3, "eDP-1", "Internal panel", vec![mode(30, 1920, 1200, 60000)], 30)];
+        desire(&cfg, &mut heads, Some(false));
+        heads[0].cur = heads[0].des;
+        assert!(heads[0].cur.enabled);
+        let mut requested = cfg.disabled.clone();
+        apply_disabled_overrides(&cfg, &mut heads, "CFG_SET", &mut requested);
+        assert_eq!(heads[0].override_enabled, None, "the rule itself is not a request to turn the panel off");
+        assert_eq!(requested, cfg.disabled, "the rule stays in the request");
+        desire(&cfg, &mut heads, Some(false));
+        assert!(heads[0].des.enabled);
+    }
+
+    #[test]
+    fn naming_a_panel_under_the_lid_rule_is_a_manual_choice() {
+        let cfg = Cfg::default();
+        let mut heads = vec![head(3, "eDP-1", "Internal panel", vec![mode(30, 1920, 1200, 60000)], 30)];
+        desire(&cfg, &mut heads, Some(false));
+        heads[0].cur = heads[0].des;
+        let mut requested = vec![("eDP-1".to_owned(), Vec::new())];
+        apply_disabled_overrides(&cfg, &mut heads, "CFG_SET", &mut requested);
+        assert_eq!(heads[0].override_enabled, Some(false));
+        assert!(requested.is_empty(), "a manual choice is not saved as a rule");
     }
 
     #[test]

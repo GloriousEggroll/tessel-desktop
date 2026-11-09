@@ -63,6 +63,14 @@ ipc 'OP: CFG_SET\nCFG:\n  DISABLED:\n    HEADLESS-2:\n' > /dev/null
 layout "CFG_SET: HEADLESS-2 disabled"
 ipc 'OP: CFG_DEL\nCFG:\n  DISABLED:\n    HEADLESS-2:\n' > /dev/null
 layout "CFG_DEL: HEADLESS-2 enabled again"
+# Global Settings sends every saved rule back on each Apply: HEADLESS-2 must stay on.
+RULE='OP: CFG_SET\nCFG:\n  DISABLED:\n    "!^HEADLESS-2":\n      IF:\n      - LID: CLOSED\n'
+ipc "\$RULE" > /dev/null
+layout "CFG_SET: conditional rule added, HEADLESS-2 stays on"
+ipc "\$RULE" > /dev/null
+layout "CFG_SET: same rule sent again, HEADLESS-2 stays on"
+ipc 'OP: CFG_DEL\nCFG:\n  DISABLED:\n    "!^HEADLESS-2":\n' > /dev/null
+layout "CFG_DEL: conditional rule removed"
 ipc 'OP: CFG_WRITE\n' > "$R/tmp/write"
 cp "\$C/cfg.yaml" "$R/tmp/written.yaml"
 wlr-randr --output HEADLESS-1 --pos 5000,5000 >/dev/null
@@ -76,6 +84,6 @@ RUN
 chmod +x "$R/run.sh"
 env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 HOME="$R/home" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" \
   WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
-  timeout 90 dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" > "$R/labwc.log" 2>&1 || true
+  timeout 120 dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" > "$R/labwc.log" 2>&1 || true
 grep '==\|^HEADLESS' "$R/labwc.log"
 echo "$R"

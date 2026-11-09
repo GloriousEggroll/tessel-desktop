@@ -397,7 +397,7 @@ impl Daemon {
                 }
             }
             "CFG_SET" | "CFG_DEL" | "CFG_TOGGLE" => {
-                self.apply_disabled_overrides(&command, &mut from);
+                layout::apply_disabled_overrides(&self.cfg, &mut self.heads, &command, &mut from.disabled);
                 let merged = match command.as_str() {
                     "CFG_SET" => self.cfg.merged_set(&from),
                     "CFG_DEL" => self.cfg.merged_del(&from),
@@ -414,35 +414,6 @@ impl Daemon {
                 send(operation.client, "", &reply);
             }
         }
-    }
-
-    /// A request about a head under a conditional DISABLED rule is a manual
-    /// choice for now, not a change to the rule. It lasts until the rule agrees.
-    fn apply_disabled_overrides(&mut self, command: &str, from: &mut Partial) {
-        let mut handled = Vec::new();
-        for head in &mut self.heads {
-            let conditional = self.cfg.disabled.iter().any(|(name, conditions)| !conditions.is_empty() && layout::matches(head, name));
-            if !conditional {
-                continue;
-            }
-            let named: Vec<String> = from.disabled.iter().filter(|(name, _)| layout::matches(head, name)).map(|(name, _)| name.clone()).collect();
-            for name in named {
-                handled.push(name);
-                let toggle = match command {
-                    "CFG_TOGGLE" => true,
-                    "CFG_DEL" => !head.cur.enabled,
-                    "CFG_SET" => head.cur.enabled,
-                    _ => false,
-                };
-                if toggle {
-                    head.override_enabled = match head.override_enabled {
-                        None => Some(!head.cur.enabled),
-                        Some(_) => None,
-                    };
-                }
-            }
-        }
-        from.disabled.retain(|(name, _)| !handled.contains(name));
     }
 
     fn write_config(&mut self) {
