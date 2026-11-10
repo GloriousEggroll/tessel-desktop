@@ -31,6 +31,7 @@ struct capture {
     uint8_t *pixels;
     size_t capacity;
     struct spa_video_info_raw format;
+    uint32_t source_width, source_height;
     char error[256];
     atomic_bool has_frame, error_set;
 };
@@ -88,6 +89,7 @@ static void format_changed(void *data, uint32_t id, const struct spa_pod *param)
         c->pixels = pixels; c->capacity = size;
     }
     atomic_store(&c->has_frame, false);
+    c->source_width = w; c->source_height = h;
     c->info.width = w; c->info.height = h; c->info.size = 0;
     snprintf(c->info.pixel_format, sizeof(c->info.pixel_format), "%s", pixel);
     const char *transfer = "iec61966-2-1", *primaries = "bt709";
@@ -112,11 +114,45 @@ static void format_changed(void *data, uint32_t id, const struct spa_pod *param)
             SPA_PARAM_BUFFERS_dataType, SPA_POD_CHOICE_FLAGS_Int(1 << SPA_DATA_MemFd)),
         spa_pod_builder_add_object(&b, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
             SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
-            SPA_PARAM_META_size, SPA_POD_Int(sizeof(struct spa_meta_header)))
+            SPA_PARAM_META_size, SPA_POD_Int(sizeof(struct spa_meta_header))),
+        /* A turned display's frames come as its panel scans them out. */
+        spa_pod_builder_add_object(&b, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+            SPA_PARAM_META_type, SPA_POD_Id(SPA_META_VideoTransform),
+            SPA_PARAM_META_size, SPA_POD_Int(sizeof(struct spa_meta_videotransform)))
     };
-    pw_stream_update_params(c->stream, params, 2);
+    pw_stream_update_params(c->stream, params, 3);
 finish:
     pthread_mutex_unlock(&c->mutex);
+}
+/* Copy a w x h frame of 4-byte pixels upright. The portal's transform is the
+ * display's wl_output transform, and wlroots renders a display's buffer with
+ * its inverse, so the transform maps each buffer pixel to its place on screen
+ * (wlr_box_transform). Returns the upright width and height. */
+void copy_upright(uint8_t *dst, const uint8_t *src, int32_t stride, uint32_t w, uint32_t h,
+                  uint32_t transform, uint32_t *out_w, uint32_t *out_h) {
+    uint32_t dw = transform % 2 ? h : w, dh = transform % 2 ? w : h;
+    *out_w = dw; *out_h = dh;
+    if (transform == SPA_META_TRANSFORMATION_None || transform > SPA_META_TRANSFORMATION_Flipped270) {
+        for (uint32_t y = 0; y < h; y++) memcpy(dst + (size_t)y*w*4, src + (size_t)y*stride, (size_t)w*4);
+        *out_w = w; *out_h = h;
+        return;
+    }
+    for (uint32_t y = 0; y < h; y++) {
+        const uint8_t *row = src + (size_t)y*stride;
+        for (uint32_t x = 0; x < w; x++) {
+            uint32_t dx, dy;
+            switch (transform) {
+            case SPA_META_TRANSFORMATION_90: dx = h-1-y; dy = x; break;
+            case SPA_META_TRANSFORMATION_180: dx = w-1-x; dy = h-1-y; break;
+            case SPA_META_TRANSFORMATION_270: dx = y; dy = w-1-x; break;
+            case SPA_META_TRANSFORMATION_Flipped: dx = w-1-x; dy = y; break;
+            case SPA_META_TRANSFORMATION_Flipped90: dx = y; dy = x; break;
+            case SPA_META_TRANSFORMATION_Flipped180: dx = x; dy = h-1-y; break;
+            default: dx = h-1-y; dy = w-1-x; break; /* Flipped270 */
+            }
+            memcpy(dst + ((size_t)dy*dw + dx)*4, row + (size_t)x*4, 4);
+        }
+    }
 }
 static void process(void *data) {
     struct capture *c = data;
@@ -134,7 +170,7 @@ static void process(void *data) {
     struct spa_meta_header *header = spa_buffer_find_meta_data(b, SPA_META_Header, sizeof(*header));
     if (!b->n_datas || (header && (header->flags & SPA_META_HEADER_FLAG_CORRUPTED))) goto done;
     struct spa_data *d = &b->datas[0];
-    uint32_t row = c->info.width * 4, h = c->info.height;
+    uint32_t w = c->source_width, row = w * 4, h = c->source_height;
     if (!d->data || !d->chunk || !d->chunk->size || d->chunk->flags & SPA_CHUNK_FLAG_CORRUPTED) goto done;
     int32_t stride = d->chunk->stride;
     if (!row || !h || stride < (int32_t)row || (uint64_t)d->chunk->offset + (uint64_t)(h-1)*stride + row > d->maxsize) {
@@ -142,8 +178,9 @@ static void process(void *data) {
     }
     size_t size = (size_t)row*h;
     if (size > c->capacity) goto done;
-    for (uint32_t y = 0; y < h; y++)
-        memcpy(c->pixels + (size_t)y*row, (uint8_t*)d->data + d->chunk->offset + (size_t)y*stride, row);
+    struct spa_meta_videotransform *vt = spa_buffer_find_meta_data(b, SPA_META_VideoTransform, sizeof(*vt));
+    copy_upright(c->pixels, (uint8_t*)d->data + d->chunk->offset, stride, w, h,
+                 vt ? vt->transform : SPA_META_TRANSFORMATION_None, &c->info.width, &c->info.height);
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     c->info.received = now.tv_sec + now.tv_nsec / 1e9;
