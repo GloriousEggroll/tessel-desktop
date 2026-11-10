@@ -3,7 +3,7 @@
 # Needs only a C compiler (not the PipeWire headers).
 set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
-W=$(mktemp -d -p "${TMPDIR:-/run/user/$(id -u)}")
+W=$(mktemp -d -p "${TMPDIR:-/tmp}")
 trap 'rm -rf "$W"' EXIT
 awk '/^void copy_upright/{f=1} f{print} f&&/^}/{exit}' "$HERE/../native/capture_pipewire.c" > "$W/copy_upright.c"
 cp "$HERE/upright.c" "$W/"
