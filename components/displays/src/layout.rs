@@ -283,26 +283,29 @@ impl MonitorLayout {
         }
     }
 
-    pub fn update_widget_transform(&self, desc: &str, transform: &str) {
-        self.with_meta(desc, |meta| meta.transform = transform.to_owned());
+    /// Show `desc` with `transform` and the mode it has: `width`×`height` pixels
+    /// (`None` keeps the mode it had).
+    pub fn update_widget_transform(&self, desc: &str, transform: &str, mode: Option<(i64, i64)>) {
+        self.with_meta(desc, |meta| {
+            let (width, height) = mode.unwrap_or((meta.orig_width, meta.orig_height));
+            meta.set_mode(width, height, transform);
+        });
         self.apply_transform_to_shape(desc, transform);
     }
 
-    /// `_apply_transform_to_shape(rotatable, transform)`.
+    /// `_apply_transform_to_shape(rotatable, transform)`: the shape takes its
+    /// display's turned size, then every shape is placed again.
     pub fn apply_transform_to_shape(&self, desc: &str, transform: &str) {
         let Some(index) = self.model.borrow().index_of(desc) else { return };
         let shape = self.shapes.borrow()[index].clone();
-        let (mut width, mut height) = {
+        let (width, height) = {
             let model = self.model.borrow();
             (model.entries[index].width, model.entries[index].height)
         };
         let (angle, flipped) = parse_transform(transform);
-        if angle == 90 || angle == 270 {
-            shape.rotatable.add_css_class("vertical");
-            std::mem::swap(&mut width, &mut height);
-        } else {
-            shape.rotatable.add_css_class("horizontal");
-        }
+        let vertical = angle == 90 || angle == 270;
+        shape.rotatable.remove_css_class(if vertical { "horizontal" } else { "vertical" });
+        shape.rotatable.add_css_class(if vertical { "vertical" } else { "horizontal" });
         shape.rotatable.set_size_request(width as i32, height as i32);
         let upside_down = angle == 180 || angle == 270;
         shape.panel_bar_top.set_visible(upside_down);

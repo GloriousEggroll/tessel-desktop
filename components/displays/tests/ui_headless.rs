@@ -642,6 +642,48 @@ fn window_on_trial(f: &Fx, seconds: u32, operations: Rc<RefCell<Vec<(String, Val
     window
 }
 
+fn a_turned_display_stays_turned_in_the_preview_after_apply(app: &gtk::Application) {
+    let f = Fx::new(app);
+    // As the daemon reports them: every head has a DESIRED transform.
+    let head = |connector: &str, transform: &str| {
+        let mut head = monitor(connector, 1920);
+        head["DESIRED"] = json!({"MODE": head["CURRENT"]["MODE"].clone(), "ENABLED": true, "TRANSFORM": transform});
+        head
+    };
+    let window = f.window_with(json!({"CFG": {"AUTO_SCALE": false}, "STATE": {"HEADS": [head("DP-1", "NORMAL"), head("HDMI-A-1", "NORMAL")]}}));
+    let operations: Rc<RefCell<Vec<(String, Value)>>> = Rc::default();
+    {
+        let mut hooks = window.hooks.borrow_mut();
+        recording(&mut hooks, operations.clone(), Rc::default());
+        hooks.apply_xwayland_primary_output = Rc::new(|_| (true, None));
+        // The daemon has turned HDMI-A-1 by the time the window reads its state again.
+        let turned = json!({"CFG": {"AUTO_SCALE": false, "TRANSFORM": {"Same model HDMI-A-1": "90"}},
+                            "STATE": {"HEADS": [head("DP-1", "NORMAL"), head("HDMI-A-1", "90")]}});
+        hooks.get_config_data = Rc::new(move || {
+            ipc::set_config_data(turned.clone());
+            true
+        });
+    }
+    let size = |desc: &str| {
+        let layout = window.layout_area.borrow().clone().unwrap();
+        let meta = layout.entries().into_iter().find(|m| m.desc == desc).unwrap();
+        let (w, h) = layout.shape(desc).unwrap().rotatable.size_request();
+        ((meta.width, meta.height), (w as i64, h as i64))
+    };
+    let widget = window.monitor_widgets.borrow()[1].clone();
+    widget.rotation_buttons[1].1.set_active(true);
+    let (model_size, shown) = size("Same model HDMI-A-1");
+    assert_eq!(model_size, (86, 153), "the preview arranges the turned size");
+    assert_eq!(shown, model_size, "and shows it");
+    window.save_config();
+    let cfg = &operations.borrow().iter().find(|(op, _)| op == "CFG_SET").unwrap().1.clone();
+    assert_eq!(cfg["TRANSFORM"], json!({"Same model HDMI-A-1": "90"}));
+    settle(0.4);
+    let (model_size, shown) = size("Same model HDMI-A-1");
+    assert_eq!((model_size, shown), ((86, 153), (86, 153)), "still turned once the preview is rebuilt");
+    println!("ok a_turned_display_stays_turned_in_the_preview_after_apply");
+}
+
 fn apply_waits_for_keep_changes_before_saving(app: &gtk::Application) {
     let f = Fx::new(app);
     let folder = TestDir::new();
@@ -1037,6 +1079,7 @@ fn main() {
     hdr_report_distinguishes_metadata_white_target_and_measurement(&app);
     vrr_changes_in_two_stale_editors_preserve_the_other_monitor(&app);
     automatic_scaling_removes_only_that_displays_scale(&app);
+    a_turned_display_stays_turned_in_the_preview_after_apply(&app);
     apply_waits_for_keep_changes_before_saving(&app);
     no_answer_reverts_after_the_countdown(&app);
     closing_the_question_or_the_window_reverts(&app);

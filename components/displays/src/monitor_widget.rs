@@ -350,12 +350,11 @@ impl MonitorWidget {
         if let Some(layout) = layout {
             let desc = self.desc();
             if let Some(shape) = layout.shape(&desc) {
-                let (w, h) = ((width.as_f64().unwrap_or(0.0) * 0.08) as i64, (height.as_f64().unwrap_or(0.0) * 0.08) as i64);
-                let mut position = (0, 0);
+                let (mut w, mut h, mut position) = (0, 0, (0, 0));
                 layout.with_meta(&desc, |meta| {
-                    meta.width = w;
-                    meta.height = h;
-                    position = (meta.x, meta.y);
+                    let transform = meta.transform.clone();
+                    meta.set_mode(width.as_i64().unwrap_or(0), height.as_i64().unwrap_or(0), &transform);
+                    (w, h, position) = (meta.width, meta.height, (meta.x, meta.y));
                 });
                 if shape.rotatable.parent().is_some_and(|p| p == *layout.fixed.upcast_ref::<gtk::Widget>()) {
                     layout.fixed.move_(&shape.rotatable, position.0 as f64, position.1 as f64);

@@ -518,17 +518,10 @@ impl TesselDisplaysApp {
             return;
         }
         let transform = transform.map(String::from).unwrap_or_else(|| transform_text(None));
-        layout.update_widget_transform(desc, &transform);
         let tab = self.monitor_tabs.borrow().get(desc).map(|t| t.0.clone());
-        if let Some(state) = tab.and_then(|t| t.get_desired_state()) {
-            let width = (state.width.as_f64().unwrap_or(0.0) * model::SCALE) as i64;
-            let height = (state.height.as_f64().unwrap_or(0.0) * model::SCALE) as i64;
-            layout.with_meta(desc, |meta| {
-                meta.width = width;
-                meta.height = height;
-            });
-        }
-        layout.apply_transform_to_shape(desc, &transform);
+        let mode = tab.and_then(|t| t.get_desired_state())
+            .and_then(|state| Some((state.width.as_f64()? as i64, state.height.as_f64()? as i64)));
+        layout.update_widget_transform(desc, &transform, mode);
     }
 
     pub fn on_monitor_enabled_toggled(self: &Rc<Self>, monitor: &Value, enabled: bool) {
@@ -770,6 +763,8 @@ impl TesselDisplaysApp {
         let weak = Rc::downgrade(self);
         glib::timeout_add_local(Duration::from_millis(250), move || {
             if let Some(this) = weak.upgrade() {
+                let get_config_data = this.hooks.borrow().get_config_data.clone();
+                get_config_data();
                 this.reload_layout();
             }
             ControlFlow::Break
@@ -941,7 +936,15 @@ impl TesselDisplaysApp {
             return;
         }
         let desc_to_tab_index: BTreeMap<String, u32> = widgets.iter().enumerate().map(|(i, w)| (w.desc(), i as u32)).collect();
-        let monitors: Vec<Value> = widgets.iter().map(|w| w.monitor.borrow().clone()).collect();
+        // The daemon's state now, not each tab's copy from when the window opened:
+        // its DESIRED transform and mode win over the configuration's.
+        let heads: Vec<Value> = ipc::config_data().get("STATE").and_then(|s| s.get("HEADS")).and_then(Value::as_array)
+            .cloned().unwrap_or_default();
+        let monitors: Vec<Value> = widgets.iter().map(|w| {
+            let desc = w.desc();
+            heads.iter().rev().find(|h| h.get("DESCRIPTION").map(py_str).as_deref() == Some(desc.as_str())).cloned()
+                .unwrap_or_else(|| w.monitor.borrow().clone())
+        }).collect();
         let layout = MonitorLayout::new(&monitors, &self.monitors_notebook, desc_to_tab_index, Some(&align), Some(&arrange),
                                         Some(&order), Some(transform_overrides), Rc::downgrade(self));
         self.layout_frame.set_child(Some(&layout.fixed));

@@ -534,6 +534,26 @@ fn layout_model_positions_snaps_and_arranges() {
     assert_eq!(model::rotated_dimensions(1, 2, "270"), (2, 1));
 }
 
+#[test]
+fn a_turned_display_keeps_its_turned_size_and_alignment() {
+    // The daemon reports every head's DESIRED transform.
+    let head = |name: &str, transform: &str| json!({"NAME": name, "DESCRIPTION": name,
+        "DESIRED": {"MODE": {"WIDTH": 1920, "HEIGHT": 1080}, "TRANSFORM": transform}, "CURRENT": {"MODE": {"WIDTH": 1920, "HEIGHT": 1080}}});
+    let mut layout = LayoutModel::new(&[head("A", "NORMAL"), head("B", "90")], &json!({}), None, None, None, &Default::default());
+    assert_eq!((layout.entries[1].width, layout.entries[1].height), (86, 153));
+    // Dragged next to A with their bottom edges lined up (A is 153x86).
+    (layout.entries[0].x, layout.entries[0].y) = (100, 150);
+    (layout.entries[1].x, layout.entries[1].y) = (253, 83);
+    assert_eq!(layout.arrangement().unwrap(), ("ROW".into(), Some("BOTTOM".into()), vec!["A".into(), "B".into()]));
+    (layout.entries[1].x, layout.entries[1].y) = (253, 116);
+    assert_eq!(layout.arrangement().unwrap().1.as_deref(), Some("MIDDLE"));
+    // Turning it back, or a new mode, gives the size of the mode as it is shown.
+    layout.entries[1].set_mode(1920, 1080, "NORMAL");
+    assert_eq!((layout.entries[1].width, layout.entries[1].height), (153, 86));
+    layout.entries[1].set_mode(2560, 1440, "FLIPPED-270");
+    assert_eq!((layout.entries[1].width, layout.entries[1].height, layout.entries[1].orig_width), (115, 204, 2560));
+}
+
 // ------------------------------------------------------------------- IPC
 
 #[test]

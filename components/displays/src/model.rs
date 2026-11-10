@@ -114,6 +114,20 @@ pub struct Meta {
     pub placed: bool,
 }
 
+impl Meta {
+    /// The preview size of a `width`×`height` mode shown with `transform`: a display
+    /// turned by 90 or 270 degrees is as tall as its mode is wide.
+    pub fn set_mode(&mut self, width: i64, height: i64, transform: &str) {
+        let (angle, _) = parse_transform(transform);
+        let (w, h) = rotated_dimensions(width, height, &angle.to_string());
+        self.orig_width = width;
+        self.orig_height = height;
+        self.width = (w as f64 * SCALE) as i64;
+        self.height = (h as f64 * SCALE) as i64;
+        self.transform = transform.to_owned();
+    }
+}
+
 /// The arrangement data of `MonitorLayout` (widgets live in `layout.rs`).
 #[derive(Clone, Debug, Default)]
 pub struct LayoutModel {
@@ -281,8 +295,7 @@ impl LayoutModel {
         }
         let arrange = cfg.get("ARRANGE").map(|v| py_str(v)).unwrap_or_else(|| "ROW".into());
         let align = cfg.get("ALIGN").map(|v| py_str(v)).unwrap_or_else(|| "TOP".into());
-        // The Python code reads data["CURRENT"]["TRANSFORM"], which shape
-        // metadata never has: sizes are used unrotated.
+        // Shape sizes are already turned with their display.
         let sizes: Vec<(i64, i64)> = self.entries.iter().map(|e| (e.width, e.height)).collect();
         if arrange == "ROW" {
             let total: i64 = sizes.iter().map(|s| s.0).sum();
@@ -367,9 +380,7 @@ impl LayoutModel {
         // positions = {desc: …}: a repeated description keeps its first slot
         // with the last shape's values.
         let mut positions: Vec<(String, i64, i64, i64, i64)> = Vec::new();
-        let mut transforms: BTreeMap<String, String> = BTreeMap::new();
         for e in &self.entries {
-            transforms.insert(e.desc.clone(), e.transform.clone());
             match positions.iter_mut().find(|p| p.0 == e.desc) {
                 Some(p) => *p = (e.desc.clone(), e.x, e.y, e.width, e.height),
                 None => positions.push((e.desc.clone(), e.x, e.y, e.width, e.height)),
@@ -388,9 +399,9 @@ impl LayoutModel {
         }
         if positions.len() >= 2 {
             let (main, neighbor) = (&sorted[0], &sorted[1]);
-            let t = |d: &str| transforms.get(d).cloned().unwrap_or_else(|| "0".into());
-            let (mw, mh) = rotated_dimensions(main.3, main.4, &t(&main.0));
-            let (nw, nh) = rotated_dimensions(neighbor.3, neighbor.4, &t(&neighbor.0));
+            // Shape sizes are already turned with their display.
+            let (mw, mh) = (main.3, main.4);
+            let (nw, nh) = (neighbor.3, neighbor.4);
             if arrange == "ROW" {
                 let (mt, nt) = (main.2 as f64, neighbor.2 as f64);
                 let top = (nt - mt).abs();
