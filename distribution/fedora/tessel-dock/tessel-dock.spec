@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?commit:%global commit 47634772d389dd9cc872163af90ed398231561d6}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -98,6 +98,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Show the dock on the primary display chosen in Displays
+
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - New users' Win layout has no monitor-specific settings
 
