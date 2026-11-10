@@ -141,6 +141,31 @@ pub fn with_managed_import(data: &[u8]) -> Vec<u8> {
 
 type Stamp = (u64, u64, u64, i64, i64);
 
+
+/// The primary output Displays saved in labwc's `environment` (one name per
+/// key it writes, normally the same connector three times).
+pub fn saved_primary_outputs(path: &Path) -> std::result::Result<Vec<String>, ()> {
+    let raw = read_regular(path, 65536).map_err(|_| ())?.unwrap_or_default();
+    let text = String::from_utf8(raw).map_err(|_| ())?;
+    let lines = fsx::splitlines(&text);
+    let start = lines.iter().position(|l| *l == PRIMARY_BEGIN).ok_or(())?;
+    let end = lines.iter().position(|l| *l == PRIMARY_END).ok_or(())?;
+    let mut values: Vec<(&str, String)> = Vec::new();
+    if end > start {
+        for line in &lines[start + 1..end] {
+            let Some((key, value)) = line.split_once('=') else { continue };
+            if PRIMARY_KEYS.contains(&key) {
+                let parts = fsx::shlex_split(value).map_err(|_| ())?;
+                if parts.len() == 1 {
+                    values.retain(|(k, _)| *k != key);
+                    values.push((key, parts.into_iter().next().unwrap()));
+                }
+            }
+        }
+    }
+    Ok(PRIMARY_KEYS.iter().filter_map(|key| values.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())).collect())
+}
+
 pub struct GtkColorScheme {
     pub config_dir: PathBuf,
     pub directory: PathBuf,
@@ -176,25 +201,7 @@ impl GtkColorScheme {
 
     fn read_primary_names(&self) -> std::result::Result<Vec<String>, ()> {
         self.primary_reads.set(self.primary_reads.get() + 1);
-        let raw = read_regular(&self.primary_path, 65536).map_err(|_| ())?.unwrap_or_default();
-        let text = String::from_utf8(raw).map_err(|_| ())?;
-        let lines = fsx::splitlines(&text);
-        let start = lines.iter().position(|l| *l == PRIMARY_BEGIN).ok_or(())?;
-        let end = lines.iter().position(|l| *l == PRIMARY_END).ok_or(())?;
-        let mut values: Vec<(&str, String)> = Vec::new();
-        if end > start {
-            for line in &lines[start + 1..end] {
-                let Some((key, value)) = line.split_once('=') else { continue };
-                if PRIMARY_KEYS.contains(&key) {
-                    let parts = fsx::shlex_split(value).map_err(|_| ())?;
-                    if parts.len() == 1 {
-                        values.retain(|(k, _)| *k != key);
-                        values.push((key, parts.into_iter().next().unwrap()));
-                    }
-                }
-            }
-        }
-        Ok(PRIMARY_KEYS.iter().filter_map(|key| values.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())).collect())
+        saved_primary_outputs(&self.primary_path)
     }
 
     /// Use the saved primary display, falling back to the first live one.

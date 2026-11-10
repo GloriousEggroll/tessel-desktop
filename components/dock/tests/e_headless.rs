@@ -133,7 +133,13 @@ fn run_cli(home: &Path, args: &[&str]) -> (i32, String, String) {
 
 impl Dock {
     fn start(name: &str, config: Value) -> Result<Dock, String> {
+        Self::start_with(name, config, |_| {})
+    }
+
+    /// `setup` sees the fake HOME before the dock starts.
+    fn start_with(name: &str, config: Value, setup: impl FnOnce(&Path)) -> Result<Dock, String> {
         let home = home(name, &config);
+        setup(&home);
         let socket_path = root().join(format!("notify-{name}"));
         let _ = std::fs::remove_file(&socket_path);
         let socket = UnixDatagram::bind(&socket_path).map_err(|e| e.to_string())?;
@@ -382,6 +388,32 @@ fn bar_clones_reserve_only_their_own_output() -> Result<(), String> {
     let snapshot = workareas()?;
     ensure!(insets(&snapshot, "HEADLESS-1") == Some([0, 0, 0, 0]), "HEADLESS-1 reserved: {snapshot}");
     ensure!(insets(&snapshot, "HEADLESS-2").is_some_and(|i| i[0] > 0), "HEADLESS-2 not reserved: {snapshot}");
+    dock.stop()?;
+    Ok(())
+}
+
+/// The block Displays writes to labwc's `environment` for a primary output.
+fn primary_environment(output: &str) -> String {
+    format!("# Personal\nEXAMPLE=1\n\n# tessel-displays primary output environment begin\nSDL_VIDEO_DISPLAY_PRIORITY={output}\n\
+             WAYLANDDRV_PRIMARY_MONITOR={output}\nPROTON_WAYLAND_MONITOR={output}\n# tessel-displays primary output environment end\n")
+}
+
+fn primary_dock_follows_the_primary_chosen_in_displays() -> Result<(), String> {
+    // Not GTK's first output, so the old "first output" guess is wrong.
+    let display = gtk::gdk::Display::default().ok_or("display")?;
+    let first = display.monitors().item(0).and_downcast::<gtk::gdk::Monitor>().and_then(|m| m.connector()).ok_or("monitor")?;
+    let (primary, other) = if first == "HEADLESS-1" { ("HEADLESS-2", "HEADLESS-1") } else { ("HEADLESS-1", "HEADLESS-2") };
+    let dock = Dock::start_with("primary", serde_json::json!({"mode": "bar", "edge": "top", "monitor": "primary"}), |home| {
+        std::fs::write(home.join(".config/labwc/environment"), primary_environment(primary)).unwrap();
+    })?;
+    let reserved = |monitor: &str| workareas().ok().and_then(|s| insets(&s, monitor)).is_some_and(|i| i[0] > 0);
+    ensure!(reserved(primary) && !reserved(other), "dock not on the saved primary {primary}: {}", workareas()?);
+    // Displays replaces the file when Apply chooses another primary.
+    let environment = dock.home.join(".config/labwc/environment");
+    let temporary = dock.home.join(".config/labwc/.environment.new");
+    std::fs::write(&temporary, primary_environment(other)).unwrap();
+    std::fs::rename(&temporary, &environment).unwrap();
+    ensure!(wait_for(5.0, || reserved(other) && !reserved(primary)), "dock did not move to {other}: {}", workareas()?);
     dock.stop()?;
     Ok(())
 }
@@ -840,6 +872,7 @@ fn main() {
         ("every_edge_reserves_bar_plus_gap_even_while_hidden", every_edge_reserves_bar_plus_gap_even_while_hidden),
         ("mac_layout_maximized_window_stops_at_the_app_dock", mac_layout_maximized_window_stops_at_the_app_dock),
         ("bar_clones_reserve_only_their_own_output", bar_clones_reserve_only_their_own_output),
+        ("primary_dock_follows_the_primary_chosen_in_displays", primary_dock_follows_the_primary_chosen_in_displays),
         ("maximized_window_drops_float_gap_per_monitor", maximized_window_drops_float_gap_per_monitor),
         ("workareas_changed_is_emitted_only_on_change", workareas_changed_is_emitted_only_on_change),
         ("hot_corner_dwell_latch_and_reentry", hot_corner_dwell_latch_and_reentry),

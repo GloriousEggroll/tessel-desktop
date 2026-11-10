@@ -98,6 +98,9 @@ pub struct App {
     config_loaded: Cell<bool>,
     monitor_metadata: RefCell<HashMap<gdk::Monitor, (String, String)>>,
     monitor_signature: RefCell<Option<Vec<String>>>,
+    /// The primary output Displays saved, and the watch on the file that holds it.
+    primary_outputs: RefCell<Vec<String>>,
+    primary_watch: RefCell<Option<(gio::FileMonitor, glib::SignalHandlerId)>>,
     trash_count: Cell<Option<u32>>,
     trash_timer: RefCell<Option<glib::SourceId>>,
     trash_refresh_timer: RefCell<Option<glib::SourceId>>,
@@ -135,7 +138,7 @@ impl App {
             wallpaper: RefCell::new(None), publisher: RefCell::new(None), previews: RefCell::default(),
             settings: Rc::new(RefCell::new(None)), settings_api: RefCell::new(None), readiness: ServiceReadiness::new(),
             startup_complete: Cell::new(false), started: Cell::new(false), config_loaded: Cell::new(false), monitor_metadata: RefCell::default(),
-            monitor_signature: RefCell::new(None), trash_count: Cell::new(None), trash_timer: RefCell::new(None),
+            monitor_signature: RefCell::new(None), primary_outputs: RefCell::default(), primary_watch: RefCell::new(None), trash_count: Cell::new(None), trash_timer: RefCell::new(None),
             trash_refresh_timer: RefCell::new(None), trash_query: RefCell::new(None), trash_monitor: RefCell::new(None),
             catalog_timer: RefCell::new(None), catalog_monitor: RefCell::new(None), display_signals: RefCell::default(),
             workarea_monitor_signals: RefCell::default(), signal_sources: RefCell::default(), menu_probe: RefCell::new(None),
@@ -186,6 +189,8 @@ impl App {
     // ---------------------------------------------------------------- startup
 
     fn startup(self: &Rc<Self>) {
+        // Before the first docks are placed.
+        self.read_primary();
         let docks = self.weak();
         crate::ui::capture_controls::register_capture_controls(&self.application, Rc::new(move || {
             docks.upgrade().map(|app| app.docks().into_iter().map(|d| d as Rc<dyn DockView>).collect()).unwrap_or_default()
@@ -296,6 +301,7 @@ impl App {
         self.display_signals.borrow_mut().push((model.upcast(), handler));
         self.rebuild_docks();
         self.watch_trash();
+        self.watch_primary();
         self.refresh_trash();
         if let Some(connection) = self.application.dbus_connection() {
             let host: Rc<dyn SettingsHost> = self.dock_app();
@@ -618,7 +624,7 @@ impl App {
             }
         }
         let target = target.unwrap_or_else(|| {
-            let primary = crate::ui::surface::display_monitors().into_iter().next();
+            let primary = self.primary_monitor();
             docks.iter().find(|d| Some(&d.monitor) == primary.as_ref()).cloned().unwrap_or_else(|| docks[0].clone())
         });
         let target = docks.iter().find(|d| d.monitor == target.monitor && !d.is_app_dock).cloned().unwrap_or(target);
@@ -666,7 +672,7 @@ impl App {
             dock.destroy();
         }
         let config = self.config();
-        let primary = crate::ui::surface::display_monitors().into_iter().next();
+        let primary = self.primary_monitor();
         let selected: Vec<_> = match config.monitor.as_str() {
             "all" => entries.clone(),
             "primary" => {
@@ -840,6 +846,46 @@ impl App {
         let pin = pins.remove(index);
         pins.insert(target, pin);
         self.save_config(DockConfig { pins, ..(*config).clone() }, false);
+    }
+
+    // ---------------------------------------------------------------- primary
+
+    /// The primary display chosen in Displays, or the first one. Wayland has no
+    /// primary output: Displays saves it in labwc's `environment`.
+    pub fn primary_monitor(&self) -> Option<gdk::Monitor> {
+        let monitors = crate::ui::surface::display_monitors();
+        let names = self.primary_outputs.borrow();
+        names.iter().find_map(|name| monitors.iter().find(|m| m.connector().is_some_and(|c| c == name.as_str())).cloned())
+            .or_else(|| monitors.into_iter().next())
+    }
+
+    fn primary_path() -> std::path::PathBuf {
+        tessel_core::paths::config_home().join("labwc").join("environment")
+    }
+
+    /// Read the saved primary; true if it changed.
+    fn read_primary(&self) -> bool {
+        let names = crate::appearance::gtk_color_scheme::saved_primary_outputs(&Self::primary_path()).unwrap_or_default();
+        if *self.primary_outputs.borrow() == names {
+            return false;
+        }
+        self.primary_outputs.replace(names);
+        true
+    }
+
+    /// Move a dock shown on the primary display when Displays chooses another.
+    fn watch_primary(&self) {
+        let file = gio::File::for_path(Self::primary_path());
+        // Displays replaces the file: follow renames into its name too.
+        let Ok(monitor) = file.monitor_file(gio::FileMonitorFlags::WATCH_MOVES, None::<&gio::Cancellable>) else { return };
+        let weak = self.weak();
+        let handler = monitor.connect_changed(move |_, _, _, _| {
+            let Some(app) = weak.upgrade() else { return };
+            if app.read_primary() && app.config().monitor == "primary" {
+                app.rebuild_docks();
+            }
+        });
+        self.primary_watch.replace(Some((monitor, handler)));
     }
 
     // ---------------------------------------------------------------- trash
@@ -1041,6 +1087,10 @@ impl App {
             source.remove();
         }
         if let Some((monitor, handler)) = self.trash_monitor.borrow_mut().take() {
+            monitor.disconnect(handler);
+            monitor.cancel();
+        }
+        if let Some((monitor, handler)) = self.primary_watch.borrow_mut().take() {
             monitor.disconnect(handler);
             monitor.cancel();
         }
