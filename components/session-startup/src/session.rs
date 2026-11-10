@@ -538,6 +538,21 @@ systemd-run --user --quiet --collect \
   --property=PartOf=graphical-session.target \
   /usr/bin/true >/dev/null 2>&1
 
+# A portal that was already running chose its backends for the desktop it was
+# started in: another desktop's session, or none when an app started it before
+# the environment above was imported. It then has no screen capture here.
+# Nothing can be sharing this session's screen yet, so restart it.
+for portal_unit in xdg-desktop-portal.service xdg-desktop-portal-wlr.service; do
+    portal_pid=$(systemctl --user show --property=MainPID --value "$portal_unit" 2>/dev/null)
+    case "$portal_pid" in ''|0) continue ;; esac
+    for portal_variable in "XDG_CURRENT_DESKTOP=$XDG_CURRENT_DESKTOP" "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"; do
+        if ! tr '\0' '\n' < "/proc/$portal_pid/environ" 2>/dev/null | grep -qxF "$portal_variable"; then
+            systemctl --user stop "$portal_unit" >/dev/null 2>&1
+            break
+        fi
+    done
+done
+
 # Required for PipeWire screen/window capture (OBS, browsers, and similar).
 systemctl --user start \
   xdg-desktop-portal-wlr.service \

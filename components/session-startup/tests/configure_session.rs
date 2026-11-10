@@ -353,3 +353,16 @@ fn argument_errors_match_argparse() {
     assert_eq!(code, 2);
     assert!(stderr.ends_with("error: unrecognized arguments: -- x\n"));
 }
+
+#[test]
+fn an_autostart_from_before_the_portal_check_has_nothing_personal() {
+    let template = session::AUTOSTART_TEMPLATE.as_str();
+    let start = template.find("# A portal that was already running").unwrap();
+    let end = template.find("# Required for PipeWire").unwrap();
+    let before = format!("{}{}", &template[..start], &template[end..]);
+    let (generic, additions) = session::split_autostart(&before, "");
+    assert_eq!(generic, template);
+    assert_eq!(additions, "");
+    // The check stops a portal from another session before the start statement starts it again.
+    assert!(template[start..end].contains("systemctl --user stop \"$portal_unit\""));
+}
