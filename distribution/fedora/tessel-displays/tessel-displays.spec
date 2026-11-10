@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?commit:%global commit c876a71db3277fa3c684f31dd789dd3ae4188479}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -84,6 +84,9 @@ install -Dm644 packaging/defaults/etc/tessel/displays/cfg.yaml %{buildroot}%{_sy
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
+- Keep a turned display's turned size in the layout preview, also after Apply
+
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - Ship Tessel's own display defaults instead of relying on way-displays' file
 
