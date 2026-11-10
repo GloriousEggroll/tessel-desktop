@@ -19,6 +19,8 @@ pub const SETTINGS_CSS: &str = r#"
     min-width: 18px; padding: 4px 6px;
 }
 .calendarmanager .clock-preview-time { font-size: 17pt; font-weight: 600; }
+/* Even-width digits keep the line still as the seconds change. */
+.calendarmanager .current-time { font-size: 14pt; font-weight: 600; font-feature-settings: "tnum"; }
 .calendarmanager .clock-preview-date, .calendarmanager .clock-preview-weekday { font-size: 10pt; }
 .calendarmanager .clock-preview-inline .clock-preview-time,
 .calendarmanager .clock-preview-inline .clock-preview-date,
@@ -94,6 +96,8 @@ pub struct SettingsInner {
     calendar_signature: RefCell<Option<Vec<crate::events::Source>>>,
     clock_syncing: Cell<bool>,
     clock_error: RefCell<String>,
+    /// Updates the current time line each second while it is shown.
+    seconds: RefCell<Option<glib::SourceId>>,
 }
 
 #[derive(Clone)]
@@ -164,7 +168,7 @@ impl DateSettingsWindow {
         window.set_child(Some(&root));
         let heading = gtk::Box::new(gtk::Orientation::Vertical, 5);
         tessel_gtk::utils::append(&heading, &label(&tr!("Date & Time"), Some("title")), false, false);
-        let current_label = label("", Some("muted"));
+        let current_label = label("", Some("current-time"));
         tessel_gtk::utils::append(&heading, &current_label, false, false);
         tessel_gtk::utils::append(&root, &heading, false, false);
 
@@ -351,7 +355,13 @@ impl DateSettingsWindow {
             formatting_time: Cell::new(false), timezone_dirty: Cell::new(false), zone_choices: RefCell::new(None),
             message: RefCell::new(String::new()), calendar_syncing: Cell::new(false), calendar_error: RefCell::new(String::new()),
             calendar_signature: RefCell::new(None), clock_syncing: Cell::new(false), clock_error: RefCell::new(String::new()),
+            seconds: RefCell::new(None),
         }));
+        // The label is shown in this window or embedded in Global Settings.
+        let weak = this.downgrade();
+        this.0.current_label.connect_map(move |_| if let Some(w) = up(&weak) { w.tick_seconds() });
+        let weak = this.downgrade();
+        this.0.current_label.connect_unmap(move |_| if let Some(w) = up(&weak) { w.stop_seconds() });
         this.connect_signals();
         this.0.constructed.set(true);
         this.refresh();
@@ -367,7 +377,37 @@ impl DateSettingsWindow {
     /// `_destroyed(window)`: release the window's style provider. Global
     /// Settings embeds the controls of a window that is never realized, so
     /// its unrealize handler never runs.
+    /// Show the current time and wake again just after the next second starts:
+    /// a fixed one-second timer drifts and skips seconds.
+    fn tick_seconds(&self) {
+        self.stop_seconds();
+        let current = self.0.backend.now();
+        self.show_current_time(&current);
+        let since = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().subsec_millis();
+        let wait = std::time::Duration::from_millis(u64::from(1000 - since.min(999)) + 5);
+        let weak = self.downgrade();
+        let source = glib::timeout_add_local_once(wait, move || {
+            if let Some(w) = up(&weak) {
+                w.0.seconds.replace(None);
+                w.tick_seconds();
+            }
+        });
+        self.0.seconds.replace(Some(source));
+    }
+
+    fn stop_seconds(&self) {
+        if let Some(source) = self.0.seconds.take() {
+            source.remove();
+        }
+    }
+
+    fn show_current_time(&self, current: &crate::backend::ZonedTime) {
+        self.0.current_label.set_text(&crate::view::strftime(current.date(), current.hour(), current.minute(), current.second(),
+                                                             "%A, %B %d, %Y · %H:%M:%S"));
+    }
+
     pub fn destroyed(&self) {
+        self.stop_seconds();
         gtk::style_context_remove_provider_for_display(&WidgetExt::display(&self.0.window), &self.0.css);
     }
 
@@ -761,8 +801,7 @@ impl DateSettingsWindow {
                 }
             }
         }
-        s.current_label.set_text(&crate::view::strftime(current.date(), current.hour(), current.minute(), current.second(),
-                                                         "%A, %B %d, %Y · %H:%M:%S"));
+        self.show_current_time(&current);
         s.calendar_view.refresh_today();
         let ready = state.ready && !state.busy;
         let manual = ready && !state.ntp;

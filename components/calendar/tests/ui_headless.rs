@@ -457,6 +457,20 @@ fn unedited_time_tracks_clock_but_unsaved_time_survives_refreshes() {
     assert!(f.history().is_empty());
 }
 
+fn current_time_line_shows_every_second() {
+    let f = Fx::new();
+    let w = f.settings();
+    let label = w.0.current_label.clone();
+    assert!(label.has_css_class("current-time") && !label.has_css_class("muted"), "the line stands out");
+    let text = |seconds: &str| label.text().ends_with(&format!(":{seconds}"));
+    assert!(text("00"), "{}", label.text());
+    for second in ["01", "02", "03"] {
+        let now = f.backend().now();
+        f.backend().tick_to(now.add_micros(1_000_000).unwrap());
+        wait_for(|| text(second), &format!("second {second} without a page refresh"), 1.3);
+    }
+}
+
 fn typed_time_rejects_invalid_fields_and_applies_uncommitted_valid_text() {
     let f = Fx::new();
     f.backend().update(|s| s.ntp = false);
@@ -851,6 +865,7 @@ fn main() {
         ("popup_calendar_browsing_and_selection_never_change_system_date", popup_calendar_browsing_and_selection_never_change_system_date),
         ("keyboard_navigation_moves_days_months_and_years", keyboard_navigation_moves_days_months_and_years),
         ("today_tracks_clock_changes_without_discarding_browsed_selection", today_tracks_clock_changes_without_discarding_browsed_selection),
+        ("current_time_line_shows_every_second", current_time_line_shows_every_second),
         ("clock_display_controls_save_live_without_changing_system_time", clock_display_controls_save_live_without_changing_system_time),
         ("clock_display_failed_save_reverts_control_and_reports_error", clock_display_failed_save_reverts_control_and_reports_error),
         ("clock_date_year_and_weekday_toggles_preserve_format_and_preview", clock_date_year_and_weekday_toggles_preserve_format_and_preview),

@@ -74,6 +74,11 @@ impl FakeDateBackend {
         self.changed();
     }
 
+    /// Move the clock as real time does: without a change notification.
+    pub fn tick_to(&self, value: ZonedTime) {
+        self.now.replace(value);
+    }
+
     fn fail(&self, message: &str) -> bool {
         self.state.borrow_mut().error = message.into();
         let callback = self.on_error.borrow().clone();
