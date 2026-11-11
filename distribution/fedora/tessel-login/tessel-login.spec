@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 67b00bda415ac7342f039404d192bedd0e511090}
+%{!?commit:%global commit 31c1e914fa5bfc2eb9985ef843e4b221349066c4}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-login
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel login screen (greetd greeter)
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -130,6 +130,11 @@ fi
 %{_unitdir}/tessel-login.service
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- The default background is the dark Slate wallpaper, the desktop's default
+- Each screen shows the render made for its shape
+- Require tessel-wallpapers
+
 * Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Send the compositor's output to the journal (identifier tessel-session)
 
