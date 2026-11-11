@@ -145,7 +145,7 @@ fn previous_layout_bytes_are_sorted_indented_and_ascii() {
 fn shipped_presets_name_no_monitors() {
     let (presets, problems) = load_presets();
     assert!(problems.is_empty(), "{problems:?}");
-    assert_eq!(presets.len(), 4);
+    assert_eq!(presets.len(), 5);
     for preset in &presets {
         assert_eq!(preset.dock["hot_corners"], json!({}), "{}", preset.name);
         assert_eq!(preset.dock["monitor_overrides"], json!({}), "{}", preset.name);
@@ -156,7 +156,7 @@ fn shipped_presets_name_no_monitors() {
 fn shipped_win_preset_is_valid_and_excludes_wallpapers_and_pins() {
     let (presets, problems) = load_presets();
     assert!(problems.is_empty(), "{problems:?}");
-    assert_eq!(presets.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(), ["GNOME", "KDE", "Mac", "Win"]);
+    assert_eq!(presets.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(), ["GNOME", "GNOME (Ubuntu)", "KDE", "Mac", "Win"]);
     let win = presets.iter().find(|p| p.key == "win").unwrap();
     assert_eq!(win.name, "Win");
     assert!(win.icon.exists());

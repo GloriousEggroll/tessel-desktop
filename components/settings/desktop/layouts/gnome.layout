@@ -14,28 +14,27 @@
       "audio",
       "showdesktop"
     ],
-    "app_dock_auto_hide": false,
+    "app_dock_auto_hide": true,
     "app_dock_background_color": "#38373a",
-    "app_dock_edge": "left",
-    "app_dock_expand": true,
-    "app_dock_float_mode": false,
+    "app_dock_edge": "bottom",
+    "app_dock_expand": false,
+    "app_dock_float_mode": true,
     "app_dock_frost_strength": 60,
-    "app_dock_frosted": false,
-    "app_dock_gap": 0,
+    "app_dock_frosted": true,
+    "app_dock_gap": 8,
     "app_dock_group_layout": {
-      "start": [
+      "start": [],
+      "center": [
         "pinned",
-        "running"
-      ],
-      "center": [],
-      "end": [
+        "running",
         "files",
         "app_menu"
-      ]
+      ],
+      "end": []
     },
     "app_dock_icon_size": 48,
-    "app_dock_match_wallpaper": true,
-    "app_dock_rounded_corners": false,
+    "app_dock_match_wallpaper": false,
+    "app_dock_rounded_corners": true,
     "app_dock_transparency": 20,
     "app_dock_transparency_enabled": true,
     "application_display": "icons",
@@ -94,7 +93,7 @@
       "clock": true,
       "session": true,
       "activities": true,
-      "focused_title": true
+      "focused_title": false
     },
     "hide_delay_ms": 500,
     "hide_on_fullscreen": false,

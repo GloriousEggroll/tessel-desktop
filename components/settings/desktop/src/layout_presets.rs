@@ -2,7 +2,7 @@
 //! desktop behavior, clock, workspaces and tiling.
 //!
 //! A preset is a JSON `.layout` file with an SVG icon of the same name. The
-//! four shipped presets are embedded (copied from tessel-settings/layouts);
+//! shipped presets are embedded (copied from tessel-settings/layouts);
 //! [`load_presets_from`] reads a directory like Python's `load_presets(dir)`.
 //! Wallpapers and pinned applications are never part of a preset.
 use std::path::{Path, PathBuf};
@@ -35,6 +35,7 @@ pub const FIELD_LABELS: &[(&str, &str)] = &[
 /// The shipped presets (`layouts/*.layout` + `*.svg`), in file-name order.
 pub const BUILTIN: &[(&str, &[u8], &[u8])] = &[
     ("gnome", include_bytes!("../layouts/gnome.layout"), include_bytes!("../layouts/gnome.svg")),
+    ("gnome-ubuntu", include_bytes!("../layouts/gnome-ubuntu.layout"), include_bytes!("../layouts/gnome-ubuntu.svg")),
     ("kde", include_bytes!("../layouts/kde.layout"), include_bytes!("../layouts/kde.svg")),
     ("mac", include_bytes!("../layouts/mac.layout"), include_bytes!("../layouts/mac.svg")),
     ("win", include_bytes!("../layouts/win.layout"), include_bytes!("../layouts/win.svg")),
@@ -466,5 +467,26 @@ mod tests {
         assert!(config.effective_rounded_corners(), "the menu opened from the bar is rounded");
         assert!(!config.effective_float_mode(), "a bar that doesn't float keeps square outer corners");
         assert!(config.apps_rounded_corners);
+    }
+
+    /// Stock GNOME (Fedora, Debian) has no dock on screen: the dash sits at the
+    /// bottom and comes out when asked for. Ubuntu's keeps its full-height
+    /// dock on the left.
+    #[test]
+    fn stock_gnome_hides_its_dash_at_the_bottom_and_ubuntu_keeps_the_side_dock() {
+        let load = |key: &str| {
+            let (_, bytes, icon) = BUILTIN.iter().find(|(k, ..)| *k == key).unwrap();
+            let preset = parse_preset(key, &decode(bytes).unwrap(), PresetIcon::Embedded(icon)).unwrap();
+            let config = merged_config(&DockConfig::default(), &preset.dock).unwrap();
+            (preset, config)
+        };
+        let (gnome, config) = load("gnome");
+        assert_eq!(gnome.name, "GNOME");
+        assert!(config.uses_separate_app_dock());
+        assert_eq!((config.app_dock_edge.as_str(), config.app_dock_auto_hide, config.app_dock_expand), ("bottom", true, false));
+        assert_eq!(gnome.dock["group_visibility"]["focused_title"], Value::Bool(false));
+        let (ubuntu, config) = load("gnome-ubuntu");
+        assert_eq!(ubuntu.name, "GNOME (Ubuntu)");
+        assert_eq!((config.app_dock_edge.as_str(), config.app_dock_auto_hide, config.app_dock_expand), ("left", false, true));
     }
 }

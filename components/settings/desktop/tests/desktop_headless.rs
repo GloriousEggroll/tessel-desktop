@@ -808,6 +808,7 @@ fn display_hooks() -> Hooks {
         ipc_operation: Rc::new(|op, _| panic!("Opening must not write ({op})")),
         ipc_config_operation: Rc::new(|op, _| panic!("Opening must not apply ({op})")),
         get_config_data: Rc::new(|| panic!("no GET in UI tests")),
+        confirm_seconds: 0,
         get_xwayland_primary_output: Rc::new(|| None),
         apply_xwayland_primary_output: Rc::new(|_| panic!("Opening must not apply")),
         read_labwc_primary_environment: Rc::new(|_| None),
