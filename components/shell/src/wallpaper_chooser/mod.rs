@@ -62,6 +62,9 @@ pub struct Options {
     pub default_folder: Option<PathBuf>,
     pub importer: Option<Importer>,
     pub validate: Option<Validator>,
+    /// The size of the screen the wallpaper is chosen for. A picture that
+    /// comes in several sizes is offered in the one nearest this shape.
+    pub screen: Option<(i32, i32)>,
 }
 
 enum Message {
@@ -122,6 +125,9 @@ struct Inner {
     parent: Option<gtk::Window>,
     parent_handler: RefCell<Option<glib::SignalHandlerId>>,
     folder: RefCell<PathBuf>,
+    screen: Option<(i32, i32)>,
+    /// The listed label of each shown path (a subfolder path or package name).
+    labels: RefCell<HashMap<PathBuf, String>>,
     wallpaper_folder: PathBuf,
     importer: RefCell<Importer>,
     validate: RefCell<Validator>,
@@ -247,6 +253,8 @@ impl WallpaperChooser {
             parent: parent.cloned(),
             parent_handler: RefCell::new(None),
             folder: RefCell::new(folder.clone()),
+            screen: options.screen,
+            labels: RefCell::new(HashMap::new()),
             wallpaper_folder: default_folder,
             importer: RefCell::new(options.importer.clone().unwrap_or_default()),
             validate: RefCell::new(validate),
@@ -554,8 +562,9 @@ impl WallpaperChooser {
         inner.widgets.up_button.set_sensitive(folder.parent().is_some());
         inner.widgets.message.set_text(&tr!("Loading wallpapers…"));
         inner.directory_loading.set(true);
+        let screen = inner.screen;
         self.send_job(true, move || {
-            let result = list_directory(&folder).map_err(|e| tessel_core::pyerr::os_error_path(&e, &folder));
+            let result = list_directory(&folder, screen).map_err(|e| tessel_core::pyerr::os_error_path(&e, &folder));
             Message::Directory(generation, select, message, result)
         });
     }
@@ -574,6 +583,7 @@ impl WallpaperChooser {
             }
         };
         let objects: Vec<gtk::StringObject> = entries.iter().map(|(p, _)| gtk::StringObject::new(&p.to_string_lossy())).collect();
+        *inner.labels.borrow_mut() = entries.into_iter().collect();
         inner.widgets.model.splice(0, 0, &objects);
         self.update_count();
         if let Some(select) = select {
@@ -655,10 +665,13 @@ impl WallpaperChooser {
         let Some(object) = item.item().and_downcast::<gtk::StringObject>() else { return };
         let path = PathBuf::from(object.string().as_str());
         let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let label = self.0.labels.borrow().get(&path).cloned().unwrap_or_else(|| name.clone());
         *tile.bound_path.borrow_mut() = Some(path.clone());
         tile.preview_finished.set(false);
-        tile.filename.set_text(&name);
+        tile.filename.set_text(&label);
         tile.remove_button.set_tooltip_text(Some(&tr!("Remove {name}", name = name.as_str())));
+        // Removal works in the shown folder only, not in its subfolders.
+        tile.remove_button.set_visible(path.parent() == Some(self.folder().as_path()));
         tile.child.set_tooltip_text(Some(&path.to_string_lossy()));
         tile.picture.set_paintable(gdk::Paintable::NONE);
         tile.icon.set_icon_name(Some(if media::is_video(&path) { "video-x-generic-symbolic" } else { "image-x-generic-symbolic" }));

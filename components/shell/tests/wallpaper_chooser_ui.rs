@@ -280,20 +280,30 @@ fn trash_confirmation_cancel_preserves_file_and_selection(c: &Case) {
     settle(0.08);
     assert!(picker.removal_dialog().is_none());
     assert!(c.image.is_file());
-    assert_eq!(picker.model().n_items(), 1);
+    // The subfolder's picture is listed too, under its folder, and only the
+    // shown folder's own files can be removed.
+    assert_eq!(picker.model().n_items(), 2);
+    let alternate = c.nested.join("Alternate.PNG");
+    wait_for("nested tile", || picker.tile(&alternate).is_some());
+    let nested = picker.tile(&alternate).unwrap();
+    assert_eq!(nested.filename.text(), "Another Folder/Alternate.PNG");
+    assert!(!nested.remove_button.is_visible());
+    assert!(tile.remove_button.is_visible());
+    assert_eq!(tile.filename.text(), "Wallpaper.png");
     assert!(results.borrow().is_empty());
 }
 
 fn confirmed_removal_updates_gallery_and_clears_deleted_selection(c: &Case) {
     let (picker, results) = c.deletion_picker();
-    picker.selection().set_selected(0);
+    let index = picker.paths().iter().position(|p| *p == c.image).unwrap();
+    picker.selection().set_selected(index as u32);
     assert!(picker.select_button().is_sensitive());
     picker.tile(&c.image).unwrap().remove_button.emit_clicked();
     picker.removal_dialog().unwrap().response(gtk::ResponseType::Accept);
     assert!(!picker.select_button().is_sensitive());
     wait_for("removal", || !picker.is_removal_busy());
     assert!(!c.image.exists());
-    assert_eq!(picker.model().n_items(), 0);
+    assert_eq!(picker.paths(), vec![c.nested.join("Alternate.PNG")]);
     assert!(picker.selected_path().is_none());
     assert!(!picker.select_button().is_sensitive());
     assert!(!picker.cache_paths().contains(&c.image));
@@ -333,7 +343,7 @@ fn removal_auth_cancel_and_failure_leave_picker_usable(c: &Case) {
         assert!(picker.grid().is_sensitive());
         assert!(picker.select_button().is_sensitive());
         assert!(c.image.is_file());
-        assert_eq!(picker.model().n_items(), 1);
+        assert_eq!(picker.model().n_items(), 2);
         assert!(results.borrow().is_empty());
     }
 }
@@ -371,7 +381,7 @@ fn preview_frame_keeps_trash_inset(c: &Case) {
         write_png(&c.folder.join(format!("{name}.png")), w, h);
     }
     let (picker, _results) = c.deletion_picker();
-    wait_for("4 previews", || picker.cache_paths().len() == 4);
+    wait_for("5 previews", || picker.cache_paths().len() == 5);
     let mut column_widths = Vec::new();
     for window_width in [800, 1200] {
         picker.window().set_default_size(window_width, 610);
@@ -385,6 +395,10 @@ fn preview_frame_keeps_trash_inset(c: &Case) {
             assert_eq!(tile.picture.content_fit(), gtk::ContentFit::Contain);
             let bounds = tile.frame.compute_bounds(&tile.child).unwrap();
             assert!((bounds.x() - (tile.child.width() - gallery::PREVIEW_WIDTH) as f32 / 2.0).abs() <= 1.0);
+            if path.parent() != Some(c.folder.as_path()) {
+                assert!(!tile.remove_button.is_visible(), "a subfolder's picture is not removed here");
+                continue;
+            }
             let button = tile.remove_button.compute_bounds(&tile.frame).unwrap();
             assert!(button.x() >= 6.0);
             assert!(button.y() >= 0.0);
@@ -401,7 +415,8 @@ fn large_previews_load_on_scroll_and_folder_navigation_cancels_once(c: &Case) {
         fs::copy(&c.image, c.folder.join(format!("Fixture {index:03}.png"))).unwrap();
     }
     let (picker, results) = c.picker();
-    wait_for("101 tiles", || picker.model().n_items() == 101);
+    // 100 fixtures, Wallpaper.png and the subfolder's Alternate.PNG.
+    wait_for("102 tiles", || picker.model().n_items() == 102);
     wait_for("some previews", || !picker.cache_paths().is_empty());
     assert!(picker.cache_paths().len() < 40, "{}", picker.cache_paths().len());
     let first: std::collections::HashSet<PathBuf> = picker.cache_paths().into_iter().collect();
@@ -424,7 +439,7 @@ fn large_previews_load_on_scroll_and_folder_navigation_cancels_once(c: &Case) {
     wait_for("nested", || picker.model().n_items() == 1);
     assert_eq!(picker.paths()[0].file_name().unwrap(), "Alternate.PNG");
     picker.up_button().emit_clicked();
-    wait_for("back to 101", || picker.model().n_items() == 101);
+    wait_for("back to 102", || picker.model().n_items() == 102);
     picker.close();
     picker.close();
     c.parent.destroy();

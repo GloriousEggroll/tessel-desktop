@@ -3,7 +3,7 @@
 //! applied on selection). An open chooser is re-presented instead of
 //! opening a second one (Python `self._wallpaper_chooser`).
 
-use crate::wallpaper_chooser::WallpaperChooser;
+use crate::wallpaper_chooser::{Options, WallpaperChooser};
 use std::cell::RefCell;
 
 pub type Chosen = Box<dyn FnOnce(Option<String>)>;
@@ -17,14 +17,15 @@ pub fn present_existing() -> bool {
     CURRENT.with(|current| current.borrow().as_ref().map(|c| c.present()).is_some())
 }
 
-pub fn choose_wallpaper(parent: Option<&gtk::Window>, chosen: Chosen) {
+/// `screen`: the size of the screen the wallpaper is for.
+pub fn choose_wallpaper(parent: Option<&gtk::Window>, screen: Option<(i32, i32)>, chosen: Chosen) {
     if present_existing() {
         return;
     }
-    let chooser = WallpaperChooser::new(parent, move |path| {
+    let chooser = WallpaperChooser::with_options(parent, move |path| {
         CURRENT.with(|current| current.replace(None));
         chosen(path.map(|p| p.to_string_lossy().into_owned()));
-    });
+    }, Options { screen, ..Default::default() });
     CURRENT.with(|current| current.replace(Some(chooser.clone())));
     chooser.present();
 }

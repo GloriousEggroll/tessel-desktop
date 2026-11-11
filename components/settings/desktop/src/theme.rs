@@ -202,6 +202,8 @@ pub struct WallpaperRow {
     pub color: gtk::ColorDialogButton,
     pub path: RefCell<Option<String>>,
     pub dirty: Cell<bool>,
+    /// The screen's size, for the picker's choice among a picture's sizes.
+    pub screen: (i32, i32),
 }
 
 /// Construction options (Python keyword arguments).
@@ -796,13 +798,14 @@ impl ThemeWallpaperPage {
             card.append(&grid);
             self.cards.append(&card);
             let mut path = previous.get("file_path").and_then(Value::as_str).map(str::to_owned);
+            let size = monitor.geometry();
             if !saved.contains_key(&connector) {
                 // Nothing chosen for this screen yet: it shows the default wallpaper.
-                let size = monitor.geometry();
                 path = tessel_core::wallpaper::default_wallpaper(Some((size.width(), size.height()))).map(|p| p.to_string_lossy().into_owned());
             }
             let row = Rc::new(WallpaperRow { chooser: chooser.clone(), mode: modes.clone(), color: colors.clone(),
-                                             path: RefCell::new(path), dirty: Cell::new(false) });
+                                             path: RefCell::new(path), dirty: Cell::new(false),
+                                             screen: (size.width(), size.height()) });
             self.rows.borrow_mut().insert(connector.clone(), row);
             self.update_media_label(&connector);
             {
@@ -899,7 +902,8 @@ impl ThemeWallpaperPage {
         let weak = Rc::downgrade(self);
         let connector = connector.to_owned();
         let token = cancellable.clone();
-        let options = tessel_shell::wallpaper_chooser::Options { cancellable: Some(cancellable.clone()), ..Default::default() };
+        let screen = self.rows.borrow().get(&connector).map(|row| row.screen);
+        let options = tessel_shell::wallpaper_chooser::Options { cancellable: Some(cancellable.clone()), screen, ..Default::default() };
         let parent = self.host.window();
         let picker = tessel_shell::wallpaper_chooser::WallpaperChooser::with_options(Some(&parent), move |path| {
             let Some(page) = weak.upgrade() else { return };

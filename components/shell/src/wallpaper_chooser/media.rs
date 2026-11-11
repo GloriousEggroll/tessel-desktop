@@ -33,7 +33,18 @@ pub fn suffix_of(path: &Path) -> String {
 }
 
 pub fn is_image(path: &Path) -> bool {
-    IMAGE_SUFFIXES.contains(&suffix_of(path).as_str())
+    let suffix = suffix_of(path);
+    IMAGE_SUFFIXES.contains(&suffix.as_str()) || loader_suffixes().iter().any(|extra| *extra == suffix)
+}
+
+/// Newer formats offered only when the installed image loader reads them:
+/// distributions ship wallpaper packages as JPEG XL (Fedora's `F44`).
+fn loader_suffixes() -> &'static [String] {
+    static SUFFIXES: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    SUFFIXES.get_or_init(|| {
+        let readable: Vec<String> = Pixbuf::formats().iter().flat_map(|format| format.extensions()).map(|e| e.to_lowercase()).collect();
+        ["jxl", "avif"].into_iter().filter(|extra| readable.iter().any(|e| e == extra)).map(str::to_owned).collect()
+    })
 }
 
 pub fn is_video(path: &Path) -> bool {
@@ -95,20 +106,18 @@ pub fn usable_video_with(probe: &Path, path: &Path) -> bool {
     }
 }
 
-/// Wallpaper files (not folders or hidden/metadata entries), sorted by casefolded name.
-pub fn list_directory(folder: &Path) -> std::io::Result<Vec<(PathBuf, String)>> {
+/// Wallpapers in `folder` and its subfolders, as `(path, label)` sorted by
+/// casefolded label: [`tessel_core::wallpaper::list_pictures`] (one entry for a
+/// picture shipped in several sizes or as a KDE package), keeping only
+/// readable images with a valid header and playable videos. `screen` is the
+/// size of the screen the wallpaper is for (`None`: 16:9): of a picture in
+/// several sizes, the one nearest that shape is offered.
+pub fn list_directory(folder: &Path, screen: Option<(i32, i32)>) -> std::io::Result<Vec<(PathBuf, String)>> {
+    let wanted = |path: &Path| is_media(path) && readable(path);
+    let listed = tessel_core::wallpaper::list_pictures(folder, screen, &wanted)?;
     let mut entries = Vec::new();
-    for entry in std::fs::read_dir(folder)? {
-        let Ok(entry) = entry else { continue };
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if name.starts_with('.') {
-            continue;
-        }
-        let path = entry.path();
-        // entry.is_file() follows symlinks in Python's DirEntry.
-        if !path.is_file() || !is_media(&path) || !readable(&path) {
-            continue;
-        }
+    for entry in listed {
+        let path = entry.path;
         if is_image(&path) {
             // Read image headers off the UI thread; a misleading suffix must
             // not produce an unusable generic-image tile.
@@ -119,9 +128,9 @@ pub fn list_directory(folder: &Path) -> std::io::Result<Vec<(PathBuf, String)>> 
         } else if !usable_video(&path) {
             continue;
         }
-        entries.push((path, name));
+        let label = if entry.dark { format!("{} ({})", entry.label, tr!("Dark")) } else { entry.label };
+        entries.push((path, label));
     }
-    entries.sort_by_key(|(_, name)| tessel_core::pyjson::casefold(name));
     Ok(entries)
 }
 

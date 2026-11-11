@@ -290,7 +290,8 @@ pub fn choose_image_for_monitor(view: &Rc<DesktopView>, entry: &Rc<MonitorContro
         update_media_button(&entry.chooser, Some(&path));
         entry.selected_path.replace(Some(path));
     };
-    super::chooser::choose_wallpaper(parent.as_ref(), Box::new(chosen));
+    let size = entry.monitor.geometry();
+    super::chooser::choose_wallpaper(parent.as_ref(), Some((size.width(), size.height())), Box::new(chosen));
 }
 
 /// `apply_wallpaper_settings`: apply on each monitor's window, merge-write.

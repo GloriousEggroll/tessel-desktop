@@ -51,9 +51,41 @@ fn media_listing_filters_and_sorts_supported_files() {
     write_png(&folder.join("picture.PNG"), 64, 36);
     std::os::unix::fs::symlink(folder.join("absent.png"), folder.join("missing.png")).unwrap();
     fs::create_dir(folder.join("Another Folder.png")).unwrap();
-    let names: Vec<String> = media::list_directory(folder).unwrap().into_iter().map(|(_, n)| n).collect();
+    let names: Vec<String> = media::list_directory(folder, None).unwrap().into_iter().map(|(_, n)| n).collect();
     assert_eq!(names, vec!["picture.PNG", "Wallpaper.png"]);
-    assert!(media::list_directory(&folder.join("nope")).is_err());
+    assert!(media::list_directory(&folder.join("nope"), None).is_err());
+}
+
+#[test]
+fn media_listing_includes_subfolders_and_packages_once() {
+    let t = temp();
+    let folder = &t.0;
+    for dir in ["space/deep", "tessel", "Next/contents/images", "Next/contents/images_dark"] {
+        fs::create_dir_all(folder.join(dir)).unwrap();
+    }
+    write_png(&folder.join("top.png"), 64, 36);
+    write_png(&folder.join("space/deep/nebula.png"), 64, 36);
+    fs::write(folder.join("space/broken.png"), b"fixture").unwrap();
+    for name in ["slate-3840x2160.png", "slate-7680x2160.png", "slate-light-3840x2160.png", "slate-light-7680x2160.png"] {
+        write_png(&folder.join("tessel").join(name), 64, 36);
+    }
+    for name in ["images/1920x1080.png", "images/1080x1920.png", "images_dark/1920x1080.png"] {
+        write_png(&folder.join("Next/contents").join(name), 64, 36);
+    }
+    write_png(&folder.join("Next/contents/screenshot.png"), 64, 36);
+    fs::write(folder.join("Next/metadata.json"), r#"{"KPlugin": {"Name": "Waterfall"}}"#).unwrap();
+    std::os::unix::fs::symlink(folder, folder.join("space/loop")).unwrap();
+    let listed = media::list_directory(folder, None).unwrap();
+    let dark = format!("Waterfall ({})", tessel_core::tr!("Dark"));
+    let got: Vec<(String, PathBuf)> = listed.into_iter().map(|(p, n)| (n, p.strip_prefix(folder).unwrap().to_path_buf())).collect();
+    assert_eq!(got, vec![
+        ("space/deep/nebula.png".to_owned(), PathBuf::from("space/deep/nebula.png")),
+        ("tessel/slate-3840x2160.png".to_owned(), PathBuf::from("tessel/slate-3840x2160.png")),
+        ("tessel/slate-light-3840x2160.png".to_owned(), PathBuf::from("tessel/slate-light-3840x2160.png")),
+        ("top.png".to_owned(), PathBuf::from("top.png")),
+        ("Waterfall".to_owned(), PathBuf::from("Next/contents/images/1920x1080.png")),
+        (dark, PathBuf::from("Next/contents/images_dark/1920x1080.png")),
+    ]);
 }
 
 #[test]
@@ -94,7 +126,7 @@ fn video_validation_keeps_playable_video_without_cached_thumbnail() {
         .unwrap();
     assert!(status.success());
     assert!(media::usable_video(&video));
-    assert!(media::list_directory(&t.0).unwrap().iter().any(|(_, n)| n == "Movie.mp4"));
+    assert!(media::list_directory(&t.0, None).unwrap().iter().any(|(_, n)| n == "Movie.mp4"));
     assert!(media::preview(&video).unwrap().is_none(), "No cached video thumbnail is required");
     assert!(media::validate_media(&video).is_ok());
 }
