@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?commit:%global commit 9e11011a3b5bdafcddf08236635dd07fab11bbf5}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-tiling
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tessel window tiling
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -77,6 +77,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Tiling.desktop
 %{_datadir}/applications/org.tessel.Tiling.desktop
 
 %changelog
+* Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
+- Gapless off after a zero gap uses 10 px; the shortcut list names dragging the gap between tiles
+
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - Require tessel-common by version, so it can update on its own
 
