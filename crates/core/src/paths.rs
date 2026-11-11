@@ -86,13 +86,18 @@ pub fn program_dirs() -> Vec<PathBuf> {
 }
 
 /// Find another Tessel program (`tessel-power-status`, `tessel-dock-toplevel`):
-/// in `$TESSEL_PROGRAM_DIR` (tests), beside the running executable, then in
-/// [`program_dirs`], else the bare name for a `PATH` lookup.
+/// beside the running executable, then in [`program_dirs`], else the bare
+/// name for a `PATH` lookup. When `$TESSEL_PROGRAM_DIR` is set (tests), only
+/// that directory is searched, and a program missing there is the bare name.
 pub fn program(name: &str) -> PathBuf {
-    // Tests point this at a directory of fakes, ahead of everything else.
-    let overridden = env::var_os("TESSEL_PROGRAM_DIR").filter(|dir| !dir.is_empty()).map(|dir| PathBuf::from(dir).join(name));
+    // Tests point this at a directory of fakes, instead of everything else, so
+    // installed programs neither replace a fake nor hide a missing one.
+    if let Some(dir) = env::var_os("TESSEL_PROGRAM_DIR").filter(|dir| !dir.is_empty()) {
+        let path = PathBuf::from(dir).join(name);
+        return if is_executable(&path) { path } else { PathBuf::from(name) };
+    }
     let beside = env::current_exe().ok().and_then(|exe| exe.parent().map(|dir| dir.join(name)));
-    overridden.into_iter().chain(beside).chain(program_dirs().into_iter().map(|dir| dir.join(name)))
+    beside.into_iter().chain(program_dirs().into_iter().map(|dir| dir.join(name)))
         .find(|path| is_executable(path))
         .unwrap_or_else(|| PathBuf::from(name))
 }
@@ -129,5 +134,35 @@ mod own_program_tests {
         assert_eq!(undeleted(std::path::Path::new("/a/tessel-files")), PathBuf::from("/a/tessel-files"));
         // The test binary itself exists, so it is its own program.
         assert_eq!(own_program("nothing-by-this-name"), env::current_exe().unwrap());
+    }
+}
+
+#[cfg(test)]
+mod program_tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn the_test_override_is_the_only_place_searched() {
+        let dir = env::temp_dir().join(format!("tessel-programs-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("tessel-fake"), "#!/bin/sh\nexit 0\n").unwrap();
+        std::fs::set_permissions(dir.join("tessel-fake"), std::fs::Permissions::from_mode(0o755)).unwrap();
+        // The test binary's own directory holds this binary; with the override
+        // set, even a program that is there is not found beside the executable.
+        let own = env::current_exe().unwrap();
+        let own_name = own.file_name().unwrap().to_str().unwrap().to_owned();
+        let saved = env::var_os("TESSEL_PROGRAM_DIR");
+        env::set_var("TESSEL_PROGRAM_DIR", &dir);
+        let found = program("tessel-fake");
+        let missing = program(&own_name);
+        match saved {
+            Some(value) => env::set_var("TESSEL_PROGRAM_DIR", value),
+            None => env::remove_var("TESSEL_PROGRAM_DIR"),
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(found, dir.join("tessel-fake"), "a fake in the override directory is found");
+        assert_eq!(missing, PathBuf::from(&own_name), "a program missing there is the bare name, though it exists beside the executable");
     }
 }

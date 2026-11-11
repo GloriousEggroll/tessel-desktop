@@ -1682,8 +1682,12 @@ fn extra_tests(app: &gtk::Application) {
             assistant_detector: Some(Rc::new(|| false)), weather_location: Some(Rc::new(|| None)), ..Default::default() }).unwrap();
         assert_eq!(settings.power_status.text(), "Power management is unavailable in this session.");
         assert!(!settings.weather_options.is_visible());
+        // Only the fakes count as installed, so tessel-lock is looked up on PATH.
+        std::env::set_var("TESSEL_PROGRAM_DIR", std::env::var("GS_FAKE_BIN").expect("GS_FAKE_BIN"));
         settings.preview.emit_clicked();
-        assert!(wait(|| std::fs::read_to_string(&log).is_ok_and(|t| !t.is_empty())));
+        let started = wait(|| std::fs::read_to_string(&log).is_ok_and(|t| !t.is_empty()));
+        std::env::remove_var("TESSEL_PROGRAM_DIR");
+        assert!(started);
         assert_eq!(std::fs::read_to_string(&log).unwrap().trim(),
                    "--user --collect --quiet --property=Type=exec tessel-lock --preview");
         settings.close();

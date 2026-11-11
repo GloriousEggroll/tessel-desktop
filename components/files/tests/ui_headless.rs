@@ -2818,10 +2818,12 @@ fn test_archive_service_menus_follow_the_selection(f: &mut Fixture) -> Outcome {
 fn test_without_tessel_archive_the_internal_archive_items_remain(f: &mut Fixture) -> Outcome {
     archive_fixture(f)?;
     remove_fake_tessel_archive();
-    // Hide any real tessel-archive as well, for this check only.
+    // Hide any real tessel-archive as well, for this check only: on PATH, and
+    // installed Tessel programs, by searching only the (now empty) fake directory.
     let original = std::env::var("PATH").unwrap_or_default();
     let filtered: Vec<&str> = original.split(':').filter(|d| !Path::new(d).join("tessel-archive").exists()).collect();
     std::env::set_var("PATH", filtered.join(":"));
+    std::env::set_var("TESSEL_PROGRAM_DIR", fake_tessel_archive().parent().unwrap());
     let result = (|| -> Outcome {
         select_names(f, &["Pack.zip"])?;
         open_selection_menu(f)?;
@@ -2836,6 +2838,7 @@ fn test_without_tessel_archive_the_internal_archive_items_remain(f: &mut Fixture
         Ok(())
     })();
     std::env::set_var("PATH", original);
+    std::env::remove_var("TESSEL_PROGRAM_DIR");
     tessel_files::service_menu::forget_archive_manager();
     result
 }
@@ -2843,46 +2846,52 @@ fn test_without_tessel_archive_the_internal_archive_items_remain(f: &mut Fixture
 fn test_archive_service_actions_run_tessel_archive_and_the_folder_updates(f: &mut Fixture) -> Outcome {
     archive_fixture(f)?;
     install_fake_tessel_archive();
-    let commands: Rc<RefCell<Vec<Vec<String>>>> = Rc::default();
-    *f.app.hooks.spawner.borrow_mut() = Some(Rc::new(HelperSpawner { commands: commands.clone() }));
-    let program = fake_tessel_archive().to_string_lossy().into_owned();
-    let here = f.source.to_string_lossy().into_owned();
-    let cases: [(&[&str], &str, &[&str], Option<&str>); 6] = [
-        (&["Pack.zip", "Bundle.tar.gz"], "win.archive-extract-here", &["--batch", "--destination", "<here>"], Some("Extracted by fake")),
-        (&["Pack.zip"], "win.archive-extract-to", &["--batch", "--dialog"], None),
-        (&["Bundle.tar.gz"], "win.archive-extract-subfolder", &["--batch", "--autosubfolder", "--destination", "<here>"], None),
-        (&["Alpha.txt", "Documents"], "win.archive-compress-tar-gz", &["--add", "--changetofirstpath", "--autofilename", "tar.gz"],
-         Some("Made by fake.tar.gz")),
-        (&["Beta.txt"], "win.archive-compress-zip", &["--add", "--changetofirstpath", "--autofilename", "zip"], Some("Made by fake.zip")),
-        (&["Pack.zip", "Beta.txt"], "win.archive-compress-to", &["--add", "--changetofirstpath", "--dialog"], None),
-    ];
-    for (index, (names, action, flags, created)) in cases.into_iter().enumerate() {
-        select_names(f, names)?;
-        let mut expected = vec![program.clone()];
-        expected.extend(flags.iter().map(|a| if *a == "<here>" { here.clone() } else { a.to_string() }));
-        // Selected paths, in view order.
-        expected.extend(f.selected_names().iter().map(|n| f.source.join(n).to_string_lossy().into_owned()));
-        open_selection_menu(f)?;
-        ensure!(f.activate(action), "{action} did not activate");
-        wait!(|| tessel_archive_calls().len() == index + 1);
-        let (cwd, argv) = tessel_archive_calls().pop().unwrap();
-        ensure_eq!(cwd, here);
-        ensure_eq!(argv, expected);
-        let command = commands.borrow().last().cloned().unwrap();
-        for flag in ["--user", "--collect", "--service-type=forking", "--launch-helper", "--program"] {
-            ensure!(command.iter().any(|a| a == flag), "{flag} missing from {command:?}");
+    // Only the fake counts as installed, so an installed tessel-archive is not run instead.
+    std::env::set_var("TESSEL_PROGRAM_DIR", fake_tessel_archive().parent().unwrap());
+    let result = (|| -> Outcome {
+        let commands: Rc<RefCell<Vec<Vec<String>>>> = Rc::default();
+        *f.app.hooks.spawner.borrow_mut() = Some(Rc::new(HelperSpawner { commands: commands.clone() }));
+        let program = fake_tessel_archive().to_string_lossy().into_owned();
+        let here = f.source.to_string_lossy().into_owned();
+        let cases: [(&[&str], &str, &[&str], Option<&str>); 6] = [
+            (&["Pack.zip", "Bundle.tar.gz"], "win.archive-extract-here", &["--batch", "--destination", "<here>"], Some("Extracted by fake")),
+            (&["Pack.zip"], "win.archive-extract-to", &["--batch", "--dialog"], None),
+            (&["Bundle.tar.gz"], "win.archive-extract-subfolder", &["--batch", "--autosubfolder", "--destination", "<here>"], None),
+            (&["Alpha.txt", "Documents"], "win.archive-compress-tar-gz", &["--add", "--changetofirstpath", "--autofilename", "tar.gz"],
+             Some("Made by fake.tar.gz")),
+            (&["Beta.txt"], "win.archive-compress-zip", &["--add", "--changetofirstpath", "--autofilename", "zip"], Some("Made by fake.zip")),
+            (&["Pack.zip", "Beta.txt"], "win.archive-compress-to", &["--add", "--changetofirstpath", "--dialog"], None),
+        ];
+        for (index, (names, action, flags, created)) in cases.into_iter().enumerate() {
+            select_names(f, names)?;
+            let mut expected = vec![program.clone()];
+            expected.extend(flags.iter().map(|a| if *a == "<here>" { here.clone() } else { a.to_string() }));
+            // Selected paths, in view order.
+            expected.extend(f.selected_names().iter().map(|n| f.source.join(n).to_string_lossy().into_owned()));
+            open_selection_menu(f)?;
+            ensure!(f.activate(action), "{action} did not activate");
+            wait!(|| tessel_archive_calls().len() == index + 1);
+            let (cwd, argv) = tessel_archive_calls().pop().unwrap();
+            ensure_eq!(cwd, here);
+            ensure_eq!(argv, expected);
+            let command = commands.borrow().last().cloned().unwrap();
+            for flag in ["--user", "--collect", "--service-type=forking", "--launch-helper", "--program"] {
+                ensure!(command.iter().any(|a| a == flag), "{flag} missing from {command:?}");
+            }
+            ensure!(!command.iter().any(|a| a == "--scope" || a == "sh"));
+            if let Some(created) = created {
+                // The folder monitor shows the new item without a reload.
+                wait!(|| f.names().iter().any(|n| n == created));
+            }
+            settle(0.05);
+            ensure!(!f.window.error_row.get_visible(), "error: {}", f.window.error_label.text());
         }
-        ensure!(!command.iter().any(|a| a == "--scope" || a == "sh"));
-        if let Some(created) = created {
-            // The folder monitor shows the new item without a reload.
-            wait!(|| f.names().iter().any(|n| n == created));
-        }
-        settle(0.05);
-        ensure!(!f.window.error_row.get_visible(), "error: {}", f.window.error_label.text());
-    }
-    ensure_eq!(commands.borrow().len(), 6);
+        ensure_eq!(commands.borrow().len(), 6);
+        Ok(())
+    })();
+    std::env::remove_var("TESSEL_PROGRAM_DIR");
     remove_fake_tessel_archive();
-    Ok(())
+    result
 }
 
 /// Click the context-menu item labelled `title` with the real pointer.

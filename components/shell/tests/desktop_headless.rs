@@ -561,6 +561,29 @@ fn efficiency(env: &Env, app: &gtk::Application) {
     inner.unwatch_monitors();
     assert_eq!(inner.geometry_watch_count(), 0);
 
+    // A screen with no entry in wallpapers.json shows the default picture; an
+    // entry, even one with no picture, is a choice and is left alone.
+    let conn = monitor.connector().unwrap().to_string();
+    let saved_config = std::fs::read(config::config_file()).ok();
+    let default_png = tessel_core::wallpaper::default_dir().join("slate-3840x2160.png");
+    std::fs::create_dir_all(default_png.parent().unwrap()).unwrap();
+    write_png(&default_png);
+    std::fs::create_dir_all(config::config_file().parent().unwrap()).unwrap();
+    std::fs::write(config::config_file(), "{}").unwrap();
+    view.load_saved_wallpaper();
+    let (default_texture, _) = inner.wallpaper_texture(default_png.to_str().unwrap()).unwrap();
+    assert_eq!(view.background.paintable().as_ref(), Some(default_texture.upcast_ref::<gdk::Paintable>()), "the default wallpaper is shown");
+    assert_eq!(view.wallpaper_signature.borrow().as_ref().map(|key| key.0.clone()), Some(default_png.clone()));
+    std::fs::write(config::config_file(), json!({conn: {"file_path": null, "mode": "Color Only", "color": "rgb(16,32,48)"}}).to_string()).unwrap();
+    view.load_saved_wallpaper();
+    assert!(view.background.paintable().is_none(), "a plain color is not replaced by the default");
+    drop(default_texture);
+    match saved_config {
+        Some(bytes) => std::fs::write(config::config_file(), bytes).unwrap(),
+        None => { let _ = std::fs::remove_file(config::config_file()); }
+    }
+    let _ = std::fs::remove_dir_all(default_png.parent().unwrap());
+
     // The wallpaper texture is shared across views and released on destroy.
     let png = env.root.join("wall2.png");
     write_png(&png);
@@ -650,12 +673,15 @@ fn interaction(env: &Env, app: &gtk::Application) {
     assert_eq!((point.x(), point.y()), (x, y), "a confirmation from this menu opens where it opened");
     menu.popdown();
     assert!(wait_until(|| popovers().is_empty(), 2.0));
+    // Only the fakes count as installed, on PATH and as Tessel programs.
     let saved_path = std::env::var("PATH").unwrap();
     std::env::set_var("PATH", &env.bin);
+    std::env::set_var("TESSEL_PROGRAM_DIR", &env.bin);
     assert!(!menus::has_display_settings());
     fake(&env.bin, "tessel-displays", "exit 0");
     assert!(menus::has_display_settings());
     std::env::set_var("PATH", saved_path);
+    std::env::remove_var("TESSEL_PROGRAM_DIR");
     view.set_selected_names(["computer.desktop".to_string()]);
     let group = menus::background_actions(&view);
     for name in ["cut", "copy", "delete_item"] {
