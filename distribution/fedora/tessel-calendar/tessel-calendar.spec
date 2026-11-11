@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 24c974c75e4eb6e425735b7639b4afba3bc27f64}
+%{!?commit:%global commit 2f76e02cc38675edd808f11c574d87a932162c3f}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-calendar
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel calendar and clock
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -68,6 +68,9 @@ ln -s ../lib/tessel/tessel-calendar %{buildroot}%{_bindir}/tessel-calendar
 %{_bindir}/tessel-calendar
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Window buttons are as far from the side of the window as from its top
+
 * Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Date Settings: the current time shows every second and is easier to read
 

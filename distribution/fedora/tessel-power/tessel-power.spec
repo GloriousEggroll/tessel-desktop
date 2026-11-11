@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?commit:%global commit 2f76e02cc38675edd808f11c574d87a932162c3f}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-power
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tessel power settings and session idle policy
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -89,6 +89,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.PowerManager.desktop
 %{_datadir}/applications/org.tessel.PowerManager.desktop
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
+- Window buttons are as far from the side of the window as from its top
+
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - Require tessel-common by version, so it can update on its own
 

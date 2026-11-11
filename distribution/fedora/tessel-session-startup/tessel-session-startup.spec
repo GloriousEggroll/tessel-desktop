@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 67b00bda415ac7342f039404d192bedd0e511090}
+%{!?commit:%global commit 2f76e02cc38675edd808f11c574d87a932162c3f}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
 Version:        0.1.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Tessel session: labwc configuration, autostart and login entry
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -113,6 +113,9 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %config(noreplace) %{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
+- New users get the Tessel layout's window gap and clock
+
 * Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - Clear failed marks left by a crashed session before starting services (black screen with a pointer after a compositor crash)
 
