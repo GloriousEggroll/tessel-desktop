@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit c69c12c5a0805d25c461aeb64969b3b3731056f3}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        11%{?dist}
+Release:        12%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -107,6 +107,12 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
+- Theme & Wallpaper and Login Screen: the picker lists wallpapers in
+  subfolders, such as the ones packages install below /usr/share/wallpapers
+- A picture that comes in several sizes, or as a KDE wallpaper package, is
+  offered once, in the size that fits the screen
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
 - Layout previews show the Nobara mark on the menu button
 - Theme & Wallpaper shows the default wallpaper for a screen with none chosen

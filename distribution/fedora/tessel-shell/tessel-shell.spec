@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit c69c12c5a0805d25c461aeb64969b3b3731056f3}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-shell
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel Shell: desktop, window switcher, overview and prompts
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -89,6 +89,12 @@ chmod 644 %{buildroot}%{_userunitdir}/tessel-shell.service
 %{_userunitdir}/tessel-shell.service
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Wallpaper Settings: the picker lists wallpapers in subfolders, such as the
+  ones packages install below /usr/share/wallpapers
+- A picture that comes in several sizes, or as a KDE wallpaper package, is
+  offered once, in the size that fits the screen
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - A screen with no wallpaper chosen shows the default wallpaper, Slate
 - Window buttons are as far from the side of the window as from its top
