@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 5977971dde68b5c64ce18d585a7393e892e46c49}
+%{!?commit:%global commit d0ec5d273dc11147f419a055471e5915f6f80bf5}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -107,6 +107,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-10
+- Layouts: add Tessel, the desktop's own layout (one top bar in islands)
+
 * Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-9
 - Layouts: the Ubuntu-style GNOME layout is now GNOME (Ubuntu); add a stock GNOME layout
 
