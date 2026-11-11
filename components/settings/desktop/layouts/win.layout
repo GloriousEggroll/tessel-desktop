@@ -49,6 +49,7 @@
     "bar_border_enabled": false,
     "bar_border_sides": [],
     "bar_float_mode": false,
+    "bar_islands": false,
     "bar_rounded_corners": true,
     "colored_window_buttons": false,
     "compact_bar": false,

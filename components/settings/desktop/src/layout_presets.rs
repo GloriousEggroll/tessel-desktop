@@ -24,7 +24,7 @@ pub const MAX_PRESET_BYTES: u64 = 256 * 1024;
 pub const FIELD_LABELS: &[(&str, &str)] = &[
     ("mode", "Dock or panel style"), ("edge", "Position on screen"), ("alignment", "Icon alignment"),
     ("icon_size", "Icon size"), ("separate_app_dock", "Separate app dock"), ("auto_hide", "Auto-hide"),
-    ("float_mode", "Floating dock"), ("magnification", "Magnification"), ("group_layouts", "Panel item arrangement"),
+    ("float_mode", "Floating dock"), ("magnification", "Magnification"), ("bar_islands", "Split bar into islands"), ("group_layouts", "Panel item arrangement"),
     ("group_visibility", "Panel items shown"), ("transparency", "Dock transparency"), ("frosted", "Dock blur"),
     ("match_wallpaper", "Match wallpaper colors"), ("apps_transparency", "Application transparency"),
     ("apps_frosted", "Application blur"), ("apps_rounded_corners", "Rounded corners"),
@@ -38,6 +38,7 @@ pub const BUILTIN: &[(&str, &[u8], &[u8])] = &[
     ("gnome-ubuntu", include_bytes!("../layouts/gnome-ubuntu.layout"), include_bytes!("../layouts/gnome-ubuntu.svg")),
     ("kde", include_bytes!("../layouts/kde.layout"), include_bytes!("../layouts/kde.svg")),
     ("mac", include_bytes!("../layouts/mac.layout"), include_bytes!("../layouts/mac.svg")),
+    ("tessel", include_bytes!("../layouts/tessel.layout"), include_bytes!("../layouts/tessel.svg")),
     ("win", include_bytes!("../layouts/win.layout"), include_bytes!("../layouts/win.svg")),
 ];
 
@@ -488,5 +489,29 @@ mod tests {
         let (ubuntu, config) = load("gnome-ubuntu");
         assert_eq!(ubuntu.name, "GNOME (Ubuntu)");
         assert_eq!((config.app_dock_edge.as_str(), config.app_dock_auto_hide, config.app_dock_expand), ("left", false, true));
+    }
+
+    /// Tessel's own layout: one floating top bar in three islands that also
+    /// holds the applications, with gaps between tiled windows. The other
+    /// layouts turn the islands off again.
+    #[test]
+    fn tessel_is_one_top_bar_in_islands_and_the_others_join_it_back() {
+        for (key, bytes, icon) in BUILTIN {
+            let preset = parse_preset(key, &decode(bytes).unwrap(), PresetIcon::Embedded(icon)).unwrap();
+            let config = merged_config(&DockConfig::default(), &preset.dock).unwrap();
+            assert_eq!(config.uses_bar_islands(), *key == "tessel", "{key}");
+            assert!(preset.dock.contains_key("bar_islands"), "{key} must say whether the bar is split");
+            if *key != "tessel" {
+                continue;
+            }
+            assert_eq!(preset.name, "Tessel");
+            assert_eq!((config.mode.as_str(), config.edge.as_str()), ("bar", "top"));
+            assert!(!config.uses_separate_app_dock() && config.effective_float_mode() && config.effective_rounded_corners());
+            assert_eq!(preset.gapless, Some(false));
+            let layout = &preset.dock["group_layouts"]["bar"];
+            assert_eq!(layout["start"], serde_json::json!(["app_menu", "workspaces", "pinned", "running", "files"]));
+            assert_eq!(layout["center"], serde_json::json!(["clock", "weather"]));
+            assert!(config.always_visible_apps.iter().any(|name| name == "tiling"));
+        }
     }
 }
