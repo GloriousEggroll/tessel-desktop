@@ -42,7 +42,7 @@ window.capture-picker { background-color: @theme_bg_color; color: @theme_fg_colo
 .capture-picker .muted { color: alpha(@theme_fg_color, .65); font-size: 9pt; }
 .capture-picker .card {
     background-color: alpha(@theme_fg_color, .04);
-    border: 1px solid alpha(@theme_fg_color, .12); border-radius: 12px; padding: 6px;
+    border: 1px solid alpha(@theme_fg_color, .12); border-radius: 8px; padding: 6px;
 }
 .capture-picker .capture-sources { background: transparent; }
 .capture-picker .capture-sources row {

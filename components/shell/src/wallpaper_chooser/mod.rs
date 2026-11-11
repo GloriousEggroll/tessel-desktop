@@ -37,7 +37,7 @@ use media_chooser::MediaChooser;
 
 pub const CSS: &str = "
 .wallpaper-chooser gridview { background: transparent; }
-.wallpaper-chooser gridview child { padding: 7px; border-radius: 10px; }
+.wallpaper-chooser gridview child { padding: 7px; border-radius: 8px; }
 .wallpaper-chooser .wallpaper-preview {
     border-radius: 8px; background: alpha(@theme_fg_color, 0.06);
 }

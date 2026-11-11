@@ -27,9 +27,9 @@ pub const STYLE: &str = "
 .pictures-window .section-title { font-size: 10pt; font-weight: 600; opacity: .7; margin-top: 8px; padding: 0 10px; }
 .pictures-window .pictures-sidebar .picture-info { padding: 0 10px; }
 .pictures-window .muted { opacity: .7; }
-.pictures-window .thumbnail { padding: 7px; border-radius: 9px; }
+.pictures-window .thumbnail { padding: 7px; border-radius: 8px; }
 .pictures-window gridview child:selected, .pictures-window listview row:selected {
- background: alpha(@theme_selected_bg_color,.28); border-radius: 9px; }
+ background: alpha(@theme_selected_bg_color,.28); border-radius: 8px; }
 .pictures-window .status { padding: 6px 12px; }
 .pictures-window .edit-bar { padding: 6px 12px; background: alpha(@theme_selected_bg_color,.15); }
 .pictures-window .tools { padding: 12px; border-left: 1px solid alpha(@theme_fg_color,.12); }

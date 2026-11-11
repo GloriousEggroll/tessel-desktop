@@ -256,7 +256,7 @@ fn blur_regions(w: &World) -> Result<(), String> {
     ensure!(blur::compositor_supports_blur(&display) == Some(true), "blur capability");
     ensure!(blur::compositor_supports_radius(&display) == Some(true), "tessel_blur_manager_v1 not bound");
     let [x, y, width, height, corners, strength] = binding.geometry(0).ok_or("no geometry")?;
-    ensure!(corners == 12 && strength == 20, "corners/strength {corners}/{strength}");
+    ensure!(corners == blur::CORNER_RADIUS && strength == 20, "corners/strength {corners}/{strength}");
     ensure!(width >= 420 && height >= 300 && x >= 0 && y >= 0, "geometry {x},{y} {width}x{height}");
     ensure!(blur::attach(&w.alpha, None, true, true).surface_count() == 1, "attach is not shared per widget");
     binding.configure(true, 100, false, None, None);

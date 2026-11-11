@@ -18,7 +18,7 @@ window.adjustment-osd {
 .adjustment-osd .popup-surface {
     background-image: none; background-color: @theme_bg_color;
     color: @theme_fg_color; border: 1px solid alpha(@theme_fg_color, .17);
-    border-radius: 12px; padding: 16px 20px;
+    border-radius: 8px; padding: 16px 20px;
 }
 .adjustment-osd label, .adjustment-osd image { color: inherit; }
 .adjustment-osd .osd-title { font-size: 11pt; font-weight: 600; }

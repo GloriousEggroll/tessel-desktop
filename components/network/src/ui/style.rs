@@ -33,7 +33,7 @@ window.networkmanager { background-color: @theme_bg_color; }
 .networkmanager .device-detail { font-size: 8.5pt; color: @network_muted; }
 .networkmanager .card, .networkmanager .device-list {
     background-color: @network_surface; border: 1px solid @network_line;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 .networkmanager .device-list > row {
     background: transparent; border: none; padding: 0;
@@ -44,7 +44,7 @@ window.networkmanager { background-color: @theme_bg_color; }
     background-color: alpha(@theme_fg_color, 0.025);
 }
 .networkmanager .device-icon, .networkmanager .network-tile {
-    min-width: 42px; min-height: 42px; border-radius: 12px;
+    min-width: 42px; min-height: 42px; border-radius: 8px;
     color: @network_accent; background-color: alpha(@network_accent, 0.10);
 }
 .networkmanager .badge {
@@ -120,11 +120,11 @@ window.networkmanager { background-color: @theme_bg_color; }
 }
 window.networkmanager.tray-popup { background-color: transparent; }
 .networkmanager .popup-surface {
-    background-color: @theme_bg_color; border-radius: 12px;
+    background-color: @theme_bg_color; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, 0.14);
 }
 .networkmanager.tray-popup .device-icon {
-    min-width: 34px; min-height: 34px; border-radius: 10px;
+    min-width: 34px; min-height: 34px; border-radius: 8px;
 }
 .networkmanager.tray-popup button:not(.titlebutton) {
     min-height: 24px; padding: 3px 10px;

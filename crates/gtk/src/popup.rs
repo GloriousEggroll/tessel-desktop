@@ -380,7 +380,7 @@ window.tray-popup .popup-subtitle { font-size: 9pt; opacity: 0.7; }
 window.tray-popup .section-title { font-size: 10pt; font-weight: 600; opacity: 0.7; }
 window.tray-popup .row-title { font-size: 10.5pt; }
 window.tray-popup .row-detail { font-size: 9pt; opacity: 0.7; }
-window.tray-popup .popup-surface { border-radius: 12px; }
+window.tray-popup .popup-surface { border-radius: 8px; }
 window.tray-popup .card, window.tray-popup .popup-card, window.tray-popup .power-card,
 window.tray-popup .device-list { border-radius: 8px; }
 window.tray-popup .device-name { font-size: 10.5pt; font-weight: 600; }
@@ -415,7 +415,7 @@ window.tray-popup button.popup-flat:not(.suggested-action) {
 window.tray-popup button.popup-flat:focus:not(:focus-visible) { outline: none; }
 window.tray-popup button.popup-flat { min-height: 30px; padding: 2px 12px; border-radius: 8px; }
 window.tray-popup button.popup-chip {
-    min-height: 26px; padding: 3px 8px; border-radius: 10px; font-size: 9pt;
+    min-height: 26px; padding: 3px 8px; border-radius: 8px; font-size: 9pt;
     background-image: none; background-color: alpha(currentColor, 0.07); border: none; box-shadow: none;
 }
 window.tray-popup button.popup-chip:hover { background-color: alpha(currentColor, 0.13); }

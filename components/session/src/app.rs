@@ -75,7 +75,7 @@ fn action_button(title: &str, icon: &str, detail: &str) -> gtk::Button {
 
 pub const CSS: &str = "
 window.tessel-session.tray-popup { background: transparent; }
-.tessel-session .popup-surface { background: @theme_bg_color; border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
+.tessel-session .popup-surface { background: @theme_bg_color; border-radius: 8px; border: 1px solid alpha(@theme_fg_color,.14); }
 .tessel-session .title { font-size: 16pt; font-weight: 600; }
 .tessel-session .subtitle { color: alpha(@theme_fg_color,.66); font-size: 9pt; }
 .tessel-session .session-title { font-size: 10.5pt; font-weight: 600; }

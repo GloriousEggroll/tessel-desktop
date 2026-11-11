@@ -228,6 +228,6 @@ mod tests {
         let material = css.split(&format!("{panel} {{")).nth(1).unwrap();
         let material = material[..material.find(';').unwrap()].trim();
         assert!(material.starts_with("background-image: none"), "{material}");
-        assert!(island.contains("background-color: rgba(") && island.contains("border-radius: 12px;") && island.contains("padding: 7px;"), "{island}");
+        assert!(island.contains("background-color: rgba(") && island.contains(&format!("border-radius: {}px;", tessel_core::look::CORNER_RADIUS)) && island.contains("padding: 7px;"), "{island}");
     }
 }

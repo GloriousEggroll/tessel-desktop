@@ -14,7 +14,7 @@ use tessel_gtk::utils::{add_css, remove_children, remove_css, set_margins, PRIOR
 /// One title size and card radius with the other settings pages (global_style.PAGE_CSS
 /// fallback used by standalone installs).
 pub const CSS: &str = concat!(".gs-page-title { font-size: 24px; font-weight: 700; } ",
-    ".gs-card { padding: 16px; border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.12); ",
+    ".gs-card { padding: 16px; border-radius: 8px; border: 1px solid alpha(@theme_fg_color,.12); ",
     "background-color: alpha(@theme_fg_color,.035); } .gs-row-subtitle { font-size: 9.5pt; }",
     " .keyboard-settings .detail { opacity: .72; }");
 

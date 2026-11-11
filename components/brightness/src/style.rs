@@ -25,10 +25,10 @@ window.brightnessmanager { background-color: @theme_bg_color; }
 .brightnessmanager .error { color: @brightness_error; }
 .brightnessmanager .card {
     background-color: @brightness_surface; border: 1px solid @brightness_line;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 .brightnessmanager .brightness-tile {
-    min-width: 42px; min-height: 42px; border-radius: 12px;
+    min-width: 42px; min-height: 42px; border-radius: 8px;
     color: @brightness_accent; background-color: alpha(@brightness_accent, 0.12);
 }
 .brightnessmanager .profile-check { color: @brightness_accent; }
@@ -50,7 +50,7 @@ window.brightnessmanager { background-color: @theme_bg_color; }
 }
 .brightnessmanager button.icon-button:hover { background-color: alpha(@theme_fg_color, 0.07); }
 .brightnessmanager button.profile-row {
-    background-color: transparent; border-color: transparent; border-radius: 10px;
+    background-color: transparent; border-color: transparent; border-radius: 8px;
     padding: 10px 12px;
 }
 .brightnessmanager button.profile-row:hover { background-color: alpha(@theme_fg_color, 0.045); }
@@ -62,7 +62,7 @@ window.brightnessmanager { background-color: @theme_bg_color; }
 .brightnessmanager scrolledwindow { background: transparent; border: none; }
 window.brightnessmanager.tray-popup { background-color: transparent; }
 .brightnessmanager .popup-surface {
-    background-color: @theme_bg_color; border-radius: 12px;
+    background-color: @theme_bg_color; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, 0.14);
 }
 .brightnessmanager.tray-popup .status { font-size: 9pt; }

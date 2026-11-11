@@ -52,7 +52,7 @@ pub fn options(key: &str) -> &'static [(Option<&'static str>, &'static str)] {
 const CSS: &str = "
         .input-settings .input-detail { color: alpha(@theme_fg_color, .7); font-size: 9.5pt; }
         .input-settings .input-test { border: 1px dashed alpha(@theme_fg_color, .3);
-            border-radius: 12px; padding: 20px; }
+            border-radius: 8px; padding: 20px; }
         .input-settings .input-test.capturing { border-color: @theme_selected_bg_color; }
         ";
 

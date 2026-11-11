@@ -931,7 +931,7 @@ mod tests {
             let data = theme_css("tessel-dock-companion-123", &entry, dark, &ThemeOptions::default()).unwrap();
             assert!(!data.contains("@define-color"));
             assert!(data.lines().all(|rule| rule.contains(".tessel-dock-companion-123")));
-            assert!(data.contains("window.tessel-dock-companion-123.tray-popup { background-image: none; background-color: transparent; border-radius: 12px; }"));
+            assert!(data.contains(&format!("window.tessel-dock-companion-123.tray-popup {{ background-image: none; background-color: transparent; border-radius: {}px; }}", tessel_core::look::CORNER_RADIUS)));
             let knob = data.lines().find(|l| l.contains("switch:checked slider")).unwrap();
             assert!(knob.contains("background-color: #ffffff;") && knob.contains("box-shadow: 0 1px 2px rgba(0,0,0,.3);"));
             let slider = data.lines().find(|l| l.contains("scale.marks-after slider")).unwrap();

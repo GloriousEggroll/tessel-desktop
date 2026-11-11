@@ -13,7 +13,7 @@ pub const OVERLAY_CSS: &str = r#"
 
         .overlay-box {
             background-color: rgba(0, 0, 0, 0.85);
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 16px;
             border: 1px solid white;
         }

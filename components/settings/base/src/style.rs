@@ -125,7 +125,7 @@ pub fn symbolic_image(picture: &gtk::Image) {
 }
 
 pub const TITLE_SIZE: &str = "18pt";
-pub const CARD_RADIUS: &str = "12px";
+pub const CARD_RADIUS: &str = "8px";
 pub const PAGE_MARGIN: i32 = 24;
 
 /// `PAGE_CSS` (TITLE_SIZE / CARD_RADIUS already substituted).
@@ -139,7 +139,7 @@ pub const PAGE_CSS: &str = "
 .gs-section-title { font-size: 11pt; font-weight: 700; }
 .gs-row-title { font-size: 10.5pt; font-weight: 400; }
 .gs-row-subtitle, .gs-muted { color: alpha(@theme_fg_color, .7); font-size: 9.5pt; }
-.gs-card, .system-page .card { padding: 4px 12px; border-radius: 12px;
+.gs-card, .system-page .card { padding: 4px 12px; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, .12); background-color: alpha(@theme_fg_color, .035); }
 .gs-card list, .system-page .card list { background: transparent; }
 .gs-card > :not(.gs-row), .system-page .card > :not(.gs-row) { margin-top: 8px; margin-bottom: 8px; }
@@ -154,7 +154,7 @@ list.card > row + row, list.gs-card > row + row { border-top: 1px solid alpha(@t
 .gs-empty-state .gs-empty-title { font-size: 14pt; font-weight: 700; }
 .gs-empty-state .gs-empty-detail { font-size: 10pt; color: alpha(@theme_fg_color, .7); }
 .gs-empty-state button { padding: 8px 20px; border-radius: 8px; }
-.gs-toast { padding: 8px 8px 8px 16px; border-radius: 12px;
+.gs-toast { padding: 8px 8px 8px 16px; border-radius: 8px;
     background-color: alpha(@theme_fg_color, .10); border: 1px solid alpha(@theme_fg_color, .14); }
 ";
 
@@ -183,7 +183,7 @@ window.tessel-settings { background: @theme_bg_color; color: @theme_fg_color; }
 .tessel-settings .settings-search-page { padding: 24px; }
 .tessel-settings .settings-search-results { background: transparent; }
 .tessel-settings .settings-search-results row {
-  padding: 12px; margin: 3px 0; border-radius: 12px;
+  padding: 12px; margin: 3px 0; border-radius: 8px;
   border: 1px solid alpha(@theme_fg_color, .10);
 }
 .tessel-settings .settings-search-results row:hover { background: alpha(@theme_fg_color, .06); }
@@ -204,7 +204,7 @@ window.tessel-settings { background: @theme_bg_color; color: @theme_fg_color; }
 .tessel-settings .tessel-dock-settings scale highlight { margin: 0; }
 /* Cards and headers of pages that other suite components build. */
 window.tessel-settings .card, window.tessel-settings .settings-card, window.tessel-settings .power-card {
-  border-radius: 12px; border: 1px solid alpha(@theme_fg_color, .12); background-color: alpha(@theme_fg_color, .035);
+  border-radius: 8px; border: 1px solid alpha(@theme_fg_color, .12); background-color: alpha(@theme_fg_color, .035);
 }
 window.tessel-settings .settings-section-title { font-size: 11pt; font-weight: 700; }
 ";

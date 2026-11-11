@@ -781,7 +781,7 @@ mod popup_style_tests {
                 assert!(!css.contains("url("));
                 assert!(css.contains("background-color: transparent;"));
                 assert!(css.contains("1.000)"));
-                assert!(css.contains(&format!("border-radius: {}px;", if rounded { 12 } else { 0 })));
+                assert!(css.contains(&format!("border-radius: {}px;", if rounded { tessel_core::look::CORNER_RADIUS } else { 0 })));
                 assert!(!css.contains("opacity:"));
                 assert!(!css.contains(".tessel-dock-panel"));
                 assert!(css.contains("popover.test.tessel-dock-context-menu { background-image: none; background-color: transparent;"));
@@ -821,7 +821,7 @@ mod popup_style_tests {
                 assert!(css.contains(if dark { "0.500)" } else { "0.850)" }));
                 assert!(!css.contains("background-size:"));
                 assert!(!css.contains("url("));
-                assert!(css.contains(&format!("border-radius: {}px;", if rounded { 12 } else { 0 })));
+                assert!(css.contains(&format!("border-radius: {}px;", if rounded { tessel_core::look::CORNER_RADIUS } else { 0 })));
                 assert!(!css.contains("opacity:"));
                 assert!(!css.contains("window"));
                 assert!(!css.contains(".tessel-dock-popup"));

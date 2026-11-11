@@ -20,13 +20,13 @@ window.tessel-displays { background-color: @theme_bg_color; color: @theme_fg_col
 .tessel-displays button.primary { background-color: @theme_selected_bg_color; color: @theme_selected_fg_color; }
 .tessel-displays entry, .tessel-displays spinbutton { border-radius: 8px; min-height: 30px; box-shadow: none; }
 .tessel-displays .settings-card, .tessel-displays .brightness-controls {
-    border: 1px solid alpha(@theme_fg_color, .12); border-radius: 12px;
+    border: 1px solid alpha(@theme_fg_color, .12); border-radius: 8px;
     padding: 16px; background-color: alpha(@theme_fg_color, .035); }
 .tessel-displays .monitor-title { font-size: 15px; font-weight: 650; }
 .tessel-displays .settings-card .heading { font-weight: 650; }
 .tessel-displays .settings-card > .settings-row { min-height: 36px; }
 .tessel-displays button.orientation-button { padding: 6px 10px; }
-.tessel-displays .hdr-details { border-radius: 10px; padding: 12px 14px;
+.tessel-displays .hdr-details { border-radius: 8px; padding: 12px 14px;
     background-color: alpha(@theme_fg_color, .04); }
 .tessel-displays .hdr-details-title { font-weight: 600; }
 .tessel-displays .hdr-value { font-feature-settings: "tnum"; }
@@ -36,18 +36,18 @@ window.tessel-displays { background-color: @theme_bg_color; color: @theme_fg_col
 .tessel-displays notebook > header tab { border: none; border-radius: 8px; padding: 10px 18px; }
 .tessel-displays notebook > header tab:checked { background: alpha(@theme_selected_bg_color, .20); }
 .tessel-displays notebook > stack { padding: 16px; background: transparent; }
-.tessel-displays frame { border-radius: 12px; border: 1px solid alpha(@theme_fg_color, .12); }
+.tessel-displays frame { border-radius: 8px; border: 1px solid alpha(@theme_fg_color, .12); }
 .tessel-displays scrollbar { background: transparent; }
 .tessel-displays scrollbar slider { min-width: 6px; min-height: 24px; border-radius: 8px;
     background: alpha(@theme_fg_color, .24); border: none; margin: 2px; }
 .tessel-displays .monitor-frame { background-color: alpha(@theme_fg_color, .07);
-    border: 1px solid @theme_selected_bg_color; border-radius: 10px; }
+    border: 1px solid @theme_selected_bg_color; border-radius: 8px; }
 .tessel-displays .overlay-label { color: @theme_fg_color; }
 .tessel-displays .panel-bar { background-color: @theme_selected_bg_color; border-color: @theme_selected_bg_color; }
 .tessel-displays .snap-flash { border-color: @theme_selected_bg_color; }
 window.tessel-displays-overlay { background: transparent; }
 .tessel-displays-overlay .overlay-box { background-color: @theme_bg_color; color: @theme_fg_color;
-    border: 1px solid alpha(@theme_fg_color, .14); border-radius: 16px; padding: 18px; }
+    border: 1px solid alpha(@theme_fg_color, .14); border-radius: 8px; padding: 18px; }
 .tessel-displays-overlay label { color: inherit; }
 "#;
 

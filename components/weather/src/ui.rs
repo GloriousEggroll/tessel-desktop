@@ -27,7 +27,7 @@ pub const CSS: &str = "
 .weathermanager button.icon-button:hover { background-color: alpha(@theme_fg_color, .08); }
 window.weathermanager.tray-popup { background: transparent; }
 .weathermanager .popup-surface { background-color: @theme_bg_color;
-    border: 1px solid alpha(@theme_fg_color, .14); border-radius: 12px; }
+    border: 1px solid alpha(@theme_fg_color, .14); border-radius: 8px; }
 .weathermanager .weather-search-results row { padding: 9px; border-radius: 7px; }
 .weathermanager .weather-search-results row:hover { background-color: alpha(@theme_fg_color, .07); }
 ";

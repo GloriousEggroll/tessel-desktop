@@ -373,7 +373,7 @@ pub fn edit_rc(text: &str, home: &Path) -> Result<(String, Vec<String>), Error> 
 }
 
 /// `tessel_core::look::CORNER_RADIUS`, as rc.xml has it (a test keeps them the same).
-pub const CORNER_RADIUS: &str = "12";
+pub const CORNER_RADIUS: &str = "8";
 // Both title fonts match GTK header bar titles (weight 600).
 const TITLE_FONT: [(&str, &str); 3] = [("name", "Sans"), ("size", "10"), ("weight", "SemiBold")];
 // labwc ignores Openbox-style <active>/<inactive><titlebar color=…/> blocks;
@@ -433,7 +433,7 @@ fn state_blocks(text: &str) -> Vec<(usize, usize)> {
     found
 }
 
-/// Matching active/inactive title fonts, 12px corners, no dead Openbox title colors.
+/// Matching active/inactive title fonts, the desktop's corner radius, no dead Openbox title colors.
 pub fn edit_theme(text: &str) -> Result<String, Error> {
     let (text, masked, open_end, close) = theme_section(text)?;
     let mut edits: Vec<(usize, usize, String)> = Vec::new();
@@ -1217,7 +1217,7 @@ mod new_user_tests {
         std::fs::remove_dir_all(&home).unwrap();
         for wanted in ["key=\"A-Tab\"", "tessel-shell-cli switch-window --reverse", "key=\"Super_L\" onRelease=\"yes\"", "tessel-dock --menu-hotkey",
                        "key=\"Print\"", "tessel-capture --toggle-recording", "tessel-prompt --message-stdin", "tessel-prompt --error", "button=\"A-Left\"",
-                       "menu=\"right-click-menu\"", "<cornerRadius>12</cornerRadius>", "tessel-action terminal", "key=\"W-l\"", "<name>4</name>"] {
+                       "menu=\"right-click-menu\"", "<cornerRadius>8</cornerRadius>", "tessel-action terminal", "key=\"W-l\"", "<name>4</name>"] {
             assert!(rc.contains(wanted), "{wanted} missing:\n{rc}");
         }
         for text in [&rc, &menu] {

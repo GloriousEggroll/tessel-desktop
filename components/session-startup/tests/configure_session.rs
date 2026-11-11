@@ -269,7 +269,7 @@ fn invalid_documents_are_rejected() {
 }
 
 #[test]
-fn theme_has_matching_title_fonts_12px_corners_and_no_dead_colors() {
+fn theme_has_matching_title_fonts_the_desktops_corners_and_no_dead_colors() {
     if suite_root().is_none() {
         return;
     }
@@ -281,7 +281,7 @@ fn theme_has_matching_title_fonts_12px_corners_and_no_dead_colors() {
         f(theme);
     };
     check(&result, &|theme| {
-        assert_eq!(xml::findtext(theme, "cornerRadius").as_deref(), Some("12"));
+        assert_eq!(xml::findtext(theme, "cornerRadius").as_deref(), Some("8"));
         assert!(xml::findall(theme, "active").next().is_none());
         assert!(xml::findall(theme, "inactive").next().is_none());
         let fonts: HashMap<String, Vec<String>> = xml::findall(theme, "font")
@@ -296,7 +296,7 @@ fn theme_has_matching_title_fonts_12px_corners_and_no_dead_colors() {
     assert_eq!(edit(&result).0, result);
     for text in ["<labwc_config>\n</labwc_config>\n", "<labwc_config>\n  <theme/>\n</labwc_config>\n"] {
         check(&edit(text).0, &|theme| {
-            assert_eq!(xml::findtext(theme, "cornerRadius").as_deref(), Some("12"));
+            assert_eq!(xml::findtext(theme, "cornerRadius").as_deref(), Some("8"));
             assert_eq!(xml::findall(theme, "font").count(), 2);
         });
     }

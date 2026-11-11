@@ -20,7 +20,7 @@ window.audiomanager.tray-popup { background-color: transparent; }
 .audiomanager.tray-popup .popup-surface {
     background-color: @theme_bg_color;
     border: 1px solid alpha(@theme_fg_color, 0.14);
-    border-radius: 12px;
+    border-radius: 8px;
 }
 .audiomanager.tray-popup .popup-status { font-size: 9pt; }
 .audiomanager.tray-popup .popup-status.error {

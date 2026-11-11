@@ -28,10 +28,10 @@ window.audiomanager { background-color: @theme_bg_color; }
 .audiomanager .device-name { font-weight: 600; font-size: 11pt; }
 .audiomanager .card {
     background-color: @audio_surface; border: 1px solid @audio_line;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 .audiomanager .device-icon {
-    min-width: 42px; min-height: 42px; border-radius: 12px;
+    min-width: 42px; min-height: 42px; border-radius: 8px;
     color: @audio_accent; background-color: alpha(@audio_accent, 0.10);
 }
 .audiomanager button:not(.titlebutton) {
@@ -48,7 +48,7 @@ window.audiomanager { background-color: @theme_bg_color; }
 .audiomanager button:focus-visible { outline: 2px solid alpha(@audio_accent, 0.65); outline-offset: 2px; }
 .audiomanager button:disabled { opacity: 0.45; }
 .audiomanager .navigation { background: transparent; }
-.audiomanager .navigation row { padding: 12px; border-radius: 9px; margin-bottom: 4px; }
+.audiomanager .navigation row { padding: 12px; border-radius: 8px; margin-bottom: 4px; }
 .audiomanager .navigation row:selected { background-color: alpha(@audio_accent, 0.14); color: @audio_accent; }
 .audiomanager .navigation row:hover { background-color: alpha(@theme_fg_color, 0.06); }
 .audiomanager .volume-label { font-size: 10pt; font-weight: 600; min-width: 48px; }
@@ -63,7 +63,7 @@ window.audiomanager { background-color: @theme_bg_color; }
 .audiomanager levelbar.input-level block.filled { background-color: @audio_accent; }
 window.audiomanager.tray-popup { background-color: transparent; }
 .audiomanager .popup-surface {
-    background-color: @theme_bg_color; border-radius: 12px;
+    background-color: @theme_bg_color; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, 0.14);
 }
 "#;

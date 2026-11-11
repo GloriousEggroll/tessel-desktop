@@ -323,7 +323,7 @@ fn find_panels(widget: &gtk::Widget, class_name: Option<&str>, found: &mut Vec<g
 /// The corners of a rounded blur region, in pixels: the radius of the surface
 /// drawn over it. This crate stands apart from the desktop's shared values, so
 /// `tessel-gtk` has a test that it is `tessel_core::look::CORNER_RADIUS`.
-pub const CORNER_RADIUS: i32 = 12;
+pub const CORNER_RADIUS: i32 = 8;
 
 /// Pixel-centre scanlines keep the effect inside the CSS rounded outline; the
 /// full middle rectangle bounds the cost by 2·radius rows, not panel size.

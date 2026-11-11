@@ -22,7 +22,7 @@ window.tessel-shell-wallpaper-settings { background-color: @theme_bg_color; colo
 .tessel-shell-wallpaper-settings .wallpaper-title { font-size: 18pt; font-weight: 700; }
 .tessel-shell-wallpaper-settings .wallpaper-subtitle { color: @wallpaper_muted; font-size: 10pt; }
 .tessel-shell-wallpaper-settings .wallpaper-tile {
-    min-width: 50px; min-height: 50px; border-radius: 12px;
+    min-width: 50px; min-height: 50px; border-radius: 8px;
     color: @theme_selected_bg_color; background-color: alpha(@theme_selected_bg_color, 0.10);
 }
 .tessel-shell-wallpaper-settings .wallpaper-card {
@@ -54,7 +54,7 @@ window.tessel-shell-wallpaper-settings { background-color: @theme_bg_color; colo
 .tessel-shell-wallpaper-settings button:disabled { opacity: 0.45; }
 .tessel-shell-wallpaper-settings dropdown popover contents {
     background-color: @theme_bg_color; color: @theme_fg_color;
-    border: 1px solid @wallpaper_line; border-radius: 12px; padding: 6px;
+    border: 1px solid @wallpaper_line; border-radius: 8px; padding: 6px;
 }
 .tessel-shell-wallpaper-settings dropdown listview { background: transparent; }
 .tessel-shell-wallpaper-settings dropdown row { border-radius: 8px; padding: 5px 8px; }

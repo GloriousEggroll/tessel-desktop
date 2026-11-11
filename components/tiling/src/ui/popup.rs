@@ -16,9 +16,9 @@ use tessel_gtk::utils::{accessible, add_css, remove_css, set_margins, PRIORITY_A
 pub const APPLICATION_ID: &str = "org.tessel.Tiling";
 
 pub const CSS: &str = ".tiling-shortcuts .popup-surface { background: @theme_bg_color; color: @theme_fg_color;
-            border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
+            border-radius: 8px; border: 1px solid alpha(@theme_fg_color,.14); }
             .tiling-shortcuts .shortcut-row { padding: 8px 2px; border-bottom: 1px solid alpha(@theme_fg_color,.08); }
-            .tiling-shortcuts .tiling-card { padding: 12px 14px; border-radius: 10px;
+            .tiling-shortcuts .tiling-card { padding: 12px 14px; border-radius: 8px;
                 background-color: alpha(@theme_fg_color,.045); border: 1px solid alpha(@theme_fg_color,.10); }
             .tiling-shortcuts .shortcut-row:last-child { border-bottom: none; }
             .tiling-shortcuts .key { font-size: 9.5pt; font-weight: 600; }

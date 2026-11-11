@@ -24,15 +24,15 @@ window.powermanager { background-color: @theme_bg_color; }
 .powermanager .error { color: @power_error; }
 .powermanager .card {
     background-color: @power_surface; border: 1px solid @power_line;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 .powermanager .power-tile {
-    min-width: 42px; min-height: 42px; border-radius: 12px;
+    min-width: 42px; min-height: 42px; border-radius: 8px;
     color: @power_accent; background-color: alpha(@power_accent, 0.12);
 }
 .powermanager .profile-check { color: @power_accent; }
 .powermanager .battery-row {
-    background-color: alpha(@theme_fg_color, 0.025); border-radius: 10px;
+    background-color: alpha(@theme_fg_color, 0.025); border-radius: 8px;
 }
 .powermanager .battery-percentage { font-size: 11pt; font-weight: 600; }
 .powermanager levelbar.battery-level {
@@ -70,7 +70,7 @@ window.powermanager { background-color: @theme_bg_color; }
 }
 .powermanager button.icon-button:hover { background-color: alpha(@theme_fg_color, 0.07); }
 .powermanager button.profile-row {
-    background-color: transparent; border-color: transparent; border-radius: 10px;
+    background-color: transparent; border-color: transparent; border-radius: 8px;
     padding: 10px 12px;
 }
 .powermanager button.profile-row:hover { background-color: alpha(@theme_fg_color, 0.045); }
@@ -82,7 +82,7 @@ window.powermanager { background-color: @theme_bg_color; }
 .powermanager scrolledwindow { background: transparent; border: none; }
 window.powermanager.tray-popup { background-color: transparent; }
 .powermanager .popup-surface {
-    background-color: @theme_bg_color; border-radius: 12px;
+    background-color: @theme_bg_color; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, 0.14);
 }
 .powermanager.tray-popup .status { font-size: 9pt; }

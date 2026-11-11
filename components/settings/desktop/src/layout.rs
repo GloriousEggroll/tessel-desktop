@@ -19,8 +19,8 @@ use crate::util::{label, Runner};
 pub const LAYOUT_CSS: &str = "
 .layout-settings .subtitle { color: alpha(@theme_fg_color, .66); }
 .layout-settings flowbox { background: transparent; }
-.layout-settings flowboxchild { padding: 0; border-radius: 12px; background: transparent; }
-.layout-settings .layout-card { padding: 12px; border-radius: 12px;
+.layout-settings flowboxchild { padding: 0; border-radius: 8px; background: transparent; }
+.layout-settings .layout-card { padding: 12px; border-radius: 8px;
     border: 2px solid alpha(@theme_fg_color, .10); background-color: alpha(@theme_fg_color, .035); }
 .layout-settings flowboxchild:hover .layout-card { background-color: alpha(@theme_fg_color, .07); }
 .layout-settings flowboxchild:selected .layout-card { border-color: @theme_selected_bg_color; }

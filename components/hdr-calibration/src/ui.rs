@@ -14,7 +14,7 @@ use tessel_core::tr;
 use tessel_displays::color_config::Status;
 
 pub const STYLE: &str = r#"
-.tessel-hdr-calibration .hdr-section { padding: 16px; border-radius: 12px; }
+.tessel-hdr-calibration .hdr-section { padding: 16px; border-radius: 8px; }
 .tessel-hdr-calibration .hdr-section-title { font-size: 10pt; font-weight: 600; opacity: .7; }
 .tessel-hdr-calibration .hdr-field-title { font-size: 10.5pt; font-weight: 600; }
 .tessel-hdr-calibration .hdr-detail { font-size: 9pt; opacity: .7; }

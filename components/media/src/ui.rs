@@ -13,7 +13,7 @@ use tessel_gtk::utils::{accessible, add_css, image, PRIORITY_APPLICATION};
 pub const CSS: &str = r#"
 window.tessel-media.tray-popup { background: transparent; }
 .tessel-media .popup-surface { background: @theme_bg_color; color: @theme_fg_color;
-  border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
+  border-radius: 8px; border: 1px solid alpha(@theme_fg_color,.14); }
 .tessel-media .media-title { font-size: 12pt; font-weight: 600; }
 .tessel-media .album-cover { border-radius: 8px; }
 .tessel-media .media-control { min-width: 46px; min-height: 46px; padding: 0;

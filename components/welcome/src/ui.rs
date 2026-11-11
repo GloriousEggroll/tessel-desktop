@@ -63,7 +63,7 @@ pub const CSS: &str = "
 .welcome .welcome-actions button { padding: 8px 18px; border-radius: 8px; }
 .welcome .welcome-key { font-family: monospace; font-weight: 600; padding: 4px 10px; border-radius: 6px;
     background-color: alpha(@theme_fg_color, .08); border: 1px solid alpha(@theme_fg_color, .14); }
-.welcome .welcome-scheme { padding: 18px 26px; border-radius: 12px; }
+.welcome .welcome-scheme { padding: 18px 26px; border-radius: 8px; }
 .welcome .welcome-scheme:checked { background-color: alpha(@theme_selected_bg_color, .22); }
 .welcome .welcome-warning { border-color: alpha(@warning_color, .6); }
 ";

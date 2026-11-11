@@ -12,7 +12,7 @@ use std::rc::{Rc, Weak};
 use tessel_core::tr;
 use tessel_gtk::utils::{add_css, headerbar, image, key_controller, PRIORITY_APPLICATION};
 
-const CSS: &str = "\n                .authentication-window .authentication-lock { border-radius: 14px; }\n            ";
+const CSS: &str = "\n                .authentication-window .authentication-lock { border-radius: 8px; }\n            ";
 
 thread_local! {
     static INSTALLED: RefCell<Vec<(gdk::Display, &'static str)>> = const { RefCell::new(Vec::new()) };

@@ -27,7 +27,7 @@ window.tessel-login { background: #161820; color: white; }
 .tessel-login entry { min-height: 34px; padding: 12px 18px; border-radius: 9999px; font-size: 13.5pt; }
 .tessel-login button:focus-visible, .tessel-login entry:focus-within { outline: 2px solid @accent_color; outline-offset: 2px; }
 .tessel-login popover contents { background: #23252d; color: white; padding: 12px; }
-.tessel-login .confirmation { padding: 12px; border-radius: 12px; background: rgba(20,22,30,.85); }
+.tessel-login .confirmation { padding: 12px; border-radius: 8px; background: rgba(20,22,30,.85); }
 .tessel-login .session-fade { background: black; }
 ";
 /// Accessibility menu styles; added above each window's palette provider.

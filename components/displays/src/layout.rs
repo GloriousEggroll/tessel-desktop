@@ -17,7 +17,7 @@ pub const LAYOUT_CSS: &str = r#"
         .monitor-frame {
             background-color: #333336;
             border: 1px solid #4a90e2;
-            border-radius: 10px;
+            border-radius: 8px;
         }
         .overlay-label {
             font-size: 10px;
@@ -31,8 +31,8 @@ pub const LAYOUT_CSS: &str = r#"
         .panel-bar {
             background-color: #4a90e2;
             border: 1px solid #4a90e2;
-            border-bottom-left-radius: 10px;
-            border-bottom-right-radius: 10px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
             border-top-left-radius: 0;
             border-top-right-radius: 0;
         }

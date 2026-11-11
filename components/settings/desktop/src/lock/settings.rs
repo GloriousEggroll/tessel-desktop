@@ -14,7 +14,7 @@ use tessel_core::tr;
 use super::config::{ConfigStore, IMAGE_EXTENSIONS, PLACEMENTS, WALLPAPER_MODES};
 use super::power::{LockPower, PowerFactory};
 
-pub const LOCK_CSS: &str = ".lock-settings .card { padding: 16px; border-radius: 12px; border: 1px solid alpha(currentColor,.12); } .lock-settings .title { font-size: 18pt; font-weight: 700; } .lock-settings headerbar .title { font-size: 1em; } .lock-settings .section-title { font-weight: 600; }";
+pub const LOCK_CSS: &str = ".lock-settings .card { padding: 16px; border-radius: 8px; border: 1px solid alpha(currentColor,.12); } .lock-settings .title { font-size: 18pt; font-weight: 700; } .lock-settings headerbar .title { font-size: 1em; } .lock-settings .section-title { font-weight: 600; }";
 
 pub type Detector = Rc<dyn Fn() -> bool>;
 pub type Preview = Rc<dyn Fn() -> Result<(), String>>;

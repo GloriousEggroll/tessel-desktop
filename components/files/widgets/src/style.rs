@@ -16,11 +16,11 @@ pub const CSS: &str = r#"
 .files-window .files-location button { padding: 5px 7px; }
 .files-window .files-pane { border: 1px solid transparent; }
 .files-window .files-split .files-pane.active-pane { border-color: alpha(currentColor, .2); }
-.files-window .files-tile { padding: 10px 8px; border-radius: 10px; }
+.files-window .files-tile { padding: 10px 8px; border-radius: 8px; }
 /* Adwaita gives "gridview > child > box" a 12px margin that ate a quarter of each tile's label width. */
 .files-window gridview > child > .files-tile { margin: 0; }
 .files-window gridview { padding: 10px; }
-.files-window gridview child { border-radius: 10px; margin: 2px; }
+.files-window gridview child { border-radius: 8px; margin: 2px; }
 .files-window columnview cell { padding: 3px 10px; }
 .files-window columnview row { min-height: 0; }
 .files-window columnview .files-tile, .files-window listview .files-tile { padding: 0; }
@@ -29,7 +29,7 @@ pub const CSS: &str = r#"
 .files-window .files-info { border-left: 1px solid alpha(currentColor, .12); }
 .files-window .files-info-header { padding: 8px 14px; border-bottom: 1px solid alpha(currentColor, .10); }
 .files-window .files-info-content { padding: 16px; }
-.files-window .files-image-preview { background-color: alpha(currentColor, .035); border-radius: 10px; }
+.files-window .files-image-preview { background-color: alpha(currentColor, .035); border-radius: 8px; }
 .files-window .files-info button { background: transparent; border: none; box-shadow: none; }
 .files-window .files-info button:hover { background-color: alpha(currentColor, .10); }
 .files-window .files-info .title { font-size: 13pt; font-weight: 650; }
@@ -47,7 +47,7 @@ pub const CSS: &str = r#"
 .files-peek > contents { padding: 10px 12px; }
 .files-peek .heading { font-weight: 650; margin-bottom: 4px; }
 .files-peek .muted, .files-goto .muted { opacity: .65; }
-.files-goto { border-radius: 14px; }
+.files-goto { border-radius: 8px; }
 .files-goto .files-goto-content { padding: 14px; }
 .files-goto .files-goto-results { background: transparent; }
 .files-goto .files-goto-results row { padding: 6px 10px; border-radius: 8px; }

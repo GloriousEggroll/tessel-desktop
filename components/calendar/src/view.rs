@@ -26,7 +26,7 @@ window.calendarmanager { background-color: @theme_bg_color; }
 .calendarmanager .section-title { font-size: 12pt; font-weight: 600; }
 .calendarmanager .card {
     background-color: @calendar_surface; border: 1px solid @calendar_line;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 .calendarmanager button:not(.titlebutton) {
     background-image: none; background-color: @calendar_surface;
@@ -60,7 +60,7 @@ window.calendarmanager { background-color: @theme_bg_color; }
 .calendarmanager .calendar-month { font-size: 12pt; font-weight: 600; }
 .calendarmanager .calendar-weekday { font-size: 9pt; color: @calendar_muted; padding: 6px 0; }
 .calendarmanager button.calendar-day {
-    border-radius: 9px; border: 1px solid transparent;
+    border-radius: 8px; border: 1px solid transparent;
     background-color: transparent; min-width: 28px; min-height: 30px;
     padding: 3px 2px; font-size: 10pt;
 }
@@ -77,7 +77,7 @@ window.calendarmanager { background-color: @theme_bg_color; }
 .calendarmanager .event-list { margin-top: 2px; }
 .calendarmanager .event-row {
     background-color: @calendar_surface; border: 1px solid @calendar_line;
-    border-radius: 10px; padding: 7px 10px;
+    border-radius: 8px; padding: 7px 10px;
 }
 .calendarmanager .event-time { font-size: 9pt; color: @calendar_muted; min-width: 64px; }
 .calendarmanager .event-title { font-weight: 600; }
@@ -93,11 +93,11 @@ window.calendarmanager { background-color: @theme_bg_color; }
 .calendarmanager .calendar-footer { font-size: 9pt; }
 window.calendarmanager.tray-popup { background-color: transparent; }
 .calendarmanager .popup-surface {
-    background-color: @theme_bg_color; border-radius: 12px;
+    background-color: @theme_bg_color; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, 0.14);
 }
 .calendarmanager .calendar-tile {
-    min-width: 42px; min-height: 42px; border-radius: 12px;
+    min-width: 42px; min-height: 42px; border-radius: 8px;
     color: @calendar_accent; background-color: alpha(@calendar_accent, 0.12);
 }
 "#;

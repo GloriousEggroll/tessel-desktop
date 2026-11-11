@@ -3,7 +3,7 @@ window.tessel-dock-surface { background: transparent; color: #eeeeee; border: no
 .tessel-dock-panel, .tessel-dock-popup {
   background: rgba(0, 0, 0, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 7px;
 }
 .tessel-dock-popup { background: rgba(16, 17, 20, 0.97); padding: 12px; }
@@ -50,7 +50,7 @@ window.tessel-dock-settings { background: @theme_bg_color; color: @theme_fg_colo
 .tessel-dock-settings .settings-title { font-size: 18pt; font-weight: 700; }
 .tessel-dock-settings .settings-muted { color: @tessel-dock_settings_muted; font-size: 9pt; }
 .tessel-dock-settings .settings-tile {
-  min-width: 50px; min-height: 50px; border-radius: 12px;
+  min-width: 50px; min-height: 50px; border-radius: 8px;
   color: @theme_selected_bg_color; background-color: alpha(@theme_selected_bg_color, 0.10);
 }
 .tessel-dock-settings .settings-card {
@@ -124,7 +124,7 @@ window.tessel-dock-settings { background: @theme_bg_color; color: @theme_fg_colo
 .tessel-dock-popup entry:focus-within { border-color: #69a7ff; outline: 2px solid rgba(105,167,255,0.45); outline-offset: -1px; }
 .tessel-dock-popup list, .tessel-dock-popup row { background: transparent; color: white; }
 .tessel-dock-popup row:hover { background: rgba(255,255,255,0.08); border-radius: 8px; }
-.tessel-dock-app-menu { padding: 16px; border-radius: 12px; }
+.tessel-dock-app-menu { padding: 16px; border-radius: 8px; }
 .tessel-dock-app-menu-header { padding: 0 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .tessel-dock-app-menu .tessel-dock-app-categories { background: transparent; }
 .tessel-dock-app-menu .tessel-dock-app-categories row { padding: 9px 10px; margin: 2px 0; border-radius: 8px; }

@@ -23,7 +23,7 @@ pub const SPEC: ArgSpec = ArgSpec {
 pub const CSS: &str = "
               window.discovery-manager.tray-popup { background: transparent; }
               .discovery-manager .popup-surface { background: @theme_bg_color; color: @theme_fg_color;
-                border-radius: 12px; border: 1px solid alpha(@theme_fg_color,.14); }
+                border-radius: 8px; border: 1px solid alpha(@theme_fg_color,.14); }
               .discovery-manager list.discovered { background: alpha(@theme_fg_color,.05); border-radius: 8px; }
               .discovery-manager list.discovered > row { background: transparent; }
             ";

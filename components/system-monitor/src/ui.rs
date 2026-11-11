@@ -20,12 +20,12 @@ window.tessel-system-monitor { font-size: 10pt; }
 .monitor-nav { padding: 12px 8px; border-right: 1px solid alpha(currentColor,.12); }
 .monitor-page { padding: 20px; }
 .monitor-heading { font-size: 16pt; font-weight: 600; }
-.monitor-summary { padding: 12px 16px; border-radius: 10px; border: 1px solid alpha(currentColor,.14); }
+.monitor-summary { padding: 12px 16px; border-radius: 8px; border: 1px solid alpha(currentColor,.14); }
 .monitor-value { font-size: 16pt; font-weight: 650; font-feature-settings: "tnum"; }
 .monitor-caption { font-size: 9pt; opacity: .75; }
 .monitor-toolbar { padding: 10px 0; }
 .monitor-status { padding: 8px 20px; font-size: 9pt; }
-.monitor-card { padding: 16px; border-radius: 12px; border: 1px solid alpha(currentColor,.15); }
+.monitor-card { padding: 16px; border-radius: 8px; border: 1px solid alpha(currentColor,.15); }
 .monitor-card-title { font-size: 11pt; font-weight: 600; }
 .monitor-storage { padding: 4px 0; }
 .monitor-storage-heading { font-size: 10pt; font-weight: 600; opacity: .7; padding: 4px 16px 2px; }

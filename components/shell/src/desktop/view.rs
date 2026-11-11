@@ -69,7 +69,7 @@ pub const VIEW_CSS: &str = r#"
             background-color: @theme_bg_color;
             color: @theme_fg_color;
             border: 1px solid alpha(@theme_fg_color, 0.12);
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 10px 12px;
         }
         "#;

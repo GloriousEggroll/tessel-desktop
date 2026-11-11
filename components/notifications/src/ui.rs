@@ -26,13 +26,13 @@ pub const STYLE: &str = "
 window.tessel-notifications.tray-popup { background: transparent; }
 .tessel-notifications .popup-surface {
     background: @theme_bg_color; color: @theme_fg_color;
-    border: 1px solid alpha(@theme_fg_color, .15); border-radius: 12px;
+    border: 1px solid alpha(@theme_fg_color, .15); border-radius: 8px;
 }
 .tessel-notifications .notification-card {
     padding: 12px; border-radius: 8px;
     border: 1px solid alpha(@theme_fg_color, .12);
 }
-.tessel-notifications .notification-card.popup-surface { border-radius: 12px; }
+.tessel-notifications .notification-card.popup-surface { border-radius: 8px; }
 .tessel-notifications .notification-avatar { border-radius: 8px; }
 .tessel-notifications .notification-card.critical {
     border-color: alpha(@theme_selected_bg_color, .7);
@@ -57,7 +57,7 @@ window.tessel-notifications.tray-popup { background: transparent; }
 .tessel-notifications .group-header { padding: 2px 0; }
 .tessel-notifications .group-header button.group-toggle { padding: 2px 6px; }
 .tessel-notifications .group-cards { margin-top: 8px; }
-.tessel-notifications .dnd-card { padding: 12px 14px; border-radius: 10px;
+.tessel-notifications .dnd-card { padding: 12px 14px; border-radius: 8px;
     background-color: alpha(@theme_fg_color, 0.045); border: 1px solid alpha(@theme_fg_color, 0.10); }
 .tessel-notifications .notification-center-title { font-size: 10.5pt; }
 ";

@@ -18,7 +18,7 @@ window.tessel-shell-switcher, window.tessel-shell-switcher-backdrop {
 }
 .tessel-shell-switcher .switcher-surface {
     background-color: @theme_bg_color; color: @theme_fg_color;
-    border: 1px solid alpha(@theme_fg_color, .14); border-radius: 12px; padding: 20px;
+    border: 1px solid alpha(@theme_fg_color, .14); border-radius: 8px; padding: 20px;
 }
 .tessel-shell-switcher .switcher-heading { font-size: 13pt; font-weight: 700; }
 .tessel-shell-switcher .switcher-count, .tessel-shell-switcher .switcher-hint {
@@ -28,7 +28,7 @@ window.tessel-shell-switcher, window.tessel-shell-switcher-backdrop {
 .tessel-shell-switcher .switcher-grid > flowboxchild { padding: 0; margin: 0; }
 .tessel-shell-switcher button.switcher-card {
     background-image: none; background-color: alpha(@theme_fg_color, .045);
-    color: @theme_fg_color; border: 2px solid transparent; border-radius: 12px;
+    color: @theme_fg_color; border: 2px solid transparent; border-radius: 8px;
     padding: 10px 8px; box-shadow: none; text-shadow: none; outline: none;
     transition: none;
 }

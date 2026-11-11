@@ -18,11 +18,11 @@ pub const CSS: &str = "
 window.tessel-keep-awake.tray-popup { background: transparent; }
 .tessel-keep-awake .popup-surface {
     background-color: @theme_bg_color; color: @theme_fg_color;
-    border: 1px solid alpha(@theme_fg_color, 0.14); border-radius: 12px;
+    border: 1px solid alpha(@theme_fg_color, 0.14); border-radius: 8px;
 }
 .tessel-keep-awake .muted { color: alpha(@theme_fg_color, 0.65); }
 .tessel-keep-awake .card {
-    border-radius: 10px; padding: 0;
+    border-radius: 8px; padding: 0;
     background-color: alpha(@theme_fg_color, 0.045);
     border: 1px solid alpha(@theme_fg_color, 0.10);
 }

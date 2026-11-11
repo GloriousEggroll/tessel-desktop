@@ -12,7 +12,7 @@ use std::rc::Rc;
 use tessel_core::tr;
 use tessel_gtk::utils::{headerbar, image, key_controller};
 
-const CSS: &str = ".keyring-prompt .settings-tile { border-radius: 14px; }";
+const CSS: &str = ".keyring-prompt .settings-tile { border-radius: 8px; }";
 
 fn main() {
     tessel_core::i18n::initialize();

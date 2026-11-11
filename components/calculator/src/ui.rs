@@ -15,16 +15,16 @@ use tessel_gtk::utils::{accessible, add_css, children, headerbar, image, remove_
 
 pub const STYLE: &str = "
 .calculator { color: @theme_fg_color; background: @theme_bg_color; }
-.calculator .calculator-display { border-radius: 14px; padding: 12px 14px; }
+.calculator .calculator-display { border-radius: 8px; padding: 12px 14px; }
 .calculator entry.expression { font-size: 15pt; background: transparent; border: none; box-shadow: none; }
 .calculator .result { font-size: 26pt; font-weight: 650; }
 .calculator .muted { opacity: .74; }
-.calculator .calculator-key { min-height: 24px; min-width: 34px; padding: 4px 7px; border-radius: 9px; font-size: 13pt; }
+.calculator .calculator-key { min-height: 24px; min-width: 34px; padding: 4px 7px; border-radius: 8px; font-size: 13pt; }
 .calculator .scientific-key { font-size: 10pt; min-height: 18px; padding: 3px 5px; }
 .calculator .memory-key { padding: 5px 7px; border-radius: 7px; min-height: 22px; }
 .calculator button.icon-button { min-width: 24px; min-height: 24px; padding: 3px; border-radius: 7px; }
 .calculator .history-title { font-size: 13pt; font-weight: 650; }
-.calculator .history-card { border-radius: 10px; border: 1px solid alpha(@theme_fg_color, .12); padding: 8px; }
+.calculator .history-card { border-radius: 8px; border: 1px solid alpha(@theme_fg_color, .12); padding: 8px; }
 .calculator .history-expression { font-size: 10pt; }
 .calculator .history-result { font-size: 14pt; font-weight: 600; }
 .calculator .error { color: #df7b85; }

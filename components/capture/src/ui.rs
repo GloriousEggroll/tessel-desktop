@@ -22,11 +22,11 @@ use tessel_gtk::utils::{accessible, add_css, headerbar, image, set_margins};
 
 pub const STYLE: &str = "
 .capture-window .subtitle { opacity: .75; }
-.capture-window .card { border-radius: 12px; padding: 14px; border: 1px solid alpha(@theme_fg_color,.12); }
+.capture-window .card { border-radius: 8px; padding: 14px; border: 1px solid alpha(@theme_fg_color,.12); }
 .capture-window .record-status { font-size: 11pt; font-weight: 600; }
 .capture-window .capture-mode button { padding: 6px 18px; }
 .capture-window .capture-mode button:checked { background-color: alpha(currentColor, .16); font-weight: 600; }
-.capture-window .preview { background: alpha(@theme_fg_color,.04); border-radius: 10px; }
+.capture-window .preview { background: alpha(@theme_fg_color,.04); border-radius: 8px; }
 .capture-window .error { color: #e97171; }
 ";
 

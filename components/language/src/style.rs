@@ -23,7 +23,7 @@ window.languagemanager { background-color: @theme_bg_color; color: @theme_fg_col
 .languagemanager .settings-tile { min-width: 24px; min-height: 24px; color: @theme_fg_color; }
 .languagemanager .card {
     background-color: mix(@theme_base_color, @theme_bg_color, .20);
-    border: 1px solid alpha(@theme_fg_color, .12); border-radius: 12px;
+    border: 1px solid alpha(@theme_fg_color, .12); border-radius: 8px;
 }
 .languagemanager list { background: transparent; }
 .languagemanager .language-list > row {
@@ -54,7 +54,7 @@ window.languagemanager { background-color: @theme_bg_color; color: @theme_fg_col
 .languagemanager button:disabled { opacity: .45; }
 .languagemanager .error { color: mix(@theme_fg_color, #db5a65, .85); }
 .languagemanager .success { color: mix(@theme_fg_color, #28a273, .80); }
-.languagemanager .result-icon { min-width: 74px; min-height: 74px; border-radius: 24px;
+.languagemanager .result-icon { min-width: 74px; min-height: 74px; border-radius: 8px;
     background-color: alpha(@theme_selected_bg_color, .12); }
 .languagemanager .review-value { font-size: 16pt; font-weight: 600; }
 .languagemanager scrollbar { background: transparent; }

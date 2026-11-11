@@ -14,7 +14,7 @@ pub const CSS: &str = "
 .tessel-text-editor .muted { opacity: .7; }
 .tessel-text-editor .editor-title { font-weight: 650; }
 .tessel-text-editor .editor-subtitle { font-size: 9pt; }
-.tessel-text-editor .settings-card { padding: 12px; border-radius: 12px; }
+.tessel-text-editor .settings-card { padding: 12px; border-radius: 8px; }
 .tessel-text-editor textview { padding: 8px; }
 ";
 
