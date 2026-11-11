@@ -48,6 +48,7 @@ Requires:       pam
 Requires(post): coreutils
 Requires(post): systemd
 Requires:       tessel-keyboard
+Requires:       tessel-wallpapers
 Recommends:     at-spi2-core
 Recommends:     orca
 

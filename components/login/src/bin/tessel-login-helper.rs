@@ -382,7 +382,7 @@ mod tests {
 
     /// Python: `json.dumps(asdict(Appearance(...)), indent=2) + "\n"` (CPython 3.14).
     const PY_CONFIG: &str = "{\n  \"picture\": \"/usr/share/backgrounds/caf\\u00e9 \\ud83d\\ude00.png\",\n  \"placement\": \"center\",\n  \"background_color\": \"#ABCdef\",\n  \"blur_strength\": 70,\n  \"transparency\": 20,\n  \"idle_seconds\": 60,\n  \"clock_24h\": true,\n  \"default_session\": \"labwc\"\n}\n";
-    const PY_DEFAULT: &str = "{\n  \"picture\": \"/usr/share/wallpapers/nobara-winds1.webp\",\n  \"placement\": \"fill\",\n  \"background_color\": \"#161820\",\n  \"blur_strength\": 50,\n  \"transparency\": 5,\n  \"idle_seconds\": 30,\n  \"clock_24h\": false,\n  \"default_session\": \"labwc\"\n}\n";
+    const PY_DEFAULT: &str = "{\n  \"picture\": \"/usr/share/wallpapers/tessel/slate-3840x2160.png\",\n  \"placement\": \"fill\",\n  \"background_color\": \"#161820\",\n  \"blur_strength\": 50,\n  \"transparency\": 5,\n  \"idle_seconds\": 30,\n  \"clock_24h\": false,\n  \"default_session\": \"labwc\"\n}\n";
 
     #[test]
     fn config_bytes_match_python_json_dump() {
@@ -523,7 +523,7 @@ mod tests {
         appearance.insert("idle_seconds".into(), 45.into());
         fixture.run(&serde_json::to_vec(&request(Value::Object(appearance))).unwrap()).unwrap();
         let written = std::fs::read_to_string(&fixture.config).unwrap();
-        assert_eq!(written, PY_DEFAULT.replace("/usr/share/wallpapers/nobara-winds1.webp", "").replace("30", "45"));
+        assert_eq!(written, PY_DEFAULT.replace("/usr/share/wallpapers/tessel/slate-3840x2160.png", "").replace("30", "45"));
         assert_eq!(std::fs::metadata(&fixture.config).unwrap().mode() & 0o777, 0o644);
         let directory = fixture.config.parent().unwrap();
         assert_eq!(std::fs::metadata(directory).unwrap().mode() & 0o777, 0o755 & !umask());

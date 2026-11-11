@@ -1648,7 +1648,7 @@ fn lock_tests(app: &gtk::Application) {
         assert!(wait(|| !c.busy.get() && !c.status.text().is_empty()));
         assert_eq!(c.status.text(), "Login screen settings saved.");
         assert_eq!(std::fs::read_to_string(&request).unwrap(),
-            "{\"expected\": {\"picture\": \"/usr/share/wallpapers/nobara-winds1.webp\", \"placement\": \"fill\", \"background_color\": \"#161820\", \"blur_strength\": 50, \"transparency\": 5, \"idle_seconds\": 30, \"clock_24h\": false, \"default_session\": \"labwc\"}, \"appearance\": {\"picture\": \"/usr/share/wallpapers/x.png\", \"placement\": \"fill\", \"background_color\": \"#161820\", \"blur_strength\": 70, \"transparency\": 5, \"idle_seconds\": 30, \"clock_24h\": true, \"default_session\": \"other\"}}");
+            "{\"expected\": {\"picture\": \"/usr/share/wallpapers/tessel/slate-3840x2160.png\", \"placement\": \"fill\", \"background_color\": \"#161820\", \"blur_strength\": 50, \"transparency\": 5, \"idle_seconds\": 30, \"clock_24h\": false, \"default_session\": \"labwc\"}, \"appearance\": {\"picture\": \"/usr/share/wallpapers/x.png\", \"placement\": \"fill\", \"background_color\": \"#161820\", \"blur_strength\": 70, \"transparency\": 5, \"idle_seconds\": 30, \"clock_24h\": true, \"default_session\": \"other\"}}");
         assert_eq!(std::fs::read_to_string(dir.join("args")).unwrap().trim(), "/usr/local/lib/tessel/tessel-login-helper");
         c.color.set_text("nope");
         c.apply.emit_clicked();

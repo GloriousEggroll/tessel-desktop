@@ -493,7 +493,10 @@ impl Wallpaper {
         }
         let path: Option<PathBuf> = match config.wallpaper_mode.as_str() {
             "desktop" => desktop_wallpaper(&imp.monitor.borrow()),
-            "picture" => (!config.picture.is_empty()).then(|| crate::expanduser(Path::new(&config.picture))),
+            // One of the Slate renders (the login screen's default) becomes
+            // the render made for this screen's shape, as on the desktop.
+            "picture" => (!config.picture.is_empty()).then(|| tessel_core::wallpaper::render_for_screen(
+                &crate::expanduser(Path::new(&config.picture)), Some((self.width(), self.height())))),
             "slideshow" => {
                 if crate::voice_state::monotonic() >= imp.next_rotation.get() {
                     let mut deck = imp.deck.borrow_mut();

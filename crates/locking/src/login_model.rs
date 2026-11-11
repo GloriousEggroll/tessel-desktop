@@ -28,7 +28,7 @@ pub struct Appearance {
 impl Default for Appearance {
     fn default() -> Self {
         Self {
-            picture: "/usr/share/wallpapers/nobara-winds1.webp".into(), placement: "fill".into(),
+            picture: tessel_core::wallpaper::LOGIN_PICTURE.into(), placement: "fill".into(),
             background_color: "#161820".into(), blur_strength: 50, transparency: 5, idle_seconds: 30, clock_24h: false,
             default_session: "labwc".into(),
         }
