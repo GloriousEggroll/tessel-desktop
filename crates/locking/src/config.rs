@@ -256,9 +256,15 @@ pub fn home_assistant_installed() -> bool {
 
 /// `desktop_wallpaper(monitor)`: the monitor's still-image wallpaper.
 pub fn desktop_wallpaper(monitor: &str) -> Option<PathBuf> {
-    let text = std::fs::read_to_string(tessel_core::paths::component_config_dir("shell").join("wallpapers.json")).ok()?;
+    let path = tessel_core::paths::component_config_dir("shell").join("wallpapers.json");
+    let text = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        // No wallpaper was ever chosen: every screen shows the default one.
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return tessel_core::wallpaper::default_wallpaper(None),
+        Err(_) => return None,
+    };
     let data: Value = serde_json::from_str(&text).ok()?;
-    let entry = data.as_object()?.get(monitor).cloned().unwrap_or(Value::Object(Map::new()));
+    let Some(entry) = data.as_object()?.get(monitor).cloned() else { return tessel_core::wallpaper::default_wallpaper(None) };
     let file = entry.as_object()?.get("file_path").and_then(Value::as_str).unwrap_or("").to_owned();
     let path = if let Some(rest) = file.strip_prefix('~') {
         if rest.is_empty() || rest.starts_with('/') { tessel_core::paths::home().join(rest.trim_start_matches('/')) } else { PathBuf::from(&file) }

@@ -73,3 +73,4 @@ the dock runs are programs too (`tessel-power-status`, `tessel-battery-status`, 
 | D-Bus activation | `~/.local/share/dbus-1/services/` | `/usr/local/share/dbus-1/services/` |
 | Translations | `~/.local/share/tessel/locale/<lang>.json` | `/usr/local/share/tessel/locale/` |
 | Logo | `~/.local/share/icons/hicolor/scalable/apps/tessel.svg` (+ `tessel-symbolic.svg`) | `/usr/local/share/icons/hicolor/…` |
+| Wallpaper | `~/.local/share/tessel/wallpapers/slate-*.png` (the default wallpaper is the dark `slate-<size>.png` nearest the screen's shape) | not installed system-wide by the installer; packages use `/usr/share/wallpapers/tessel/` |

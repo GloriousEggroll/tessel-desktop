@@ -2250,15 +2250,24 @@ impl DesktopView {
         wallpaper::apply_fit(&self.background, mode);
     }
 
-    /// `_load_saved_wallpaper`: paint this window's monitor from the config.
+    /// `_load_saved_wallpaper`: paint this window's monitor from the config,
+    /// or with the default wallpaper while nothing is chosen for it.
     pub fn load_saved_wallpaper(&self) {
-        if !config::config_file().exists() {
-            return;
-        }
-        let Ok(bytes) = std::fs::read(config::config_file()) else { return };
-        let Ok(serde_json::Value::Object(data)) = serde_json::from_slice::<serde_json::Value>(&bytes) else { return };
+        let data = match std::fs::read(config::config_file()).ok().map(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes)) {
+            Some(Ok(serde_json::Value::Object(data))) => data,
+            // A file that cannot be understood is left as it is, with nothing drawn.
+            Some(_) => return,
+            None => Default::default(),
+        };
         let conn = self.monitor.connector().map(|c| c.to_string()).filter(|c| !c.is_empty()).unwrap_or_else(|| format!("mon-{:p}", self.monitor.as_ptr()));
-        let Some(cfg) = data.get(&conn).filter(|c| tessel_core::pyjson::truthy(c)) else { return };
+        let Some(cfg) = data.get(&conn).filter(|c| tessel_core::pyjson::truthy(c)) else {
+            let size = self.monitor.geometry();
+            if let Some(picture) = tessel_core::wallpaper::default_wallpaper(Some((size.width(), size.height()))) {
+                let color = gdk::RGBA::parse(tessel_core::wallpaper::DEFAULT_COLOR).unwrap_or(gdk::RGBA::BLACK);
+                self.set_monitor_wallpaper(&self.monitor, picture.to_str(), Some(tessel_core::wallpaper::DEFAULT_MODE), &color);
+            }
+            return;
+        };
         let color = cfg.get("color").and_then(|c| c.as_str()).unwrap_or("black");
         let rgba = gdk::RGBA::parse(color).unwrap_or(gdk::RGBA::new(0.0, 0.0, 0.0, 0.0));
         let file = cfg.get("file_path").and_then(|f| f.as_str());

@@ -1,0 +1,4 @@
+# The wallpaper's renders and Blender files are large. They are left out of the
+# source archive every package is built from; tessel-wallpapers takes the
+# pictures as sources of their own (distribution/fedora/README.md, "Sources").
+branding/wallpaper export-ignore

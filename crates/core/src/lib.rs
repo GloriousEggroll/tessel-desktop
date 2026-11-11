@@ -22,6 +22,7 @@ pub mod shell;
 pub mod single_instance;
 pub mod timer;
 pub mod values;
+pub mod wallpaper;
 
 pub use i18n::{translate, translate_with};
 pub use pyfmt::Arg;

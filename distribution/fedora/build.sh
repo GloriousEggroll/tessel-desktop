@@ -35,13 +35,21 @@ if [ -n "${TREE:-}" ]; then
     defines=(--define "commit $tree" --define "vendorlock $(sha256sum "$repo/Cargo.lock" | cut -c1-12)")
 fi
 
-# Source0 and Source1 of a spec, as rpm sees them with the overrides above.
-spec_sources() { rpmspec -P "${defines[@]}" "$1" | sed -n 's/^Source[01]:[[:space:]]*//p'; }
+# The sources of a spec, as rpm sees them with the overrides above.
+spec_sources() { rpmspec -P "${defines[@]}" "$1" | sed -n 's/^Source[0-9]*:[[:space:]]*//p'; }
 
 make_sources() {
-    local url commit lock work
+    local url commit lock work path
     for url in $(spec_sources "$1"); do
         case $url in
+        */raw/*)
+            # One file of the repository at a commit (the wallpaper's pictures).
+            # Its name does not say which commit, so it is always made again.
+            path=${url#*/raw/}; commit=${path%%/*}; path=${path#*/}
+            git -C "$repo" cat-file -e "$commit:$path" 2>/dev/null ||
+                { echo "$path at $commit (from $1) is not in this repository" >&2; exit 1; }
+            git -C "$repo" show "$commit:$path" > "$sources/${url##*/}"
+            ;;
         */archive/*)
             commit=${url%/*}; commit=${commit##*/}
             [ -f "$sources/${url##*/}" ] && continue

@@ -336,6 +336,8 @@ pub struct PaletteReader {
     samples: HashMap<(PathBuf, FileStamp), (Option<Rgb>, Option<String>)>,
     frost_samples: HashMap<FrostKey, (Option<String>, Option<String>)>,
     pub monitor_sizes: BTreeMap<String, (i64, i64)>,
+    /// Where the default wallpaper is installed (`tessel_core::wallpaper`).
+    pub default_dir: PathBuf,
 }
 
 /// `Path(value).expanduser()` for `~` and `~/…` (`$HOME`).
@@ -359,6 +361,7 @@ impl PaletteReader {
             config_path, sample: sample.unwrap_or_else(|| Box::new(move |path| sampler.media_color(path))),
             fingerprint: None, result: PaletteResult::default(), frosted_enabled: frosted, frost_cache,
             samples: HashMap::new(), frost_samples: HashMap::new(), monitor_sizes: BTreeMap::new(),
+            default_dir: tessel_core::wallpaper::default_dir(),
         }
     }
 
@@ -404,14 +407,25 @@ impl WallpaperReader for PaletteReader {
     }
 
     fn read(&mut self, force: bool) -> PaletteResult {
-        let (raw, config) = match self.read_config() {
+        // A screen nothing was chosen for shows the default wallpaper.
+        let defaults: Vec<(String, PathBuf)> = self.monitor_sizes.iter().filter_map(|(name, (width, height))| {
+            let size = (i32::try_from(*width).ok()?, i32::try_from(*height).ok()?);
+            tessel_core::wallpaper::default_wallpaper_in(&self.default_dir, Some(size)).map(|path| (name.clone(), path))
+        }).collect();
+        let (raw, mut config) = match self.read_config() {
             Ok(value) => value,
+            Err(_) if !defaults.is_empty() && !self.config_path.exists() => (Vec::new(), serde_json::Map::new()),
             Err(error) => {
                 self.fingerprint = None;
                 self.result = PaletteResult::error(format!("Wallpaper settings unavailable: {error}"));
                 return self.result.clone();
             }
         };
+        for (name, path) in defaults {
+            config.entry(name).or_insert_with(|| serde_json::json!({
+                "file_path": path.to_string_lossy(), "mode": tessel_core::wallpaper::DEFAULT_MODE, "color": tessel_core::wallpaper::DEFAULT_COLOR,
+            }));
+        }
         let mut entries: Vec<(String, &serde_json::Map<String, Value>, Option<PathBuf>)> = Vec::new();
         for (name, entry) in &config {
             let Some(entry) = entry.as_object().filter(|_| !name.starts_with('_')) else { continue };
@@ -1258,6 +1272,42 @@ mod tests {
         write_config(&config, &choices);
         assert_ne!(reader.read(false).frosts["DP-1"], changed.frosts["DP-1"]);
         assert_eq!(calls.lock().unwrap().len(), 4);
+    }
+
+    #[test]
+    fn a_screen_nothing_was_chosen_for_takes_the_default_wallpaper() {
+        let root = root("default");
+        let installed = root.join("wallpapers");
+        std::fs::create_dir_all(&installed).unwrap();
+        let slate = image(&installed, "slate-3840x2160.png", 0x202860FF);
+        let chosen = image(&root, "red.png", 0xC05050FF);
+        let config = root.join("wallpapers.json");
+        let sizes: BTreeMap<String, (i64, i64)> = [("DP-1", (1920, 1080)), ("DP-2", (1920, 1080)), ("DP-3", (1920, 1080))]
+            .into_iter().map(|(name, size)| (name.to_owned(), size)).collect();
+
+        // No settings file at all: every screen shows it.
+        let mut new_user = reader(&config);
+        new_user.default_dir = installed.clone();
+        new_user.set_monitor_sizes(&sizes);
+        let result = new_user.read(false);
+        assert_eq!(result.error, None);
+        assert_eq!(result.sources["DP-1"], Some(slate.clone()));
+        assert_eq!(result.colors["DP-3"], [32, 40, 96]);
+
+        // A choice is kept, also the choice of a plain color.
+        write_config(&config, &json!({"DP-1": {"file_path": chosen, "mode": "Fill"}, "DP-2": {"file_path": null, "mode": "Color Only", "color": "#204060"}}));
+        let result = new_user.read(false);
+        assert_eq!(result.sources["DP-1"], Some(chosen));
+        assert_eq!(result.sources["DP-2"], None);
+        assert_eq!(result.colors["DP-2"], [32, 64, 96]);
+        assert_eq!(result.sources["DP-3"], Some(slate));
+
+        // Not installed: as before.
+        std::fs::remove_file(&config).unwrap();
+        let mut bare = reader(&config);
+        bare.default_dir = root.join("nowhere");
+        bare.set_monitor_sizes(&sizes);
+        assert!(bare.read(false).error.unwrap().starts_with("Wallpaper settings unavailable"));
     }
 
     #[test]

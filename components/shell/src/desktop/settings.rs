@@ -178,7 +178,12 @@ pub fn show_wallpaper_manager(view: &Rc<DesktopView>) {
         let grid = gtk::Grid::new();
         grid.set_row_spacing(10);
         grid.set_column_spacing(20);
-        let file_path = previous.get("file_path").and_then(|v| v.as_str()).map(str::to_owned);
+        let mut file_path = previous.get("file_path").and_then(|v| v.as_str()).map(str::to_owned);
+        if !saved.contains_key(&conn) {
+            // Nothing chosen for this screen yet: it shows the default wallpaper.
+            let size = monitor.geometry();
+            file_path = tessel_core::wallpaper::default_wallpaper(Some((size.width(), size.height()))).map(|p| p.to_string_lossy().into_owned());
+        }
         let chooser = gtk::Button::new();
         chooser.set_hexpand(true);
         update_media_button(&chooser, file_path.as_deref());

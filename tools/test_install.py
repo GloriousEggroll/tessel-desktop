@@ -74,6 +74,7 @@ class UserInstall(unittest.TestCase):
         self.assertTrue((self.home / ".local/share/applications/helium.desktop").exists())
         self.assertTrue((self.home / ".local/share/tessel/locale/de.json").is_file())
         self.assertTrue((self.home / ".local/share/icons/hicolor/scalable/apps/tessel.svg").is_file())
+        self.assertTrue((self.home / ".local/share/tessel/wallpapers/slate-3840x2160.png").is_file())
         calls = self.log.read_text().splitlines()
         self.assertEqual(calls, [f"tessel-configure-session --apply HOME={self.home}",
                                  f"tessel-xdg-autostart --apply HOME={self.home}"])

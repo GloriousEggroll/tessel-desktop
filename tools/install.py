@@ -8,7 +8,7 @@
   pkexec /usr/bin/python3 -I install.py --system --rollback
 
 User scope (no root): programs into ~/.local/lib/tessel with ~/.local/bin links, units,
-desktop files, translations, the logo, the Secret Service activation file, the labwc
+desktop files, translations, the logo, the wallpaper, the Secret Service activation file, the labwc
 session files (tessel-configure-session, tessel-xdg-autostart), and the old desktop-suite
 desktop files moved out of the menu. Nothing is started, stopped, enabled or restarted:
 the new session starts at the next login, where tessel-migrate moves old settings over.
@@ -34,7 +34,7 @@ REPO = Path(__file__).resolve().parent.parent
 SKIP_PACKAGES = {"home-assistant-screen"}          # Kasumi: its own device and installer
 APP_DIRS = ("data/applications",)                  # plus components/*/data/*.desktop
 
-USER_PARTS = ("programs", "locale", "icons", "units", "applications", "dbus", "session", "retire-old")
+USER_PARTS = ("programs", "locale", "icons", "wallpapers", "units", "applications", "dbus", "session", "retire-old")
 SYSTEM_PARTS = ("keyring", "lock-pam", "session-entry", "retire-old")
 EXPLICIT_SYSTEM_PARTS = ("login",)    # only with --only login (the login screen; takes effect at the next boot)
 # Native helpers built by build.rs into the build output (not [[bin]] targets).
@@ -211,6 +211,10 @@ def user_plan(home, parts, binaries, target_dir):
         icons = home / ".local/share/icons/hicolor"
         plan.write(icons / "scalable/apps/tessel.svg", (REPO / "branding/tessel-logo.svg").read_bytes())
         plan.write(icons / "symbolic/apps/tessel-symbolic.svg", (REPO / "branding/tessel-symbolic.svg").read_bytes())
+    if "wallpapers" in parts:
+        # Where tessel_core::wallpaper looks for the default wallpaper of a ~/.local install.
+        for picture in sorted((REPO / "branding/wallpaper/renders").glob("slate-*.png")):
+            plan.write(home / ".local/share/tessel/wallpapers" / picture.name, picture.read_bytes())
     if "units" in parts:
         for unit in sorted((REPO / "data/units").iterdir()):
             plan.write(home / ".config/systemd/user" / unit.name, unit.read_bytes())

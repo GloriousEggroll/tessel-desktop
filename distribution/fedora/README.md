@@ -5,6 +5,7 @@ One folder per packaged part, each with its `.spec`:
 - a folder per component in `components/` that ships programs (`dock/` makes `tessel-dock`);
 - `wayland-helpers/`: the programs of `crates/wayland`;
 - `common/`: translations, the logo, the program directory and `packaging/defaults`;
+- `tessel-wallpapers/`: the Slate wallpaper of `branding/wallpaper`;
 - `tessel-meta/`: requires all of the above, plus labwc, Ptyxis and xdg-desktop-portal-wlr.
 
 `components/theme` is a library with no programs. `components/home-assistant-screen` (Kasumi)
@@ -31,7 +32,11 @@ Specs fetch their sources from https://github.com/GloriousEggroll/tessel-desktop
   no network. GitHub does not make this file: upload the one `build.sh` leaves in
   `build-fedora/sources/` to a release with the tag `vendor-<lock>`. It only changes with `Cargo.lock`.
 
-`build.sh` makes both files from the local repository under those names, so the commit must be
+`branding/wallpaper` is left out of that archive (`.gitattributes`), because its pictures are large
+and only one package needs them. `tessel-wallpapers` names each picture as a source of its own,
+`raw/<commit>/branding/wallpaper/renders/<file>`: the file at the spec's `%commit`.
+
+`build.sh` makes all of these from the local repository under those names, so the commit must be
 in the local repository; push it before submitting the SRPMs. `TREE=1 build.sh` builds the working
 tree instead, for testing only.
 

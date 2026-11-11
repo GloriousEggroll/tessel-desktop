@@ -795,7 +795,12 @@ impl ThemeWallpaperPage {
             }
             card.append(&grid);
             self.cards.append(&card);
-            let path = previous.get("file_path").and_then(Value::as_str).map(str::to_owned);
+            let mut path = previous.get("file_path").and_then(Value::as_str).map(str::to_owned);
+            if !saved.contains_key(&connector) {
+                // Nothing chosen for this screen yet: it shows the default wallpaper.
+                let size = monitor.geometry();
+                path = tessel_core::wallpaper::default_wallpaper(Some((size.width(), size.height()))).map(|p| p.to_string_lossy().into_owned());
+            }
             let row = Rc::new(WallpaperRow { chooser: chooser.clone(), mode: modes.clone(), color: colors.clone(),
                                              path: RefCell::new(path), dirty: Cell::new(false) });
             self.rows.borrow_mut().insert(connector.clone(), row);
