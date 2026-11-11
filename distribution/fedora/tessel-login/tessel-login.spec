@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?commit:%global commit 67b00bda415ac7342f039404d192bedd0e511090}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-login
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tessel login screen (greetd greeter)
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -129,6 +129,9 @@ fi
 %{_unitdir}/tessel-login.service
 
 %changelog
+* Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
+- Send the compositor's output to the journal (identifier tessel-session)
+
 * Sun Nov 08 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - Use /etc/greetd/tessel-config.toml, separate from greetd's own configuration
 - Enable the login screen on first install, unless another display manager is in use
