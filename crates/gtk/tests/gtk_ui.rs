@@ -8,7 +8,7 @@ use gtk4_layer_shell::{Edge, LayerShell};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use tessel_gtk::{app_menu, gtk, osd, palette, placement, popup, theme, utils};
+use tessel_gtk::{app_menu, button_gap, gtk, osd, palette, placement, popup, theme, utils};
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -332,6 +332,59 @@ fn window_buttons_follow_the_layout_while_open(cache: &std::path::Path) {
     println!("ok window buttons follow the layout");
 }
 
+/// The window buttons are centered in the header bar, whatever its height, so
+/// their distance from the side has to follow: in a short header bar and a
+/// tall one, with plain buttons on the right and colored ones on the left.
+fn window_buttons_are_as_far_from_the_side_as_from_the_top(cache: &std::path::Path) {
+    let path = cache.join("tessel/dock/palette-gap.json");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let display = gdk::Display::default().unwrap();
+    let monitor = display.monitors().item(0).and_downcast::<gdk::Monitor>().unwrap();
+    let g = monitor.geometry();
+    for (colored, layout, tall) in [(false, ":minimize,maximize,close", false), (false, ":minimize,maximize,close", true),
+                                    (true, "close,minimize,maximize:", false), (true, "close,minimize,maximize:", true)] {
+        let palette = serde_json::json!({"version": 1, "is_dark": true, "colored_window_buttons": colored, "monitors": [
+            {"name": monitor.connector().map(|c| c.to_string()).unwrap_or_default(), "geometry": [g.x(), g.y(), g.width(), g.height()],
+             "background": [30, 15, 50], "foreground": [238, 238, 238], "accent": [105, 167, 255]}]});
+        std::fs::write(&path, palette.to_string()).unwrap();
+        // What the user's gtk.css holds for every GTK4 program.
+        let user = gtk::CssProvider::new();
+        user.load_from_string(&theme::window_controls_css("window", [238, 238, 238], colored));
+        gtk::style_context_add_provider_for_display(&display, &user, gtk::STYLE_PROVIDER_PRIORITY_USER);
+        let client = theme::PaletteClient::new(Some(path.clone()));
+        let window = gtk::Window::new();
+        window.set_default_size(640, 320);
+        let header = utils::headerbar("Gap");
+        header.set_decoration_layout(Some(layout));
+        if tall {
+            let tool = gtk::Button::with_label("Tool");
+            tool.set_size_request(-1, 44);
+            header.pack_start(&tool);
+        }
+        window.set_titlebar(Some(&header));
+        let binding = theme::attach(&window, Some(&client));
+        window.present();
+        settle(0.5);
+        client.refresh();
+        settle(0.4);
+        let sides = button_gap::measure(header.upcast_ref());
+        let side = sides[if colored { 0 } else { 1 }].unwrap_or_else(|| panic!("no window buttons measured ({layout}, tall: {tall}): {sides:?}"));
+        assert!(sides[if colored { 1 } else { 0 }].is_none(), "buttons on one side only: {sides:?}");
+        assert!((side.top - side.gap).abs() < 1.0, "side gap {} is not the top gap {} ({layout}, tall: {tall})", side.gap, side.top);
+        assert!(side.top >= 3.0, "the buttons are not against the top: {side:?}");
+        if tall {
+            assert!(header.height() >= 44, "the tool makes the header bar taller: {}", header.height());
+        }
+        let (left, right) = binding.button_gap().padding().expect("a padding was set");
+        assert_eq!(left, right, "a side without buttons mirrors the other");
+        binding.close();
+        window.destroy();
+        gtk::style_context_remove_provider_for_display(&display, &user);
+        settle(0.1);
+    }
+    println!("ok window buttons are as far from the side as from the top");
+}
+
 fn osd_checks() {
     let dismissed = Rc::new(Cell::new(false));
     let flag = dismissed.clone();
@@ -368,6 +421,7 @@ fn main() {
     app_menu_checks(&app);
     live_theme(&cache);
     window_buttons_follow_the_layout_while_open(&cache);
+    window_buttons_are_as_far_from_the_side_as_from_the_top(&cache);
     osd_checks();
     println!("gtk_ui: all checks passed");
 }

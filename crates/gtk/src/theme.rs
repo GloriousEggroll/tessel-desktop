@@ -202,6 +202,7 @@ fn light_css(window: &str, foreground: Rgb) -> String {
     let [r, g, b] = foreground;
     let mut css = vec![
         format!("{window} windowcontrols {{ border-spacing: 8px; }}"),
+        side_gap_css(window, 7),
         format!("{button}, {button}:hover, {button}:active, {button}:checked, {button}:backdrop \
                  {{ min-width: 16px; min-height: 16px; padding: 0 2px; margin: 0; border: none; box-shadow: none; \
                  background: none; outline: none; }}"),
@@ -238,6 +239,17 @@ pub fn window_frame_css(window: &str) -> String {
         .join("\n")
 }
 
+/// The window buttons' distance from the side of the window, for a header bar
+/// of GTK's own size (46 px tall, 6 px of side padding), which is what other
+/// GTK4 programs have: the margin that makes it the distance from the top.
+/// GTK's own theme pulls the buttons outward instead, against the edge once
+/// they have no padding. Tessel's windows have header bars of other heights
+/// and are measured one by one ([`crate::button_gap`]), above these rules.
+fn side_gap_css(window: &str, margin: i32) -> String {
+    format!("{window} headerbar windowcontrols.start {{ margin-left: {margin}px; }}\n\
+             {window} headerbar windowcontrols.end {{ margin-right: {margin}px; }}")
+}
+
 /// Title buttons for every GTK4 `windowcontrols` under `window`.
 ///
 /// The glyph is drawn on the button's image, filtering out the toolkit's own,
@@ -252,6 +264,7 @@ pub fn window_controls_css(window: &str, foreground: Rgb, colored: bool) -> Stri
     let [r, g, b] = foreground;
     let mut css = vec![
         format!("{window} windowcontrols {{ border-spacing: 6px; }}"),
+        side_gap_css(window, 5),
         format!("{button}, {button}:hover, {button}:active, {button}:checked, {button}:backdrop \
                  {{ min-width: 24px; min-height: 24px; padding: 0; margin: 0; border: none; box-shadow: none; \
                  background: none; outline: none; }}"),
@@ -611,6 +624,7 @@ struct ThemeInner {
     monitor_name: RefCell<Option<String>>,
     pending: RefCell<Option<glib::SourceId>>,
     blur: BlurBinding,
+    button_gap: crate::button_gap::ButtonGap,
     signals: RefCell<Vec<glib::SignalHandlerId>>,
 }
 
@@ -625,7 +639,8 @@ impl WindowTheme {
             window: window.downgrade(), client: client.clone(), scope: scope.clone(), provider: RefCell::new(None),
             corner_provider: RefCell::new(None), controls_provider: RefCell::new(None), display: RefCell::new(None), signature: RefCell::new(None),
             closed: Cell::new(false), monitor_name: RefCell::new(None), pending: RefCell::new(None),
-            blur: blur::attach(window, None, true, true), signals: RefCell::new(Vec::new()),
+            blur: blur::attach(window, None, true, true), button_gap: crate::button_gap::ButtonGap::new(window, &scope),
+            signals: RefCell::new(Vec::new()),
         }));
         window.add_css_class(&scope);
         let mut signals = Vec::new();
@@ -669,6 +684,8 @@ impl WindowTheme {
     pub fn provider(&self) -> Option<gtk::CssProvider> { self.0.provider.borrow().clone() }
     pub fn is_closed(&self) -> bool { self.0.closed.get() }
     pub fn blur(&self) -> &BlurBinding { &self.0.blur }
+    /// Keeps the window buttons as far from the side as from the top.
+    pub fn button_gap(&self) -> &crate::button_gap::ButtonGap { &self.0.button_gap }
 
     fn event(&self) {
         self.0.client.refresh();
@@ -781,6 +798,7 @@ impl WindowTheme {
             return;
         }
         self.0.blur.close();
+        self.0.button_gap.close();
         if let Some(id) = self.0.pending.take() {
             id.remove();
         }

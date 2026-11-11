@@ -17,7 +17,10 @@ pub const HOVER: Rgb = [238, 238, 238];
 pub const INACTIVE: Rgb = [112, 114, 118];
 pub const BUTTONS: [(&str, &str); 4] = [("iconify", "minimize"), ("max", "maximize"), ("max_toggled", "restore"), ("close", "close")];
 pub const THEMERC: [(&str, &str); 13] = [
-    ("window.titlebar.padding.width", "6"),
+    // The buttons sit as far from the side of the window as from its top:
+    // labwc centers them in a title bar of button height + twice the padding
+    // height, and starts them at the padding width from the side.
+    ("window.titlebar.padding.width", "4"),
     ("window.titlebar.padding.height", "4"),
     ("window.button.width", "26"),
     ("window.button.height", "26"),
@@ -222,6 +225,13 @@ mod tests {
 
     fn luminance(c: Rgb) -> f64 {
         c[0] as f64 * 0.2126 + c[1] as f64 * 0.7152 + c[2] as f64 * 0.0722
+    }
+
+    #[test]
+    fn window_buttons_are_as_far_from_the_side_as_from_the_top() {
+        let value = |key: &str| THEMERC.iter().find(|(name, _)| *name == key).unwrap().1;
+        assert_eq!(value("window.titlebar.padding.width"), value("window.titlebar.padding.height"));
+        assert_eq!(value("window.button.width"), value("window.button.height"));
     }
 
     #[test]

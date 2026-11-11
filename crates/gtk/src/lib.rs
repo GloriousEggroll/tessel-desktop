@@ -6,6 +6,7 @@ pub use gtk4_layer_shell as layer_shell;
 
 pub mod app_menu;
 pub mod blur;
+pub mod button_gap;
 pub mod osd;
 pub mod palette;
 pub mod placement;
