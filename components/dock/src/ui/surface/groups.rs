@@ -46,21 +46,34 @@ pub fn custom_limits(available: i32, requests: [i32; 3]) -> [i32; 3] {
     [side_limit, center_limit, side_limit]
 }
 
-/// The menu icon file (`~/.local/share/tessel/dock/icons/tessel-dock-app-menu-symbolic.svg`;
-/// else an embedded copy is extracted to `$XDG_RUNTIME_DIR/tessel/dock`).
-pub fn menu_icon_path() -> std::path::PathBuf {
-    const NAME: &str = "tessel-dock-app-menu-symbolic.svg";
-    let installed = tessel_core::paths::suite_data_dir().join("dock/icons").join(NAME);
+/// The application menu icon (the Nobara mark) for a dark bar and for a light
+/// bar. The files keep their own colors: their names do not end in `-symbolic`,
+/// so GTK does not recolor them to the bar's text color.
+const MENU_ICONS: [(&str, &[u8]); 2] = [
+    ("tessel-dock-app-menu.svg", include_bytes!("../../app/tessel-dock-app-menu.svg")),
+    ("tessel-dock-app-menu-on-light.svg", include_bytes!("../../app/tessel-dock-app-menu-on-light.svg")),
+];
+
+/// The menu icon file for a dark or a light bar: an installed file of the same
+/// name in `<data_dir>/dock/icons` wins, else the embedded copy is extracted
+/// to `<runtime_dir>/tessel/dock`.
+pub fn menu_icon_file(data_dir: &std::path::Path, runtime_dir: &std::path::Path, dark_bar: bool) -> std::path::PathBuf {
+    let (name, data) = MENU_ICONS[usize::from(!dark_bar)];
+    let installed = data_dir.join("dock/icons").join(name);
     if installed.is_file() {
         return installed;
     }
-    let extracted = tessel_core::paths::runtime_dir().join("tessel/dock").join(NAME);
-    let data: &[u8] = include_bytes!("../../app/tessel-dock-app-menu-symbolic.svg");
+    let extracted = runtime_dir.join("tessel/dock").join(name);
     if std::fs::read(&extracted).ok().as_deref() != Some(data) {
         let _ = std::fs::create_dir_all(extracted.parent().expect("parent"));
         let _ = std::fs::write(&extracted, data);
     }
     extracted
+}
+
+/// `menu_icon_file` in the suite data dir (`~/.local/share/tessel`) and `$XDG_RUNTIME_DIR`.
+pub fn menu_icon_path(dark_bar: bool) -> std::path::PathBuf {
+    menu_icon_file(&tessel_core::paths::suite_data_dir(), &tessel_core::paths::runtime_dir(), dark_bar)
 }
 
 impl DockSurface {
@@ -80,6 +93,17 @@ impl DockSurface {
         button
     }
 
+    /// Show the menu icon that suits the bar's current background.
+    pub(super) fn update_menu_icon(&self) {
+        let Some(groups) = self.widgets.get() else { return };
+        let Some(image) = groups.menu_button.child().and_downcast::<gtk::Image>() else { return };
+        let path = menu_icon_path(self.bar_is_dark());
+        let shown = image.gicon().and_downcast::<gio::FileIcon>().and_then(|icon| icon.file().path());
+        if shown.as_deref() != Some(path.as_path()) {
+            image.set_from_gicon(&gio::FileIcon::new(&gio::File::for_path(&path)));
+        }
+    }
+
     /// `_build_groups()`: every section is created once.
     pub(super) fn build_groups(self: &Rc<Self>) {
         self.building_groups.set(true);
@@ -92,7 +116,7 @@ impl DockSurface {
             self.core.replace(core);
         }
         let core = self.core();
-        let menu_icon: gio::Icon = gio::FileIcon::new(&gio::File::for_path(menu_icon_path())).upcast();
+        let menu_icon: gio::Icon = gio::FileIcon::new(&gio::File::for_path(menu_icon_path(self.bar_is_dark()))).upcast();
         let weak = self.this.clone();
         let menu_button = self.action_button(&menu_icon, &tr!("Applications"), move || {
             if let Some(dock) = weak.upgrade() {
@@ -738,5 +762,48 @@ mod tests {
         assert_eq!(custom_limits(1000, [200, 300, 100]), [347, 594, 347]);
         // Tiny space never goes below 1.
         assert_eq!(custom_limits(3, [50, 50, 50]), [1, 1, 1]);
+    }
+
+    fn scratch(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("tessel-dock-menu-icon-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn menu_icon_follows_the_bar() {
+        let root = scratch("embedded");
+        let (data, runtime) = (root.join("data"), root.join("rt"));
+        let dark = menu_icon_file(&data, &runtime, true);
+        let light = menu_icon_file(&data, &runtime, false);
+        assert_eq!(dark, runtime.join("tessel/dock/tessel-dock-app-menu.svg"));
+        assert_eq!(light, runtime.join("tessel/dock/tessel-dock-app-menu-on-light.svg"));
+        // Full color, not symbolic: tanzanite with a zircon eye, darker on a light bar.
+        let dark = std::fs::read_to_string(dark).unwrap();
+        let light = std::fs::read_to_string(light).unwrap();
+        assert!(dark.contains("#6876f2") && dark.contains("#5cc6f2"));
+        assert!(light.contains("#2e37ad") && light.contains("#128cc0"));
+        // A changed extracted copy is written again.
+        std::fs::write(runtime.join("tessel/dock/tessel-dock-app-menu.svg"), "stale").unwrap();
+        let again = menu_icon_file(&data, &runtime, true);
+        assert_eq!(std::fs::read_to_string(again).unwrap(), dark);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn installed_menu_icon_wins() {
+        let root = scratch("installed");
+        let (data, runtime) = (root.join("data"), root.join("rt"));
+        let icons = data.join("dock/icons");
+        std::fs::create_dir_all(&icons).unwrap();
+        std::fs::write(icons.join("tessel-dock-app-menu-on-light.svg"), "<svg/>").unwrap();
+        // The old symbolic name is not honored any more.
+        std::fs::write(icons.join("tessel-dock-app-menu-symbolic.svg"), "<svg/>").unwrap();
+        assert_eq!(menu_icon_file(&data, &runtime, false), icons.join("tessel-dock-app-menu-on-light.svg"));
+        assert_eq!(menu_icon_file(&data, &runtime, true), runtime.join("tessel/dock/tessel-dock-app-menu.svg"));
+        std::fs::write(icons.join("tessel-dock-app-menu.svg"), "<svg/>").unwrap();
+        assert_eq!(menu_icon_file(&data, &runtime, true), icons.join("tessel-dock-app-menu.svg"));
+        let _ = std::fs::remove_dir_all(root);
     }
 }

@@ -749,6 +749,41 @@ fn content_lines(region: &str, horizontal: bool) -> Result<(usize, usize, usize)
     Ok((hits.len(), hits.first().copied().unwrap_or(0), hits.last().copied().unwrap_or(0)))
 }
 
+/// Pixels in `region` within 12 of `color` on every channel.
+fn color_count(region: &str, color: [u8; 3]) -> Result<usize, String> {
+    let data = frame(region);
+    let (_, _, pixels) = ppm(&data).ok_or_else(|| format!("no frame for {region}"))?;
+    Ok(pixels.chunks(3).filter(|p| p.iter().zip(color).all(|(a, b)| a.abs_diff(b) <= 12)).count())
+}
+
+/// The application menu button shows the Nobara mark in its own colors, not
+/// recolored to the bar's text: tanzanite with a zircon eye on a dark bar,
+/// the darker pair on a light bar, switched while the dock runs.
+fn menu_icon_follows_a_dark_and_a_light_bar() -> Result<(), String> {
+    let dock = Dock::start("menu-icon", serde_json::json!({
+        "mode": "bar", "edge": "top", "bar_float_mode": false, "bar_islands": false,
+        "match_wallpaper": false, "background_color": "#202020", "transparency_enabled": false, "frosted": false,
+        "group_layouts": {"bar": {"start": ["app_menu"], "center": ["clock"], "end": ["session"]}}}))?;
+    let region = "0,0 160x48";
+    let (dark, dark_eye, light, light_eye) = ([0x68, 0x76, 0xf2], [0x5c, 0xc6, 0xf2], [0x2e, 0x37, 0xad], [0x12, 0x8c, 0xc0]);
+    ensure!(wait_for(5.0, || color_count(region, dark).unwrap_or(0) >= 40), "no tanzanite mark on the dark bar: {}",
+            color_count(region, dark)?);
+    ensure!(color_count(region, dark_eye)? >= 4, "no zircon eye on the dark bar");
+    ensure!(color_count(region, light)? == 0, "light-bar mark on the dark bar");
+    let request = serde_json::json!({"changes": {"background_color": "#f0f0f0"}, "expected": {"background_color": "#202020"}}).to_string();
+    settings_call("Apply", Some(&(request,).to_variant()))?;
+    ensure!(wait_for(5.0, || color_count(region, light).unwrap_or(0) >= 40), "the mark did not follow the light bar: {}",
+            color_count(region, light)?);
+    ensure!(color_count(region, light_eye)? >= 4, "no zircon eye on the light bar");
+    ensure!(color_count(region, dark)? == 0, "dark-bar mark still shown on the light bar");
+    let request = serde_json::json!({"changes": {"background_color": "#202020"}, "expected": {"background_color": "#f0f0f0"}}).to_string();
+    settings_call("Apply", Some(&(request,).to_variant()))?;
+    ensure!(wait_for(5.0, || color_count(region, dark).unwrap_or(0) >= 40 && color_count(region, light).unwrap_or(1) == 0),
+            "the mark did not switch back to the dark bar");
+    dock.stop()?;
+    Ok(())
+}
+
 /// The real-config regression (center section empty while start/end render):
 /// every custom `group_layouts` path must map its center groups with a real
 /// size at the monitor midpoint: bar on horizontal and vertical edges, dock
@@ -927,6 +962,7 @@ fn main() {
         ("custom_layout_center_survives_auto_hide", custom_layout_center_survives_auto_hide),
         ("fullscreen_window_covers_the_dock", fullscreen_window_covers_the_dock),
         ("menu_churn_does_not_grow_memory", menu_churn_does_not_grow_memory),
+        ("menu_icon_follows_a_dark_and_a_light_bar", menu_icon_follows_a_dark_and_a_light_bar),
     ];
     let mut failed = 0;
     for (name, test) in tests {

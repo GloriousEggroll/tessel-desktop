@@ -7,7 +7,7 @@ use std::cell::RefCell;
 
 use super::DockSurface;
 use crate::appearance::style::{dock_css, DockCssRequest};
-use tessel_gtk::palette::Rgb;
+use tessel_gtk::palette::{self, Rgb};
 
 /// Arguments of `set_background(...)`. `None` = Python's "argument omitted"
 /// (keep the previous value; the first call falls back to the config).
@@ -51,6 +51,14 @@ pub(super) struct Styles {
     pub background_signature: RefCell<Option<String>>,
     pub popup: RefCell<Option<gtk::CssProvider>>,
     pub popup_signature: RefCell<Option<(String, String)>>,
+}
+
+/// Whether a bar has a dark background: a manual `#RRGGBB` color decides by its
+/// luminance, as `palette::surface_palette` does for the bar's text color;
+/// otherwise the dark or light style does.
+pub fn bar_is_dark(is_dark: bool, background_color: Option<&str>) -> bool {
+    background_color.and_then(|color| palette::parse_hex(color))
+        .map_or(is_dark, |color| palette::relative_luminance(color) < 0.179)
 }
 
 impl Styles {
@@ -129,6 +137,14 @@ impl DockSurface {
         }).sum()
     }
 
+    /// Whether the bar is dark right now; before the first background, the
+    /// dark style the dock also assumes without an appearance controller.
+    pub(crate) fn bar_is_dark(&self) -> bool {
+        let Some((is_dark, ..)) = *self.styles.options.borrow() else { return true };
+        let color = self.styles.material.borrow().background_color.clone().flatten();
+        bar_is_dark(is_dark, color.as_deref())
+    }
+
     /// Re-apply the stored background (maximize/float changes).
     pub(crate) fn restyle(&self) {
         let options = *self.styles.options.borrow();
@@ -167,6 +183,7 @@ impl DockSurface {
         }
         let requested = request.rounded_corners.unwrap_or_else(|| self.config.effective_rounded_corners());
         self.styles.options.replace(Some((request.is_dark, request.transparency, request.wallpaper, requested)));
+        self.update_menu_icon();
         let rounded = self.effective_rounding(requested);
         let m = self.material();
         let islands = self.islands_active();
@@ -235,5 +252,21 @@ impl DockSurface {
             provider.load_from_string(&format!("{}{}", css.popup, css.menu));
         }
         self.styles.popup_signature.replace(Some(popup));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bar_darkness_follows_style_and_manual_color() {
+        assert!(bar_is_dark(true, None));
+        assert!(!bar_is_dark(false, None));
+        // A manual color wins over the style, either way round.
+        assert!(!bar_is_dark(true, Some("#f0f0f0")));
+        assert!(bar_is_dark(false, Some("#1E1E2E")));
+        // An unreadable color leaves the style in charge.
+        assert!(!bar_is_dark(false, Some("navy")));
     }
 }

@@ -94,8 +94,10 @@ LOW-priority idle chunks after 200 ms. RSS per 10 menus: before 162/179/186/194/
   in a real compositor. Focused-title clicking, trash empty dialog, drag & drop and settings window
   through the dock are not GUI-tested here.
 - Layer-shell unsupported → prints the message and exits 1 (Python raised in `do_startup`).
-- The menu icon is the installed `~/.local/share/tessel-dock/icons/…` file, else an embedded copy extracted to
-  `$XDG_RUNTIME_DIR/tessel-dock/` (GTK recolours `-symbolic.svg` files only from a path).
+- The menu icon is the Nobara mark in full color: `tessel-dock-app-menu.svg` on a dark bar,
+  `tessel-dock-app-menu-on-light.svg` on a light one, switched when the bar's background changes. An installed
+  file of that name in `~/.local/share/tessel/dock/icons/` wins, else an embedded copy is extracted to
+  `$XDG_RUNTIME_DIR/tessel/dock/`. The names do not end in `-symbolic`, so GTK keeps the icon's own colors.
 
 ## Real-configuration memory (tools/realconfig/run.sh)
 Live after the swap: Rust tessel-dock RSS 216 / PSS 131 MB ([heap] 71 MB) vs a 12-hour-old Python tessel-dock at
