@@ -354,6 +354,24 @@ fn argument_errors_match_argparse() {
     assert!(stderr.ends_with("error: unrecognized arguments: -- x\n"));
 }
 
+/// After a compositor crash the services are left marked failed (start limit
+/// hit); the next session clears that before starting them.
+#[test]
+fn failed_marks_from_a_crashed_session_are_cleared_before_services_start() {
+    let template = session::AUTOSTART_TEMPLATE.as_str();
+    let reset = template.find("systemctl --user reset-failed 'tessel-*.service'").expect("reset-failed statement");
+    let first_start = template.find("systemctl --user start").unwrap();
+    assert!(reset < first_start, "reset must come before any service is started");
+    // An autostart generated before this statement existed is replaced without
+    // anything being taken for a personal addition.
+    let line_start = template[..reset].rfind("# When the compositor ended").unwrap();
+    let line_end = reset + template[reset..].find('\n').unwrap() + 1;
+    let before = format!("{}{}", &template[..line_start], &template[line_end..]);
+    let (generic, additions) = session::split_autostart(&before, "");
+    assert_eq!(generic, template);
+    assert_eq!(additions, "");
+}
+
 #[test]
 fn an_autostart_from_before_the_portal_check_has_nothing_personal() {
     let template = session::AUTOSTART_TEMPLATE.as_str();

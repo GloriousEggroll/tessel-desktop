@@ -2,6 +2,13 @@
 # Executed by greetd as the authenticated user, after PAM creates the runtime
 # directory. Desktop shortcuts and systemd user services must share one bus.
 unset DBUS_SESSION_BUS_ADDRESS DBUS_SESSION_BUS_PID DBUS_SESSION_BUS_WINDOWID
+# Keep what the compositor says in the journal. On the console it is hidden
+# behind the desktop and gone after the next login, and the line a compositor
+# prints before it stops is the one that explains a crash.
+if [ -z "${TESSEL_SESSION_CONSOLE:-}" ] && command -v systemd-cat >/dev/null 2>&1 \
+    && systemd-cat --identifier=tessel-session true 2>/dev/null; then
+    set -- systemd-cat --identifier=tessel-session --stderr-priority=warning "$@"
+fi
 if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "$XDG_RUNTIME_DIR/bus" ]; then
     export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
     exec "$@"

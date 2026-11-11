@@ -538,6 +538,12 @@ systemd-run --user --quiet --collect \
   --property=PartOf=graphical-session.target \
   /usr/bin/true >/dev/null 2>&1
 
+# When the compositor ended without a clean sign-out (it crashed or was
+# killed), this desktop's services kept restarting with nothing to connect
+# to until systemd marked them failed. That mark would stop them starting
+# below, leaving a screen with only a pointer.
+systemctl --user reset-failed 'tessel-*.service' >/dev/null 2>&1
+
 # A portal that was already running chose its backends for the desktop it was
 # started in: another desktop's session, or none when an app started it before
 # the environment above was imported. It then has no screen capture here.
