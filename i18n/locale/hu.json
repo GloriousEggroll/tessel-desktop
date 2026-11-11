@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "A visszaszámlálás végén visszaállnak a korábbi beállítások, hacsak nem a Módosítások megtartása lehetőséget választja.",
   "Keep Changes": "Módosítások megtartása",
   "Revert": "Visszaállítás",
-  "Resize the tiles on both sides of the gap": "A rés két oldalán lévő csempék átméretezése"
+  "Resize the tiles on both sides of the gap": "A rés két oldalán lévő csempék átméretezése",
+  "Split bar into islands": "Sáv felosztása szigetekre",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "A sáv elejét, közepét és végét külön darabokként rajzolja ki, köztük látszik a háttérkép. Sávokra vonatkozik, dokkokra nem."
 }

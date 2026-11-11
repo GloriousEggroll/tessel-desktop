@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "การตั้งค่าก่อนหน้าจะกลับมาเมื่อการนับถอยหลังสิ้นสุด เว้นแต่คุณจะเลือกเก็บการเปลี่ยนแปลง",
   "Keep Changes": "เก็บการเปลี่ยนแปลง",
   "Revert": "ย้อนกลับ",
-  "Resize the tiles on both sides of the gap": "ปรับขนาดไทล์ทั้งสองด้านของช่องว่าง"
+  "Resize the tiles on both sides of the gap": "ปรับขนาดไทล์ทั้งสองด้านของช่องว่าง",
+  "Split bar into islands": "แบ่งแถบออกเป็นเกาะ",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "วาดส่วนต้น ส่วนกลาง และส่วนท้ายของแถบเป็นชิ้นแยกกัน โดยมองเห็นวอลเปเปอร์ระหว่างชิ้น ใช้กับแถบ ไม่ใช่ด็อก"
 }

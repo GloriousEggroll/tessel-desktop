@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "De forrige innstillingene kommer tilbake når nedtellingen er over, med mindre du velger Behold endringer.",
   "Keep Changes": "Behold endringer",
   "Revert": "Tilbakestill",
-  "Resize the tiles on both sides of the gap": "Endre størrelse på flisene på begge sider av mellomrommet"
+  "Resize the tiles on both sides of the gap": "Endre størrelse på flisene på begge sider av mellomrommet",
+  "Split bar into islands": "Del linjen i øyer",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Tegn starten, midten og slutten av linjen som separate deler med bakgrunnsbildet synlig mellom dem. Gjelder linjer, ikke dokker."
 }

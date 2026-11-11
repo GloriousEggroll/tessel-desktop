@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Pengaturan sebelumnya akan kembali saat hitung mundur berakhir, kecuali Anda memilih Pertahankan Perubahan.",
   "Keep Changes": "Pertahankan Perubahan",
   "Revert": "Kembalikan",
-  "Resize the tiles on both sides of the gap": "Ubah ukuran ubin di kedua sisi celah"
+  "Resize the tiles on both sides of the gap": "Ubah ukuran ubin di kedua sisi celah",
+  "Split bar into islands": "Pisahkan bilah menjadi pulau",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Gambar bagian awal, tengah, dan akhir bilah sebagai potongan terpisah dengan wallpaper terlihat di antaranya. Berlaku untuk bilah, bukan dok."
 }

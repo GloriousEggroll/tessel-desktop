@@ -480,6 +480,9 @@ impl DockSurface {
                 widget.set_visible(shown);
             }
         }
+        for island in self.islands() {
+            island.add_css_class("tessel-dock-island");
+        }
         let groups = self.widgets.get().expect("groups");
         if let Some(custom) = &custom {
             let scrolls = [self.start_scroll(), Some(groups.app_scroll.clone()), self.utility_scroll()];
@@ -590,6 +593,7 @@ impl DockSurface {
         } else {
             (padding.top() + padding.bottom() + border.top() + border.bottom()) as i32
         };
+        fixed += self.islands_chrome();
         if self.custom_group_zones().is_some() {
             self.custom_layout_limits((span - fixed).max(1));
             return;

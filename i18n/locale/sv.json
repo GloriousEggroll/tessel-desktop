@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Dina tidigare inställningar kommer tillbaka när nedräkningen är slut, om du inte väljer Behåll ändringar.",
   "Keep Changes": "Behåll ändringar",
   "Revert": "Återställ",
-  "Resize the tiles on both sides of the gap": "Ändra storlek på rutorna på båda sidor om mellanrummet"
+  "Resize the tiles on both sides of the gap": "Ändra storlek på rutorna på båda sidor om mellanrummet",
+  "Split bar into islands": "Dela upp fältet i öar",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rita fältets början, mitt och slut som separata delar med bakgrundsbilden synlig mellan dem. Gäller fält, inte dockor."
 }

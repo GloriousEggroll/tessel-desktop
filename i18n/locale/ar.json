@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "ستعود إعداداتك السابقة عند انتهاء العد التنازلي، ما لم تختر «الاحتفاظ بالتغييرات».",
   "Keep Changes": "الاحتفاظ بالتغييرات",
   "Revert": "تراجع",
-  "Resize the tiles on both sides of the gap": "تغيير حجم النوافذ المتجانبة على جانبي الفجوة"
+  "Resize the tiles on both sides of the gap": "تغيير حجم النوافذ المتجانبة على جانبي الفجوة",
+  "Split bar into islands": "تقسيم الشريط إلى جزر",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "ارسم بداية الشريط ووسطه ونهايته كقطع منفصلة تظهر الخلفية بينها. ينطبق على الأشرطة، وليس على الأرصفة."
 }

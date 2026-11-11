@@ -85,5 +85,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.",
   "Keep Changes": "Keep Changes",
   "Revert": "Revert",
-  "Resize the tiles on both sides of the gap": "Resize the tiles on both sides of the gap"
+  "Resize the tiles on both sides of the gap": "Resize the tiles on both sides of the gap",
+  "Split bar into islands": "Split bar into islands",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks."
 }

@@ -444,6 +444,45 @@ fn maximized_window_drops_float_gap_per_monitor() -> Result<(), String> {
     Ok(())
 }
 
+/// A bar split into islands shows the desktop between its start, center and
+/// end; a maximized window joins them into one bar, as it also stops floating.
+fn bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window() -> Result<(), String> {
+    let observer = Observer::new()?;
+    let dock = Dock::start("islands", serde_json::json!({
+        "mode": "bar", "edge": "top", "bar_float_mode": true, "bar_rounded_corners": false, "gap": 8, "bar_islands": true,
+        "match_wallpaper": false, "background_color": "#00aa00", "transparency_enabled": false, "frosted": false,
+        "group_layouts": {"bar": {"start": ["app_menu"], "center": ["clock"],
+            "end": ["session", "pinned", "running", "files", "workspaces", "media", "system_tray", "service_apps", "weather",
+                    "activities", "focused_title"]}},
+        "group_visibility": {"pinned": false, "running": false, "files": false, "workspaces": false, "media": false,
+            "system_tray": false, "service_apps": false, "weather": false}}))?;
+    pointer(400, 400);
+    settle(0.5);
+    let bar = |p: [u8; 3]| p[1] > 100 && p[1] as i32 > p[0] as i32 + 60 && p[1] as i32 > p[2] as i32 + 60;
+    for origin in [0, H1] {
+        let desktop = pixel(origin + 320, 300);
+        ensure!(!bar(desktop), "desktop {desktop:?}");
+        // Start, center and end islands are painted (their padding, clear of icons and text) ...
+        for x in [11, 640, 1280 - 12] {
+            ensure!(bar(pixel(origin + x, 12)), "no island at {x}: {:?}", pixel(origin + x, 12));
+        }
+        // ... and the desktop shows between them and in the float gap.
+        for (x, y) in [(320, 12), (960, 12), (640, 3)] {
+            ensure!(pixel(origin + x, y) == desktop, "bar drawn between islands at {x},{y}: {:?}", pixel(origin + x, y));
+        }
+    }
+    let window = gtk_window(&observer, "Over the islands", |w| w.maximize())?;
+    ensure!(wait_for(5.0, || observer.window("Over the islands").is_some_and(|w| w.maximized)), "not maximized");
+    let monitor = observer.window("Over the islands").unwrap().outputs.first().cloned().unwrap_or_default();
+    let (origin, other) = if monitor == "HEADLESS-1" { (H1, 0) } else { (0, H1) };
+    ensure!(wait_for(5.0, || [320, 960].iter().all(|x| bar(pixel(origin + x, 5)))), "islands did not join: {:?}", pixel(origin + 320, 5));
+    ensure!(!bar(pixel(other + 320, 12)), "the other output's islands joined too");
+    window.destroy();
+    ensure!(wait_for(5.0, || !bar(pixel(origin + 320, 12)) && !bar(pixel(origin + 640, 3))), "islands did not come back");
+    dock.stop()?;
+    Ok(())
+}
+
 fn workareas_changed_is_emitted_only_on_change() -> Result<(), String> {
     let signals: Rc<RefCell<Vec<String>>> = Rc::default();
     let sink = signals.clone();
@@ -874,6 +913,8 @@ fn main() {
         ("bar_clones_reserve_only_their_own_output", bar_clones_reserve_only_their_own_output),
         ("primary_dock_follows_the_primary_chosen_in_displays", primary_dock_follows_the_primary_chosen_in_displays),
         ("maximized_window_drops_float_gap_per_monitor", maximized_window_drops_float_gap_per_monitor),
+        ("bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window",
+         bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window),
         ("workareas_changed_is_emitted_only_on_change", workareas_changed_is_emitted_only_on_change),
         ("hot_corner_dwell_latch_and_reentry", hot_corner_dwell_latch_and_reentry),
         ("menu_targets_pointer_output_and_toggles", menu_targets_pointer_output_and_toggles),

@@ -2115,5 +2115,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "倒數結束時將還原先前的設定,除非您選擇「保留變更」。",
   "Keep Changes": "保留變更",
   "Revert": "還原",
-  "Resize the tiles on both sides of the gap": "調整間隙兩側並排視窗的大小"
+  "Resize the tiles on both sides of the gap": "調整間隙兩側並排視窗的大小",
+  "Split bar into islands": "將列分割為島",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "將列的開頭、中間和結尾繪製為彼此分離的區塊，中間露出桌布。適用於列，不適用於 Dock。"
 }

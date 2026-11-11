@@ -2115,5 +2115,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "변경 사항 유지를 선택하지 않으면 카운트다운이 끝날 때 이전 설정으로 돌아갑니다.",
   "Keep Changes": "변경 사항 유지",
   "Revert": "되돌리기",
-  "Resize the tiles on both sides of the gap": "간격 양쪽의 타일 크기 조정"
+  "Resize the tiles on both sides of the gap": "간격 양쪽의 타일 크기 조정",
+  "Split bar into islands": "막대를 섬으로 나누기",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "막대의 시작, 가운데, 끝을 따로 떨어진 조각으로 그리고 그 사이로 배경 화면이 보이게 합니다. 독이 아닌 막대에 적용됩니다."
 }

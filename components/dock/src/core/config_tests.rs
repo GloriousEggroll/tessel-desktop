@@ -611,6 +611,7 @@ fn error_messages_match_python_text() {
         (json!({"match_wallpaper": 1}), "Invalid wallpaper color matching setting."),
         (json!({"apps_frosted": 1}), "Invalid transparency setting: apps_frosted."),
         (json!({"compact_bar": 1}), "Invalid appearance setting: compact_bar."),
+        (json!({"bar_islands": "yes"}), "Invalid appearance setting: bar_islands."),
         (json!({"rounded_corners": 1}), "Invalid rounded corners setting."),
         (json!({"float_mode": 1}), "Invalid float mode setting."),
         (json!({"bar_rounded_corners": 1}), "Invalid Bar rounded corners setting."),
@@ -653,5 +654,15 @@ fn field_names_follow_dataclass_order() {
     let value = DockConfig::default().to_value();
     let keys: Vec<&str> = value.as_object().unwrap().keys().map(String::as_str).collect();
     assert_eq!(keys, field_names());
-    assert_eq!(field_names().len(), 61);
+    assert_eq!(field_names().len(), 62);
+}
+
+#[test]
+fn bar_islands_is_off_by_default_and_only_splits_bars() {
+    assert!(!DockConfig::default().bar_islands);
+    // A configuration saved before the option existed keeps one solid bar.
+    assert!(!from(json!({"mode": "bar"})).uses_bar_islands());
+    assert!(from(json!({"mode": "bar", "bar_islands": true})).uses_bar_islands());
+    assert!(!from(json!({"mode": "dock", "bar_islands": true})).uses_bar_islands());
+    assert_eq!(from(json!({"mode": "bar", "bar_islands": true})).to_value()["bar_islands"], json!(true));
 }

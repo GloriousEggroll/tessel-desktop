@@ -267,6 +267,8 @@ struct BlurSurface {
     effect: effect_surface::ExtBackgroundEffectSurfaceV1,
     radius: Option<RadiusSurface>,
     geometry: [i32; 6],
+    /// Every blurred rectangle of this surface; `geometry` is the first.
+    parts: Vec<[i32; 6]>,
     seen: bool,
     token: usize,
 }
@@ -302,20 +304,20 @@ struct Group {
     surfaces: Vec<BlurSurface>,
 }
 
-fn find_panel(widget: &gtk::Widget, class_name: Option<&str>) -> Option<gtk::Widget> {
+/// Every widget of this native carrying the class (a bar split into islands
+/// has several); the search does not descend into a match.
+fn find_panels(widget: &gtk::Widget, class_name: Option<&str>, found: &mut Vec<gtk::Widget>) {
     if class_name.is_some_and(|c| !c.is_empty() && widget.has_css_class(c)) {
-        return Some(widget.clone());
+        found.push(widget.clone());
+        return;
     }
     let mut child = widget.first_child();
     while let Some(current) = child {
         if !current.is::<gtk::Native>() {
-            if let Some(found) = find_panel(&current, class_name) {
-                return Some(found);
-            }
+            find_panels(&current, class_name, found);
         }
         child = current.next_sibling();
     }
-    None
 }
 
 /// Pixel-centre scanlines keep the effect inside the CSS rounded outline; the
@@ -339,7 +341,7 @@ pub fn rounded_region_rects(x: i32, y: i32, width: i32, height: i32, radius: i32
 }
 
 impl Group {
-    fn apply_native(&mut self, widget: &gtk::Widget, panel: &gtk::Widget, corners: i32, strength: i32) {
+    fn apply_native(&mut self, widget: &gtk::Widget, panels: &[gtk::Widget], corners: i32, strength: i32) {
         let Some(native) = widget.dynamic_cast_ref::<gtk::Native>() else { return };
         let Some(surface) = native.surface() else { return };
         let Some(wayland_surface) = surface.downcast_ref::<gdk_wayland::WaylandSurface>() else { return };
@@ -353,15 +355,18 @@ impl Group {
         };
         let Some(effects) = effects.filter(|_| capabilities & BLUR_CAPABILITY != 0) else { return };
         let Some(compositor) = manager.compositor.clone() else { return };
-        let Some(bounds) = panel.compute_bounds(widget) else { return };
         // GTK adds this translation when snapshotting the native widget into
         // its surface (CSD shadows put the window at a positive offset).
         let (tx, ty) = native.surface_transform();
-        let (left, top) = (bounds.x() as f64 + tx, bounds.y() as f64 + ty);
-        let (x, y) = (left.ceil() as i32, top.ceil() as i32);
-        let width = (left + bounds.width() as f64).floor() as i32 - x;
-        let height = (top + bounds.height() as f64).floor() as i32 - y;
-        if width <= 0 || height <= 0 {
+        let parts: Vec<[i32; 6]> = panels.iter().filter(|panel| panel.is_mapped()).filter_map(|panel| {
+            let bounds = panel.compute_bounds(widget)?;
+            let (left, top) = (bounds.x() as f64 + tx, bounds.y() as f64 + ty);
+            let (x, y) = (left.ceil() as i32, top.ceil() as i32);
+            let width = (left + bounds.width() as f64).floor() as i32 - x;
+            let height = (top + bounds.height() as f64).floor() as i32 - y;
+            (width > 0 && height > 0).then_some([x, y, width, height, corners, strength])
+        }).collect();
+        if parts.is_empty() {
             return;
         }
         let index = match self.surfaces.iter().position(|s| s.surface == surface) {
@@ -379,27 +384,29 @@ impl Group {
                 let token = NEXT_TOKEN.with(|t| t.replace(t.get() + 1));
                 unsafe { surface.set_data(OWNER_KEY, token) };
                 self.surfaces.push(BlurSurface { surface: surface.clone(), manager: manager.clone(), effect, radius,
-                                                 geometry: [0, 0, 0, 0, 0, -1], seen: false, token });
+                                                 geometry: [0, 0, 0, 0, 0, -1], parts: Vec::new(), seen: false, token });
                 self.surfaces.len() - 1
             }
         };
         let record = &mut self.surfaces[index];
         record.seen = true;
-        let geometry = [x, y, width, height, corners, strength];
-        if record.geometry == geometry {
+        if record.parts == parts {
             return;
         }
         let qh = manager.queue.borrow().handle();
         let region = compositor.create_region(&qh, ());
-        for [rx, ry, rw, rh] in rounded_region_rects(x, y, width, height, corners) {
-            region.add(rx, ry, rw, rh);
+        for [x, y, width, height, ..] in &parts {
+            for [rx, ry, rw, rh] in rounded_region_rects(*x, *y, *width, *height, corners) {
+                region.add(rx, ry, rw, rh);
+            }
         }
         record.effect.set_blur_region(Some(&region));
         region.destroy();
         if let Some(radius) = &record.radius {
             radius.set_radius(strength as u32);
         }
-        record.geometry = geometry;
+        record.geometry = parts[0];
+        record.parts = parts;
         let _ = manager.conn.flush();
         widget.queue_draw();
         surface.queue_render();
@@ -412,23 +419,23 @@ impl Group {
             return;
         }
         if widget.is::<gtk::Native>() {
-            let mut panel = None;
+            let mut panels = Vec::new();
             if widget == root && include_root {
-                panel = if target_class.is_some_and(|c| !c.is_empty()) { find_panel(widget, target_class) } else { Some(widget.clone()) };
+                if target_class.is_some_and(|c| !c.is_empty()) { find_panels(widget, target_class, &mut panels) } else { panels.push(widget.clone()) }
             } else if widget.is::<gtk::Popover>() {
                 // GtkPopoverContent owns the background, not the transparent
                 // popup margin, shadow, or positioning arrow.
                 let mut child = widget.first_child();
                 while let Some(current) = child {
                     if current.css_name() == "contents" {
-                        panel = Some(current);
+                        panels.push(current);
                         break;
                     }
                     child = current.next_sibling();
                 }
             }
-            if let Some(panel) = panel {
-                self.apply_native(widget, &panel, corners, strength);
+            if !panels.is_empty() {
+                self.apply_native(widget, &panels, corners, strength);
             }
         }
         let mut child = widget.first_child();
@@ -574,6 +581,12 @@ impl BlurBinding {
     /// (requested logical geometry, never pixels from other applications).
     pub fn geometry(&self, index: u32) -> Option<[i32; 6]> {
         self.0.group.borrow().surfaces.get(index as usize).map(|s| s.geometry)
+    }
+
+    /// Diagnostics: every blurred rectangle of surface `index` (a bar split
+    /// into islands has one per island).
+    pub fn parts(&self, index: u32) -> Vec<[i32; 6]> {
+        self.0.group.borrow().surfaces.get(index as usize).map(|s| s.parts.clone()).unwrap_or_default()
     }
 
     pub fn close(&self) {

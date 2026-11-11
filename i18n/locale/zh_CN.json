@@ -2115,5 +2115,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "倒计时结束时将恢复之前的设置,除非您选择“保留更改”。",
   "Keep Changes": "保留更改",
   "Revert": "还原",
-  "Resize the tiles on both sides of the gap": "调整间隙两侧平铺窗口的大小"
+  "Resize the tiles on both sides of the gap": "调整间隙两侧平铺窗口的大小",
+  "Split bar into islands": "将栏拆分为岛",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "将栏的起始、中间和末尾部分绘制为相互分离的小块，中间露出壁纸。适用于栏，不适用于停靠栏。"
 }

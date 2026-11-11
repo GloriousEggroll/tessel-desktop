@@ -2268,5 +2268,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Wenn der Countdown endet, werden deine vorherigen Einstellungen wiederhergestellt, sofern du nicht „Änderungen behalten“ wählst.",
   "Keep Changes": "Änderungen behalten",
   "Revert": "Zurücksetzen",
-  "Resize the tiles on both sides of the gap": "Größe der Kacheln auf beiden Seiten der Lücke ändern"
+  "Resize the tiles on both sides of the gap": "Größe der Kacheln auf beiden Seiten der Lücke ändern",
+  "Split bar into islands": "Leiste in Inseln aufteilen",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Anfang, Mitte und Ende der Leiste als getrennte Teile zeichnen, zwischen denen das Hintergrundbild sichtbar ist. Gilt für Leisten, nicht für Docks."
 }

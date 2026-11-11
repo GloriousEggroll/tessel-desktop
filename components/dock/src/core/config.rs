@@ -115,6 +115,8 @@ pub struct DockConfig {
     pub hover_scale_int: IntHint,
     pub magnification: bool,
     pub compact_bar: bool,
+    /// Draw the bar's start, center and end as separate islands.
+    pub bar_islands: bool,
     pub transparency: i64,
     pub transparency_enabled: bool,
     pub frosted: bool,
@@ -153,7 +155,7 @@ const FIELD_NAMES: &[&str] = &[
     "app_dock_frosted", "app_dock_frost_strength", "app_dock_match_wallpaper", "app_dock_background_color",
     "app_dock_auto_hide", "app_dock_shine", "app_dock_shadow", "app_dock_group_layout", "application_display", "always_show_tray",
     "always_visible_apps", "group_layouts", "edge", "alignment", "monitor", "monitor_overrides", "icon_size", "gap",
-    "hover_scale", "magnification", "compact_bar", "transparency", "transparency_enabled", "frosted", "frost_strength",
+    "hover_scale", "magnification", "compact_bar", "bar_islands", "transparency", "transparency_enabled", "frosted", "frost_strength",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
     "window_buttons_left", "colored_window_buttons", "window_shadows", "match_wallpaper", "background_color",
     "rounded_corners", "float_mode", "bar_rounded_corners", "bar_float_mode", "bar_border_enabled", "bar_border_sides",
@@ -206,6 +208,7 @@ impl Default for DockConfig {
             hover_scale_int: IntHint(false),
             magnification: false,
             compact_bar: false,
+            bar_islands: false,
             transparency: 5,
             transparency_enabled: true,
             frosted: false,
@@ -323,6 +326,10 @@ impl DockConfig {
     pub fn is_group_visible(&self, name: &str) -> bool {
         self.group_visibility.get(name).copied().unwrap_or(true)
     }
+    /// The bar is drawn as separate islands (start, center, end).
+    pub fn uses_bar_islands(&self) -> bool {
+        self.bar_islands && self.mode == "bar"
+    }
     pub fn uses_separate_app_dock(&self) -> bool {
         self.separate_app_dock && self.mode == "bar" && self.edge == "top"
     }
@@ -420,6 +427,7 @@ impl DockConfig {
         );
         put("magnification", Value::from(self.magnification));
         put("compact_bar", Value::from(self.compact_bar));
+        put("bar_islands", Value::from(self.bar_islands));
         put("transparency", Value::from(self.transparency));
         put("transparency_enabled", Value::from(self.transparency_enabled));
         put("frosted", Value::from(self.frosted));
@@ -638,7 +646,7 @@ impl DockConfig {
                 return Err(format!("Invalid transparency setting: {name}."));
             }
         }
-        for name in ["magnification", "compact_bar", "window_buttons_left", "colored_window_buttons", "window_shadows"] {
+        for name in ["magnification", "compact_bar", "bar_islands", "window_buttons_left", "colored_window_buttons", "window_shadows"] {
             if !c[name].is_boolean() {
                 return Err(format!("Invalid appearance setting: {name}."));
             }
@@ -712,6 +720,7 @@ impl DockConfig {
             hover_scale_int,
             magnification: flag("magnification"),
             compact_bar: flag("compact_bar"),
+            bar_islands: flag("bar_islands"),
             transparency: int("transparency"),
             transparency_enabled: flag("transparency_enabled"),
             frosted: flag("frosted"),

@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "काउंटडाउन समाप्त होने पर आपकी पिछली सेटिंग वापस आ जाएँगी, जब तक कि आप बदलाव रखें न चुनें।",
   "Keep Changes": "बदलाव रखें",
   "Revert": "वापस लाएँ",
-  "Resize the tiles on both sides of the gap": "अंतराल के दोनों ओर की टाइलों का आकार बदलें"
+  "Resize the tiles on both sides of the gap": "अंतराल के दोनों ओर की टाइलों का आकार बदलें",
+  "Split bar into islands": "बार को द्वीपों में बाँटें",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "बार के आरंभ, मध्य और अंत को अलग-अलग टुकड़ों के रूप में बनाएँ, जिनके बीच वॉलपेपर दिखाई दे। यह बार पर लागू होता है, डॉक पर नहीं।"
 }

@@ -2115,5 +2115,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "「変更を維持」を選択しない限り、カウントダウンが終わると以前の設定に戻ります。",
   "Keep Changes": "変更を維持",
   "Revert": "元に戻す",
-  "Resize the tiles on both sides of the gap": "隙間の両側のタイルのサイズを変更"
+  "Resize the tiles on both sides of the gap": "隙間の両側のタイルのサイズを変更",
+  "Split bar into islands": "バーをアイランドに分割",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "バーの先頭・中央・末尾を別々のパーツとして描画し、その間に壁紙が見えるようにします。ドックではなくバーに適用されます。"
 }

@@ -322,6 +322,7 @@ pub struct SettingsControls {
     pub app_dock_layout_controls: Rc<GroupLayoutControls>,
     pub size: gtk::SpinButton,
     pub compact_bar: gtk::Switch,
+    pub bar_islands: gtk::Switch,
     pub rounded_corners: gtk::Switch,
     pub float_mode: gtk::Switch,
     pub gap: gtk::SpinButton,
@@ -659,6 +660,11 @@ impl SettingsWindow {
         let compact_bar = switch(config.compact_bar);
         accessible_name(&compact_bar, &tr!("Compact bar"));
         b.row(&tr!("Compact bar"), &compact_bar, Some(&tr!("Use a thin bar with smaller text and status icons. Applies to bars, not docks.")));
+        let bar_islands = switch(config.bar_islands);
+        accessible_name(&bar_islands, &tr!("Split bar into islands"));
+        b.row(&tr!("Split bar into islands"), &bar_islands,
+              Some(&tr!("Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.")));
+        bar_islands.set_sensitive(config.mode == "bar");
         let rounded_corners = switch(config.effective_rounded_corners());
         accessible_name(&rounded_corners, &tr!("Rounded corners"));
         b.row(&tr!("Rounded corners"), &rounded_corners, Some(&tr!("Round the dock outline.")));
@@ -914,6 +920,7 @@ impl SettingsWindow {
             app_dock_layout_controls,
             size,
             compact_bar,
+            bar_islands,
             rounded_corners,
             float_mode,
             gap,
@@ -1251,6 +1258,7 @@ impl Inner {
         config.auto_hide = c.auto_hide.is_active();
         config.magnification = c.magnification.is_active();
         config.compact_bar = c.compact_bar.is_active();
+        config.bar_islands = c.bar_islands.is_active();
         // Keep the saved size unless magnification is in use.
         if c.magnification.is_active() {
             config.hover_scale = py_round(c.magnification_size.value()) as f64 / 100.0;
@@ -1437,6 +1445,7 @@ impl Inner {
         let c = &self.c;
         let bar = self.mode_id() == "bar";
         c.bar_border_enabled.set_sensitive(bar);
+        c.bar_islands.set_sensitive(bar);
         let enabled = bar && c.bar_border_enabled.is_active();
         for toggle in c.bar_border_switches.values() {
             toggle.set_sensitive(enabled);

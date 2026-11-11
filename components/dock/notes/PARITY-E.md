@@ -74,6 +74,15 @@ LOW-priority idle chunks after 200 ms. RSS per 10 menus: before 162/179/186/194/
 116.93/116.93/116.94/116.94/116.94 MB (flat); screenshots stay 0 px (first open and cached reopen).
 `E_CHURN_BATCHES=N` runs more batches.
 
+## Tessel additions (not in the Python dock)
+- `bar_islands` ("Split bar into islands"): the bar's start, center and end sections each take the panel's
+  material (`.tessel-dock-island`), the panel itself turns transparent (`.tessel-dock-islands`) and the blur
+  region is the union of the islands (`tessel_wayland::blur` now takes every widget with the target class).
+  A maximized window joins the islands into one bar, as it already stops the bar floating. The application
+  menu opens under the island that holds its button. Tests: `style::tests::islands_take_the_panel_material_*`,
+  `config_tests::bar_islands_*`, e_headless `bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window`,
+  g_settings_headless `mode_settings_remember_separate_appearance_and_preserve_placement`.
+
 ## Honest gaps
 - `hot_corner_is_blocked_by_fullscreen` is kept but not run: in the private labwc the corner fires over a
   fullscreen client with the Python dock too, so it is not a parity check.

@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Коли зворотний відлік закінчиться, повернуться попередні налаштування, якщо ви не виберете «Зберегти зміни».",
   "Keep Changes": "Зберегти зміни",
   "Revert": "Повернути",
-  "Resize the tiles on both sides of the gap": "Змінити розмір плиток з обох боків проміжку"
+  "Resize the tiles on both sides of the gap": "Змінити розмір плиток з обох боків проміжку",
+  "Split bar into islands": "Розділити панель на острівці",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Малювати початок, середину та кінець панелі окремими частинами, між якими видно шпалери. Стосується панелей, а не доків."
 }

@@ -38,7 +38,7 @@ pub const BORDER_FIELDS: &[&str] = &["bar_border_enabled", "bar_border_sides", "
 const DOCK_BASE_FIELDS: &[&str] = &["mode", "application_display", "monitor", "monitor_overrides", "icon_size", "gap", "transparency",
     "transparency_enabled", "match_wallpaper", "background_color", "frosted", "frost_strength", "rounded_corners", "float_mode",
     "bar_rounded_corners", "bar_float_mode", "group_visibility", "group_layouts", "hide_on_fullscreen", "auto_hide",
-    "always_show_tray", "always_visible_apps", "magnification", "hover_scale", "compact_bar"];
+    "always_show_tray", "always_visible_apps", "magnification", "hover_scale", "compact_bar", "bar_islands"];
 pub const DESKTOP_FIELDS: &[&str] = &["menu_hotkey_fullscreen", "hot_corners", "hot_corner_delay_ms"];
 /// Desktop Layout presets also set the global placement and timing that no
 /// single page edits. Pinned applications are personal and never part of one.

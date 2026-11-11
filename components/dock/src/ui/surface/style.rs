@@ -97,6 +97,38 @@ impl DockSurface {
                           material.apps_rounded_corners.unwrap_or(true), None, None);
     }
 
+    /// Whether the bar is drawn as islands right now: a maximized window
+    /// joins them back into one bar, as it also stops the bar floating.
+    pub fn islands_active(&self) -> bool {
+        self.config.uses_bar_islands() && self.bar_mode && !self.is_app_dock && self.positioned_layout && !self.has_maximized.get()
+    }
+
+    /// The start, center and end sections of a bar.
+    pub(crate) fn islands(&self) -> Vec<gtk::Widget> {
+        if !self.bar_mode || self.is_app_dock || !self.positioned_layout {
+            return Vec::new();
+        }
+        [self.start_scroll().map(|s| s.upcast::<gtk::Widget>()), Some(self.core().upcast()), self.utility_scroll().map(|s| s.upcast())]
+            .into_iter().flatten().collect()
+    }
+
+    /// Island padding and margins along the bar that the sections' width limits must leave free.
+    #[allow(deprecated)]
+    pub(crate) fn islands_chrome(&self) -> i32 {
+        if !self.islands_active() {
+            return 0;
+        }
+        self.islands().iter().filter(|island| island.get_visible()).map(|island| {
+            let context = island.style_context();
+            let (padding, margin) = (context.padding(), context.margin());
+            (if self.horizontal {
+                padding.left() + padding.right() + margin.left() + margin.right()
+            } else {
+                padding.top() + padding.bottom() + margin.top() + margin.bottom()
+            }) as i32
+        }).sum()
+    }
+
     /// Re-apply the stored background (maximize/float changes).
     pub(crate) fn restyle(&self) {
         let options = *self.styles.options.borrow();
@@ -137,7 +169,16 @@ impl DockSurface {
         self.styles.options.replace(Some((request.is_dark, request.transparency, request.wallpaper, requested)));
         let rounded = self.effective_rounding(requested);
         let m = self.material();
-        self.blur.configure(m.frosted.unwrap_or(false), strength(m.frost_strength.unwrap_or(50)), rounded, None, None);
+        let islands = self.islands_active();
+        for island in self.islands() {
+            island.add_css_class("tessel-dock-island");
+        }
+        if self.panel.has_css_class("tessel-dock-islands") != islands {
+            self.toggle_class(&self.panel, "tessel-dock-islands", islands);
+            self.queue_panel_layout();
+        }
+        self.blur.configure(m.frosted.unwrap_or(false), strength(m.frost_strength.unwrap_or(50)), rounded,
+                            Some(if islands { "tessel-dock-island" } else { "tessel-dock-panel" }), None);
         if let Some(popup) = self.preview().window() {
             self.set_window_popup_blur(&popup, false);
         }
@@ -158,6 +199,7 @@ impl DockSurface {
             border_color: m.border_color.clone().flatten(), shine: self.is_app_dock && self.config.app_dock_shine, shadow: self.shadow_room() > 0,
             apps_transparency: m.apps_transparency.unwrap_or(0), apps_frosted: m.apps_frosted.unwrap_or(false),
             apps_frost_strength: m.apps_frost_strength.unwrap_or(50), apps_rounded_corners: m.apps_rounded_corners.unwrap_or(true),
+            islands: self.config.uses_bar_islands() && self.bar_mode && !self.is_app_dock,
         });
         let css = match css {
             Ok(css) => css,

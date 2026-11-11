@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Aiemmat asetukset palautetaan, kun lähtölaskenta päättyy, ellet valitse Säilytä muutokset.",
   "Keep Changes": "Säilytä muutokset",
   "Revert": "Palauta",
-  "Resize the tiles on both sides of the gap": "Muuta välin molemmilla puolilla olevien ruutujen kokoa"
+  "Resize the tiles on both sides of the gap": "Muuta välin molemmilla puolilla olevien ruutujen kokoa",
+  "Split bar into islands": "Jaa palkki saarekkeisiin",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Piirrä palkin alku, keskiosa ja loppu erillisinä osina, joiden välistä taustakuva näkyy. Koskee palkkeja, ei telakoita."
 }

@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Po skončení odpočítavania sa vrátia predchádzajúce nastavenia, ak nezvolíte Ponechať zmeny.",
   "Keep Changes": "Ponechať zmeny",
   "Revert": "Vrátiť späť",
-  "Resize the tiles on both sides of the gap": "Zmeniť veľkosť dlaždíc na oboch stranách medzery"
+  "Resize the tiles on both sides of the gap": "Zmeniť veľkosť dlaždíc na oboch stranách medzery",
+  "Split bar into islands": "Rozdeliť lištu na ostrovčeky",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vykreslí začiatok, stred a koniec lišty ako samostatné časti, medzi ktorými je vidieť tapetu. Platí pre lišty, nie pre doky."
 }

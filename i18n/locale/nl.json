@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Je vorige instellingen komen terug wanneer het aftellen eindigt, tenzij je Wijzigingen behouden kiest.",
   "Keep Changes": "Wijzigingen behouden",
   "Revert": "Terugzetten",
-  "Resize the tiles on both sides of the gap": "Formaat van de tegels aan beide kanten van de tussenruimte wijzigen"
+  "Resize the tiles on both sides of the gap": "Formaat van de tegels aan beide kanten van de tussenruimte wijzigen",
+  "Split bar into islands": "Balk in eilanden splitsen",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Teken het begin, het midden en het einde van de balk als losse delen, met de achtergrond ertussen zichtbaar. Geldt voor balken, niet voor docks."
 }

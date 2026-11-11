@@ -118,6 +118,31 @@ pub struct DockCssRequest {
     pub apps_frosted: bool,
     pub apps_frost_strength: i64,
     pub apps_rounded_corners: bool,
+    /// Also style `.tessel-dock-islands`: the panel turns transparent and
+    /// each `.tessel-dock-island` inside it takes the panel's material.
+    pub islands: bool,
+}
+
+/// The space between two islands of a bar (CSS margin on the center one).
+pub const ISLAND_GAP: i32 = 8;
+
+/// The panel's own rule re-targeted at the islands inside it.
+fn islands_css(panel_css: &str, scope: &str) -> String {
+    let panel = format!(".{scope}.tessel-dock-panel");
+    let Some(body) = panel_css.find(&format!("{panel} {{")).and_then(|start| {
+        let rest = &panel_css[start + panel.len() + 2..];
+        rest.find("\n}").map(|end| rest[..end].trim().to_owned())
+    }) else { return String::new() };
+    format!("
+{panel}.tessel-dock-islands {{ background-image: none; background-color: transparent; box-shadow: none; padding: 0; }}
+{panel}.tessel-dock-islands .tessel-dock-island {{ {body}
+    padding: 7px;
+}}
+{panel}.tessel-dock-islands.tessel-dock-compact-bar .tessel-dock-island {{ padding: 2px 6px; }}
+{panel}.tessel-dock-islands.tessel-dock-compact-bar.tessel-dock-vertical .tessel-dock-island {{ padding: 6px 2px; }}
+{panel}.tessel-dock-islands .tessel-dock-applications.tessel-dock-island {{ margin: 0 {ISLAND_GAP}px; }}
+{panel}.tessel-dock-islands.tessel-dock-vertical .tessel-dock-applications.tessel-dock-island {{ margin: {ISLAND_GAP}px 0; }}
+")
 }
 
 /// Panel CSS (provider at APPLICATION+2), then the popup and application-menu
@@ -130,13 +155,16 @@ pub struct DockCss {
 }
 
 pub fn dock_css(request: &DockCssRequest) -> Result<DockCss, String> {
-    let panel = background_css(request.is_dark, &BackgroundRequest {
+    let mut panel = background_css(request.is_dark, &BackgroundRequest {
         transparency: request.transparency, wallpaper: request.wallpaper, rounded_corners: request.rounded_corners,
         inner_rounded_corners: Some(request.requested_rounding), frosted: request.frosted,
         frost_strength: request.frost_strength, scope: Some(request.scope.clone()),
         background_color: request.background_color.clone(), border_sides: request.border_sides.clone(),
         border_color: request.border_color.clone(), shine: request.shine, shadow: request.shadow,
     })?;
+    if request.islands {
+        panel.push_str(&islands_css(&panel, &request.scope));
+    }
     // Application menus inherit the surface that opened them; other app popups
     // keep the independently configured application appearance.
     let popup = popup_css(&request.scope, request.is_dark, request.wallpaper, request.apps_transparency,
@@ -176,12 +204,30 @@ mod tests {
             is_dark: true, transparency: 30, wallpaper: Some([40, 60, 80]), rounded_corners: false, requested_rounding: true,
             frosted: false, frost_strength: 50, scope: "tessel-dock-clone-1".into(), background_color: None,
             border_sides: vec![], border_color: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
-            apps_frost_strength: 50, apps_rounded_corners: false }).unwrap();
+            apps_frost_strength: 50, apps_rounded_corners: false, islands: false }).unwrap();
         assert!(css.panel.contains(".tessel-dock-clone-1.tessel-dock-panel {"));
         assert!(css.panel.contains("border-radius: 0px;"));
         assert!(css.panel.contains("button.tessel-dock-workspace { border-radius: 8px; }"));
         assert!(css.popup.contains(".tessel-dock-clone-1 .tessel-dock-popup *"));
         assert!(css.menu.contains(".tessel-dock-clone-1-applications .tessel-dock-popup, "));
         assert!(!css.menu.contains("border-radius: 0;"));
+        assert!(!css.panel.contains("tessel-dock-island"));
+    }
+
+    #[test]
+    fn islands_take_the_panel_material_and_the_panel_turns_transparent() {
+        let css = dock_css(&DockCssRequest {
+            is_dark: true, transparency: 30, wallpaper: Some([40, 60, 80]), rounded_corners: true, requested_rounding: true,
+            frosted: false, frost_strength: 50, scope: "tessel-dock-clone-1".into(), background_color: None,
+            border_sides: vec![], border_color: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
+            apps_frost_strength: 50, apps_rounded_corners: false, islands: true }).unwrap().panel;
+        let panel = ".tessel-dock-clone-1.tessel-dock-panel";
+        assert!(css.contains(&format!("{panel}.tessel-dock-islands {{ background-image: none; background-color: transparent;")));
+        let island = css.split(&format!("{panel}.tessel-dock-islands .tessel-dock-island {{")).nth(1).unwrap();
+        let island = &island[..island.find('}').unwrap()];
+        let material = css.split(&format!("{panel} {{")).nth(1).unwrap();
+        let material = material[..material.find(';').unwrap()].trim();
+        assert!(material.starts_with("background-image: none"), "{material}");
+        assert!(island.contains("background-color: rgba(") && island.contains("border-radius: 12px;") && island.contains("padding: 7px;"), "{island}");
     }
 }

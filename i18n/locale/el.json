@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Οι προηγούμενες ρυθμίσεις θα επανέλθουν όταν λήξει η αντίστροφη μέτρηση, εκτός αν επιλέξετε Διατήρηση αλλαγών.",
   "Keep Changes": "Διατήρηση αλλαγών",
   "Revert": "Επαναφορά",
-  "Resize the tiles on both sides of the gap": "Αλλαγή μεγέθους των πλακιδίων και στις δύο πλευρές του κενού"
+  "Resize the tiles on both sides of the gap": "Αλλαγή μεγέθους των πλακιδίων και στις δύο πλευρές του κενού",
+  "Split bar into islands": "Διαίρεση της μπάρας σε νησίδες",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Σχεδίαση της αρχής, του κέντρου και του τέλους της μπάρας ως ξεχωριστών τμημάτων, με την ταπετσαρία να φαίνεται ανάμεσά τους. Ισχύει για μπάρες, όχι για docks."
 }

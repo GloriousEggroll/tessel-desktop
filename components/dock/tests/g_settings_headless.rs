@@ -425,7 +425,10 @@ fn mode_settings_remember_separate_appearance_and_preserve_placement(app: &Rc<Fa
     let before = app.config();
     let c = window.controls();
     ensure_eq!(active_id(&c.mode), "dock");
+    ensure!(!c.bar_islands.is_sensitive() && !c.bar_islands.is_active(), "islands are for bars");
     c.mode.set_active_id(Some("bar"));
+    ensure!(c.bar_islands.is_sensitive() && !c.bar_islands.is_active(), "islands off by default");
+    c.bar_islands.set_active(true);
     ensure!(!c.float_mode.is_active() && !c.rounded_corners.is_active(), "bar defaults");
     ensure!(c.float_mode.is_sensitive() && c.rounded_corners.is_sensitive(), "sensitive");
     ensure!(!c.gap.is_sensitive(), "gap");
@@ -441,11 +444,13 @@ fn mode_settings_remember_separate_appearance_and_preserve_placement(app: &Rc<Fa
     ensure_eq!(stored.mode, "bar");
     ensure!(!stored.rounded_corners && stored.float_mode, "dock values {stored:?}");
     ensure!(stored.bar_rounded_corners && stored.bar_float_mode, "bar values");
+    ensure!(stored.bar_islands && stored.uses_bar_islands(), "islands saved");
     ensure_eq!(stored.monitor_overrides, before.monitor_overrides);
     ensure_eq!(stored.pins, before.pins);
     let reopened = reopen(app);
     let r = reopened.controls();
     ensure!(r.rounded_corners.is_active(), "reopened bar");
+    ensure!(r.bar_islands.is_active() && r.bar_islands.is_sensitive(), "reopened islands");
     r.mode.set_active_id(Some("dock"));
     ensure!(!r.rounded_corners.is_active(), "reopened dock");
     ensure!(r.edge_widgets.values().all(|(_, a)| a.is_sensitive()), "alignment in dock");

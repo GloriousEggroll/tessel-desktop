@@ -2268,5 +2268,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Tu configuración anterior se restaurará cuando termine la cuenta atrás, a menos que elijas Conservar los cambios.",
   "Keep Changes": "Conservar los cambios",
   "Revert": "Revertir",
-  "Resize the tiles on both sides of the gap": "Cambiar el tamaño de los mosaicos a ambos lados del espacio"
+  "Resize the tiles on both sides of the gap": "Cambiar el tamaño de los mosaicos a ambos lados del espacio",
+  "Split bar into islands": "Dividir la barra en islas",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Dibuja el inicio, el centro y el final de la barra como piezas separadas, con el fondo de pantalla visible entre ellas. Se aplica a las barras, no a los docks."
 }

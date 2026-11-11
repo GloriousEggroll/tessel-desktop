@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Dine tidligere indstillinger vender tilbage, når nedtællingen slutter, medmindre du vælger Behold ændringer.",
   "Keep Changes": "Behold ændringer",
   "Revert": "Gendan",
-  "Resize the tiles on both sides of the gap": "Tilpas størrelsen på fliserne på begge sider af mellemrummet"
+  "Resize the tiles on both sides of the gap": "Tilpas størrelsen på fliserne på begge sider af mellemrummet",
+  "Split bar into islands": "Opdel bjælken i øer",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Tegn bjælkens start, midte og slutning som separate stykker med baggrundsbilledet synligt imellem. Gælder for bjælker, ikke docks."
 }

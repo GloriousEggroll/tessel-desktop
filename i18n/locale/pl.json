@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Po zakończeniu odliczania wrócą poprzednie ustawienia, chyba że wybierzesz Zachowaj zmiany.",
   "Keep Changes": "Zachowaj zmiany",
   "Revert": "Przywróć",
-  "Resize the tiles on both sides of the gap": "Zmień rozmiar kafelków po obu stronach odstępu"
+  "Resize the tiles on both sides of the gap": "Zmień rozmiar kafelków po obu stronach odstępu",
+  "Split bar into islands": "Podziel pasek na wyspy",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rysuje początek, środek i koniec paska jako osobne części, między którymi widać tapetę. Dotyczy pasków, nie doków."
 }

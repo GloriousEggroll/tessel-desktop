@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Cài đặt trước đó sẽ được khôi phục khi đếm ngược kết thúc, trừ khi bạn chọn Giữ thay đổi.",
   "Keep Changes": "Giữ thay đổi",
   "Revert": "Hoàn nguyên",
-  "Resize the tiles on both sides of the gap": "Đổi kích thước các ô ở hai bên khoảng trống"
+  "Resize the tiles on both sides of the gap": "Đổi kích thước các ô ở hai bên khoảng trống",
+  "Split bar into islands": "Chia thanh thành các đảo",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vẽ phần đầu, giữa và cuối của thanh thành các mảnh riêng, với hình nền hiện ra giữa chúng. Áp dụng cho thanh, không áp dụng cho dock."
 }

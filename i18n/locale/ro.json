@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Setările anterioare vor reveni la sfârșitul numărătorii inverse, dacă nu alegeți Păstrează modificările.",
   "Keep Changes": "Păstrează modificările",
   "Revert": "Revenire",
-  "Resize the tiles on both sides of the gap": "Redimensionează plăcile de pe ambele părți ale spațiului"
+  "Resize the tiles on both sides of the gap": "Redimensionează plăcile de pe ambele părți ale spațiului",
+  "Split bar into islands": "Împarte bara în insule",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Desenează începutul, centrul și sfârșitul barei ca piese separate, cu imaginea de fundal vizibilă între ele. Se aplică barelor, nu dock-urilor."
 }

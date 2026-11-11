@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "ההגדרות הקודמות יחזרו בסיום הספירה לאחור, אלא אם תבחרו באפשרות שמירת השינויים.",
   "Keep Changes": "שמירת השינויים",
   "Revert": "ביטול השינויים",
-  "Resize the tiles on both sides of the gap": "שינוי גודל האריחים משני צידי הרווח"
+  "Resize the tiles on both sides of the gap": "שינוי גודל האריחים משני צידי הרווח",
+  "Split bar into islands": "פיצול הסרגל לאיים",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "ציור ההתחלה, המרכז והסוף של הסרגל כחלקים נפרדים, כשהרקע נראה ביניהם. חל על סרגלים, לא על מעגנים."
 }

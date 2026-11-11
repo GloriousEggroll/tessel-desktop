@@ -861,14 +861,29 @@ impl PopupHost for DockSurface {
                 alignment = "start".into();
             }
         }
-        let anchor = widget.and_then(|widget| {
+        // The menu of a bar split into islands opens under its own island.
+        if self.islands_active() && *anchor == PopupAnchor::Menu {
+            if let Some(groups) = self.widgets.get().filter(|g| g.menu_button.get_visible()) {
+                if let Some(island) = self.islands().into_iter().find(|island| groups.menu_button.is_ancestor(island)) {
+                    if self.start_scroll().is_some_and(|start| start.upcast_ref::<gtk::Widget>() == &island) {
+                        alignment = "start".into();
+                    }
+                    widget = Some(island);
+                }
+            }
+        }
+        // An island is anchored by its outline (its origin is inside its padding).
+        let outline = widget.as_ref().filter(|widget| widget.has_css_class("tessel-dock-island") && self.islands_active())
+            .and_then(|island| island.compute_bounds(&self.panel))
+            .map(|bounds| if self.horizontal { (bounds.x() as f64, bounds.width() as f64) } else { (bounds.y() as f64, bounds.height() as f64) });
+        let anchor = outline.or_else(|| widget.and_then(|widget| {
             super::host::translate(&widget, &self.panel, 0.0, 0.0).map(|point| {
                 // Python's get_allocated_width/height: the margin box.
                 #[allow(deprecated)]
                 let extent = if self.horizontal { widget.allocated_width() } else { widget.allocated_height() };
                 (if self.horizontal { point.0 } else { point.1 }, extent as f64)
             })
-        });
+        }));
         let frost = self.panel_frost_geometry();
         PopupPlacement {
             edge: self.config.edge.clone(),

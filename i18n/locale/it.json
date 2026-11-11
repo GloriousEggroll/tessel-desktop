@@ -1933,5 +1933,7 @@
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Le impostazioni precedenti verranno ripristinate al termine del conto alla rovescia, a meno che tu non scelga Mantieni le modifiche.",
   "Keep Changes": "Mantieni le modifiche",
   "Revert": "Ripristina",
-  "Resize the tiles on both sides of the gap": "Ridimensiona le tessere su entrambi i lati dello spazio"
+  "Resize the tiles on both sides of the gap": "Ridimensiona le tessere su entrambi i lati dello spazio",
+  "Split bar into islands": "Dividi la barra in isole",
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Disegna l’inizio, il centro e la fine della barra come parti separate, con lo sfondo visibile tra di esse. Si applica alle barre, non ai dock."
 }
