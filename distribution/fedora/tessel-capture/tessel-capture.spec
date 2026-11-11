@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 2f76e02cc38675edd808f11c574d87a932162c3f}
+%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-capture
@@ -97,6 +97,7 @@ sh components/capture/tests/run_upright.sh
 %changelog
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
 - Window buttons are as far from the side of the window as from its top
+- Rounded corners are 8 px, as browsers' own windows have
 
 * Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Capture a rotated display upright

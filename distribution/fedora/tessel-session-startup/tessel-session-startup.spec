@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 2f76e02cc38675edd808f11c574d87a932162c3f}
+%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
@@ -115,6 +115,7 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %changelog
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
 - New users get the Tessel layout's window gap and clock
+- labwc rounds window corners at 8 px, as the rest of the desktop does
 
 * Tue Nov 10 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - Clear failed marks left by a crashed session before starting services (black screen with a pointer after a compositor crash)

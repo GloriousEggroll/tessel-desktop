@@ -5,7 +5,7 @@
 # leaves branding/wallpaper out (.gitattributes). Here each picture is a source
 # of its own: the file at this spec's commit. build.sh makes them from the
 # local repository.
-%{!?commit:%global commit 2f76e02cc38675edd808f11c574d87a932162c3f}
+%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
 %global pictures https://github.com/GloriousEggroll/tessel-desktop/raw/%{commit}/branding/wallpaper/renders
 
 Name:           tessel-wallpapers
