@@ -372,6 +372,7 @@ pub fn edit_rc(text: &str, home: &Path) -> Result<(String, Vec<String>), Error> 
     Ok((text, skipped))
 }
 
+/// `tessel_core::look::CORNER_RADIUS`, as rc.xml has it (a test keeps them the same).
 pub const CORNER_RADIUS: &str = "12";
 // Both title fonts match GTK header bar titles (weight 600).
 const TITLE_FONT: [(&str, &str); 3] = [("name", "Sans"), ("size", "10"), ("weight", "SemiBold")];
@@ -1254,6 +1255,11 @@ mod new_user_tests {
         let (again, _) = plan(&home).unwrap();
         std::fs::remove_dir_all(&home).unwrap();
         assert!(!again.iter().any(|(path, _, _)| *path == tiling || *path == clock), "someone with an rc.xml keeps their gaps and clock");
+    }
+
+    #[test]
+    fn labwc_rounds_window_corners_as_the_rest_of_the_desktop_does() {
+        assert_eq!(CORNER_RADIUS, tessel_core::look::CORNER_RADIUS.to_string());
     }
 
     #[test]

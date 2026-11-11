@@ -123,7 +123,7 @@ pub fn palette_css(css_class: &str, colors: &Colors, transparency: i64, options:
         return Err(ValueError(STRENGTH_ERROR));
     }
     let rounded_corners = options.rounded_corners;
-    let radius = if rounded_corners { 12 } else { 0 };
+    let radius = if rounded_corners { tessel_core::look::CORNER_RADIUS } else { 0 };
     let root = format!(".{css_class}");
     if options.backdrop {
         return Ok(format!("window{root}.tessel-shell-switcher-backdrop {{ background-image: none; \

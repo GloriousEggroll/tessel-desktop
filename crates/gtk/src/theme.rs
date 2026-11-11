@@ -326,7 +326,7 @@ pub fn theme_css(scope: &str, entry: &MonitorPalette, is_dark: bool, options: &T
     }
     let alpha = (100.0 - transparency as f64) / 100.0;
     // Surfaces (windows, popups, menus) use 12px; controls and inner cards 8px.
-    let radius = if options.rounded_corners { 12 } else { 0 };
+    let radius = if options.rounded_corners { tessel_core::look::CORNER_RADIUS } else { 0 };
     let background_color = |value: Rgb| rgba(value, alpha);
     let mix = crate::palette::mix;
     let (background, foreground) = (entry.background, entry.foreground);

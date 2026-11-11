@@ -320,6 +320,11 @@ fn find_panels(widget: &gtk::Widget, class_name: Option<&str>, found: &mut Vec<g
     }
 }
 
+/// The corners of a rounded blur region, in pixels: the radius of the surface
+/// drawn over it. This crate stands apart from the desktop's shared values, so
+/// `tessel-gtk` has a test that it is `tessel_core::look::CORNER_RADIUS`.
+pub const CORNER_RADIUS: i32 = 12;
+
 /// Pixel-centre scanlines keep the effect inside the CSS rounded outline; the
 /// full middle rectangle bounds the cost by 2·radius rows, not panel size.
 pub fn rounded_region_rects(x: i32, y: i32, width: i32, height: i32, radius: i32) -> Vec<[i32; 4]> {
@@ -537,7 +542,7 @@ impl BlurBinding {
         self.0.surface_count.set(0);
     }
 
-    /// `strength` 0..=100 maps to 0..=40 px; `rounded` gives 12px corners.
+    /// `strength` 0..=100 maps to 0..=40 px; `rounded` gives [`CORNER_RADIUS`] corners.
     /// `target_class` (a panel CSS class, `Some("")` for none) and `include_root`
     /// replace the stored values when given.
     pub fn configure(&self, enabled: bool, strength: u8, rounded: bool, target_class: Option<&str>, include_root: Option<bool>) {
@@ -569,7 +574,7 @@ impl BlurBinding {
         let target = self.0.target_class.borrow().clone().filter(|t| !t.is_empty());
         let strength = (self.0.strength.get() as f64 * 0.4).round_ties_even() as i32;
         let count = self.0.group.borrow_mut().update(&widget, target.as_deref(), self.0.enabled.get(), self.0.include_root.get(),
-                                                     self.0.include_popovers, if self.0.rounded.get() { 12 } else { 0 }, strength);
+                                                     self.0.include_popovers, if self.0.rounded.get() { CORNER_RADIUS } else { 0 }, strength);
         self.0.surface_count.set(count);
     }
 

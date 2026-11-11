@@ -6,3 +6,11 @@
 //! `attach(&widget, target_class, include_root, include_popovers) -> BlurBinding`,
 //! `.configure(..)`, `.refresh()`, `.surface_count()`, `.geometry(i)`, `.close()`.
 pub use tessel_wayland::blur::*;
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn a_blur_region_has_the_corners_of_the_surface_over_it() {
+        assert_eq!(super::CORNER_RADIUS, tessel_core::look::CORNER_RADIUS);
+    }
+}

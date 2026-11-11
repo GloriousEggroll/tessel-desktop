@@ -11,6 +11,7 @@ pub mod i18n;
 pub mod labwc_hdr;
 pub mod icon_theme;
 pub mod lang;
+pub mod look;
 pub mod paths;
 pub mod pyerr;
 pub mod pyfmt;

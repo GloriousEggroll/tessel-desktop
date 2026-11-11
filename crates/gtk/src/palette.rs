@@ -225,7 +225,7 @@ pub fn background_css(is_dark: bool, style: &PanelStyle) -> Result<String, Strin
     let ordinary = ":not(.power-saver):not(.full):not(.vpn):not(.performance):not(.dimmed):not(.low):not(.limited):not(.critical):not(.needs-attention)";
     let status = ["connected", "plugged", "balanced", "auto", "active"].iter()
         .map(|state| format!("{panel} button.tessel-dock-status.{state}{ordinary}")).collect::<Vec<_>>().join(",\n");
-    let radius = if style.rounded_corners { 12 } else { 0 };
+    let radius = if style.rounded_corners { tessel_core::look::CORNER_RADIUS } else { 0 };
     let inner = if style.inner_rounded_corners.unwrap_or(style.rounded_corners) { 8 } else { 0 };
     Ok(format!("
 {panel} {{ {material}
@@ -254,7 +254,7 @@ pub fn popup_css(scope: &str, is_dark: bool, wallpaper: Option<Rgb>, transparenc
     if transparency > 100 || frost_strength > 100 {
         return Err("Transparency must be between 0 and 100 percent.".into());
     }
-    let radius = if rounded_corners { 12 } else { 0 };
+    let radius = if rounded_corners { tessel_core::look::CORNER_RADIUS } else { 0 };
     let palette = surface_palette(is_dark, wallpaper, background_color);
     let alpha = surface_alpha(palette.background, transparency);
     let (background, foreground, accent) = (join(palette.background), join(palette.foreground), join(palette.accent));
