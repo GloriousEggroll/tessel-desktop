@@ -958,7 +958,23 @@ pub fn split_environment(current: &str, local: &str) -> (String, String) {
 /// replaced by these; it only gets the managed changes above.
 const DEFAULT_RC: &str = include_str!("../../../packaging/defaults/labwc/rc.xml");
 const DEFAULT_MENU: &str = include_str!("../../../packaging/defaults/labwc/menu.xml");
-const NEW_USER_TILING: &str = "{\"gapless\": true, \"gapped_spacing\": 10}\n";
+/// What the Tessel layout, which a new user starts on, sets outside the dock:
+/// a gap between windows (the default rc.xml has it too) and the clock.
+const NEW_USER_TILING: &str = "{\"gapless\": false, \"gapped_spacing\": 10}\n";
+const NEW_USER_CLOCK: &str = r#"{
+  "date_first": true,
+  "date_order": "mdy",
+  "date_separator": "/",
+  "month_name": true,
+  "short_names": true,
+  "show_date": true,
+  "show_weekday": true,
+  "show_year": false,
+  "stacked": false,
+  "use_24_hour": false,
+  "version": 1
+}
+"#;
 
 /// Program paths for a default file: `(labwc expands "~", a shell expands "$HOME")`.
 const DEFAULT_PATHS: (&str, &str) = if tessel_core::paths::PACKAGED {
@@ -987,11 +1003,16 @@ pub fn plan(home: &Path) -> Result<(Vec<FileEntry>, Vec<String>), Error> {
     let mut notes = Vec::new();
 
     let rc = labwc.join("rc.xml");
-    // A new user's rc.xml has no window gap and starts on the Win layout, so the
-    // tiling switch has to say so. Anyone with an rc.xml keeps what they have.
-    let tiling = home.join(".config/tessel/tiling/config.json");
-    if std::fs::symlink_metadata(&rc).is_err() && std::fs::symlink_metadata(&tiling).is_err() {
-        files.push((tiling, NEW_USER_TILING.as_bytes().to_vec(), 0o600));
+    // A new user starts on the Tessel layout. The dock takes its part of the
+    // layout by itself; the window gap and the clock are set here. Anyone with
+    // an rc.xml keeps what they have.
+    if std::fs::symlink_metadata(&rc).is_err() {
+        for (path, text) in [(".config/tessel/tiling/config.json", NEW_USER_TILING), (".config/tessel/clock.json", NEW_USER_CLOCK)] {
+            let path = home.join(path);
+            if std::fs::symlink_metadata(&path).is_err() {
+                files.push((path, text.as_bytes().to_vec(), 0o600));
+            }
+        }
     }
     if let Some(current) = labwc_file(&rc, DEFAULT_RC)? {
         let (text, skipped) = edit_rc(&current, home)?;
@@ -1217,18 +1238,37 @@ mod new_user_tests {
     }
 
     #[test]
-    fn only_a_new_user_starts_without_window_gaps() {
-        let home = home("gapless");
+    fn only_a_new_user_gets_the_tessel_layouts_window_gap_and_clock() {
+        let home = home("layout");
         let tiling = home.join(".config/tessel/tiling/config.json");
+        let clock = home.join(".config/tessel/clock.json");
         let (files, _) = plan(&home).unwrap();
         assert_eq!(file(&files, "config.json"), NEW_USER_TILING);
+        assert_eq!(file(&files, "clock.json"), NEW_USER_CLOCK);
+        assert!(file(&files, "rc.xml").contains("<gap>10</gap>"), "the default rc.xml has the gap the tiling switch reports");
         for (path, data, mode) in &files {
             fsops::atomic_write(path, data, *mode).unwrap();
         }
         std::fs::remove_file(&tiling).unwrap();
+        std::fs::remove_file(&clock).unwrap();
         let (again, _) = plan(&home).unwrap();
         std::fs::remove_dir_all(&home).unwrap();
-        assert!(!again.iter().any(|(path, _, _)| *path == tiling), "someone with an rc.xml keeps their gaps");
+        assert!(!again.iter().any(|(path, _, _)| *path == tiling || *path == clock), "someone with an rc.xml keeps their gaps and clock");
+    }
+
+    #[test]
+    fn the_new_user_values_are_the_tessel_layouts() {
+        let layout = include_str!("../../settings/desktop/layouts/tessel.layout");
+        let compact: String = layout.split_whitespace().collect();
+        assert!(compact.contains("\"gapless\":false"), "the Tessel layout has window gaps");
+        let pair = Regex::new(r#"(?m)^  ("[a-z_0-9]+"): (.+?),?$"#).unwrap();
+        let mut seen = 0;
+        for found in pair.captures_iter(NEW_USER_CLOCK).filter(|found| &found[1] != "\"version\"") {
+            let wanted = format!("{}:{}", &found[1], &found[2]);
+            assert!(compact.contains(&wanted), "the Tessel layout's clock has no {wanted}");
+            seen += 1;
+        }
+        assert_eq!(seen, 10, "every clock preference is set");
     }
 
     #[test]

@@ -927,8 +927,8 @@ pub struct ConfigStore {
     new_user_layout: bool,
 }
 
-/// The Win layout of Global Settings > Desktop Layout, which a new user starts on.
-const NEW_USER_LAYOUT: &str = include_str!("../../../settings/desktop/layouts/win.layout");
+/// The Tessel layout of Global Settings > Desktop Layout, which a new user starts on.
+const NEW_USER_LAYOUT: &str = include_str!("../../../settings/desktop/layouts/tessel.layout");
 
 /// The default settings with [`NEW_USER_LAYOUT`] applied.
 pub fn new_user_config() -> DockConfig {

@@ -105,14 +105,16 @@ fn preset(values: Value) -> Preset {
 }
 
 #[test]
-fn a_new_user_starts_on_the_win_layout() {
+fn a_new_user_starts_on_the_tessel_layout() {
     let (presets, problems) = crate::layout_presets::load_presets();
     assert!(problems.is_empty(), "{problems:?}");
-    let win = presets.iter().find(|p| p.key == "win").unwrap();
+    let tessel = presets.iter().find(|p| p.key == "tessel").unwrap();
     let config = tessel_dock::core::config::new_user_config();
     assert_eq!(config.mode, "bar");
+    assert!(config.bar_islands && config.edge == "top");
     assert!(config.hot_corners.is_empty() && config.monitor_overrides.is_empty(), "no one else's monitor names");
-    assert!(crate::layout_presets::matches(win, &config, win.workspaces, win.gapless, None), "Desktop Layout should show Win as current");
+    assert_eq!(tessel.gapless, Some(false), "session startup gives a new user this gap");
+    assert!(crate::layout_presets::matches(tessel, &config, tessel.workspaces, tessel.gapless, None), "Desktop Layout should show Tessel as current");
 }
 
 #[test]

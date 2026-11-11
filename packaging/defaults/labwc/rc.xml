@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <labwc_config>
   <core>
-    <gap>0</gap>
+    <gap>10</gap>
     <promptCommand>exec @SHELL_BIN@/tessel-prompt --message-stdin &lt;&lt;'TESSEL_PROMPT_END_7f3a9c1e5d2b4860'
 %m
 TESSEL_PROMPT_END_7f3a9c1e5d2b4860</promptCommand>
