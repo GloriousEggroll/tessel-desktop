@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Διατήρηση αυτών των ρυθμίσεων οθόνης;",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Οι προηγούμενες ρυθμίσεις θα επανέλθουν όταν λήξει η αντίστροφη μέτρηση, εκτός αν επιλέξετε Διατήρηση αλλαγών.",
   "Keep Changes": "Διατήρηση αλλαγών",
-  "Revert": "Επαναφορά"
+  "Revert": "Επαναφορά",
+  "Resize the tiles on both sides of the gap": "Αλλαγή μεγέθους των πλακιδίων και στις δύο πλευρές του κενού"
 }

@@ -90,9 +90,10 @@ pub static BINDINGS: LazyLock<Vec<Binding>> = LazyLock::new(|| {
 });
 
 /// Display-only rows of the shortcut list (`EXTRA_SHORTCUTS`).
-pub const EXTRA_SHORTCUTS: [(&str, &str); 7] = [
+pub const EXTRA_SHORTCUTS: [(&str, &str); 8] = [
     ("Super + left drag", "Rearrange tiles or move a floating window"),
     ("Super + right drag", "Resize tiles or a floating window"),
+    ("Left drag between tiles", "Resize the tiles on both sides of the gap"),
     ("Super + scroll", "Change workspace"),
     ("Super + Alt + scroll", "Change window in group"),
     ("Alt + Tab / Alt + Shift + Tab", "Tessel Shell activities / reverse activities"),

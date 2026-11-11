@@ -296,6 +296,9 @@ fn json_line(value: &Map<String, Value>) -> Vec<u8> {
 }
 
 /// `TilingConfig`: every change runs under the lock and rolls back on failure.
+/// The gap between tiles when gaps are on and none was set before.
+pub const DEFAULT_GAP: i64 = 10;
+
 pub struct TilingConfig {
     /// Explicit rc.xml (tests); `None` = the running compositor's session config.
     pub path: Option<PathBuf>,
@@ -428,10 +431,12 @@ impl TilingConfig {
             (None, None) => b"<labwc_config/>".to_vec(),
         };
         let mode = if existed { Self::mode_of(&path)? } else { 0o600 };
+        // Turning gaps on with no spacing to go back to (the saved one was 0)
+        // uses the default, so there is a gap to drag between tiles.
         let gap = if enabled { Some(0) } else {
             match preferences.get("gapped_spacing") {
-                None => Some(10),
-                value => as_int(value),
+                None => Some(DEFAULT_GAP),
+                value => as_int(value).map(|gap| if gap == 0 { DEFAULT_GAP } else { gap }),
             }
         };
         let gap = gap.ok_or_else(|| Error("Invalid window gap.".into()))?;
@@ -779,6 +784,19 @@ mod tests {
             assert_eq!(fs::read(&path).unwrap(), original, "{failure}");
             assert!(!config.preferences.exists());
         }
+    }
+
+    #[test]
+    fn turning_gaps_on_after_a_zero_gap_uses_the_default() {
+        let root = crate::testing::scratch("gap-zero");
+        let path = root.join("rc.xml");
+        fs::write(&path, b"<labwc_config><core><gap>0</gap></core></labwc_config>").unwrap();
+        let call: Call = Arc::new(|_: &str| Ok(reply(json!({"compositor_pid": 42}))));
+        let config = TilingConfig::new(Some(path.clone()), Some(root.clone()), Some(root.clone()), Some(call), noop_reload(), None);
+        config.set_gapless(true).unwrap();
+        assert_eq!(config.load_preferences().unwrap()["gapped_spacing"], json!(0));
+        config.set_gapless(false).unwrap();
+        assert_eq!(with_gap(&fs::read(&path).unwrap(), 0).unwrap().1, DEFAULT_GAP);
     }
 
     #[test]

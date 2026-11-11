@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Зберегти ці налаштування екрана?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Коли зворотний відлік закінчиться, повернуться попередні налаштування, якщо ви не виберете «Зберегти зміни».",
   "Keep Changes": "Зберегти зміни",
-  "Revert": "Повернути"
+  "Revert": "Повернути",
+  "Resize the tiles on both sides of the gap": "Змінити розмір плиток з обох боків проміжку"
 }

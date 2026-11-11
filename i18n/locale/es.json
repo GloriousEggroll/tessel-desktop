@@ -2267,5 +2267,6 @@
   "Keep these display settings?": "¿Conservar esta configuración de pantalla?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Tu configuración anterior se restaurará cuando termine la cuenta atrás, a menos que elijas Conservar los cambios.",
   "Keep Changes": "Conservar los cambios",
-  "Revert": "Revertir"
+  "Revert": "Revertir",
+  "Resize the tiles on both sides of the gap": "Cambiar el tamaño de los mosaicos a ambos lados del espacio"
 }

@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "เก็บการตั้งค่าจอแสดงผลนี้ไว้หรือไม่",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "การตั้งค่าก่อนหน้าจะกลับมาเมื่อการนับถอยหลังสิ้นสุด เว้นแต่คุณจะเลือกเก็บการเปลี่ยนแปลง",
   "Keep Changes": "เก็บการเปลี่ยนแปลง",
-  "Revert": "ย้อนกลับ"
+  "Revert": "ย้อนกลับ",
+  "Resize the tiles on both sides of the gap": "ปรับขนาดไทล์ทั้งสองด้านของช่องว่าง"
 }

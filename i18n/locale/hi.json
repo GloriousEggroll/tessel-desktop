@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "क्या इन डिस्प्ले सेटिंग को रखना है?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "काउंटडाउन समाप्त होने पर आपकी पिछली सेटिंग वापस आ जाएँगी, जब तक कि आप बदलाव रखें न चुनें।",
   "Keep Changes": "बदलाव रखें",
-  "Revert": "वापस लाएँ"
+  "Revert": "वापस लाएँ",
+  "Resize the tiles on both sides of the gap": "अंतराल के दोनों ओर की टाइलों का आकार बदलें"
 }

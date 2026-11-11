@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Păstrați aceste setări ale ecranului?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Setările anterioare vor reveni la sfârșitul numărătorii inverse, dacă nu alegeți Păstrează modificările.",
   "Keep Changes": "Păstrează modificările",
-  "Revert": "Revenire"
+  "Revert": "Revenire",
+  "Resize the tiles on both sides of the gap": "Redimensionează plăcile de pe ambele părți ale spațiului"
 }

@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Zachować te ustawienia ekranu?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Po zakończeniu odliczania wrócą poprzednie ustawienia, chyba że wybierzesz Zachowaj zmiany.",
   "Keep Changes": "Zachowaj zmiany",
-  "Revert": "Przywróć"
+  "Revert": "Przywróć",
+  "Resize the tiles on both sides of the gap": "Zmień rozmiar kafelków po obu stronach odstępu"
 }

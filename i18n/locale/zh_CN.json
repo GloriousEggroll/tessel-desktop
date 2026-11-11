@@ -2114,5 +2114,6 @@
   "Keep these display settings?": "要保留这些显示设置吗?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "倒计时结束时将恢复之前的设置,除非您选择“保留更改”。",
   "Keep Changes": "保留更改",
-  "Revert": "还原"
+  "Revert": "还原",
+  "Resize the tiles on both sides of the gap": "调整间隙两侧平铺窗口的大小"
 }

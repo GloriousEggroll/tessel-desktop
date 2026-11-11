@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Säilytetäänkö nämä näyttöasetukset?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Aiemmat asetukset palautetaan, kun lähtölaskenta päättyy, ellet valitse Säilytä muutokset.",
   "Keep Changes": "Säilytä muutokset",
-  "Revert": "Palauta"
+  "Revert": "Palauta",
+  "Resize the tiles on both sides of the gap": "Muuta välin molemmilla puolilla olevien ruutujen kokoa"
 }

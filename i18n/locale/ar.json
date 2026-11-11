@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "هل تريد الاحتفاظ بإعدادات الشاشة هذه؟",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "ستعود إعداداتك السابقة عند انتهاء العد التنازلي، ما لم تختر «الاحتفاظ بالتغييرات».",
   "Keep Changes": "الاحتفاظ بالتغييرات",
-  "Revert": "تراجع"
+  "Revert": "تراجع",
+  "Resize the tiles on both sides of the gap": "تغيير حجم النوافذ المتجانبة على جانبي الفجوة"
 }

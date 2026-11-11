@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Bu ekran ayarları korunsun mu?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Değişiklikleri Koru seçeneğini seçmezseniz geri sayım bittiğinde önceki ayarlarınız geri gelir.",
   "Keep Changes": "Değişiklikleri Koru",
-  "Revert": "Geri Al"
+  "Revert": "Geri Al",
+  "Resize the tiles on both sides of the gap": "Boşluğun iki yanındaki döşemeleri yeniden boyutlandır"
 }

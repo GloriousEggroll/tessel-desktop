@@ -2114,5 +2114,6 @@
   "Keep these display settings?": "このディスプレイ設定を維持しますか?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "「変更を維持」を選択しない限り、カウントダウンが終わると以前の設定に戻ります。",
   "Keep Changes": "変更を維持",
-  "Revert": "元に戻す"
+  "Revert": "元に戻す",
+  "Resize the tiles on both sides of the gap": "隙間の両側のタイルのサイズを変更"
 }

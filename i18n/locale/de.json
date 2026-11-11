@@ -2267,5 +2267,6 @@
   "Keep these display settings?": "Diese Anzeigeeinstellungen beibehalten?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Wenn der Countdown endet, werden deine vorherigen Einstellungen wiederhergestellt, sofern du nicht „Änderungen behalten“ wählst.",
   "Keep Changes": "Änderungen behalten",
-  "Revert": "Zurücksetzen"
+  "Revert": "Zurücksetzen",
+  "Resize the tiles on both sides of the gap": "Größe der Kacheln auf beiden Seiten der Lücke ändern"
 }

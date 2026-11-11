@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Megtartja ezeket a kijelzőbeállításokat?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "A visszaszámlálás végén visszaállnak a korábbi beállítások, hacsak nem a Módosítások megtartása lehetőséget választja.",
   "Keep Changes": "Módosítások megtartása",
-  "Revert": "Visszaállítás"
+  "Revert": "Visszaállítás",
+  "Resize the tiles on both sides of the gap": "A rés két oldalán lévő csempék átméretezése"
 }

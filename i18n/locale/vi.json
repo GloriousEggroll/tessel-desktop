@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Giữ các cài đặt màn hình này?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Cài đặt trước đó sẽ được khôi phục khi đếm ngược kết thúc, trừ khi bạn chọn Giữ thay đổi.",
   "Keep Changes": "Giữ thay đổi",
-  "Revert": "Hoàn nguyên"
+  "Revert": "Hoàn nguyên",
+  "Resize the tiles on both sides of the gap": "Đổi kích thước các ô ở hai bên khoảng trống"
 }

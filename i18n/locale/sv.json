@@ -1932,5 +1932,6 @@
   "Keep these display settings?": "Vill du behålla de här skärminställningarna?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Dina tidigare inställningar kommer tillbaka när nedräkningen är slut, om du inte väljer Behåll ändringar.",
   "Keep Changes": "Behåll ändringar",
-  "Revert": "Återställ"
+  "Revert": "Återställ",
+  "Resize the tiles on both sides of the gap": "Ändra storlek på rutorna på båda sidor om mellanrummet"
 }

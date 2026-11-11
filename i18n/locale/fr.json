@@ -2267,5 +2267,6 @@
   "Keep these display settings?": "Conserver ces paramètres d'affichage ?",
   "Your previous settings will come back when the countdown ends, unless you choose Keep Changes.": "Vos paramètres précédents seront rétablis à la fin du compte à rebours, sauf si vous choisissez Conserver les modifications.",
   "Keep Changes": "Conserver les modifications",
-  "Revert": "Rétablir"
+  "Revert": "Rétablir",
+  "Resize the tiles on both sides of the gap": "Redimensionner les tuiles de part et d’autre de l’espace"
 }

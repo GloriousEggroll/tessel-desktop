@@ -50,6 +50,7 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 
 ## §3b Gapless (`gaps`)
 `with_gap` span edits, minidom `toxml()` of `<core>`, previous gap, self-closing root/core, comments, invalid inputs; `set_gapless` no-op, `gapped_spacing`, backup `gap-<stamp>.xml`, rollback on reload/prefs failure: ✅ `gaps::tests::*`, `config::tests::{persistence_*, reload_or_preference_*, invalid_saved_spacing_is_rejected}`, `python_parity`.
+⚠ Turning gaps back on when the saved spacing is 0 uses 10 px (`DEFAULT_GAP`), so there is a gap to drag between tiles (labwc 0.20.2-23): `config::tests::turning_gaps_on_after_a_zero_gap_uses_the_default`.
 
 ## §4 Files / OutlineSync
 config.json (unknown keys kept, `json.dumps`+`\n`, 0600), change.lock, backups, palette.json limits (1 MiB, 64 monitors, name regex, int channels): ✅ `outline::tests::*`, `config::tests::{toggle_preserves_*, failed_preference_write_*, invalid_preferences_raise}`, cli watch (palette → one `outline-color`).
