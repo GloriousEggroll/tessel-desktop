@@ -23,6 +23,7 @@ use gs_desktop::dock::{self, DockPage, DockPageOptions, TilingPart, WorkspacePar
 use gs_desktop::layout::{LayoutOptions, LayoutSettings};
 use gs_desktop::layout_presets::{self as presets, Preset, PresetIcon, TilingBackend, WorkspaceBackend, WorkspaceState};
 use gs_desktop::icon_themes;
+use gs_desktop::snap_layouts::{self as snap, Axis, Preset as SnapPreset};
 use gs_desktop::theme::{self, ColorSettings, ThemeBridge, ThemeOptions, ThemeWallpaperPage, MODES};
 use gtk::prelude::*;
 use serde_json::{json, Map, Value};
@@ -930,6 +931,8 @@ struct DockFx {
     rc: PathBuf,
     reloads: Arc<Mutex<usize>>,
     dir: PathBuf,
+    snap_config: PathBuf,
+    snap_reloads: Rc<Cell<usize>>,
 }
 
 impl DockFx {
@@ -950,6 +953,11 @@ fn offline_factory(store: PathBuf) -> dock::BridgeFactory {
 }
 
 fn dock_fx(app: &gtk::Application, section: &str, tiling: Option<dock::TilingFactory>) -> DockFx {
+    dock_fx_with(app, section, tiling, None)
+}
+
+fn dock_fx_with(app: &gtk::Application, section: &str, tiling: Option<dock::TilingFactory>,
+                screens: Option<snap::ScreenList>) -> DockFx {
     let dir = scratch("dock");
     let store = dir.join("dock.json");
     let mut config = config_with(json!({"pins": ["org.example.App.desktop"], "hot_corners": {"offline-output": ["bottom_left"]}}));
@@ -974,12 +982,21 @@ fn dock_fx(app: &gtk::Application, section: &str, tiling: Option<dock::TilingFac
     });
     let authentication: dock::AuthenticationFactory = Rc::new(|| dock::AuthenticationStatus::new(None));
     let (test_host, _host) = host(app);
+    let snap_config = dir.join("tessel/snap-layouts.json");
+    let snap_reloads: Rc<Cell<usize>> = Rc::default();
+    let (rc3, counter) = (rc.clone(), snap_reloads.clone());
+    let snap_layouts = snap::SnapOptions { config: Some(snap_config.clone()), rc: Some(Rc::new(move || rc3.clone())),
+        reconfigure: Some(Rc::new(move || {
+            counter.set(counter.get() + 1);
+            (true, None)
+        })), screens };
     let options = DockPageOptions { bridge_factory: Some(offline_factory(store.clone())), workspace_factory: Some(workspace),
-                                    tiling_factory: Some(tiling), authentication_factory: Some(authentication) };
+                                    tiling_factory: Some(tiling), authentication_factory: Some(authentication),
+                                    snap_layouts: Some(snap_layouts) };
     let page = dock::create_page(Some(app.clone()), section, options).unwrap();
     show(&test_host, &page);
     let dock = page.controller::<DockPage>().unwrap();
-    DockFx { host: test_host, page, dock, store, rc, reloads, dir }
+    DockFx { host: test_host, page, dock, store, rc, reloads, dir, snap_config, snap_reloads }
 }
 
 fn tiling_backend(rc: &Path, dir: &Path) -> tessel_tiling::config::TilingConfig {
@@ -1233,7 +1250,7 @@ fn dock_tests(app: &gtk::Application) {
         assert_eq!(saved.hot_corners.get(&output).cloned(), Some(vec!["top_left".to_owned()]));
         assert_eq!(saved.transparency, 5);
         for name in ["workspace_count", "gapless_switch", "tiling_switch", "focus_outline_switch", "authentication_status",
-                     "hot_corner_delay", "menu_hotkey_fullscreen"] {
+                     "hot_corner_delay", "menu_hotkey_fullscreen", "snap_layouts"] {
             assert!(fx.page.search_targets.borrow().contains_key(name), "{name}");
         }
         fx.done();
@@ -1753,6 +1770,173 @@ fn build_page_tests(app: &gtk::Application) {
     });
 }
 
+// ------------------------------------------------------------- snap layouts
+
+fn select_preset(group: &snap::SnapLayoutsGroup, preset: SnapPreset) {
+    group.layout.set_selected(snap::PRESETS.iter().position(|p| *p == preset).unwrap() as u32);
+}
+
+fn saved_outputs(path: &Path) -> Value {
+    serde_json::from_str::<Value>(&std::fs::read_to_string(path).unwrap()).unwrap()["outputs"].clone()
+}
+
+/// The page scrolled so the Snap layouts card is in view; grim of the whole session.
+fn snap_screenshot(fx: &DockFx, name: &str) {
+    let group = fx.dock.extra_controls().unwrap().snap_layouts.clone();
+    let scrolled = group.widget.ancestor(gtk::ScrolledWindow::static_type()).and_downcast::<gtk::ScrolledWindow>().unwrap();
+    GtkWindowExt::set_focus(&fx.host.window, None::<&gtk::Widget>);
+    for _ in 0..3 {
+        settle(0.3);
+        let child = scrolled.child().unwrap();
+        let point = group.widget.compute_point(&child, &gtk::graphene::Point::new(0.0, 0.0)).unwrap();
+        // The viewport's coordinates already include the scroll offset.
+        let adjustment = scrolled.vadjustment();
+        adjustment.set_value(adjustment.value() + point.y() as f64 - 12.0);
+    }
+    settle(0.4);
+    let path = screenshot(name);
+    // SNAP_PROOF=<dir> keeps a copy outside the run's scratch tree.
+    if let Some(proof) = std::env::var_os("SNAP_PROOF").map(PathBuf::from) {
+        std::fs::create_dir_all(&proof).unwrap();
+        std::fs::copy(&path, proof.join(format!("{name}.png"))).unwrap();
+    }
+}
+
+fn snap_tests(app: &gtk::Application) {
+    run("snap_layouts_group_lists_both_screens_and_writes_three_rows", || {
+        let fx = dock_fx(app, "desktop", None);
+        let group = fx.dock.extra_controls().unwrap().snap_layouts.clone();
+        assert!(group.widget.is_visible());
+        let names = dropdown_names(&group.screen);
+        let outputs = connectors();
+        assert_eq!(names.len(), 2, "{names:?}");
+        assert!(names[1].starts_with(&outputs[1]), "{names:?} {outputs:?}");
+        assert!(group.screen.is_visible() && group.screen_caption.is_visible());
+        assert_eq!(dropdown_names(&group.layout), ["Halves (default)", "2 columns", "3 columns", "4 columns", "2 rows",
+                                                   "3 rows", "2 × 2 grid", "3 × 2 grid", "Custom"]);
+        assert_eq!(group.preset(), SnapPreset::Halves);
+        assert!(fx.page.search_targets.borrow().contains_key("snap_layouts"));
+        group.screen.set_selected(1);
+        assert_eq!(group.editing().as_deref(), Some(outputs[1].as_str()));
+        select_preset(&group, SnapPreset::Rows3);
+        settle(0.1);
+        assert_eq!(fx.snap_reloads.get(), 1);
+        assert_eq!(saved_outputs(&fx.snap_config), json!({outputs[1].clone(): {"columns": [100], "rows": [33, 34, 33]}}));
+        let rc = std::fs::read_to_string(&fx.rc).unwrap();
+        let o = &outputs[1];
+        let block = [
+            "<!-- tessel snap layouts begin -->".to_owned(), "<regions>".into(),
+            format!("  <region name=\"tessel-1-1\" output=\"{o}\" x=\"0%\" y=\"0%\" width=\"100%\" height=\"33%\"/>"),
+            format!("  <region name=\"tessel-1-2\" output=\"{o}\" x=\"0%\" y=\"33%\" width=\"100%\" height=\"34%\"/>"),
+            format!("  <region name=\"tessel-1-3\" output=\"{o}\" x=\"0%\" y=\"67%\" width=\"100%\" height=\"33%\"/>"),
+            "</regions>".into(), "<!-- tessel snap layouts end -->".into()].join("\n");
+        assert_eq!(rc, format!("<labwc_config><desktops number=\"4\"/>\n\n{block}\n</labwc_config>\n"));
+        assert_eq!((group.columns.value_as_int(), group.rows.value_as_int()), (1, 3));
+        assert_eq!(group.size_labels(), ["33%", "34%", "33%"]);
+        assert_eq!(group.dividers().len(), 2);
+        assert!(group.dividers().iter().all(|(axis, _, d)| *axis == Axis::Rows && d.is_focusable()));
+        // The first screen keeps the default; switching back shows it.
+        group.screen.set_selected(0);
+        assert_eq!(group.preset(), SnapPreset::Halves);
+        assert!(group.dividers().is_empty());
+        group.screen.set_selected(1);
+        assert_eq!(group.preset(), SnapPreset::Rows3);
+        // Nothing changed: nothing written, no reload.
+        group.apply_now();
+        group.refresh();
+        assert_eq!(fx.snap_reloads.get(), 1);
+        assert_eq!(group.preset(), SnapPreset::Rows3);
+        select_preset(&group, SnapPreset::Halves);
+        settle(0.1);
+        assert_eq!(fx.snap_reloads.get(), 2);
+        assert_eq!(saved_outputs(&fx.snap_config), json!({}));
+        let rc = std::fs::read_to_string(&fx.rc).unwrap();
+        assert_eq!(rc, "<labwc_config><desktops number=\"4\"/>\n</labwc_config>\n");
+        assert!(!group.error.is_visible());
+        fx.done();
+    });
+    run("snap_layouts_dividers_and_spin_buttons_resize_the_areas", || {
+        let fx = dock_fx(app, "desktop", None);
+        let group = fx.dock.extra_controls().unwrap().snap_layouts.clone();
+        group.columns.set_value(3.0);
+        assert_eq!(group.preset(), SnapPreset::Columns3);
+        assert_eq!(group.current().columns, [33, 34, 33]);
+        assert_eq!(fx.snap_reloads.get(), 1);
+        // Keyboard moves wait for the debounce.
+        assert!(group.move_divider(Axis::Columns, 0, 1));
+        assert!(group.move_divider(Axis::Columns, 0, 1));
+        assert!(group.has_pending());
+        assert_eq!(group.current().columns, [35, 32, 33]);
+        assert_eq!(group.preset(), SnapPreset::Custom);
+        assert_eq!(group.size_labels(), ["35%", "32%", "33%"]);
+        assert_eq!(fx.snap_reloads.get(), 1);
+        assert!(wait(|| !group.has_pending()));
+        assert_eq!(fx.snap_reloads.get(), 2);
+        assert_eq!(saved_outputs(&fx.snap_config)[connectors()[0].as_str()]["columns"], json!([35, 32, 33]));
+        assert!(std::fs::read_to_string(&fx.rc).unwrap().contains("x=\"35%\" y=\"0%\" width=\"32%\""));
+        // A mouse drag of the second divider far right stops at 10 %.
+        assert!(group.drag_divider(Axis::Columns, 1, 2000.0));
+        assert_eq!(group.current().columns, [35, 55, 10]);
+        assert_eq!(fx.snap_reloads.get(), 3);
+        // A drag back to equal thirds is the preset again.
+        let width = group.preview.width() as f64;
+        assert!(width > 100.0);
+        assert!(group.drag_divider(Axis::Columns, 1, -(width * 0.23)));
+        assert!(group.drag_divider(Axis::Columns, 0, -(width * 0.02)));
+        assert_eq!(group.current().columns, [33, 34, 33]);
+        assert_eq!(group.preset(), SnapPreset::Columns3);
+        // A real key press on a focused divider.
+        let (_, _, divider) = group.dividers()[0].clone();
+        divider.grab_focus();
+        assert!(!group.move_divider(Axis::Columns, 5, 1));
+        group.rows.set_value(2.0);
+        assert_eq!(group.preset(), SnapPreset::Grid3x2);
+        assert_eq!(group.size_labels().len(), 6);
+        assert_eq!(group.size_labels()[0], "33% × 50%");
+        // Unwritable rc.xml: the JSON keeps the change and the error shows.
+        std::fs::remove_file(&fx.rc).unwrap();
+        std::fs::create_dir(&fx.rc).unwrap();
+        select_preset(&group, SnapPreset::Rows2);
+        assert!(group.error.is_visible());
+        assert_eq!(saved_outputs(&fx.snap_config)[connectors()[0].as_str()]["rows"], json!([50, 50]));
+        fx.done();
+    });
+    run("snap_layouts_note_follows_window_tiling_and_a_single_screen_hides_the_choice", || {
+        let one: snap::ScreenList = Rc::new(|| vec![snap::Screen { connector: "DP-2".into(), label: "DP-2".into(), width: 1080, height: 1920 }]);
+        let fx = dock_fx_with(app, "desktop", None, Some(one));
+        let extra = fx.dock.extra_controls().unwrap();
+        let group = extra.snap_layouts.clone();
+        assert!(!group.screen.is_visible() && !group.screen_caption.is_visible());
+        assert_eq!(group.tiling_note.is_visible(), extra.tiling.enabled_switch().is_active());
+        assert!(group.preview.content_height() > group.preview.content_width());
+        select_preset(&group, SnapPreset::Columns2);
+        assert_eq!(saved_outputs(&fx.snap_config), json!({"DP-2": {"columns": [50, 50], "rows": [100]}}));
+        fx.done();
+    });
+    run("snap_layouts_screenshots", || {
+        let dark = std::env::var("SNAP_DARK").is_ok_and(|v| v == "1");
+        if let Some(settings) = gtk::Settings::default() {
+            settings.set_gtk_application_prefer_dark_theme(dark);
+        }
+        let suffix = format!("{}{}", if dark { "dark" } else { "light" },
+                             std::env::var("LANGUAGE").map(|l| format!("-{l}")).unwrap_or_default());
+        let screens: snap::ScreenList = Rc::new(|| vec![
+            snap::Screen { connector: "HDMI-A-1".into(), label: "HDMI-A-1 · Wide monitor".into(), width: 2560, height: 1440 },
+            snap::Screen { connector: "DP-2".into(), label: "DP-2 · Rotated monitor".into(), width: 1080, height: 1920 }]);
+        let fx = dock_fx_with(app, "desktop", None, Some(screens));
+        let _style = gs_base::style::install(&fx.host.window);
+        fx.host.window.set_default_size(900, 760);
+        let group = fx.dock.extra_controls().unwrap().snap_layouts.clone();
+        select_preset(&group, SnapPreset::Columns3);
+        snap_screenshot(&fx, &format!("snap-landscape-{suffix}"));
+        group.screen.set_selected(1);
+        select_preset(&group, SnapPreset::Rows3);
+        assert!(group.move_divider(Axis::Rows, 0, 7));
+        snap_screenshot(&fx, &format!("snap-portrait-{suffix}"));
+        fx.done();
+    });
+}
+
 // -------------------------------------------------------------------- helpers
 
 
@@ -1777,7 +1961,8 @@ fn main() {
     app.register(gio::Cancellable::NONE).unwrap();
     let only = std::env::args().nth(1);
     let groups: Vec<(&str, fn(&gtk::Application))> = vec![("theme", theme_tests), ("icons", icon_tests), ("displays", display_tests), ("dock", dock_tests),
-        ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests)];
+        ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests),
+        ("snap", snap_tests)];
     for (name, group) in groups {
         if only.as_deref().is_none_or(|o| o == name) {
             group(&app);

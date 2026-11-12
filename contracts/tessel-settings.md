@@ -94,6 +94,14 @@ Every page that Python built from another component's module is built from that 
 - rc.xml (labwc `-c/-C` of `LABWC_PID`, else `$XDG_CONFIG_HOME/labwc/rc.xml`): workspaces/input/keyboard/
   shortcuts/accessibility/night light blocks via `labwc_settings` / `workspace_config` / `input_config`
   (backups `$XDG_STATE_HOME/tessel/backups/{input,…}`, reload `labwc --reconfigure`, restore on failure).
+- Desktop Behavior "Snap layouts" (Rust-only, `gs_desktop::snap_layouts`): `$XDG_CONFIG_HOME/tessel/snap-layouts.json`
+  (0600, atomic; `{"version": 1, "outputs": {"<connector>": {"columns": [..], "rows": [..]}}}`, integer percentages
+  summing to 100, 1–6 columns, 1–4 rows, each area ≥ 10 %, unknown keys kept, invalid entries read as the default) is
+  the source of truth; rc.xml gets the block `<!-- tessel snap layouts begin -->` `<regions>` `<region name="tessel-<col>-<row>"
+  output="<connector>" x= y= width= height= (%)/>` … `<!-- tessel snap layouts end -->` before `</labwc_config>`, under
+  the shared `rc.xml.tessel-lock`; removed when every screen keeps "Halves (default)"; `labwc --reconfigure` only when
+  the block changed. A user's own `<regions>` is never touched. Applies immediately (keyboard divider moves after 300 ms,
+  mouse drags on release). Not rewritten on page load; `snap_layouts::sync_rc()` regenerates it from the JSON.
 - `labwc/environment` keys (`XCURSOR_SIZE`, `TERMINAL`, XKB_*), `night-light` config, `mimeapps.list`
   (default apps), `~/.config/tessel-dock/config.json` (when tessel-dock is offline), `~/.config/tessel/clock.json`,
   `layout_presets` previous-layout state, tiling config, tessel-lock config, login appearance (via pkexec helper).

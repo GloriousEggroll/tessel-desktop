@@ -12,6 +12,7 @@ pub mod layout;
 pub mod layout_presets;
 pub mod lock;
 pub mod login;
+pub mod snap_layouts;
 pub mod theme;
 pub mod util;
 pub mod workspaces;
