@@ -2277,5 +2277,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "Les applications sélectionnées restent affichées dans la zone de notification sans cliquer sur Plus d'applications.",
   "Always": "Toujours",
   "On only while an app is fullscreen on this screen.": "Activée uniquement lorsqu’une application est en plein écran sur cet écran.",
-  "Adaptive Sync is not available on this screen.": "La synchronisation adaptative n’est pas disponible sur cet écran."
+  "Adaptive Sync is not available on this screen.": "La synchronisation adaptative n’est pas disponible sur cet écran.",
+  "Small": "Petite",
+  "Medium": "Moyenne",
+  "Large": "Grande",
+  "System tray icon size": "Taille des icônes de la zone de notification",
+  "The size of the status icons, tray applications and More apps in the system tray.": "La taille des icônes d'état, des applications de la zone de notification et du bouton Plus d'applications."
 }

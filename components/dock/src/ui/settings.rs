@@ -46,7 +46,7 @@ use indexmap::IndexMap;
 use tessel_core::tr;
 
 use super::group_layout_settings::GroupLayoutControls;
-use crate::core::config::{DockConfig, IntHint, BORDER_SIDES, CORNERS, DEFAULT_APPS, GROUPS};
+use crate::core::config::{DockConfig, IntHint, BORDER_SIDES, CORNERS, DEFAULT_APPS, GROUPS, TRAY_ICON_SIZES};
 use crate::core::group_layout::APP_DOCK_GROUPS;
 use crate::core::ordered::OrderedMap;
 use crate::core::tray_prefs::TrayEntry;
@@ -341,6 +341,7 @@ pub struct SettingsControls {
     pub group_labels: IndexMap<String, gtk::Label>,
     pub layout_controls: Rc<GroupLayoutControls>,
     pub default_app_switches: IndexMap<String, gtk::Switch>,
+    pub tray_icon_size: gtk::ComboBoxText,
     pub tray_rows: gtk::Box,
     pub tray_refresh: gtk::Button,
     pub fullscreen: gtk::Switch,
@@ -792,6 +793,15 @@ impl SettingsWindow {
 
         // System tray
         b.section(&content, &tr!("System tray"), "view-more-symbolic", "tray");
+        let tray_size_choices: Vec<(String, String)> =
+            TRAY_ICON_SIZES.iter().map(|(name, title)| (name.to_string(), tr!(title))).collect();
+        let tray_icon_size = combo(&tray_size_choices, &config.tray_icon_size);
+        accessible_name(&tray_icon_size, &tr!("System tray icon size"));
+        b.row(
+            &tr!("System tray icon size"),
+            &tray_icon_size,
+            Some(&tr!("The size of the status icons, tray applications and More apps in the system tray.")),
+        );
         let tray_rows = gtk::Box::new(gtk::Orientation::Vertical, 10);
         b.full(&tray_rows);
         let tray_refresh = gtk::Button::from_icon_name("view-refresh-symbolic");
@@ -941,6 +951,7 @@ impl SettingsWindow {
             group_labels,
             layout_controls,
             default_app_switches,
+            tray_icon_size,
             tray_rows,
             tray_refresh,
             fullscreen,
@@ -1239,6 +1250,7 @@ impl Inner {
         config.always_visible_apps =
             c.default_app_switches.iter().filter(|(_, t)| t.is_active()).map(|(name, _)| name.clone()).collect();
         config.application_display = active_id(&c.application_display);
+        config.tray_icon_size = active_id(&c.tray_icon_size);
         config.monitor = active_id(&c.monitor);
         config.monitor_overrides = overrides;
         config.icon_size = c.size.value_as_int() as i64;

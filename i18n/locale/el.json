@@ -1944,5 +1944,10 @@
   "Always": "Πάντα",
   "Adaptive Sync (VRR)": "Προσαρμοστικός συγχρονισμός (VRR)",
   "On only while an app is fullscreen on this screen.": "Ενεργό μόνο όσο μια εφαρμογή είναι σε πλήρη οθόνη σε αυτή την οθόνη.",
-  "Adaptive Sync is not available on this screen.": "Ο προσαρμοστικός συγχρονισμός δεν είναι διαθέσιμος σε αυτήν την οθόνη."
+  "Adaptive Sync is not available on this screen.": "Ο προσαρμοστικός συγχρονισμός δεν είναι διαθέσιμος σε αυτήν την οθόνη.",
+  "Small": "Μικρό",
+  "Medium": "Μεσαίο",
+  "Large": "Μεγάλο",
+  "System tray icon size": "Μέγεθος εικονιδίων περιοχής ειδοποιήσεων",
+  "The size of the status icons, tray applications and More apps in the system tray.": "Το μέγεθος των εικονιδίων κατάστασης, των εφαρμογών της περιοχής ειδοποιήσεων και του κουμπιού «Περισσότερες εφαρμογές»."
 }

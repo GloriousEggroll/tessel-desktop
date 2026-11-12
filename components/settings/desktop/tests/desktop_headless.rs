@@ -1303,13 +1303,18 @@ fn dock_tests(app: &gtk::Application) {
     run("dock_search_targets_use_settings_search_names", || {
         let fx = dock_fx(app, "dock", None);
         for name in ["mode", "monitor", "size", "float_mode", "rounded_corners", "auto_hide", "fullscreen", "application_display",
-                     "separate_app_dock", "background_color", "bar_border_enabled", "app_dock_layout_controls", "group_media"] {
+                     "separate_app_dock", "background_color", "bar_border_enabled", "app_dock_layout_controls", "group_media",
+                     "tray_icon_size"] {
             assert!(fx.page.search_targets.borrow().contains_key(name), "{name}");
         }
         // Searching "Media" spotlights the panel's Media switch, which starts off.
         let media = fx.page.search_targets.borrow()["group_media"].clone();
         let media = media.downcast::<gtk::Switch>().expect("the Media switch");
         assert!(!media.is_active());
+        // Searching "tray icon size" spotlights the system tray's icon size, Medium by default.
+        let size = fx.page.search_targets.borrow()["tray_icon_size"].clone();
+        let size = size.downcast::<gtk::ComboBoxText>().expect("the tray icon size choice");
+        assert_eq!(size.active_id().as_deref(), Some("medium"));
         fx.done();
     });
 }

@@ -2124,5 +2124,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "選択したアプリケーションは、「その他のアプリ」をクリックしなくてもシステムトレイに表示されたままになります。",
   "Always": "常に",
   "On only while an app is fullscreen on this screen.": "この画面でアプリが全画面表示されている間だけオンになります。",
-  "Adaptive Sync is not available on this screen.": "この画面では可変リフレッシュレートを利用できません。"
+  "Adaptive Sync is not available on this screen.": "この画面では可変リフレッシュレートを利用できません。",
+  "Small": "小",
+  "Medium": "中",
+  "Large": "大",
+  "System tray icon size": "システムトレイのアイコンサイズ",
+  "The size of the status icons, tray applications and More apps in the system tray.": "システムトレイのステータスアイコン、トレイアプリ、「その他のアプリ」のサイズ。"
 }

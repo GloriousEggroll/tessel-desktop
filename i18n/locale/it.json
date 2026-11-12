@@ -1944,5 +1944,10 @@
   "Always": "Sempre",
   "Adaptive Sync (VRR)": "Sincronizzazione adattiva (VRR)",
   "On only while an app is fullscreen on this screen.": "Attiva solo mentre un’app è a schermo intero su questo schermo.",
-  "Adaptive Sync is not available on this screen.": "La sincronizzazione adattiva non è disponibile su questo schermo."
+  "Adaptive Sync is not available on this screen.": "La sincronizzazione adattiva non è disponibile su questo schermo.",
+  "Small": "Piccola",
+  "Medium": "Media",
+  "Large": "Grande",
+  "System tray icon size": "Dimensione delle icone dell'area di notifica",
+  "The size of the status icons, tray applications and More apps in the system tray.": "La dimensione delle icone di stato, delle applicazioni nell'area di notifica e di Altre applicazioni."
 }

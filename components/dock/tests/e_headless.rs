@@ -930,6 +930,143 @@ fn output_layout() -> Result<(), String> {
     Ok(())
 }
 
+// ------------------------------------------------------------------ system tray icon size
+
+const SNI_XML: &str = r#"<node><interface name="org.kde.StatusNotifierItem">
+<property name="Id" type="s" access="read"/>
+<property name="Title" type="s" access="read"/>
+<property name="Status" type="s" access="read"/>
+<property name="IconName" type="s" access="read"/>
+<property name="ItemIsMenu" type="b" access="read"/>
+<method name="Activate"><arg type="i" direction="in"/><arg type="i" direction="in"/></method>
+</interface></node>"#;
+
+/// Tray applications on this test's own private-bus connection.
+struct FakeTrayItems {
+    connection: gio::DBusConnection,
+    paths: Vec<String>,
+    registrations: Vec<gio::RegistrationId>,
+}
+
+impl FakeTrayItems {
+    fn new(items: &[(&str, &str)]) -> Result<Self, String> {
+        let address = gio::dbus_address_get_for_bus_sync(gio::BusType::Session, None::<&gio::Cancellable>).map_err(|e| e.to_string())?;
+        let connection = gio::DBusConnection::for_address_sync(&address,
+            gio::DBusConnectionFlags::AUTHENTICATION_CLIENT | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION, None, None::<&gio::Cancellable>)
+            .map_err(|e| e.to_string())?;
+        let info = gio::DBusNodeInfo::for_xml(SNI_XML).map_err(|e| e.to_string())?
+            .lookup_interface("org.kde.StatusNotifierItem").ok_or("interface")?;
+        let (mut paths, mut registrations) = (Vec::new(), Vec::new());
+        for (index, (id, icon)) in items.iter().enumerate() {
+            let path = format!("/test/Tray{index}");
+            let (id, icon) = (id.to_string(), icon.to_string());
+            let registration = connection.register_object(&path, &info)
+                .method_call(|_, _, _, _, _, _, invocation| invocation.return_value(Some(&().to_variant())))
+                .property(move |_, _, _, _, name| match name {
+                    "Id" => id.to_variant(), "Title" => format!("Tray size {id}").to_variant(), "Status" => "Active".to_variant(),
+                    "IconName" => icon.to_variant(), _ => false.to_variant(),
+                })
+                .build().map_err(|e| e.to_string())?;
+            paths.push(path);
+            registrations.push(registration);
+        }
+        Ok(Self { connection, paths, registrations })
+    }
+
+    fn register(&self) -> Result<(), String> {
+        for path in &self.paths {
+            self.connection.call_sync(Some("org.kde.StatusNotifierWatcher"), "/StatusNotifierWatcher", "org.kde.StatusNotifierWatcher",
+                "RegisterStatusNotifierItem", Some(&(path.as_str(),).to_variant()), None, gio::DBusCallFlags::NONE, 5000,
+                None::<&gio::Cancellable>).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }
+
+    fn close(self) {
+        for registration in self.registrations {
+            let _ = self.connection.unregister_object(registration);
+        }
+        let _ = self.connection.close_sync(None::<&gio::Cancellable>);
+    }
+}
+
+/// Small, Medium and Large tray icons, applied live over D-Bus (`Apply`,
+/// no dock restart) on docks and bars at the default and the smallest icon
+/// size: the panel is never thicker than at Small, the tray visibly changes,
+/// and shots of each go to `$TMPDIR/proof-tray-size`.
+fn tray_icon_sizes_apply_live_and_never_thicken_the_panel() -> Result<(), String> {
+    let out = root().join("proof-tray-size");
+    std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+    let shown = serde_json::json!({"app_menu": true, "pinned": true, "running": true, "files": true, "workspaces": true,
+        "media": false, "service_apps": true, "weather": true, "clock": false, "session": true, "activities": true,
+        "focused_title": true});
+    let only_tray = serde_json::json!({"app_menu": true, "pinned": true, "running": true, "files": false, "workspaces": false,
+        "media": false, "service_apps": true, "weather": false, "clock": false, "session": false, "activities": false,
+        "focused_title": false});
+    let cases = [
+        ("dock-16-tray-only", serde_json::json!({"mode": "dock", "edge": "bottom", "icon_size": 16, "group_visibility": only_tray}), 1),
+        ("dock-title-tray-only", serde_json::json!({"mode": "dock", "edge": "bottom", "application_display": "title",
+                                                    "group_visibility": only_tray}), 1),
+        ("dock-left-16-tray-only", serde_json::json!({"mode": "dock", "edge": "left", "icon_size": 16, "group_visibility": only_tray}), 2),
+        ("dock-40", serde_json::json!({"mode": "dock", "edge": "bottom", "icon_size": 40}), 1),
+        ("dock-16-no-clock", serde_json::json!({"mode": "dock", "edge": "bottom", "icon_size": 16, "group_visibility": shown}), 1),
+        ("dock-title-no-clock", serde_json::json!({"mode": "dock", "edge": "bottom", "application_display": "title",
+                                                   "group_visibility": shown}), 1),
+        ("bar-40", serde_json::json!({"mode": "bar", "edge": "top", "icon_size": 40}), 0),
+        ("bar-16-no-clock", serde_json::json!({"mode": "bar", "edge": "top", "icon_size": 16, "group_visibility": shown}), 0),
+        ("bar-compact", serde_json::json!({"mode": "bar", "edge": "top", "compact_bar": true}), 0),
+        ("bar-compact-28-islands", serde_json::json!({"mode": "bar", "edge": "top", "compact_bar": true, "icon_size": 28,
+                                                      "bar_islands": true}), 0),
+        ("bar-compact-16-tray-only", serde_json::json!({"mode": "bar", "edge": "top", "compact_bar": true, "icon_size": 16,
+                                                        "group_visibility": only_tray}), 0),
+        ("bar-title", serde_json::json!({"mode": "bar", "edge": "top", "application_display": "title"}), 0),
+        ("dock-left-40", serde_json::json!({"mode": "dock", "edge": "left", "icon_size": 40}), 2),
+    ];
+    let mut report = Vec::new();
+    for (name, mut config, side) in cases {
+        config["tray_icon_size"] = Value::from("small");
+        config["always_show_tray"] = serde_json::json!(["id:tray-size-always"]);
+        config["float_mode"] = Value::from(false);
+        config["gap"] = Value::from(0);
+        let dock = Dock::start(&format!("tray-size-{name}"), config)?;
+        let items = FakeTrayItems::new(&[("tray-size-always", "mail-unread"), ("tray-size-hidden", "applications-games")])?;
+        items.register()?;
+        ensure!(wait_for(10.0, || dock.check().is_ok_and(|check| check["panel"]["tray_items"].as_u64().unwrap_or(0) >= 2
+                    || check["panel"]["tray_items"].as_array().is_some_and(|a| a.len() >= 2))),
+                "{name}: tray items never registered: {}", dock.check().map(|c| c["panel"].to_string()).unwrap_or_default());
+        settle(1.0);
+        let region = match side { 0 => format!("{H1},0 1280x120"), 1 => format!("{H1},600 1280x120"), _ => format!("{H1},0 220x720") };
+        let mut thickness = Vec::new();
+        let mut frames = Vec::new();
+        let mut previous = "small";
+        for size in ["small", "medium", "large"] {
+            if size != previous {
+                let request = serde_json::json!({"changes": {"tray_icon_size": size}, "expected": {"tray_icon_size": previous}}).to_string();
+                settings_call("Apply", Some(&(request,).to_variant()))?;
+                previous = size;
+                settle(1.5);
+            }
+            let inset = insets(&workareas()?, "HEADLESS-1").ok_or("missing monitor")?;
+            let value = inset[if side == 2 { 2 } else { side }];
+            thickness.push(value);
+            let file = out.join(format!("{name}-{size}.png"));
+            let status = Command::new("grim").args(["-g", &region]).arg(&file).status().map_err(|e| e.to_string())?;
+            ensure!(status.success(), "grim {region}");
+            frames.push(frame(&region));
+        }
+        report.push(format!("{name}: panel thickness small/medium/large = {thickness:?}"));
+        ensure!(thickness[0] > 0 && thickness.iter().all(|t| *t <= thickness[0]), "{name}: the panel grew {thickness:?}");
+        ensure!(frames[0] != frames[1] && frames[1] != frames[2], "{name}: the tray did not change on screen");
+        items.close();
+        dock.stop()?;
+    }
+    for line in report {
+        println!("{line}");
+    }
+    println!("proof {}", out.display());
+    Ok(())
+}
+
 fn main() {
     if std::env::var("TESSEL_DOCK_E_HEADLESS").as_deref() != Ok("1") {
         eprintln!("e_headless: skipped (run tests/run_e_headless.sh)");
@@ -965,6 +1102,7 @@ fn main() {
         ("fullscreen_window_covers_the_dock", fullscreen_window_covers_the_dock),
         ("menu_churn_does_not_grow_memory", menu_churn_does_not_grow_memory),
         ("menu_icon_follows_a_dark_and_a_light_bar", menu_icon_follows_a_dark_and_a_light_bar),
+        ("tray_icon_sizes_apply_live_and_never_thicken_the_panel", tray_icon_sizes_apply_live_and_never_thicken_the_panel),
     ];
     let mut failed = 0;
     for (name, test) in tests {

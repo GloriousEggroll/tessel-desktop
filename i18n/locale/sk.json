@@ -1944,5 +1944,10 @@
   "Always": "Vždy",
   "Adaptive Sync (VRR)": "Adaptívna synchronizácia (VRR)",
   "On only while an app is fullscreen on this screen.": "Zapnutá len vtedy, keď je na tejto obrazovke aplikácia na celú obrazovku.",
-  "Adaptive Sync is not available on this screen.": "Adaptívna synchronizácia nie je na tejto obrazovke dostupná."
+  "Adaptive Sync is not available on this screen.": "Adaptívna synchronizácia nie je na tejto obrazovke dostupná.",
+  "Small": "Malé",
+  "Medium": "Stredné",
+  "Large": "Veľké",
+  "System tray icon size": "Veľkosť ikon v oblasti oznámení",
+  "The size of the status icons, tray applications and More apps in the system tray.": "Veľkosť stavových ikon, aplikácií v oblasti oznámení a tlačidla Ďalšie aplikácie."
 }

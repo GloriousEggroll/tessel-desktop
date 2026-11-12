@@ -2277,5 +2277,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "Ausgewählte Anwendungen bleiben in der Kontrollleiste sichtbar, ohne auf „Weitere Anwendungen“ zu klicken.",
   "Always": "Immer",
   "On only while an app is fullscreen on this screen.": "Nur aktiv, während eine Anwendung auf diesem Bildschirm im Vollbild läuft.",
-  "Adaptive Sync is not available on this screen.": "Adaptive Synchronisierung ist auf diesem Bildschirm nicht verfügbar."
+  "Adaptive Sync is not available on this screen.": "Adaptive Synchronisierung ist auf diesem Bildschirm nicht verfügbar.",
+  "Small": "Klein",
+  "Medium": "Mittel",
+  "Large": "Groß",
+  "System tray icon size": "Symbolgröße der Kontrollleiste",
+  "The size of the status icons, tray applications and More apps in the system tray.": "Die Größe der Statussymbole, der Anwendungen in der Kontrollleiste und von „Weitere Anwendungen“."
 }

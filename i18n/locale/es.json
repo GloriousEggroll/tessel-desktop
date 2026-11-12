@@ -2277,5 +2277,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "Las aplicaciones seleccionadas siguen a la vista en la bandeja del sistema sin pulsar Más aplicaciones.",
   "Always": "Siempre",
   "On only while an app is fullscreen on this screen.": "Activada solo mientras una aplicación está en pantalla completa en esta pantalla.",
-  "Adaptive Sync is not available on this screen.": "La sincronización adaptativa no está disponible en esta pantalla."
+  "Adaptive Sync is not available on this screen.": "La sincronización adaptativa no está disponible en esta pantalla.",
+  "Small": "Pequeño",
+  "Medium": "Mediano",
+  "Large": "Grande",
+  "System tray icon size": "Tamaño de los iconos de la bandeja del sistema",
+  "The size of the status icons, tray applications and More apps in the system tray.": "El tamaño de los iconos de estado, las aplicaciones de la bandeja y Más aplicaciones en la bandeja del sistema."
 }

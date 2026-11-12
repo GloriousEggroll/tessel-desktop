@@ -1944,5 +1944,10 @@
   "Always": "Завжди",
   "Adaptive Sync (VRR)": "Адаптивна синхронізація (VRR)",
   "On only while an app is fullscreen on this screen.": "Увімкнено, лише поки на цьому екрані застосунок відкрито на весь екран.",
-  "Adaptive Sync is not available on this screen.": "Адаптивна синхронізація недоступна на цьому екрані."
+  "Adaptive Sync is not available on this screen.": "Адаптивна синхронізація недоступна на цьому екрані.",
+  "Small": "Малий",
+  "Medium": "Середній",
+  "Large": "Великий",
+  "System tray icon size": "Розмір значків системного лотка",
+  "The size of the status icons, tray applications and More apps in the system tray.": "Розмір значків стану, застосунків у лотку та кнопки «Інші застосунки» в системному лотку."
 }

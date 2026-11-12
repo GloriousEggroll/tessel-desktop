@@ -1944,5 +1944,10 @@
   "Always": "Mereu",
   "Adaptive Sync (VRR)": "Sincronizare adaptivă (VRR)",
   "On only while an app is fullscreen on this screen.": "Activă doar cât timp o aplicație rulează pe tot ecranul pe acest ecran.",
-  "Adaptive Sync is not available on this screen.": "Sincronizarea adaptivă nu este disponibilă pe acest ecran."
+  "Adaptive Sync is not available on this screen.": "Sincronizarea adaptivă nu este disponibilă pe acest ecran.",
+  "Small": "Mică",
+  "Medium": "Medie",
+  "Large": "Mare",
+  "System tray icon size": "Dimensiunea pictogramelor din tava de sistem",
+  "The size of the status icons, tray applications and More apps in the system tray.": "Dimensiunea pictogramelor de stare, a aplicațiilor din tavă și a butonului Mai multe aplicații din tava de sistem."
 }

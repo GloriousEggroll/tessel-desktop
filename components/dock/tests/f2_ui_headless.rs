@@ -1755,7 +1755,8 @@ fn status_visuals_and_vpn_badge() -> TestResult {
     app.status_set("network", "text", json!("󰤨 \u{f023}"));
     app.status_set("network", "classes", json!(["wifi", "vpn"]));
     app.status_set("weather", "text", json!("☀ 72°"));
-    let dock = make_dock(&app, 0, "HEADLESS-1", |c| c.icon_size = 48);
+    // Small: the applets follow the dock's icon size (round(48 * .5) = 24 px).
+    let dock = make_dock(&app, 0, "HEADLESS-1", |c| { c.icon_size = 48; c.tray_icon_size = "small".into(); });
     let panel = dock.panel();
     let network = panel.status_button("network").unwrap();
     ensure!(network.label.text() == "󰤨", "first glyph only: {}", network.label.text());
@@ -2082,10 +2083,90 @@ fn dbusmenu_popover_from_right_click_and_item_click() -> TestResult {
     Ok(())
 }
 
+// ------------------------------------------------------------------ system tray icon size
+
+/// The system tray's icon size (`tray_icon_size`) reaches the applets, the
+/// tray items (shown and behind More apps) and More apps on every layout;
+/// a changed setting applies on the next refresh, and Small is unchanged.
+fn tray_icon_size_applies_to_applets_items_and_more_apps() -> TestResult {
+    let app = default_apps_setup();
+    compact_status(&app);
+    set_property(&app.fake_tray.items()[2], "Id", "always-item".to_variant());
+    // Applets drawn with a themed icon (the others fall back to a glyph).
+    let themed = |panel: &DockIndicators| -> Vec<&'static str> {
+        INDICATORS.iter().copied().filter(|name| panel.status_button(name).is_some_and(|s| s.icon.get_visible())).collect()
+    };
+    for (mode, edge, compact, icon_size) in [("dock", "bottom", false, 40), ("bar", "top", false, 16), ("bar", "top", true, 40),
+                                             ("dock", "left", false, 64)] {
+        for choice in ["small", "medium", "large"] {
+            let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+                c.mode = mode.into(); c.edge = edge.into(); c.compact_bar = compact; c.icon_size = icon_size;
+                c.tray_icon_size = choice.into(); c.always_show_tray = vec!["id:always-item".into()];
+            });
+            let panel = dock.panel();
+            panel.apps_toggle().emit_clicked();
+            ensure!(panel.apps_expanded(), "{mode} {edge} {choice}");
+            settle(0.1);
+            let config = dock.config();
+            let layout = tessel_dock::ui::indicators::system_tray_layout(compact, &config);
+            let (item, applet, toggle) = match layout {
+                Some((icon, _)) => (icon, icon, icon),
+                None => (if compact { 16 } else { 22 }, tessel_dock::ui::indicators::status_icon_size(&config), -1),
+            };
+            let label = format!("{mode} {edge} compact={compact} {icon_size} {choice}");
+            ensure!((choice == "small") == layout.is_none(), "{label}");
+            ensure!(panel.service_area().has_css_class(&format!("tray-icons-{choice}")), "{label}: size class");
+            ensure!(panel.service_area().has_css_class("tray-pad-1") == (layout.map(|l| l.1) == Some(1)), "{label}: pad class");
+            for tray in [panel.tray().unwrap(), panel.always_tray().unwrap()] {
+                ensure!(tray.icon_size() == item, "{label}: tray {}", tray.icon_size());
+                ensure!(!tray.keys().is_empty(), "{label}: an empty tray");
+                for key in tray.keys() {
+                    let image = tray.image(&key).unwrap();
+                    ensure!(image.pixel_size() == item && tray.button(&key).unwrap().is_mapped(), "{label}: {key} {}", image.pixel_size());
+                }
+            }
+            ensure!(!themed(&panel).is_empty(), "{label}: no applet has a themed icon");
+            for name in themed(&panel) {
+                let status = panel.status_button(name).unwrap();
+                ensure!(status.icon.pixel_size() == applet, "{label}: {name} {}", status.icon.pixel_size());
+            }
+            let more = panel.apps_toggle().child().and_downcast::<gtk::Image>().unwrap();
+            ensure!(more.pixel_size() == toggle, "{label}: More apps {}", more.pixel_size());
+            // The rest of the panel keeps its own sizes.
+            if let Some(weather) = panel.status_button("weather") {
+                ensure!(weather.icon.pixel_size() <= 0 || weather.icon.pixel_size() == tessel_dock::ui::indicators::status_icon_size(&config), "{label}: weather");
+            }
+            panel.set_apps_expanded(false);
+            dock.destroy(&app);
+        }
+    }
+    // A changed setting applies without rebuilding the panel.
+    let dock = make_dock(&app, 0, "HEADLESS-1", |c| c.tray_icon_size = "small".into());
+    let panel = dock.panel();
+    let tray = panel.always_tray().unwrap();
+    ensure!(tray.icon_size() == 22);
+    for (choice, size) in [("large", 32), ("medium", 28), ("small", 22)] {
+        dock.set_config(|c| c.tray_icon_size = choice.into());
+        panel.refresh();
+        ensure!(tray.icon_size() == size, "live {choice}: {}", tray.icon_size());
+        ensure!(panel.service_area().has_css_class(&format!("tray-icons-{choice}")), "live {choice} class");
+        ensure!(["small", "medium", "large"].iter().filter(|c| panel.service_area().has_css_class(&format!("tray-icons-{c}"))).count() == 1);
+        let applet = if choice == "small" { 20 } else { size };
+        for name in themed(&panel) {
+            ensure!(panel.status_button(name).unwrap().icon.pixel_size() == applet, "live {choice}: {name}");
+        }
+        let more = panel.apps_toggle().child().and_downcast::<gtk::Image>().unwrap();
+        ensure!(more.pixel_size() == if choice == "small" { -1 } else { size }, "live {choice}: More apps");
+    }
+    dock.destroy(&app);
+    Ok(())
+}
+
 // ------------------------------------------------------------------ proof screenshots
 
 /// Not a check: run alone (`run_f2_headless.sh proof_screenshots`) to save
-/// grim shots of the system tray, collapsed and expanded, to `$TMPDIR/proof`.
+/// grim shots of the system tray, collapsed and expanded, at each tray icon
+/// size, to `$TMPDIR/proof`.
 fn proof_screenshots() -> TestResult {
     if std::env::args().nth(1).as_deref() != Some("proof_screenshots") {
         return Ok(());
@@ -2101,10 +2182,19 @@ fn proof_screenshots() -> TestResult {
     }
     app.workspaces.replace(Vec::new());
     set_property(&app.fake_tray.items()[2], "Id", "always-item".to_variant());
-    for (mode, edge) in [("dock", "bottom"), ("bar", "top"), ("dock", "left"), ("bar", "right")] {
+    for (mode, edge, size) in [("dock", "bottom"), ("bar", "top"), ("compact", "top"), ("dock", "left"), ("bar", "right")].into_iter()
+        .flat_map(|(mode, edge)| ["small", "medium", "large"].map(|size| (mode, edge, size))) {
         let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
-            c.mode = mode.into(); c.edge = edge.into(); c.always_show_tray = vec!["id:always-item".into()];
+            c.mode = if mode == "compact" { "bar" } else { mode }.into(); c.compact_bar = mode == "compact";
+            c.edge = edge.into(); c.always_show_tray = vec!["id:always-item".into()];
+            c.tray_icon_size = size.into();
         });
+        if mode == "compact" {
+            // The fake dock has no surface: mark its box like the compact bar's panel.
+            dock.core.add_css_class("tessel-dock-panel");
+            dock.core.add_css_class("tessel-dock-compact-bar");
+            dock.panel().refresh();
+        }
         dock.core.add_css_class("tessel-dock-proof");
         let panel = dock.panel();
         pointer_move(640.0, 360.0);
@@ -2118,7 +2208,7 @@ fn proof_screenshots() -> TestResult {
             settle(0.4);
             let (x, y) = dock.origin();
             let region = format!("{},{} {}x{}", x as i32, y as i32, dock.window.width(), dock.window.height());
-            let file = out.join(format!("{mode}-{edge}-{state}.png"));
+            let file = out.join(format!("{mode}-{edge}-{size}-{state}.png"));
             let status = Command::new("grim").args(["-g", &region]).arg(&file).status().map_err(|e| e.to_string())?;
             ensure!(status.success(), "grim {region}");
             println!("proof {}", file.display());
@@ -2176,6 +2266,7 @@ fn main() {
         ("coordinates_second_monitor_and_menu_releases_catchers", coordinates_second_monitor_and_menu_releases_catchers),
         ("dbusmenu_popover_from_right_click_and_item_click", dbusmenu_popover_from_right_click_and_item_click),
         ("coordinates_scaled_output_and_menu_only_left_click", coordinates_scaled_output_and_menu_only_left_click),
+        ("tray_icon_size_applies_to_applets_items_and_more_apps", tray_icon_size_applies_to_applets_items_and_more_apps),
         ("proof_screenshots", proof_screenshots),
     ];
     let filter = std::env::args().nth(1).unwrap_or_default();

@@ -2124,5 +2124,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "所選應用程式會一直顯示在系統匣中，不必按一下「更多應用程式」。",
   "Always": "永遠",
   "On only while an app is fullscreen on this screen.": "僅在此螢幕上有應用程式全螢幕顯示時開啟。",
-  "Adaptive Sync is not available on this screen.": "此螢幕無法使用自適應同步。"
+  "Adaptive Sync is not available on this screen.": "此螢幕無法使用自適應同步。",
+  "Small": "小",
+  "Medium": "中",
+  "Large": "大",
+  "System tray icon size": "系統匣圖示大小",
+  "The size of the status icons, tray applications and More apps in the system tray.": "系統匣中狀態圖示、系統匣應用程式與「更多應用程式」按鈕的大小。"
 }

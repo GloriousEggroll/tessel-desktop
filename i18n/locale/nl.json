@@ -1944,5 +1944,10 @@
   "Always": "Altijd",
   "Adaptive Sync (VRR)": "Adaptieve synchronisatie (VRR)",
   "On only while an app is fullscreen on this screen.": "Alleen aan terwijl een app schermvullend is op dit scherm.",
-  "Adaptive Sync is not available on this screen.": "Adaptieve synchronisatie is niet beschikbaar op dit scherm."
+  "Adaptive Sync is not available on this screen.": "Adaptieve synchronisatie is niet beschikbaar op dit scherm.",
+  "Small": "Klein",
+  "Medium": "Middel",
+  "Large": "Groot",
+  "System tray icon size": "Pictogramgrootte in het systeemvak",
+  "The size of the status icons, tray applications and More apps in the system tray.": "De grootte van de statuspictogrammen, de apps in het systeemvak en Meer apps."
 }

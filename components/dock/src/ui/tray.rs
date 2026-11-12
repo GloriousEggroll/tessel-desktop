@@ -200,6 +200,8 @@ struct TrayInner {
     closed: Cell<bool>,
     theme: gtk::IconTheme,
     theme_serial: Cell<u64>,
+    /// Sized by the system tray's Medium or Large icon size (`set_resized`).
+    resized: Cell<bool>,
     /// Private `IconThemePath`s of current items; a full theme is only built
     /// (and shared between views) when the directory has themed copies.
     custom_themes: RefCell<HashMap<String, Option<gtk::IconTheme>>>,
@@ -224,7 +226,7 @@ impl StatusTray {
             palette_class: options.palette_class, screen_position: options.screen_position,
             item_filter: options.item_filter.unwrap_or_else(|| Rc::new(|item: &TrayItem| !item.is_passive())),
             buttons: RefCell::default(), menus: RefCell::default(), menu: RefCell::new(None), menu_key: RefCell::new(None),
-            closed: Cell::new(false), theme, theme_serial: Cell::new(0), custom_themes: RefCell::default(),
+            closed: Cell::new(false), theme, theme_serial: Cell::new(0), resized: Cell::new(false), custom_themes: RefCell::default(),
             theme_handler: RefCell::new(None), subscription: Cell::new(None), pixbuf_calls: Cell::new(0),
             menu_factory: RefCell::new(None),
         }));
@@ -303,6 +305,7 @@ impl StatusTray {
     /// level; otherwise the result is derived from the display theme: themed
     /// icons win, then unthemed top-level files in search-path order.
     fn resolve_icon(&self, item: &TrayItem, name: &str, size: i32) -> Option<std::path::PathBuf> {
+        let size = theme_lookup_size(size, self.0.resized.get());
         let lookup = |theme: &gtk::IconTheme| {
             theme.lookup_icon(name, &[], size, 1, gtk::TextDirection::Ltr, gtk::IconLookupFlags::empty())
                 .file().and_then(|file| file.path())
@@ -365,7 +368,8 @@ impl StatusTray {
     #[allow(deprecated)]
     fn update_icon(&self, entry: &TrayButton, item: &TrayItem) {
         let size = self.0.icon_size.get();
-        let signature = item.icon_signature(size, self.0.theme_serial.get());
+        // The lookup changes with `resized` too: count it like a theme change.
+        let signature = item.icon_signature(size, self.0.theme_serial.get() * 2 + u64::from(self.0.resized.get()));
         if entry.signature.borrow().as_ref() == Some(&signature) {
             entry.signature.replace(Some(signature));
             return;
@@ -396,6 +400,18 @@ impl StatusTray {
         entry.image.set_size_request(size, size);
         entry.signature.replace(Some(signature));
     }
+
+    /// Whether the system tray's Medium or Large icon size sizes this tray:
+    /// themed icons are then looked up for an even scale ([`theme_lookup_size`]).
+    pub fn set_resized(&self, resized: bool) -> bool {
+        if resized == self.0.resized.replace(resized) {
+            return false;
+        }
+        self.refresh();
+        true
+    }
+
+    pub fn resized(&self) -> bool { self.0.resized.get() }
 
     /// Resize every tray icon; unchanged sizes cost nothing.
     pub fn set_icon_size(&self, size: i32) -> bool {
@@ -938,6 +954,25 @@ enum PrivateIcons {
     TopLevel(std::path::PathBuf),
     /// Below a subdirectory (a themed copy), or the directory is too large to tell.
     Nested,
+}
+
+/// The icon theme size to look a tray icon up at for `size` px.
+///
+/// At the original sizes (`resized` false) the size itself. A Medium or
+/// Large tray (`resized`) avoids the 22 and 24 px panel sizes, which themes
+/// draw with wide margins: up to 24 px the icon comes from the 16 px size,
+/// scaled up at most 1.5 times; above that from the next larger common size,
+/// scaled down. So a bigger choice never shows a smaller picture, and none
+/// shows a smaller one than the original 16 and 22 px sizes.
+pub fn theme_lookup_size(size: i32, resized: bool) -> i32 {
+    const LARGER: [i32; 6] = [32, 48, 64, 96, 128, 256];
+    if !resized {
+        size
+    } else if size <= 24 {
+        16.min(size)
+    } else {
+        LARGER.iter().copied().find(|known| *known >= size).unwrap_or(size)
+    }
 }
 
 fn private_icon_layout(root: &Path, name: &str) -> PrivateIcons {

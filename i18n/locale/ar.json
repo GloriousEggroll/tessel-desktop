@@ -1944,5 +1944,10 @@
   "Always": "دائمًا",
   "Adaptive Sync (VRR)": "المزامنة التكيفية (VRR)",
   "On only while an app is fullscreen on this screen.": "تعمل فقط أثناء عرض تطبيق بملء الشاشة على هذه الشاشة.",
-  "Adaptive Sync is not available on this screen.": "المزامنة التكيفية غير متاحة على هذه الشاشة."
+  "Adaptive Sync is not available on this screen.": "المزامنة التكيفية غير متاحة على هذه الشاشة.",
+  "Small": "صغير",
+  "Medium": "متوسط",
+  "Large": "كبير",
+  "System tray icon size": "حجم أيقونات صينية النظام",
+  "The size of the status icons, tray applications and More apps in the system tray.": "حجم أيقونات الحالة وتطبيقات الصينية وزر «مزيد من التطبيقات» في صينية النظام."
 }

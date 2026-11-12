@@ -688,7 +688,7 @@ fn field_names_follow_dataclass_order() {
     let value = DockConfig::default().to_value();
     let keys: Vec<&str> = value.as_object().unwrap().keys().map(String::as_str).collect();
     assert_eq!(keys, field_names());
-    assert_eq!(field_names().len(), 62);
+    assert_eq!(field_names().len(), 63);
 }
 
 #[test]
@@ -725,4 +725,43 @@ fn media_is_off_by_default_and_a_saved_choice_is_kept() {
 #[test]
 fn new_users_start_with_media_off() {
     assert!(!new_user_config().media_enabled());
+}
+
+#[test]
+fn tray_icon_size_defaults_to_medium_and_old_configs_get_medium() {
+    assert_eq!(DockConfig::default().tray_icon_size, "medium");
+    assert_eq!(DEFAULT_TRAY_ICON_SIZE, "medium");
+    assert_eq!(new_user_config().tray_icon_size, "medium");
+    // A config saved before the setting existed has no key: it gets Medium.
+    assert_eq!(from(json!({"mode": "bar", "icon_size": 32})).tray_icon_size, "medium");
+    let mut old = DockConfig::default().to_saved_value();
+    old.as_object_mut().unwrap().remove("tray_icon_size");
+    assert_eq!(from(old).tray_icon_size, "medium");
+    // Saved with the other keys, right after the always-visible applets.
+    let saved: Value = serde_json::from_str(&save_bytes(&DockConfig::default())).unwrap();
+    assert_eq!(saved["tray_icon_size"], json!("medium"));
+    let keys: Vec<&str> = saved.as_object().unwrap().keys().map(String::as_str).collect();
+    let at = keys.iter().position(|k| *k == "tray_icon_size").unwrap();
+    assert_eq!(keys[at - 1], "always_visible_apps");
+}
+
+#[test]
+fn tray_icon_size_round_trips_and_rejects_bad_values() {
+    assert_eq!(TRAY_ICON_SIZES.iter().map(|(n, _)| *n).collect::<Vec<_>>(), ["small", "medium", "large"]);
+    for size in ["small", "medium", "large"] {
+        let config = from(json!({"tray_icon_size": size}));
+        assert_eq!(config.tray_icon_size, size);
+        assert_eq!(from(config.to_saved_value()), config);
+    }
+    for bad in [json!("huge"), json!("Medium"), json!(""), json!(24), json!(null), json!(true), json!(["small"])] {
+        rejects(json!({"tray_icon_size": bad}));
+        assert_eq!(DockConfig::from_value(&json!({"tray_icon_size": bad})).unwrap_err(),
+                   "Choose a small, medium or large system tray icon size.");
+    }
+    let dir = TempDir::new();
+    let mut store = store(&dir);
+    let saved = store.save(&DockConfig { tray_icon_size: "large".into(), ..Default::default() }).unwrap();
+    assert_eq!(saved.tray_icon_size, "large");
+    assert_eq!(store.load(None, None).tray_icon_size, "large");
+    assert!(store.save(&DockConfig { tray_icon_size: "xl".into(), ..Default::default() }).is_err());
 }

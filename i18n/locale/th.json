@@ -1944,5 +1944,10 @@
   "Always": "เสมอ",
   "Adaptive Sync (VRR)": "การซิงค์แบบปรับได้ (VRR)",
   "On only while an app is fullscreen on this screen.": "เปิดเฉพาะขณะที่มีแอปแสดงเต็มหน้าจอบนหน้าจอนี้",
-  "Adaptive Sync is not available on this screen.": "การซิงค์แบบปรับได้ใช้งานไม่ได้บนหน้าจอนี้"
+  "Adaptive Sync is not available on this screen.": "การซิงค์แบบปรับได้ใช้งานไม่ได้บนหน้าจอนี้",
+  "Small": "เล็ก",
+  "Medium": "กลาง",
+  "Large": "ใหญ่",
+  "System tray icon size": "ขนาดไอคอนถาดระบบ",
+  "The size of the status icons, tray applications and More apps in the system tray.": "ขนาดของไอคอนสถานะ แอปในถาด และปุ่มแอปเพิ่มเติมในถาดระบบ"
 }

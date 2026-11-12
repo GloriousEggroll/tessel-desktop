@@ -809,6 +809,35 @@ fn default_apps_settings_save_cancel_and_reopen(app: &Rc<FakeApp>) -> R {
     Ok(())
 }
 
+fn tray_icon_size_choice_saves_cancels_and_reopens(app: &Rc<FakeApp>) -> R {
+    let window = appearance_settings(app);
+    let before = app.config();
+    let c = window.controls();
+    // Medium by default, offered as Small, Medium and Large in the System tray section.
+    ensure_eq!(active_id(&c.tray_icon_size), "medium");
+    let model = c.tray_icon_size.model().ok_or("no choices")?;
+    ensure_eq!(model.iter_n_children(None), 3);
+    c.tray_icon_size.set_active_id(Some("large"));
+    ensure_eq!(app.config(), before);
+    click(&window, "Cancel");
+    ensure_eq!(app.config(), before);
+    let window = reopen(app);
+    ensure_eq!(active_id(&window.controls().tray_icon_size), "medium");
+    window.controls().tray_icon_size.set_active_id(Some("small"));
+    window.apply();
+    let mut expected = before.clone();
+    expected.tray_icon_size = "small".into();
+    ensure_eq!(app.load(), expected);
+    window.destroy();
+    let reopened = reopen(app);
+    ensure_eq!(active_id(&reopened.controls().tray_icon_size), "small");
+    reopened.controls().tray_icon_size.set_active_id(Some("large"));
+    reopened.apply();
+    ensure_eq!(app.load().tray_icon_size, "large");
+    reopened.destroy();
+    Ok(())
+}
+
 fn settings_apply_and_cancel_keep_saved_pins_and_group_choices(app: &Rc<FakeApp>) -> R {
     let window = appearance_settings(app);
     let before = app.config();
@@ -1023,6 +1052,7 @@ fn main() {
         ("separate_layout_settings_order_apply_reset_and_disable_preserve_bar", separate_layout_settings_order_apply_reset_and_disable_preserve_bar),
         ("settings_enable_only_on_top_bars_and_save_independent_values", settings_enable_only_on_top_bars_and_save_independent_values),
         ("default_apps_settings_save_cancel_and_reopen", default_apps_settings_save_cancel_and_reopen),
+        ("tray_icon_size_choice_saves_cancels_and_reopens", tray_icon_size_choice_saves_cancels_and_reopens),
         ("settings_apply_and_cancel_keep_saved_pins_and_group_choices", settings_apply_and_cancel_keep_saved_pins_and_group_choices),
         ("preferences_cancel_apply_and_reopen_keep_offline_choices", preferences_cancel_apply_and_reopen_keep_offline_choices),
         ("empty_tray_subscription_and_refresh", empty_tray_subscription_and_refresh),

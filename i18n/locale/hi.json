@@ -1944,5 +1944,10 @@
   "Always": "हमेशा",
   "Adaptive Sync (VRR)": "अनुकूली सिंक (VRR)",
   "On only while an app is fullscreen on this screen.": "केवल तब चालू, जब इस स्क्रीन पर कोई ऐप पूर्ण स्क्रीन में हो।",
-  "Adaptive Sync is not available on this screen.": "इस स्क्रीन पर अनुकूली सिंक उपलब्ध नहीं है।"
+  "Adaptive Sync is not available on this screen.": "इस स्क्रीन पर अनुकूली सिंक उपलब्ध नहीं है।",
+  "Small": "छोटा",
+  "Medium": "मध्यम",
+  "Large": "बड़ा",
+  "System tray icon size": "सिस्टम ट्रे आइकन का आकार",
+  "The size of the status icons, tray applications and More apps in the system tray.": "सिस्टम ट्रे में स्थिति आइकन, ट्रे ऐप्स और और ऐप्स बटन का आकार।"
 }

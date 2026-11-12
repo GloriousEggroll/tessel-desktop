@@ -94,5 +94,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "Selected applications stay shown in the system tray without clicking More apps.",
   "Always": "Always",
   "On only while an app is fullscreen on this screen.": "On only while an app is fullscreen on this screen.",
-  "Adaptive Sync is not available on this screen.": "Adaptive Sync is not available on this screen."
+  "Adaptive Sync is not available on this screen.": "Adaptive Sync is not available on this screen.",
+  "Small": "Small",
+  "Medium": "Medium",
+  "Large": "Large",
+  "System tray icon size": "System tray icon size",
+  "The size of the status icons, tray applications and More apps in the system tray.": "The size of the status icons, tray applications and More apps in the system tray."
 }

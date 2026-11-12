@@ -21,6 +21,9 @@
 //!   system tray). Loading accepts it in `group_visibility` (shown = either was
 //!   shown) and in `group_layouts` (see `group_layout::validate_layouts`);
 //!   saving never writes it.
+//! - [`TRAY_ICON_SIZES`] / [`DEFAULT_TRAY_ICON_SIZE`]: the system tray's icon
+//!   size choice (`tray_icon_size`: small = the original sizes, medium (the
+//!   default, also for configs saved before the key existed), large).
 //! - Constants [`GROUPS`], [`CORNERS`], [`DEFAULT_APPS`], [`ALWAYS_VISIBLE_APPS`], [`BORDER_SIDES`].
 
 use std::path::{Path, PathBuf};
@@ -82,6 +85,11 @@ pub const DEFAULT_APPS: &[(&str, &str)] = &[
 ];
 pub const ALWAYS_VISIBLE_APPS: &[&str] = &["idle_inhibitor", "capslock", "audio", "brightness", "showdesktop"];
 pub const BORDER_SIDES: &[&str] = &["top", "bottom", "left", "right"];
+/// System tray icon sizes (`tray_icon_size`), smallest first. Small is the
+/// size the tray always had; see `ui::indicators::system_tray_icon_size`.
+pub const TRAY_ICON_SIZES: &[(&str, &str)] = &[("small", "Small"), ("medium", "Medium"), ("large", "Large")];
+/// New users, and configs saved before the setting existed, get Medium.
+pub const DEFAULT_TRAY_ICON_SIZE: &str = "medium";
 const EDGES: &[&str] = &["top", "bottom", "left", "right"];
 const ALIGNMENTS: &[&str] = &["start", "center", "end"];
 
@@ -121,6 +129,8 @@ pub struct DockConfig {
     pub application_display: String,
     pub always_show_tray: Vec<String>,
     pub always_visible_apps: Vec<String>,
+    /// System tray icon size: one of [`TRAY_ICON_SIZES`].
+    pub tray_icon_size: String,
     pub group_layouts: Layouts,
     pub edge: String,
     pub alignment: String,
@@ -173,7 +183,7 @@ const FIELD_NAMES: &[&str] = &[
     "app_dock_float_mode", "app_dock_rounded_corners", "app_dock_transparency", "app_dock_transparency_enabled",
     "app_dock_frosted", "app_dock_frost_strength", "app_dock_match_wallpaper", "app_dock_background_color",
     "app_dock_auto_hide", "app_dock_shine", "app_dock_shadow", "app_dock_group_layout", "application_display", "always_show_tray",
-    "always_visible_apps", "group_layouts", "edge", "alignment", "monitor", "monitor_overrides", "icon_size", "gap",
+    "always_visible_apps", "tray_icon_size", "group_layouts", "edge", "alignment", "monitor", "monitor_overrides", "icon_size", "gap",
     "hover_scale", "magnification", "compact_bar", "bar_islands", "transparency", "transparency_enabled", "frosted", "frost_strength",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
     "window_buttons_left", "colored_window_buttons", "window_shadows", "match_wallpaper", "background_color",
@@ -216,6 +226,7 @@ impl Default for DockConfig {
             application_display: "icons".into(),
             always_show_tray: Vec::new(),
             always_visible_apps: strings(ALWAYS_VISIBLE_APPS),
+            tray_icon_size: DEFAULT_TRAY_ICON_SIZE.into(),
             group_layouts: Layouts::new(),
             edge: "bottom".into(),
             alignment: "center".into(),
@@ -422,6 +433,7 @@ impl DockConfig {
         put("application_display", Value::from(self.application_display.clone()));
         put("always_show_tray", Value::from(self.always_show_tray.clone()));
         put("always_visible_apps", Value::from(self.always_visible_apps.clone()));
+        put("tray_icon_size", Value::from(self.tray_icon_size.clone()));
         put("group_layouts", group_layout::layouts_value(&self.group_layouts));
         put("edge", Value::from(self.edge.clone()));
         put("alignment", Value::from(self.alignment.clone()));
@@ -723,6 +735,10 @@ impl DockConfig {
         if !apps_valid {
             return Err("Always visible apps must use supported applet names.".into());
         }
+        let tray_sizes: Vec<&str> = TRAY_ICON_SIZES.iter().map(|(name, _)| *name).collect();
+        if !str_in(&c["tray_icon_size"], &tray_sizes) {
+            return Err("Choose a small, medium or large system tray icon size.".into());
+        }
         let flag = |name: &str| c[name].as_bool().unwrap_or_default();
         let int = |name: &str| c[name].as_i64().unwrap_or_default();
         Ok(DockConfig {
@@ -748,6 +764,7 @@ impl DockConfig {
             application_display,
             always_show_tray: dedupe(string_list(&c["always_show_tray"])),
             always_visible_apps: dedupe(string_list(&c["always_visible_apps"])),
+            tray_icon_size: text(&c["tray_icon_size"]),
             group_layouts,
             edge: text(&c["edge"]),
             alignment: text(&c["alignment"]),

@@ -5,7 +5,9 @@
 //! [`TEXT_INDICATORS`], [`status_icon_names`] (glyph/class → themed symbolic
 //! icon candidates, verbatim from panel_ui.py), [`status_icon_size`]
 //! (compact `clamp(round(icon·.4), 12, 20)`, else `clamp(round(icon·.5), 14, 32)`),
-//! [`tray_icon_size`] (16 compact / 22), [`status_classes`], [`status_tooltip`],
+//! [`tray_icon_size`] (16 compact / 22), [`system_tray_icon_size`] (the
+//! `tray_icon_size` setting: Small keeps those two sizes; Medium and Large give
+//! the applets, tray items and More apps one bigger size), [`status_classes`], [`status_tooltip`],
 //! [`tray_info`] (TrayItem → core::tray_prefs::TrayItemInfo).
 //!
 //! Widget API: `DockIndicators::new(&Rc<dyn DockView>, Rc<dyn DockApp>)` builds
@@ -249,6 +251,76 @@ pub fn tray_icon_size(panel_compact: bool, config: &DockConfig, is_app_dock: boo
     if panel_compact || (config.compact_bar && !is_app_dock) { 16 } else { 22 }
 }
 
+/// The system tray's icon pixels for `config.tray_icon_size`, shared by its
+/// applets, tray items and More apps; `None` for Small, which keeps the
+/// original sizes ([`status_icon_size`] for applets, [`tray_icon_size`] for
+/// items, GTK's default for More apps).
+pub fn system_tray_icon_size(compact: bool, config: &DockConfig) -> Option<i32> {
+    system_tray_layout(compact, config).map(|(icon, _)| icon)
+}
+
+/// Medium and Large as (icon pixels, padding across the panel), or `None` for Small.
+///
+/// The icons scale with the dock's icon size like the applets always did.
+/// In a dock or full bar: 70 % (22–32 px) for Medium and 80 % (24–36 px) for
+/// Large, so 28 and 32 px at the default 40 px, against 20 px applets, 22 px
+/// tray items and a 16 px More apps at Small. In the compact bar: 75 %
+/// (20–28 px) and 90 % (22–32 px), so 21 and 25 px in the Tessel layout's
+/// 28 px bar, against 12 px applets and 16 px tray items at Small.
+///
+/// A tray button is never thicker than the panel's other items: in a dock or
+/// full bar the larger of an application button (its icon + 10 px) and
+/// Small's 30 px applet buttons; in the compact bar an application button
+/// (its icon + 4 px) or, when it shows the window title, its 22 px rows.
+/// Where that is tight the padding across the panel shrinks first (to 2 px
+/// for Medium and 1 px for Large in a dock, to 1 px and none in the compact
+/// bar), then the icon. (GTK draws a symbolic icon no bigger at 18 px than
+/// at 16 px, so the compact bar's Medium starts at 20 px.)
+pub fn system_tray_layout(compact: bool, config: &DockConfig) -> Option<(i32, i32)> {
+    let medium = match config.tray_icon_size.as_str() {
+        "medium" => true,
+        "large" => false,
+        _ => return None,
+    };
+    let base = if config.icon_size == 0 { 40 } else { config.icon_size };
+    let title = config.application_display == "title";
+    let scaled = |ratio: f64, low: i64, high: i64| py_round(base as f64 * ratio).clamp(low, high) as i32;
+    let (room, wanted, min_pad, max_pad) = if compact {
+        let room = if title { 22 } else { (base + 4).max(22) as i32 };
+        let wanted = if medium { scaled(0.75, 20, 28) } else { scaled(0.9, 22, 32) };
+        (room, wanted, if medium { 1 } else { 0 }, 2)
+    } else {
+        let item = if title { base.min(22) } else { base };
+        let wanted = if medium { scaled(0.7, 22, 32) } else { scaled(0.8, 24, 36) };
+        ((item + 10).max(30) as i32, wanted, if medium { 2 } else { 1 }, 5)
+    };
+    let icon = wanted.min(room - 2 * min_pad);
+    Some((icon, ((room - icon) / 2).clamp(min_pad, max_pad)))
+}
+
+/// The CSS class on the system tray for its icon size (`tray-icons-<size>`).
+pub fn tray_size_class(config: &DockConfig) -> &'static str {
+    match config.tray_icon_size.as_str() {
+        "small" => "tray-icons-small",
+        "large" => "tray-icons-large",
+        _ => "tray-icons-medium",
+    }
+}
+
+/// The padding class for [`system_tray_layout`]'s padding (`tray-pad-0` … `tray-pad-5`).
+pub fn tray_pad_class(pad: i32) -> &'static str {
+    ["tray-pad-0", "tray-pad-1", "tray-pad-2", "tray-pad-3", "tray-pad-4", "tray-pad-5"][pad.clamp(0, 5) as usize]
+}
+
+/// Spacing between the system tray's buttons: a little more room around bigger icons.
+pub fn tray_spacing(config: &DockConfig) -> i32 {
+    match config.tray_icon_size.as_str() {
+        "small" => 1,
+        "large" => 3,
+        _ => 2,
+    }
+}
+
 /// `set(raw if list/tuple else [raw]) - {""}` from `state.get("classes", state.get("class", ()))`.
 pub fn status_classes(state: &Map<String, Value>) -> BTreeSet<String> {
     let raw = state.get("classes").or_else(|| state.get("class"));
@@ -297,6 +369,12 @@ pub struct StatusButton {
     pub visual: gtk::Box,
     pub vpn_badge: Option<gtk::Image>,
     panel_classes: RefCell<BTreeSet<String>>,
+    /// Sized by a Medium or Large system tray ([`system_tray_layout`]): the
+    /// VPN badge sits on the icon's corner instead of 4 px beside it, and a
+    /// glyph fallback is drawn at 80 % (never below Small's size, `glyph_floor`)
+    /// so wide glyphs stay within the button.
+    tray_sized: Cell<bool>,
+    glyph_floor: Cell<i32>,
 }
 
 impl StatusButton {
@@ -336,7 +414,8 @@ fn glyph_button(text: &str, tooltip: &str, name: &str, size: i32) -> Rc<StatusBu
         button.set_child(Some(&visual));
     }
     let status = Rc::new(StatusButton { button, name: name.into(), label, icon, visual, vpn_badge,
-                                        panel_classes: RefCell::default() });
+                                        panel_classes: RefCell::default(), tray_sized: Cell::new(false),
+                                        glyph_floor: Cell::new(0) });
     set_status_visual(&status, text, &BTreeSet::new(), size);
     status.button.set_tooltip_text(Some(tooltip));
     accessible_name(&status.button, tooltip);
@@ -356,15 +435,32 @@ pub fn set_status_visual(status: &StatusButton, text: &str, classes: &BTreeSet<S
         status.icon.set_pixel_size(size);
     } else if !TEXT_INDICATORS.contains(&status.name.as_str()) {
         // Glyph fallback scales with the configured icon size, not CSS px.
+        let pixels = if status.tray_sized.get() { (size * 4 / 5).max(status.glyph_floor.get()) } else { size };
         let attributes = pango::AttrList::new();
-        attributes.insert(pango::AttrSize::new_size_absolute(size * pango::SCALE));
+        attributes.insert(pango::AttrSize::new_size_absolute(pixels * pango::SCALE));
         status.label.set_attributes(Some(&attributes));
     }
     status.icon.set_visible(icon.is_some());
     status.label.set_visible(icon.is_none());
+    // The network button's overlay leaves room for the VPN badge; a bigger
+    // system tray icon (Medium, Large) carries the badge on its corner.
+    if status.vpn_badge.is_some() {
+        if let Some(content) = status.button.child() {
+            let room = if status.tray_sized.get() { 0 } else { 4 };
+            content.set_size_request(size + room, size + room);
+        }
+    }
 }
 
 // ------------------------------------------------------------ DockIndicators
+
+/// The system tray's applied size: its CSS classes and icon pixels.
+#[derive(Clone, PartialEq)]
+struct TraySizing {
+    classes: [Option<&'static str>; 2],
+    applet: i32,
+    toggle: Option<i32>,
+}
 
 struct Inner {
     dock: Weak<dyn DockView>,
@@ -388,6 +484,8 @@ struct Inner {
     app_button_sizes: gtk::SizeGroup,
     apps_toggle: gtk::Button,
     service_area: gtk::Box,
+    /// What `sync_tray_size` last applied to the system tray.
+    tray_sizing: RefCell<Option<TraySizing>>,
     clock: gtk::Button,
     clock_store: RefCell<ClockPreferencesStore>,
     clock_settings: RefCell<Option<ClockPreferences>>,
@@ -441,6 +539,7 @@ impl DockIndicators {
             tray_expander: RefCell::new(None), apps: gtk::Box::new(orientation, 1),
             app_button_sizes: gtk::SizeGroup::new(gtk::SizeGroupMode::Both),
             apps_toggle: gtk::Button::from_icon_name("view-more-symbolic"), service_area: gtk::Box::new(orientation, 1),
+            tray_sizing: RefCell::new(None),
             clock: gtk::Button::new(), clock_store: RefCell::new(app.clock_store()), clock_settings: RefCell::new(None),
             clock_content: gtk::Box::new(gtk::Orientation::Horizontal, 6),
             clock_box: gtk::Box::new(gtk::Orientation::Vertical, 0), weekday_label: gtk::Label::new(None),
@@ -490,8 +589,9 @@ impl DockIndicators {
             }));
             inner.tray_subscription.set(Some(id));
         }
+        let applet_size = self.applet_icon_size();
         for name in INDICATORS {
-            let button = self.indicator(name, size);
+            let button = self.indicator(name, applet_size);
             inner.app_button_sizes.add_widget(&button.button);
             pack(&inner.apps, &button.button, false, false, 0);
         }
@@ -515,6 +615,7 @@ impl DockIndicators {
             inner.service_area.append(&always.widget());
         }
         inner.service_area.append(&inner.apps);
+        self.sync_tray_size();
         let (available, enabled, closing, changed) = (self.weak(), Rc::downgrade(dock), self.weak(), self.weak());
         let expander = TrayExpander::new(dock, &inner.app, &hidden_tray, ExpanderOptions {
             kind: Some("system_tray".into()),
@@ -663,7 +764,29 @@ impl DockIndicators {
     pub fn tray_icon_size(&self) -> i32 {
         let Some(dock) = self.dock() else { return 22 };
         let compact = dock.panel().is_some_and(|panel| panel.has_css_class("tessel-dock-compact-bar"));
-        tray_icon_size(compact, &dock.config(), dock.is_app_dock())
+        let config = dock.config();
+        let original = tray_icon_size(compact, &config, dock.is_app_dock());
+        system_tray_icon_size(self.tray_compact(), &config).unwrap_or(original)
+    }
+
+    /// The system tray's applet icon pixels (the status icon size at Small).
+    pub fn applet_icon_size(&self) -> i32 {
+        let Some(dock) = self.dock() else { return 20 };
+        let config = dock.config();
+        system_tray_icon_size(self.tray_compact(), &config).unwrap_or_else(|| status_icon_size(&config))
+    }
+
+    /// More apps' icon pixels; `None` (Small) leaves GTK's default.
+    pub fn apps_toggle_icon_size(&self) -> Option<i32> {
+        self.dock().and_then(|dock| system_tray_icon_size(self.tray_compact(), &dock.config()))
+    }
+
+    /// The tray sits in a compact bar (the panel says so, or the config will).
+    fn tray_compact(&self) -> bool {
+        let Some(dock) = self.dock() else { return false };
+        let config = dock.config();
+        dock.panel().is_some_and(|panel| panel.has_css_class("tessel-dock-compact-bar"))
+            || (config.compact_bar && !dock.is_app_dock())
     }
 
     // ---------------------------------------------------------- default apps
@@ -818,10 +941,46 @@ impl DockIndicators {
         result
     }
 
+    /// Apply the system tray icon size (`tray_icon_size`) to the tray items,
+    /// the applets and More apps, with its CSS class and spacing. Unchanged
+    /// sizes cost nothing; a dock rebuilt for new settings starts over.
     fn sync_tray_size(&self) {
-        let size = self.tray_icon_size();
-        for tray in [&self.0.tray, &self.0.always_tray].into_iter().flatten() {
-            tray.set_icon_size(size);
+        let Some(dock) = self.dock() else { return };
+        let config = dock.config();
+        let inner = &self.0;
+        let layout = system_tray_layout(self.tray_compact(), &config);
+        let item = self.tray_icon_size();
+        for tray in [&inner.tray, &inner.always_tray].into_iter().flatten() {
+            tray.set_resized(layout.is_some());
+            tray.set_icon_size(item);
+        }
+        let classes = [Some(tray_size_class(&config)), layout.map(|(_, pad)| tray_pad_class(pad))];
+        let sizing = TraySizing { classes, applet: self.applet_icon_size(), toggle: layout.map(|(icon, _)| icon) };
+        if inner.tray_sizing.borrow().as_ref() == Some(&sizing) {
+            return;
+        }
+        let previous = inner.tray_sizing.replace(Some(sizing.clone()));
+        for class in previous.as_ref().map(|old| old.classes).unwrap_or_default().into_iter().flatten() {
+            inner.service_area.remove_css_class(class);
+        }
+        for class in sizing.classes.into_iter().flatten() {
+            inner.service_area.add_css_class(class);
+        }
+        let spacing = tray_spacing(&config);
+        for container in [&inner.service_area, &inner.apps] {
+            container.set_spacing(spacing);
+        }
+        for tray in [&inner.tray, &inner.always_tray].into_iter().flatten() {
+            tray.widget().set_spacing(spacing);
+        }
+        if let Some(image) = inner.apps_toggle.child().and_downcast::<gtk::Image>() {
+            image.set_pixel_size(sizing.toggle.unwrap_or(-1));
+        }
+        let buttons: Vec<Rc<StatusButton>> = INDICATORS.iter().filter_map(|name| self.status_button(name)).collect();
+        for button in buttons {
+            button.tray_sized.set(layout.is_some());
+            button.glyph_floor.set(status_icon_size(&config));
+            set_status_visual(&button, &button.label.text(), &button.panel_classes(), sizing.applet);
         }
     }
 
@@ -1020,7 +1179,7 @@ impl DockIndicators {
         self.refresh_workspaces();
         self.sync_tray_size();
         let status = self.0.app.status();
-        let size = self.icon_size();
+        let (size, applet_size) = (self.icon_size(), self.applet_icon_size());
         let buttons: Vec<(String, Rc<StatusButton>)> =
             self.0.buttons.borrow().iter().map(|(name, button)| (name.clone(), button.clone())).collect();
         let empty = Map::new();
@@ -1039,6 +1198,7 @@ impl DockIndicators {
                 badge.set_visible(classes.contains("vpn"));
             }
             button.label.set_text(&text);
+            let size = if INDICATORS.contains(&name.as_str()) { applet_size } else { size };
             set_status_visual(&button, &text, &classes, size);
             let title = translated_title(&name);
             let detail = state.get("tooltip").map(py_str_or_empty).unwrap_or_default();
@@ -1167,6 +1327,101 @@ mod tests {
         assert_eq!(tray_icon_size(false, &config, true), 22);
         assert_eq!(tray_icon_size(true, &DockConfig::default(), true), 16);
         assert_eq!(tray_icon_size(false, &DockConfig::default(), false), 22);
+    }
+
+    #[test]
+    fn system_tray_icon_size_per_choice() {
+        let mut config = DockConfig::default();
+        assert_eq!(config.tray_icon_size, "medium");
+        // Small keeps the original sizes: applets follow the icon size, tray items 22/16 px.
+        config.tray_icon_size = "small".into();
+        assert_eq!(system_tray_layout(false, &config), None);
+        assert_eq!(system_tray_icon_size(true, &config), None);
+        assert_eq!((status_icon_size(&config), tray_icon_size(false, &config, false)), (20, 22));
+        assert_eq!((tray_size_class(&config), tray_spacing(&config)), ("tray-icons-small", 1));
+        // Medium and Large: one size for applets, items and More apps.
+        // (icon size, display, Medium (icon, padding), Large (icon, padding))
+        for (icon, display, medium, large) in [
+            (40, "icons", (28, 5), (32, 5)), (16, "icons", (22, 4), (24, 3)), (24, "icons", (22, 5), (24, 5)),
+            (32, "icons", (22, 5), (26, 5)), (48, "icons", (32, 5), (36, 5)), (64, "icons", (32, 5), (36, 5)),
+            (128, "icons", (32, 5), (36, 5)), (40, "title", (28, 2), (30, 1)), (16, "title", (22, 4), (24, 3)),
+        ] {
+            config.icon_size = icon;
+            config.application_display = display.into();
+            config.tray_icon_size = "medium".into();
+            assert_eq!(system_tray_layout(false, &config), Some(medium), "medium {icon} {display}");
+            config.tray_icon_size = "large".into();
+            assert_eq!(system_tray_layout(false, &config), Some(large), "large {icon} {display}");
+            config.tray_icon_size = "small".into();
+            let small = status_icon_size(&config).max(tray_icon_size(false, &config, false));
+            assert!(medium.0 < large.0, "{icon} {display}");
+            assert!(small <= medium.0, "{icon} {display}: {small} {medium:?}");
+            // No thicker than the dock's own items (icon + 10 px) or Small's 30 px applets.
+            let item = if display == "title" { icon.min(22) } else { icon } as i32;
+            for (size, pad) in [medium, large] {
+                assert!(size + 2 * pad <= (item + 10).max(30), "{icon} {display}: {size} {pad}");
+            }
+        }
+        // At the default size Medium and Large are clear steps up from Small's 20 and 22 px.
+        config.icon_size = 40;
+        config.application_display = "icons".into();
+        config.tray_icon_size = "medium".into();
+        assert_eq!(system_tray_icon_size(false, &config), Some(28));
+        // The compact bar: rows as tall as its application buttons (icon + 4 px),
+        // 22 px with the window title. (icon size, display, Medium, Large)
+        for (icon, display, medium, large) in [
+            (28, "icons", (21, 2), (25, 2)), (24, "icons", (20, 2), (22, 2)), (32, "icons", (24, 2), (29, 2)),
+            (40, "icons", (28, 2), (32, 2)), (16, "icons", (20, 1), (22, 0)), (40, "title", (20, 1), (22, 0)),
+            (28, "title", (20, 1), (22, 0)),
+        ] {
+            config.icon_size = icon;
+            config.application_display = display.into();
+            config.tray_icon_size = "medium".into();
+            assert_eq!(system_tray_layout(true, &config), Some(medium), "compact medium {icon} {display}");
+            config.tray_icon_size = "large".into();
+            assert_eq!(system_tray_layout(true, &config), Some(large), "compact large {icon} {display}");
+            let room = if display == "title" { 22 } else { (icon as i32 + 4).max(22) };
+            for (size, pad) in [medium, large] {
+                assert!(size + 2 * pad <= room, "compact {icon} {display}: {size} {pad}");
+            }
+            config.tray_icon_size = "small".into();
+            assert!(status_icon_size(&DockConfig { compact_bar: true, ..config.clone() }).max(16) < medium.0);
+        }
+        config.icon_size = 40;
+        config.application_display = "icons".into();
+        for (choice, class, spacing) in [("medium", "tray-icons-medium", 2), ("large", "tray-icons-large", 3)] {
+            config.tray_icon_size = choice.into();
+            assert_eq!((tray_size_class(&config), tray_spacing(&config)), (class, spacing));
+        }
+        assert!(tray_icon_size(true, &config, false) < 20);
+        assert_eq!(tray_pad_class(3), "tray-pad-3");
+        assert_eq!((tray_pad_class(-1), tray_pad_class(0), tray_pad_class(9)), ("tray-pad-0", "tray-pad-0", "tray-pad-5"));
+        // Medium and Large tray items skip the padded 22/24 px theme sizes;
+        // Small looks up exactly its own sizes.
+        use crate::ui::tray::theme_lookup_size;
+        for size in [16, 22, 20, 28] {
+            assert_eq!(theme_lookup_size(size, false), size);
+        }
+        for (size, lookup) in [(12, 12), (16, 16), (20, 16), (22, 16), (24, 16), (25, 32), (28, 32), (32, 32), (36, 48)] {
+            assert_eq!(theme_lookup_size(size, true), lookup, "{size}");
+        }
+    }
+
+    #[test]
+    fn tray_size_rules_keep_small_and_fit_the_compact_bar() {
+        let css = crate::appearance::style::CSS;
+        // Small has no rules of its own: the original ones apply unchanged.
+        assert!(!css.contains("tray-icons-small"));
+        assert!(css.contains(".tessel-dock-panel button.tessel-dock-status, .tessel-dock-panel button.tessel-dock-tray-item {\n  min-width: 24px; min-height: 30px; padding: 5px 4px;"));
+        for pad in 1..=5 {
+            assert!(css.contains(&format!(".tessel-dock-panel .tray-pad-{pad} button.tessel-dock-status, .tessel-dock-panel .tray-pad-{pad} button.tessel-dock-tray-item {{ padding: {pad}px 6px; }}")), "{pad}");
+            assert!(css.contains(&format!(".tessel-dock-panel.tessel-dock-vertical .tray-pad-{pad} button.tessel-dock-tray-item {{ padding: 6px {pad}px; }}")), "{pad}");
+        }
+        // The compact bar keeps its 22 px rows.
+        assert!(css.contains(".tessel-dock-panel.tessel-dock-compact-bar .tray-pad-1 button.tessel-dock-tray-item { min-height: 22px; padding: 1px 4px; }"));
+        assert!(css.contains(".tessel-dock-panel.tessel-dock-compact-bar .tray-pad-0 button.tessel-dock-tray-item { min-height: 22px; padding: 0 4px; }"));
+        // Normal icons are never dimmed; only off, inactive and unavailable states are.
+        assert!(!css.contains(".tessel-dock-status { opacity") && !css.contains(".tessel-dock-tray-item { opacity"));
     }
 
     #[test]

@@ -1944,5 +1944,10 @@
   "Always": "Alltid",
   "Adaptive Sync (VRR)": "Adaptiv synkronisering (VRR)",
   "On only while an app is fullscreen on this screen.": "Bara på medan ett program visas i helskärm på den här skärmen.",
-  "Adaptive Sync is not available on this screen.": "Adaptiv synkronisering är inte tillgänglig på den här skärmen."
+  "Adaptive Sync is not available on this screen.": "Adaptiv synkronisering är inte tillgänglig på den här skärmen.",
+  "Small": "Liten",
+  "Medium": "Mellan",
+  "Large": "Stor",
+  "System tray icon size": "Ikonstorlek i systemfältet",
+  "The size of the status icons, tray applications and More apps in the system tray.": "Storleken på statusikonerna, programmen i systemfältet och Fler appar."
 }

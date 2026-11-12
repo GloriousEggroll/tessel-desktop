@@ -2124,5 +2124,10 @@
   "Selected applications stay shown in the system tray without clicking More apps.": "선택한 애플리케이션은 더 많은 앱을 클릭하지 않아도 시스템 트레이에 계속 표시됩니다.",
   "Always": "항상",
   "On only while an app is fullscreen on this screen.": "이 화면에서 앱이 전체 화면일 때만 켜집니다.",
-  "Adaptive Sync is not available on this screen.": "이 화면에서는 가변 주사율을 사용할 수 없습니다."
+  "Adaptive Sync is not available on this screen.": "이 화면에서는 가변 주사율을 사용할 수 없습니다.",
+  "Small": "작게",
+  "Medium": "보통",
+  "Large": "크게",
+  "System tray icon size": "시스템 트레이 아이콘 크기",
+  "The size of the status icons, tray applications and More apps in the system tray.": "시스템 트레이의 상태 아이콘, 트레이 앱 및 더 많은 앱 버튼의 크기입니다."
 }

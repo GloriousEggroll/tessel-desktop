@@ -163,6 +163,20 @@ window.tessel-dock-settings { background: @theme_bg_color; color: @theme_fg_colo
 .tessel-dock-panel button.tessel-dock-status, .tessel-dock-panel button.tessel-dock-tray-item {
   min-width: 24px; min-height: 30px; padding: 5px 4px;
 }
+/* System tray icon size (tray_icon_size, see ui::indicators::system_tray_layout).
+   Small keeps the rule above. Medium and Large set tray-pad-N: N px across the
+   panel, so a button is no thicker than the dock's other items, and 6 px along
+   it for room between the bigger icons. */
+.tessel-dock-panel .tray-pad-1 button.tessel-dock-status, .tessel-dock-panel .tray-pad-1 button.tessel-dock-tray-item { padding: 1px 6px; }
+.tessel-dock-panel .tray-pad-2 button.tessel-dock-status, .tessel-dock-panel .tray-pad-2 button.tessel-dock-tray-item { padding: 2px 6px; }
+.tessel-dock-panel .tray-pad-3 button.tessel-dock-status, .tessel-dock-panel .tray-pad-3 button.tessel-dock-tray-item { padding: 3px 6px; }
+.tessel-dock-panel .tray-pad-4 button.tessel-dock-status, .tessel-dock-panel .tray-pad-4 button.tessel-dock-tray-item { padding: 4px 6px; }
+.tessel-dock-panel .tray-pad-5 button.tessel-dock-status, .tessel-dock-panel .tray-pad-5 button.tessel-dock-tray-item { padding: 5px 6px; }
+.tessel-dock-panel.tessel-dock-vertical .tray-pad-1 button.tessel-dock-status, .tessel-dock-panel.tessel-dock-vertical .tray-pad-1 button.tessel-dock-tray-item { padding: 6px 1px; }
+.tessel-dock-panel.tessel-dock-vertical .tray-pad-2 button.tessel-dock-status, .tessel-dock-panel.tessel-dock-vertical .tray-pad-2 button.tessel-dock-tray-item { padding: 6px 2px; }
+.tessel-dock-panel.tessel-dock-vertical .tray-pad-3 button.tessel-dock-status, .tessel-dock-panel.tessel-dock-vertical .tray-pad-3 button.tessel-dock-tray-item { padding: 6px 3px; }
+.tessel-dock-panel.tessel-dock-vertical .tray-pad-4 button.tessel-dock-status, .tessel-dock-panel.tessel-dock-vertical .tray-pad-4 button.tessel-dock-tray-item { padding: 6px 4px; }
+.tessel-dock-panel.tessel-dock-vertical .tray-pad-5 button.tessel-dock-status, .tessel-dock-panel.tessel-dock-vertical .tray-pad-5 button.tessel-dock-tray-item { padding: 6px 5px; }
 .tessel-dock-media-song { font-family: "Noto Sans", sans-serif; font-size: 10pt; }
 .tessel-dock-panel .tessel-dock-media button.tessel-dock-media-control {
   min-width: 20px; min-height: 22px; padding: 2px; border-radius: 8px;
@@ -209,6 +223,20 @@ window.tessel-dock-settings { background: @theme_bg_color; color: @theme_fg_colo
 .tessel-dock-compact-bar button.tessel-dock-compact-item {
   min-width: 22px; min-height: 22px; padding: 2px 3px; border-radius: 8px;
 }
+/* The compact bar: tray-pad-0 to tray-pad-2 across it, its own 4 px along it,
+   and never below its 22 px rows. */
+.tessel-dock-panel.tessel-dock-compact-bar .tray-pad-0 button.tessel-dock-status,
+.tessel-dock-panel.tessel-dock-compact-bar .tray-pad-0 button.tessel-dock-tray-item { min-height: 22px; padding: 0 4px; }
+.tessel-dock-panel.tessel-dock-compact-bar .tray-pad-1 button.tessel-dock-status,
+.tessel-dock-panel.tessel-dock-compact-bar .tray-pad-1 button.tessel-dock-tray-item { min-height: 22px; padding: 1px 4px; }
+.tessel-dock-panel.tessel-dock-compact-bar .tray-pad-2 button.tessel-dock-status,
+.tessel-dock-panel.tessel-dock-compact-bar .tray-pad-2 button.tessel-dock-tray-item { min-height: 22px; padding: 2px 4px; }
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical .tray-pad-0 button.tessel-dock-status,
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical .tray-pad-0 button.tessel-dock-tray-item { min-width: 22px; padding: 4px 0; }
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical .tray-pad-1 button.tessel-dock-status,
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical .tray-pad-1 button.tessel-dock-tray-item { min-width: 22px; padding: 4px 1px; }
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical .tray-pad-2 button.tessel-dock-status,
+.tessel-dock-panel.tessel-dock-compact-bar.tessel-dock-vertical .tray-pad-2 button.tessel-dock-tray-item { min-width: 22px; padding: 4px 2px; }
 .tessel-dock-compact-bar .status-capslock .tessel-dock-status-glyph { font-size: 11pt; }
 .tessel-dock-compact-bar .tessel-dock-media-song { font-size: 10pt; }
 .tessel-dock-compact-bar .status-weather .tessel-dock-status-glyph { font-size: 10pt; }

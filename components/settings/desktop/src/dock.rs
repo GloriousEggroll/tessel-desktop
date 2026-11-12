@@ -348,6 +348,7 @@ impl DockPage {
             page.add_target("background_color", &c.background_color.button);
             page.add_target("bar_border_enabled", &c.bar_border_enabled);
             page.add_target("app_dock_layout_controls", c.app_dock_layout_controls.widget());
+            page.add_target("tray_icon_size", &c.tray_icon_size);
             if let Some(media) = c.group_switches.get("media") {
                 page.add_target("group_media", media);
             }
