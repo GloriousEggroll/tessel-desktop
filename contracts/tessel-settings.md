@@ -102,6 +102,27 @@ Every page that Python built from another component's module is built from that 
   the shared `rc.xml.tessel-lock`; removed when every screen keeps "Halves (default)"; `labwc --reconfigure` only when
   the block changed. A user's own `<regions>` is never touched. Applies immediately (keyboard divider moves after 300 ms,
   mouse drags on release). Not rewritten on page load; `snap_layouts::sync_rc()` regenerates it from the JSON.
+- Theme & Wallpaper "Pointer" card (Rust-only, `gs_desktop::cursor_themes` over `tessel_core::cursor_theme`): lists
+  every dir of the icon search path whose `cursors/` has `left_ptr` or `default` (never `default` itself; first dir
+  wins an id; sorted by `Name=`), previews six cursors read from the theme's Xcursor files (aliases + `Inherits=`), and
+  falls back to Adwaita without saving when the configured theme is not installed. Choosing a theme writes, each step
+  independent and only when changed: gsettings `org.gnome.desktop.interface cursor-theme`; `gtk-cursor-theme-name` in
+  `gtk-{3,4}.0/settings.ini`; `XCURSOR_THEME` in labwc's `environment` then `labwc --reconfigure`;
+  `$XDG_DATA_HOME/icons/default/index.theme` `[Icon Theme] Inherits=` (only that line of an existing file; also
+  `~/.icons/default` when it exists; symlinks out of `$HOME` and unwritable files skipped);
+  `$XDG_CONFIG_HOME/tessel/cursor-theme`. Its Size row uses the Accessibility backend (`cursor-size`, `XCURSOR_SIZE`)
+  and also reloads labwc. Search target `cursor_theme`.
+- Theme & Wallpaper "Fonts" card (Rust-only, `gs_desktop::fonts`): four `GtkFontDialogButton`s, applied on choice,
+  each step independent and only when changed: Interface text → gsettings `org.gnome.desktop.interface font-name` +
+  `gtk-font-name` in `gtk-{3,4}.0/settings.ini`; Document text → `document-font-name`; Monospace text →
+  `monospace-font-name` (dialog lists monospace families only); Window titles → rc.xml `<theme><font
+  place="ActiveWindow">` and `place="InactiveWindow"` (`<name>` family, `<size>` rounded whole points, `<slant>`,
+  `<weight>` nearest labwc keyword), edited in place (other `<font>`s, comments and bytes kept; created in `<theme>`,
+  `<theme>` created when missing; moved after a later place-less `<font>`), under `rc.xml.tessel-lock`, then
+  `labwc --reconfigure` (only under labwc). "Restore defaults" (sensitive only when something differs): gsettings
+  `reset` of the three keys, `gtk-font-name` removed from both ini files, title fonts back to
+  `tessel-configure-session`'s Sans 10 SemiBold. Samples in the interface and monospace fonts. Search targets
+  `font_interface`, `font_document`, `font_monospace`, `font_titlebar`.
 - `labwc/environment` keys (`XCURSOR_SIZE`, `TERMINAL`, XKB_*), `night-light` config, `mimeapps.list`
   (default apps), `~/.config/tessel-dock/config.json` (when tessel-dock is offline), `~/.config/tessel/clock.json`,
   `layout_presets` previous-layout state, tiling config, tessel-lock config, login appearance (via pkexec helper).

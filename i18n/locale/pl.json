@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Granica między wierszami {value1} i {value2}",
   "Drag or use the arrow keys to resize the areas.": "Przeciągnij lub użyj klawiszy strzałek, aby zmienić rozmiar obszarów.",
   "Could not save the snap layout: {error}": "Nie można zapisać układu przyciągania: {error}",
-  "Could not apply the snap layout: {error}": "Nie można zastosować układu przyciągania: {error}"
+  "Could not apply the snap layout: {error}": "Nie można zastosować układu przyciągania: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Wybierz motyw wskaźnika używany przez pulpit i aplikacje.",
+  "The pointer theme could not be changed: {error}": "Nie można zmienić motywu wskaźnika: {error}",
+  "The shared pointer theme setting could not be changed.": "Nie można zmienić wspólnego ustawienia motywu wskaźnika.",
+  "No pointer themes are installed.": "Nie zainstalowano żadnych motywów wskaźnika.",
+  "Fonts": "Czcionki",
+  "Choose the fonts used by the desktop and applications.": "Wybierz czcionki używane przez pulpit i aplikacje.",
+  "Interface text": "Tekst interfejsu",
+  "Document text": "Tekst dokumentów",
+  "Monospace text": "Tekst o stałej szerokości",
+  "Window titles": "Tytuły okien",
+  "Choose a font": "Wybierz czcionkę",
+  "The quick brown fox jumps over the lazy dog.": "Pchnąć w tę łódź jeża lub ośm skrzyń fig.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Niektóre aplikacje użyją nowych czcionek dopiero po ponownym uruchomieniu. Rozmiar tekstu ustawia się na stronie Dostępność.",
+  "The font could not be changed: {error}": "Nie udało się zmienić czcionki: {error}",
+  "The fonts could not be reset: {error}": "Nie udało się przywrócić czcionek: {error}",
+  "The shared font setting could not be changed.": "Nie udało się zmienić wspólnego ustawienia czcionki.",
+  "The window manager did not reload its settings: {error}": "Menedżer okien nie wczytał ponownie ustawień: {error}"
 }

@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Batas antara baris {value1} dan {value2}",
   "Drag or use the arrow keys to resize the areas.": "Seret atau gunakan tombol panah untuk mengubah ukuran area.",
   "Could not save the snap layout: {error}": "Tidak dapat menyimpan tata letak tempel: {error}",
-  "Could not apply the snap layout: {error}": "Tidak dapat menerapkan tata letak tempel: {error}"
+  "Could not apply the snap layout: {error}": "Tidak dapat menerapkan tata letak tempel: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Pilih tema penunjuk yang digunakan oleh desktop dan aplikasi.",
+  "The pointer theme could not be changed: {error}": "Tema penunjuk tidak dapat diubah: {error}",
+  "The shared pointer theme setting could not be changed.": "Pengaturan tema penunjuk bersama tidak dapat diubah.",
+  "No pointer themes are installed.": "Tidak ada tema penunjuk yang terpasang.",
+  "Fonts": "Fon",
+  "Choose the fonts used by the desktop and applications.": "Pilih fon yang digunakan desktop dan aplikasi.",
+  "Interface text": "Teks antarmuka",
+  "Document text": "Teks dokumen",
+  "Monospace text": "Teks monospace",
+  "Window titles": "Judul jendela",
+  "Choose a font": "Pilih fon",
+  "The quick brown fox jumps over the lazy dog.": "Muharjo seorang xenofobia universal yang takut pada warga jazirah.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Beberapa aplikasi baru memakai fon baru setelah dimulai ulang. Ukuran teks diatur di halaman Aksesibilitas.",
+  "The font could not be changed: {error}": "Fon tidak dapat diubah: {error}",
+  "The fonts could not be reset: {error}": "Fon tidak dapat diatur ulang: {error}",
+  "The shared font setting could not be changed.": "Pengaturan fon bersama tidak dapat diubah.",
+  "The window manager did not reload its settings: {error}": "Pengelola jendela tidak memuat ulang pengaturannya: {error}"
 }

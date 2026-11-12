@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Rand tussen rij {value1} en {value2}",
   "Drag or use the arrow keys to resize the areas.": "Sleep of gebruik de pijltjestoetsen om de gebieden te vergroten of te verkleinen.",
   "Could not save the snap layout: {error}": "Kan de vastklikindeling niet opslaan: {error}",
-  "Could not apply the snap layout: {error}": "Kan de vastklikindeling niet toepassen: {error}"
+  "Could not apply the snap layout: {error}": "Kan de vastklikindeling niet toepassen: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Kies het aanwijzerthema dat het bureaublad en de toepassingen gebruiken.",
+  "The pointer theme could not be changed: {error}": "Het aanwijzerthema kon niet worden gewijzigd: {error}",
+  "The shared pointer theme setting could not be changed.": "De gedeelde instelling voor het aanwijzerthema kon niet worden gewijzigd.",
+  "No pointer themes are installed.": "Er zijn geen aanwijzerthema's geïnstalleerd.",
+  "Fonts": "Lettertypen",
+  "Choose the fonts used by the desktop and applications.": "Kies de lettertypen die het bureaublad en de toepassingen gebruiken.",
+  "Interface text": "Tekst van de interface",
+  "Document text": "Tekst van documenten",
+  "Monospace text": "Tekst met vaste breedte",
+  "Window titles": "Venstertitels",
+  "Choose a font": "Kies een lettertype",
+  "The quick brown fox jumps over the lazy dog.": "Pa’s wijze lynx bezag vroom het fikse aquaduct.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Sommige toepassingen gebruiken de nieuwe lettertypen pas nadat ze opnieuw zijn gestart. De tekstgrootte stelt u in op de pagina Toegankelijkheid.",
+  "The font could not be changed: {error}": "Het lettertype kan niet worden gewijzigd: {error}",
+  "The fonts could not be reset: {error}": "De lettertypen kunnen niet worden hersteld: {error}",
+  "The shared font setting could not be changed.": "De gedeelde lettertype-instelling kan niet worden gewijzigd.",
+  "The window manager did not reload its settings: {error}": "Het vensterbeheer heeft zijn instellingen niet opnieuw geladen: {error}"
 }

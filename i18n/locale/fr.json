@@ -2305,5 +2305,22 @@
   "Border between rows {value1} and {value2}": "Bordure entre les lignes {value1} et {value2}",
   "Drag or use the arrow keys to resize the areas.": "Faites glisser ou utilisez les flèches pour redimensionner les zones.",
   "Could not save the snap layout: {error}": "Impossible d’enregistrer la disposition d’ancrage : {error}",
-  "Could not apply the snap layout: {error}": "Impossible d’appliquer la disposition d’ancrage : {error}"
+  "Could not apply the snap layout: {error}": "Impossible d’appliquer la disposition d’ancrage : {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Choisissez le thème de pointeur utilisé par le bureau et les applications.",
+  "The pointer theme could not be changed: {error}": "Impossible de modifier le thème de pointeur : {error}",
+  "The shared pointer theme setting could not be changed.": "Impossible de modifier le réglage partagé du thème de pointeur.",
+  "No pointer themes are installed.": "Aucun thème de pointeur n'est installé.",
+  "Fonts": "Polices",
+  "Choose the fonts used by the desktop and applications.": "Choisissez les polices utilisées par le bureau et les applications.",
+  "Interface text": "Texte de l’interface",
+  "Document text": "Texte des documents",
+  "Monospace text": "Texte à chasse fixe",
+  "Window titles": "Titres des fenêtres",
+  "Choose a font": "Choisir une police",
+  "The quick brown fox jumps over the lazy dog.": "Portez ce vieux whisky au juge blond qui fume.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Certaines applications n’utilisent les nouvelles polices qu’après avoir été redémarrées. La taille du texte se règle sur la page Accessibilité.",
+  "The font could not be changed: {error}": "Impossible de changer la police : {error}",
+  "The fonts could not be reset: {error}": "Impossible de réinitialiser les polices : {error}",
+  "The shared font setting could not be changed.": "Impossible de modifier le réglage de police partagé.",
+  "The window manager did not reload its settings: {error}": "Le gestionnaire de fenêtres n’a pas rechargé ses réglages : {error}"
 }

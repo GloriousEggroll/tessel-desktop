@@ -2152,5 +2152,22 @@
   "Border between rows {value1} and {value2}": "{value1}행과 {value2}행 사이의 경계",
   "Drag or use the arrow keys to resize the areas.": "끌거나 화살표 키를 사용해 영역 크기를 조절합니다.",
   "Could not save the snap layout: {error}": "스냅 레이아웃을 저장할 수 없습니다: {error}",
-  "Could not apply the snap layout: {error}": "스냅 레이아웃을 적용할 수 없습니다: {error}"
+  "Could not apply the snap layout: {error}": "스냅 레이아웃을 적용할 수 없습니다: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "데스크톱과 애플리케이션에서 사용할 포인터 테마를 선택합니다.",
+  "The pointer theme could not be changed: {error}": "포인터 테마를 변경할 수 없습니다: {error}",
+  "The shared pointer theme setting could not be changed.": "공유 포인터 테마 설정을 변경할 수 없습니다.",
+  "No pointer themes are installed.": "설치된 포인터 테마가 없습니다.",
+  "Fonts": "글꼴",
+  "Choose the fonts used by the desktop and applications.": "데스크톱과 앱에서 사용할 글꼴을 선택합니다.",
+  "Interface text": "인터페이스 글자",
+  "Document text": "문서 글자",
+  "Monospace text": "고정폭 글자",
+  "Window titles": "창 제목",
+  "Choose a font": "글꼴 선택",
+  "The quick brown fox jumps over the lazy dog.": "다람쥐 헌 쳇바퀴에 타고파.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "일부 앱은 다시 시작한 뒤에야 새 글꼴을 사용합니다. 글자 크기는 접근성 페이지에서 설정합니다.",
+  "The font could not be changed: {error}": "글꼴을 바꿀 수 없습니다: {error}",
+  "The fonts could not be reset: {error}": "글꼴을 초기화할 수 없습니다: {error}",
+  "The shared font setting could not be changed.": "공유 글꼴 설정을 바꿀 수 없습니다.",
+  "The window manager did not reload its settings: {error}": "창 관리자가 설정을 다시 불러오지 않았습니다: {error}"
 }

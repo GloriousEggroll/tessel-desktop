@@ -5,8 +5,10 @@
 //! [`interface_settings`]. Every page module also has a `build_*_page`
 //! variant taking Python's keyword arguments (fakes for tests).
 pub mod bridge;
+pub mod cursor_themes;
 pub mod displays;
 pub mod dock;
+pub mod fonts;
 pub mod icon_themes;
 pub mod layout;
 pub mod layout_presets;

@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Kant mellem række {value1} og {value2}",
   "Drag or use the arrow keys to resize the areas.": "Træk eller brug piletasterne for at ændre områdernes størrelse.",
   "Could not save the snap layout: {error}": "Fastgørelseslayoutet kunne ikke gemmes: {error}",
-  "Could not apply the snap layout: {error}": "Fastgørelseslayoutet kunne ikke anvendes: {error}"
+  "Could not apply the snap layout: {error}": "Fastgørelseslayoutet kunne ikke anvendes: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Vælg det markørtema, som skrivebordet og programmerne bruger.",
+  "The pointer theme could not be changed: {error}": "Markørtemaet kunne ikke ændres: {error}",
+  "The shared pointer theme setting could not be changed.": "Den fælles indstilling for markørtema kunne ikke ændres.",
+  "No pointer themes are installed.": "Der er ikke installeret nogen markørtemaer.",
+  "Fonts": "Skrifttyper",
+  "Choose the fonts used by the desktop and applications.": "Vælg de skrifttyper, som skrivebordet og programmerne bruger.",
+  "Interface text": "Tekst i brugerfladen",
+  "Document text": "Tekst i dokumenter",
+  "Monospace text": "Tekst med fast bredde",
+  "Window titles": "Vinduestitler",
+  "Choose a font": "Vælg en skrifttype",
+  "The quick brown fox jumps over the lazy dog.": "Høj bly gom vandt fræk sexquiz på wc.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Nogle programmer bruger først de nye skrifttyper, når de er genstartet. Tekststørrelsen indstilles på siden Tilgængelighed.",
+  "The font could not be changed: {error}": "Skrifttypen kunne ikke ændres: {error}",
+  "The fonts could not be reset: {error}": "Skrifttyperne kunne ikke nulstilles: {error}",
+  "The shared font setting could not be changed.": "Den fælles skrifttypeindstilling kunne ikke ændres.",
+  "The window manager did not reload its settings: {error}": "Vindueshåndteringen genindlæste ikke sine indstillinger: {error}"
 }

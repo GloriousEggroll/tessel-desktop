@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Ranh giới giữa hàng {value1} và {value2}",
   "Drag or use the arrow keys to resize the areas.": "Kéo hoặc dùng phím mũi tên để đổi kích thước các vùng.",
   "Could not save the snap layout: {error}": "Không thể lưu bố cục ghim: {error}",
-  "Could not apply the snap layout: {error}": "Không thể áp dụng bố cục ghim: {error}"
+  "Could not apply the snap layout: {error}": "Không thể áp dụng bố cục ghim: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Chọn chủ đề con trỏ mà màn hình nền và các ứng dụng sử dụng.",
+  "The pointer theme could not be changed: {error}": "Không thể thay đổi chủ đề con trỏ: {error}",
+  "The shared pointer theme setting could not be changed.": "Không thể thay đổi cài đặt chủ đề con trỏ dùng chung.",
+  "No pointer themes are installed.": "Chưa cài đặt chủ đề con trỏ nào.",
+  "Fonts": "Phông chữ",
+  "Choose the fonts used by the desktop and applications.": "Chọn phông chữ dùng cho màn hình nền và ứng dụng.",
+  "Interface text": "Chữ giao diện",
+  "Document text": "Chữ tài liệu",
+  "Monospace text": "Chữ đơn cách",
+  "Window titles": "Tiêu đề cửa sổ",
+  "Choose a font": "Chọn phông chữ",
+  "The quick brown fox jumps over the lazy dog.": "Bầu trời trong xanh thăm thẳm, không một gợn mây.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Một số ứng dụng chỉ dùng phông chữ mới sau khi được khởi động lại. Cỡ chữ được đặt ở trang Trợ năng.",
+  "The font could not be changed: {error}": "Không thể đổi phông chữ: {error}",
+  "The fonts could not be reset: {error}": "Không thể đặt lại phông chữ: {error}",
+  "The shared font setting could not be changed.": "Không thể thay đổi cài đặt phông chữ dùng chung.",
+  "The window manager did not reload its settings: {error}": "Trình quản lý cửa sổ không tải lại cài đặt: {error}"
 }

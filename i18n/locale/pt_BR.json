@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Borda entre as linhas {value1} e {value2}",
   "Drag or use the arrow keys to resize the areas.": "Arraste ou use as teclas de seta para redimensionar as áreas.",
   "Could not save the snap layout: {error}": "Não foi possível salvar o layout de encaixe: {error}",
-  "Could not apply the snap layout: {error}": "Não foi possível aplicar o layout de encaixe: {error}"
+  "Could not apply the snap layout: {error}": "Não foi possível aplicar o layout de encaixe: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Escolha o tema de ponteiro usado pela área de trabalho e pelos aplicativos.",
+  "The pointer theme could not be changed: {error}": "Não foi possível alterar o tema de ponteiro: {error}",
+  "The shared pointer theme setting could not be changed.": "Não foi possível alterar a configuração compartilhada do tema de ponteiro.",
+  "No pointer themes are installed.": "Não há temas de ponteiro instalados.",
+  "Fonts": "Fontes",
+  "Choose the fonts used by the desktop and applications.": "Escolha as fontes usadas pela área de trabalho e pelos aplicativos.",
+  "Interface text": "Texto da interface",
+  "Document text": "Texto de documentos",
+  "Monospace text": "Texto monoespaçado",
+  "Window titles": "Títulos das janelas",
+  "Choose a font": "Escolha uma fonte",
+  "The quick brown fox jumps over the lazy dog.": "Um pequeno jabuti xereta viu dez cegonhas felizes.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Alguns aplicativos só usam as novas fontes depois de serem reiniciados. O tamanho do texto é definido na página Acessibilidade.",
+  "The font could not be changed: {error}": "Não foi possível alterar a fonte: {error}",
+  "The fonts could not be reset: {error}": "Não foi possível redefinir as fontes: {error}",
+  "The shared font setting could not be changed.": "Não foi possível alterar a configuração compartilhada de fonte.",
+  "The window manager did not reload its settings: {error}": "O gerenciador de janelas não recarregou as configurações: {error}"
 }

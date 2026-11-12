@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Hranica medzi riadkami {value1} a {value2}",
   "Drag or use the arrow keys to resize the areas.": "Veľkosť oblastí zmeníte ťahaním alebo klávesmi šípok.",
   "Could not save the snap layout: {error}": "Rozloženie prichytenia sa nepodarilo uložiť: {error}",
-  "Could not apply the snap layout: {error}": "Rozloženie prichytenia sa nepodarilo použiť: {error}"
+  "Could not apply the snap layout: {error}": "Rozloženie prichytenia sa nepodarilo použiť: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Vyberte tému ukazovateľa, ktorú používa pracovné prostredie a aplikácie.",
+  "The pointer theme could not be changed: {error}": "Tému ukazovateľa sa nepodarilo zmeniť: {error}",
+  "The shared pointer theme setting could not be changed.": "Spoločné nastavenie témy ukazovateľa sa nepodarilo zmeniť.",
+  "No pointer themes are installed.": "Nie sú nainštalované žiadne témy ukazovateľa.",
+  "Fonts": "Písma",
+  "Choose the fonts used by the desktop and applications.": "Vyberte písma, ktoré používa pracovné prostredie a aplikácie.",
+  "Interface text": "Text rozhrania",
+  "Document text": "Text dokumentov",
+  "Monospace text": "Text s pevnou šírkou",
+  "Window titles": "Názvy okien",
+  "Choose a font": "Vyberte písmo",
+  "The quick brown fox jumps over the lazy dog.": "Kŕdeľ šťastných ďatľov učí pri ústí Váhu mĺkveho koňa obhrýzať kôru.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Niektoré aplikácie použijú nové písma až po reštarte. Veľkosť textu sa nastavuje na stránke Prístupnosť.",
+  "The font could not be changed: {error}": "Písmo sa nepodarilo zmeniť: {error}",
+  "The fonts could not be reset: {error}": "Písma sa nepodarilo obnoviť: {error}",
+  "The shared font setting could not be changed.": "Spoločné nastavenie písma sa nepodarilo zmeniť.",
+  "The window manager did not reload its settings: {error}": "Správca okien znovu nenačítal svoje nastavenia: {error}"
 }

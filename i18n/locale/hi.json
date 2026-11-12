@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "पंक्ति {value1} और {value2} के बीच की सीमा",
   "Drag or use the arrow keys to resize the areas.": "क्षेत्रों का आकार बदलने के लिए खींचें या तीर कुंजियों का उपयोग करें।",
   "Could not save the snap layout: {error}": "स्नैप लेआउट सहेजा नहीं जा सका: {error}",
-  "Could not apply the snap layout: {error}": "स्नैप लेआउट लागू नहीं किया जा सका: {error}"
+  "Could not apply the snap layout: {error}": "स्नैप लेआउट लागू नहीं किया जा सका: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "डेस्कटॉप और ऐप्लिकेशन द्वारा उपयोग की जाने वाली पॉइंटर थीम चुनें।",
+  "The pointer theme could not be changed: {error}": "पॉइंटर थीम बदली नहीं जा सकी: {error}",
+  "The shared pointer theme setting could not be changed.": "साझा पॉइंटर थीम सेटिंग बदली नहीं जा सकी।",
+  "No pointer themes are installed.": "कोई पॉइंटर थीम इंस्टॉल नहीं है।",
+  "Fonts": "फ़ॉन्ट",
+  "Choose the fonts used by the desktop and applications.": "डेस्कटॉप और ऐप्लिकेशन द्वारा उपयोग किए जाने वाले फ़ॉन्ट चुनें।",
+  "Interface text": "इंटरफ़ेस का टेक्स्ट",
+  "Document text": "दस्तावेज़ का टेक्स्ट",
+  "Monospace text": "मोनोस्पेस टेक्स्ट",
+  "Window titles": "विंडो शीर्षक",
+  "Choose a font": "फ़ॉन्ट चुनें",
+  "The quick brown fox jumps over the lazy dog.": "ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम।",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "कुछ ऐप्लिकेशन नए फ़ॉन्ट केवल दोबारा शुरू होने के बाद इस्तेमाल करते हैं। टेक्स्ट का आकार सुलभता पेज पर सेट होता है।",
+  "The font could not be changed: {error}": "फ़ॉन्ट नहीं बदला जा सका: {error}",
+  "The fonts could not be reset: {error}": "फ़ॉन्ट रीसेट नहीं किए जा सके: {error}",
+  "The shared font setting could not be changed.": "साझा फ़ॉन्ट सेटिंग नहीं बदली जा सकी।",
+  "The window manager did not reload its settings: {error}": "विंडो मैनेजर ने अपनी सेटिंग दोबारा लोड नहीं कीं: {error}"
 }

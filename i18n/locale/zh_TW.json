@@ -2152,5 +2152,22 @@
   "Border between rows {value1} and {value2}": "第 {value1} 列與第 {value2} 列之間的邊界",
   "Drag or use the arrow keys to resize the areas.": "拖曳或使用方向鍵調整區域大小。",
   "Could not save the snap layout: {error}": "無法儲存貼齊版面配置：{error}",
-  "Could not apply the snap layout: {error}": "無法套用貼齊版面配置：{error}"
+  "Could not apply the snap layout: {error}": "無法套用貼齊版面配置：{error}",
+  "Choose the pointer theme used by the desktop and applications.": "選擇桌面和應用程式使用的指標主題。",
+  "The pointer theme could not be changed: {error}": "無法變更指標主題：{error}",
+  "The shared pointer theme setting could not be changed.": "無法變更共用的指標主題設定。",
+  "No pointer themes are installed.": "未安裝任何指標主題。",
+  "Fonts": "字型",
+  "Choose the fonts used by the desktop and applications.": "選擇桌面與應用程式使用的字型。",
+  "Interface text": "介面文字",
+  "Document text": "文件文字",
+  "Monospace text": "等寬文字",
+  "Window titles": "視窗標題",
+  "Choose a font": "選擇字型",
+  "The quick brown fox jumps over the lazy dog.": "敏捷的棕色狐狸跳過了那隻懶狗。",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "部分應用程式需要重新啟動後才會使用新字型。文字大小在「無障礙」頁面中設定。",
+  "The font could not be changed: {error}": "無法變更字型：{error}",
+  "The fonts could not be reset: {error}": "無法重設字型：{error}",
+  "The shared font setting could not be changed.": "無法變更共用的字型設定。",
+  "The window manager did not reload its settings: {error}": "視窗管理員未重新載入其設定：{error}"
 }

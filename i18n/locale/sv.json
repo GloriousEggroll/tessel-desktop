@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Kant mellan rad {value1} och {value2}",
   "Drag or use the arrow keys to resize the areas.": "Dra eller använd piltangenterna för att ändra storlek på områdena.",
   "Could not save the snap layout: {error}": "Det gick inte att spara fästlayouten: {error}",
-  "Could not apply the snap layout: {error}": "Det gick inte att tillämpa fästlayouten: {error}"
+  "Could not apply the snap layout: {error}": "Det gick inte att tillämpa fästlayouten: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Välj det pekartema som skrivbordet och programmen använder.",
+  "The pointer theme could not be changed: {error}": "Pekartemat kunde inte ändras: {error}",
+  "The shared pointer theme setting could not be changed.": "Den delade inställningen för pekartema kunde inte ändras.",
+  "No pointer themes are installed.": "Inga pekarteman är installerade.",
+  "Fonts": "Typsnitt",
+  "Choose the fonts used by the desktop and applications.": "Välj vilka typsnitt skrivbordet och programmen använder.",
+  "Interface text": "Gränssnittstext",
+  "Document text": "Dokumenttext",
+  "Monospace text": "Text med fast bredd",
+  "Window titles": "Fönsterrubriker",
+  "Choose a font": "Välj ett typsnitt",
+  "The quick brown fox jumps over the lazy dog.": "Flygande bäckasiner söka hwila på mjuka tuvor.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Vissa program använder de nya typsnitten först när de har startats om. Textstorleken ställs in på sidan Tillgänglighet.",
+  "The font could not be changed: {error}": "Typsnittet kunde inte ändras: {error}",
+  "The fonts could not be reset: {error}": "Typsnitten kunde inte återställas: {error}",
+  "The shared font setting could not be changed.": "Den delade typsnittsinställningen kunde inte ändras.",
+  "The window manager did not reload its settings: {error}": "Fönsterhanteraren läste inte in sina inställningar igen: {error}"
 }

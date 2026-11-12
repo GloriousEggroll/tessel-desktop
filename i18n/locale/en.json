@@ -122,5 +122,22 @@
   "Border between rows {value1} and {value2}": "Border between rows {value1} and {value2}",
   "Drag or use the arrow keys to resize the areas.": "Drag or use the arrow keys to resize the areas.",
   "Could not save the snap layout: {error}": "Could not save the snap layout: {error}",
-  "Could not apply the snap layout: {error}": "Could not apply the snap layout: {error}"
+  "Could not apply the snap layout: {error}": "Could not apply the snap layout: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Choose the pointer theme used by the desktop and applications.",
+  "The pointer theme could not be changed: {error}": "The pointer theme could not be changed: {error}",
+  "The shared pointer theme setting could not be changed.": "The shared pointer theme setting could not be changed.",
+  "No pointer themes are installed.": "No pointer themes are installed.",
+  "Fonts": "Fonts",
+  "Choose the fonts used by the desktop and applications.": "Choose the fonts used by the desktop and applications.",
+  "Interface text": "Interface text",
+  "Document text": "Document text",
+  "Monospace text": "Monospace text",
+  "Window titles": "Window titles",
+  "Choose a font": "Choose a font",
+  "The quick brown fox jumps over the lazy dog.": "The quick brown fox jumps over the lazy dog.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.",
+  "The font could not be changed: {error}": "The font could not be changed: {error}",
+  "The fonts could not be reset: {error}": "The fonts could not be reset: {error}",
+  "The shared font setting could not be changed.": "The shared font setting could not be changed.",
+  "The window manager did not reload its settings: {error}": "The window manager did not reload its settings: {error}"
 }

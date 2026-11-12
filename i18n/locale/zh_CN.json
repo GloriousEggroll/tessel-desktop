@@ -2152,5 +2152,22 @@
   "Border between rows {value1} and {value2}": "第 {value1} 行与第 {value2} 行之间的边界",
   "Drag or use the arrow keys to resize the areas.": "拖动或使用方向键调整区域大小。",
   "Could not save the snap layout: {error}": "无法保存贴靠布局：{error}",
-  "Could not apply the snap layout: {error}": "无法应用贴靠布局：{error}"
+  "Could not apply the snap layout: {error}": "无法应用贴靠布局：{error}",
+  "Choose the pointer theme used by the desktop and applications.": "选择桌面和应用程序使用的指针主题。",
+  "The pointer theme could not be changed: {error}": "无法更改指针主题：{error}",
+  "The shared pointer theme setting could not be changed.": "无法更改共享的指针主题设置。",
+  "No pointer themes are installed.": "未安装任何指针主题。",
+  "Fonts": "字体",
+  "Choose the fonts used by the desktop and applications.": "选择桌面和应用程序使用的字体。",
+  "Interface text": "界面文字",
+  "Document text": "文档文字",
+  "Monospace text": "等宽文字",
+  "Window titles": "窗口标题",
+  "Choose a font": "选择字体",
+  "The quick brown fox jumps over the lazy dog.": "敏捷的棕色狐狸跳过了那只懒狗。",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "部分应用程序需要重新启动后才会使用新字体。文字大小在“辅助功能”页面中设置。",
+  "The font could not be changed: {error}": "无法更改字体：{error}",
+  "The fonts could not be reset: {error}": "无法重置字体：{error}",
+  "The shared font setting could not be changed.": "无法更改共享的字体设置。",
+  "The window manager did not reload its settings: {error}": "窗口管理器未重新加载其设置：{error}"
 }

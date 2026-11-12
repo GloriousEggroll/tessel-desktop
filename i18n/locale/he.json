@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "גבול בין שורות {value1} ו-{value2}",
   "Drag or use the arrow keys to resize the areas.": "גררו או השתמשו במקשי החיצים כדי לשנות את גודל האזורים.",
   "Could not save the snap layout: {error}": "לא ניתן לשמור את פריסת ההצמדה: {error}",
-  "Could not apply the snap layout: {error}": "לא ניתן להחיל את פריסת ההצמדה: {error}"
+  "Could not apply the snap layout: {error}": "לא ניתן להחיל את פריסת ההצמדה: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "בחרו את ערכת הסמן שבה משתמשים שולחן העבודה והיישומים.",
+  "The pointer theme could not be changed: {error}": "לא ניתן היה לשנות את ערכת הסמן: {error}",
+  "The shared pointer theme setting could not be changed.": "לא ניתן היה לשנות את הגדרת ערכת הסמן המשותפת.",
+  "No pointer themes are installed.": "לא מותקנות ערכות סמן.",
+  "Fonts": "גופנים",
+  "Choose the fonts used by the desktop and applications.": "בחרו את הגופנים שבהם משתמשים שולחן העבודה והיישומים.",
+  "Interface text": "טקסט הממשק",
+  "Document text": "טקסט מסמכים",
+  "Monospace text": "טקסט ברוחב קבוע",
+  "Window titles": "כותרות חלונות",
+  "Choose a font": "בחירת גופן",
+  "The quick brown fox jumps over the lazy dog.": "דג סקרן שט בים מאוכזב ולפתע מצא חברה.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "חלק מהיישומים ישתמשו בגופנים החדשים רק לאחר הפעלה מחדש. גודל הטקסט נקבע בעמוד נגישות.",
+  "The font could not be changed: {error}": "לא ניתן לשנות את הגופן: {error}",
+  "The fonts could not be reset: {error}": "לא ניתן לאפס את הגופנים: {error}",
+  "The shared font setting could not be changed.": "לא ניתן לשנות את הגדרת הגופן המשותפת.",
+  "The window manager did not reload its settings: {error}": "מנהל החלונות לא טען מחדש את ההגדרות שלו: {error}"
 }

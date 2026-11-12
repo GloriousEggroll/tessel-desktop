@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Kant mellom rad {value1} og {value2}",
   "Drag or use the arrow keys to resize the areas.": "Dra eller bruk piltastene for å endre størrelsen på områdene.",
   "Could not save the snap layout: {error}": "Kunne ikke lagre festeoppsettet: {error}",
-  "Could not apply the snap layout: {error}": "Kunne ikke bruke festeoppsettet: {error}"
+  "Could not apply the snap layout: {error}": "Kunne ikke bruke festeoppsettet: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Velg pekertemaet som skrivebordet og programmene bruker.",
+  "The pointer theme could not be changed: {error}": "Pekertemaet kunne ikke endres: {error}",
+  "The shared pointer theme setting could not be changed.": "Den delte innstillingen for pekertema kunne ikke endres.",
+  "No pointer themes are installed.": "Ingen pekertemaer er installert.",
+  "Fonts": "Skrifttyper",
+  "Choose the fonts used by the desktop and applications.": "Velg skrifttypene som skrivebordet og programmene bruker.",
+  "Interface text": "Tekst i grensesnittet",
+  "Document text": "Tekst i dokumenter",
+  "Monospace text": "Tekst med fast bredde",
+  "Window titles": "Vindustitler",
+  "Choose a font": "Velg en skrifttype",
+  "The quick brown fox jumps over the lazy dog.": "Vår sære Zulu fra badeøya spilte jo whist og quickstep.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Noen programmer bruker de nye skrifttypene først etter at de er startet på nytt. Tekststørrelsen angis på siden Tilgjengelighet.",
+  "The font could not be changed: {error}": "Skrifttypen kunne ikke endres: {error}",
+  "The fonts could not be reset: {error}": "Skrifttypene kunne ikke tilbakestilles: {error}",
+  "The shared font setting could not be changed.": "Den delte skrifttypeinnstillingen kunne ikke endres.",
+  "The window manager did not reload its settings: {error}": "Vindusbehandleren lastet ikke inn innstillingene på nytt: {error}"
 }

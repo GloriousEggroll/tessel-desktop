@@ -394,6 +394,7 @@ fn theme_fx(app: &gtk::Application, bridge: Option<Rc<FakeBridge>>, request: Opt
         bridge: Some(bridge.clone()), request: Some(Arc::new(move |payload| request(payload, &seen))),
         config_path: Some(dir.join("wallpapers.json")), color_settings: Some(Some(colors.clone())),
         icon_settings: Some(FakeIcons::new("Papirus-Dark")), icon_dirs: Some(vec![dir.join("icons")]),
+        ..Default::default()
     }).unwrap();
     show(&test_host, &page);
     let c = page.controller::<ThemeWallpaperPage>().unwrap();
@@ -1937,6 +1938,306 @@ fn snap_tests(app: &gtk::Application) {
     });
 }
 
+// ------------------------------------------------------------------ pointer
+
+struct FakeCursors {
+    value: RefCell<Option<String>>,
+    size: Cell<i32>,
+    handlers: RefCell<Vec<Rc<dyn Fn()>>>,
+    writes: RefCell<Vec<String>>,
+    size_writes: RefCell<Vec<i32>>,
+    result: RefCell<gs_desktop::cursor_themes::Applied>,
+}
+
+impl FakeCursors {
+    fn new(value: &str) -> Rc<Self> {
+        Rc::new(Self { value: RefCell::new(Some(value.into())), size: Cell::new(24), handlers: RefCell::default(),
+                       writes: RefCell::default(), size_writes: RefCell::default(), result: RefCell::default() })
+    }
+    /// Another program (or the Accessibility page) changed the setting.
+    fn external(&self, value: &str, size: i32) {
+        self.value.replace(Some(value.into()));
+        self.size.set(size);
+        let handlers = self.handlers.borrow().clone();
+        for handler in handlers {
+            handler();
+        }
+    }
+}
+
+impl gs_desktop::cursor_themes::CursorThemeSettings for FakeCursors {
+    fn current(&self) -> Option<String> { self.value.borrow().clone() }
+    fn set(&self, theme: &str, done: gs_desktop::cursor_themes::AppliedDone) {
+        self.writes.borrow_mut().push(theme.into());
+        let result = self.result.borrow().clone();
+        if result.errors.is_empty() {
+            self.value.replace(Some(theme.into()));
+        }
+        done(result);
+    }
+    fn size(&self) -> i32 { self.size.get() }
+    fn set_size(&self, size: i32, done: gs_desktop::cursor_themes::AppliedDone) {
+        self.size_writes.borrow_mut().push(size);
+        self.size.set(size);
+        done(self.result.borrow().clone());
+    }
+    fn connect_changed(&self, handler: Rc<dyn Fn()>) -> u64 {
+        self.handlers.borrow_mut().push(handler);
+        self.handlers.borrow().len() as u64
+    }
+    fn disconnect(&self, _id: u64) { self.handlers.borrow_mut().clear() }
+}
+
+/// A theme of generated Xcursor files (`index` None: no index.theme).
+fn pointer_theme(icons: &Path, id: &str, index: Option<&str>, names: &[&str], fill: [u8; 4]) {
+    let dir = icons.join(id).join("cursors");
+    std::fs::create_dir_all(&dir).unwrap();
+    if let Some(index) = index {
+        std::fs::write(icons.join(id).join("index.theme"), index).unwrap();
+    }
+    let data = tessel_core::cursor_theme::encode_xcursor(&[(24, 24, 24, fill), (32, 32, 32, fill), (48, 48, 48, fill)]);
+    for name in names {
+        std::fs::write(dir.join(name), &data).unwrap();
+    }
+}
+
+/// A fake icon dir: the real Adwaita and steam cursors (read-only symlinks,
+/// so screenshots show real cursors) when installed, two generated themes,
+/// and entries that must not be offered.
+fn fake_cursor_dir(root: &Path) -> PathBuf {
+    let icons = root.join("share/icons");
+    std::fs::create_dir_all(&icons).unwrap();
+    let real = Path::new("/usr/share/icons/Adwaita");
+    if real.join("cursors/default").is_file() {
+        std::os::unix::fs::symlink(real, icons.join("Adwaita")).unwrap();
+    } else {
+        pointer_theme(&icons, "Adwaita", Some("[Icon Theme]\nName=Adwaita\n"), &["default", "pointer", "text"], [0, 0, 0, 255]);
+    }
+    pointer_theme(&icons, "test-cursors", Some("[Icon Theme]\nName=Test Pointer\n"),
+                  &["left_ptr", "hand2", "xterm", "fleur", "sb_h_double_arrow", "watch"], [0, 0, 200, 255]);
+    pointer_theme(&icons, "partial", Some("[Icon Theme]\nName=Partial\nInherits=missing\n"), &["default", "pointer"], [0, 160, 0, 255]);
+    // Inherit-only, icon-only and arrow-less themes are not pointer themes.
+    std::fs::create_dir_all(icons.join("default")).unwrap();
+    std::fs::write(icons.join("default/index.theme"), "[Icon Theme]\nInherits=test-cursors\n").unwrap();
+    write_theme(&icons, "icons-only", "Icons Only");
+    pointer_theme(&icons, "no-arrow", Some("[Icon Theme]\nName=No Arrow\n"), &["xterm"], [1, 1, 1, 255]);
+    icons
+}
+
+fn pointer_page(app: &gtk::Application, backend: Rc<FakeCursors>, dirs: Vec<PathBuf>)
+    -> (Rc<TestHost>, SettingsPage, Rc<ThemeWallpaperPage>) {
+    let (test_host, host) = host(app);
+    let dir = scratch("pointer-page");
+    let page = theme::build_theme_page(&host, ThemeOptions {
+        bridge: Some(FakeBridge::new()), config_path: Some(dir.join("wallpapers.json")), color_settings: Some(None),
+        icon_settings: Some(FakeIcons::new("Papirus-Dark")), icon_dirs: Some(vec![dir.join("icons")]),
+        cursor_settings: Some(backend), cursor_dirs: Some(dirs), ..Default::default()
+    }).unwrap();
+    show(&test_host, &page);
+    let c = page.controller::<ThemeWallpaperPage>().unwrap();
+    (test_host, page, c)
+}
+
+/// The page scrolled so the Pointer card is in view; grim of the whole session.
+fn pointer_screenshot(host: &TestHost, card: &gtk::Box, name: &str) -> PathBuf {
+    let scrolled = card.ancestor(gtk::ScrolledWindow::static_type()).and_downcast::<gtk::ScrolledWindow>().unwrap();
+    GtkWindowExt::set_focus(&host.window, None::<&gtk::Widget>);
+    for _ in 0..3 {
+        settle(0.3);
+        let child = scrolled.child().unwrap();
+        let point = card.compute_point(&child, &gtk::graphene::Point::new(0.0, 0.0)).unwrap();
+        let adjustment = scrolled.vadjustment();
+        adjustment.set_value(adjustment.value() + point.y() as f64 - 160.0);
+    }
+    settle(0.4);
+    screenshot(name)
+}
+
+/// The RGBA bytes of a `w`×`h` region of a PNG.
+fn png_region(path: &Path, x: i32, y: i32, w: i32, h: i32) -> Vec<u8> {
+    let texture = gtk::gdk::Texture::from_filename(path).unwrap();
+    let mut downloader = gtk::gdk::TextureDownloader::new(&texture);
+    downloader.set_format(gtk::gdk::MemoryFormat::R8g8b8a8);
+    let (bytes, stride) = downloader.download_bytes();
+    let mut region = Vec::new();
+    for row in y..y + h {
+        let start = row as usize * stride + x as usize * 4;
+        region.extend_from_slice(&bytes[start..start + w as usize * 4]);
+    }
+    region
+}
+
+fn pointer_tests(app: &gtk::Application) {
+    use gs_desktop::cursor_themes::Applied;
+    run("pointer_card_lists_installed_themes_and_saves_through_the_backend", || {
+        let dir = scratch("pointer");
+        let icons = fake_cursor_dir(&dir);
+        let backend = FakeCursors::new("test-cursors");
+        let (test_host, page, c) = pointer_page(app, backend.clone(), vec![icons.clone()]);
+        let chooser = c.cursors.clone();
+        // Directly after the Icons card.
+        assert_eq!(c.icons.card.next_sibling().as_ref(), Some(chooser.card.upcast_ref::<gtk::Widget>()));
+        let ids: Vec<&str> = chooser.themes.iter().map(|t| t.id.as_str()).collect();
+        assert_eq!(ids, ["Adwaita", "partial", "test-cursors"]);
+        assert_eq!(dropdown_names(&chooser.dropdown), ["Adwaita", "Partial", "Test Pointer"]);
+        assert_eq!(chooser.selected_id().as_deref(), Some("test-cursors"));
+        assert_eq!(chooser.sample_names(), ["left_ptr", "hand2", "xterm", "fleur", "sb_h_double_arrow", "watch"]);
+        assert_eq!(dropdown_names(&chooser.size), ["24 pixels", "32 pixels", "48 pixels", "64 pixels", "96 pixels"]);
+        assert_eq!(chooser.selected_size(), 24);
+        assert!(backend.writes.borrow().is_empty() && backend.size_writes.borrow().is_empty(), "nothing saved on open");
+        assert!(page.search_targets.borrow().contains_key("cursor_theme"));
+        assert_eq!(page.search_targets.borrow()["cursor_theme"], chooser.dropdown.clone().upcast::<gtk::Widget>());
+        // Selecting another theme saves it once and shows its own cursors.
+        chooser.dropdown.set_selected(1);
+        assert_eq!(*backend.writes.borrow(), ["partial"]);
+        assert_eq!(chooser.sample_names(), ["left_ptr", "hand2"]);
+        assert!(!chooser.status.get_visible());
+        // Selecting the configured theme again writes nothing.
+        chooser.sync();
+        assert_eq!(backend.writes.borrow().len(), 1);
+        // The size is saved through the same backend.
+        chooser.size.set_selected(2);
+        assert_eq!(*backend.size_writes.borrow(), [48]);
+        // Another program (or the Accessibility page) changes both: the card follows without saving.
+        backend.external("Adwaita", 64);
+        assert_eq!(chooser.selected_id().as_deref(), Some("Adwaita"));
+        assert_eq!(chooser.selected_size(), 64);
+        assert_eq!((backend.writes.borrow().len(), backend.size_writes.borrow().len()), (1, 1));
+        // Re-read on page activate.
+        backend.value.replace(Some("test-cursors".into()));
+        backend.size.set(96);
+        page.activate();
+        assert_eq!((chooser.selected_id().as_deref(), chooser.selected_size()), (Some("test-cursors"), 96));
+        // A failed step is reported and the saved theme stays selected.
+        backend.result.replace(Applied { errors: vec!["read-only".into(), "no gsettings".into()], reload_failed: false });
+        chooser.dropdown.set_selected(1);
+        assert_eq!(*backend.writes.borrow(), ["partial", "partial"]);
+        assert_eq!(chooser.selected_id().as_deref(), Some("test-cursors"));
+        assert!(chooser.status.get_visible());
+        assert_eq!(chooser.status.text(), "The pointer theme could not be changed: read-only no gsettings");
+        // Saved, but labwc did not reload.
+        backend.result.replace(Applied { errors: Vec::new(), reload_failed: true });
+        chooser.dropdown.set_selected(0);
+        assert_eq!(chooser.selected_id().as_deref(), Some("Adwaita"));
+        assert_eq!(chooser.status.text(), "Saved, but the desktop could not reload its configuration.");
+        backend.result.replace(Applied::default());
+        chooser.dropdown.set_selected(2);
+        assert!(!chooser.status.get_visible());
+        finish(&test_host, &page);
+        assert!(backend.handlers.borrow().is_empty());
+    });
+    run("pointer_missing_theme_selects_adwaita_without_saving", || {
+        let dir = scratch("pointer-missing");
+        let icons = fake_cursor_dir(&dir);
+        let backend = FakeCursors::new("breeze_cursors");
+        let (test_host, page, c) = pointer_page(app, backend.clone(), vec![icons]);
+        assert_eq!(c.cursors.selected_id().as_deref(), Some("Adwaita"));
+        assert!(!c.cursors.sample_names().is_empty());
+        assert!(backend.writes.borrow().is_empty());
+        finish(&test_host, &page);
+    });
+    run("pointer_card_without_themes_is_disabled", || {
+        let dir = scratch("pointer-none");
+        let (test_host, page, c) = pointer_page(app, FakeCursors::new("Adwaita"), vec![dir.join("none")]);
+        assert!(!c.cursors.dropdown.is_sensitive());
+        assert!(c.cursors.size.is_sensitive());
+        assert_eq!(c.cursors.status.text(), "No pointer themes are installed.");
+        finish(&test_host, &page);
+    });
+    run("pointer_preview_of_real_themes_has_no_glitches", || {
+        // Every installed theme previews without panicking; Adwaita has all six.
+        let dirs = tessel_core::icon_theme::search_dirs();
+        for theme in tessel_core::cursor_theme::discover(&dirs) {
+            let samples = tessel_core::cursor_theme::sample_images(&dirs, &theme.id, 32);
+            println!("installed pointer theme {} ({}): {} preview cursors", theme.id, theme.name, samples.len());
+        }
+        if Path::new("/usr/share/icons/Adwaita/cursors/default").is_file() {
+            let samples = tessel_core::cursor_theme::sample_images(&dirs, "Adwaita", 32);
+            assert_eq!(samples.len(), 6);
+            for (_, image) in samples {
+                assert!(image.width >= 24 && image.width <= 64 && image.pixels.iter().any(|b| *b != 0));
+            }
+        }
+    });
+    run("pointer_screenshots", || {
+        let dir = scratch("pointer-shots");
+        let icons = fake_cursor_dir(&dir);
+        if Path::new("/usr/share/icons/steam/cursors/default").is_file() {
+            std::os::unix::fs::symlink("/usr/share/icons/steam", icons.join("steam")).unwrap();
+        }
+        let backend = FakeCursors::new("Adwaita");
+        backend.size.set(32);
+        let (test_host, page, c) = pointer_page(app, backend, vec![icons]);
+        let _style = gs_base::style::install(&test_host.window);
+        for dark in [false, true] {
+            if let Some(settings) = gtk::Settings::default() {
+                settings.set_gtk_application_prefer_dark_theme(dark);
+            }
+            let shot = pointer_screenshot(&test_host, &c.cursors.card, &format!("pointer-{}", if dark { "dark" } else { "light" }));
+            println!("screenshot {}", shot.display());
+        }
+        if let Some(settings) = gtk::Settings::default() {
+            settings.set_gtk_application_prefer_dark_theme(false);
+        }
+        finish(&test_host, &page);
+    });
+    run("pointer_theme_reaches_the_nested_compositor", || {
+        // The real backend against this private labwc: its environment file
+        // ($GS_ROOT/cfg/environment), `labwc --reconfigure`, and grim -c.
+        let (adwaita, steam) = (Path::new("/usr/share/icons/Adwaita/cursors/default"), Path::new("/usr/share/icons/steam/cursors/default"));
+        if !adwaita.is_file() || !steam.is_file() || !Path::new("/usr/bin/wlrctl").exists() {
+            println!("skipped: needs the Adwaita and steam cursor themes and wlrctl");
+            return;
+        }
+        let pid = std::env::var("LABWC_PID").expect("LABWC_PID of the nested labwc");
+        let environ = std::fs::read(format!("/proc/{pid}/environ")).unwrap();
+        let private = format!("XDG_RUNTIME_DIR={}", std::env::var("XDG_RUNTIME_DIR").unwrap());
+        assert!(environ.split(|b| *b == 0).any(|v| v == private.as_bytes()), "LABWC_PID is this private session's labwc");
+        assert!(!private.ends_with("/run/user/1000"));
+        // `labwc` on PATH is a logging fake: point it at the real one for this test only.
+        let fake = root().join("bin/labwc");
+        let logging = std::fs::read(&fake).unwrap();
+        std::fs::write(&fake, "#!/bin/sh\nexec /usr/bin/labwc \"$@\"\n").unwrap();
+        let dir = scratch("pointer-e2e");
+        let paths = gs_desktop::cursor_themes::CursorPaths {
+            config_home: dir.join("config"), data_home: dir.join("data"), home: dir.join("home"),
+            environment: Some(root().join("cfg/environment")) };
+        let backend = gs_desktop::cursor_themes::SystemCursorThemeSettings::new(None, None, paths,
+            gs_system::labwc_settings::default_reconfigure());
+        let wlrctl = |args: &[&str]| assert!(std::process::Command::new("/usr/bin/wlrctl").args(args).status().unwrap().success());
+        let grim = |name: &str| {
+            let path = root().join(format!("{name}.png"));
+            assert!(std::process::Command::new("/usr/bin/grim").arg("-c").arg(&path).status().unwrap().success());
+            path
+        };
+        wlrctl(&["pointer", "move", "-5000", "-5000"]);
+        wlrctl(&["pointer", "move", "100", "100"]);
+        settle(0.5);
+        let mut shots = Vec::new();
+        for theme in ["steam", "Adwaita", "steam"] {
+            let done = Rc::new(RefCell::new(None));
+            let slot = done.clone();
+            use gs_desktop::cursor_themes::CursorThemeSettings;
+            backend.set(theme, Box::new(move |applied| { slot.replace(Some(applied)); }));
+            assert!(wait(|| done.borrow().is_some()), "reconfigure finished");
+            assert_eq!(done.take().unwrap(), Applied::default(), "{theme}");
+            settle(0.8);
+            wlrctl(&["pointer", "move", "1", "0"]);
+            wlrctl(&["pointer", "move", "-1", "0"]);
+            settle(0.5);
+            let shot = grim(&format!("pointer-e2e-{}-{theme}", shots.len()));
+            println!("compositor cursor with {theme}: {}", shot.display());
+            shots.push(png_region(&shot, 60, 60, 80, 80));
+        }
+        std::fs::write(&fake, logging).unwrap();
+        let environment = std::fs::read_to_string(root().join("cfg/environment")).unwrap();
+        assert!(environment.contains("XCURSOR_THEME=steam\n"), "{environment}");
+        assert!(shots[0].chunks(4).any(|p| p != &shots[0][..4]), "a cursor is drawn");
+        assert_ne!(shots[0], shots[1], "the compositor cursor changed with the theme");
+        assert_eq!(shots[0], shots[2], "and changed back");
+    });
+}
+
 // -------------------------------------------------------------------- helpers
 
 
@@ -1946,6 +2247,235 @@ fn snap_tests(app: &gtk::Application) {
 
 
 
+
+// --------------------------------------------------------------------- fonts
+
+struct FakeFonts {
+    values: RefCell<Vec<(gs_desktop::fonts::FontRole, String)>>,
+    defaults: Vec<(gs_desktop::fonts::FontRole, String)>,
+    writes: RefCell<Vec<(gs_desktop::fonts::FontRole, String)>>,
+    resets: Cell<u32>,
+    fail: Cell<bool>,
+    handlers: RefCell<Vec<Rc<dyn Fn()>>>,
+}
+
+impl FakeFonts {
+    fn new(values: [&str; 4]) -> Rc<Self> {
+        let values: Vec<_> = gs_desktop::fonts::FontRole::ALL.into_iter().zip(values).map(|(r, v)| (r, v.to_owned())).collect();
+        Rc::new(Self { defaults: values.clone(), values: RefCell::new(values), writes: RefCell::default(), resets: Cell::new(0),
+                       fail: Cell::new(false), handlers: RefCell::default() })
+    }
+}
+
+impl gs_desktop::fonts::FontSettings for FakeFonts {
+    fn current(&self, role: gs_desktop::fonts::FontRole) -> Option<String> {
+        self.values.borrow().iter().find(|(r, _)| *r == role).map(|(_, v)| v.clone())
+    }
+    fn set(&self, role: gs_desktop::fonts::FontRole, font: &str) -> Result<(), String> {
+        self.writes.borrow_mut().push((role, font.to_owned()));
+        if self.fail.get() {
+            return Err("settings.ini: read-only".into());
+        }
+        for (r, value) in self.values.borrow_mut().iter_mut() {
+            if *r == role {
+                *value = font.to_owned();
+            }
+        }
+        Ok(())
+    }
+    fn is_default(&self) -> bool { *self.values.borrow() == self.defaults }
+    fn reset(&self) -> Result<(), String> {
+        self.resets.set(self.resets.get() + 1);
+        self.values.replace(self.defaults.clone());
+        Ok(())
+    }
+    fn connect_changed(&self, handler: Rc<dyn Fn()>) -> u64 {
+        self.handlers.borrow_mut().push(handler);
+        1
+    }
+    fn disconnect(&self, _id: u64) { self.handlers.borrow_mut().clear() }
+}
+
+fn font_page(app: &gtk::Application, fonts: Rc<dyn gs_desktop::fonts::FontSettings>) -> (Rc<TestHost>, SettingsPage, Rc<ThemeWallpaperPage>) {
+    let (test_host, host) = host(app);
+    let dir = scratch("fonts");
+    let page = theme::build_theme_page(&host, ThemeOptions {
+        bridge: Some(FakeBridge::new()), config_path: Some(dir.join("wallpapers.json")), color_settings: Some(None),
+        icon_settings: Some(FakeIcons::new("Papirus-Dark")), icon_dirs: Some(vec![dir.join("icons")]),
+        font_settings: Some(fonts), ..Default::default()
+    }).unwrap();
+    show(&test_host, &page);
+    let c = page.controller::<ThemeWallpaperPage>().unwrap();
+    (test_host, page, c)
+}
+
+fn font_of(button: &gtk::FontDialogButton) -> String {
+    button.font_desc().map(|d| d.to_str().to_string()).unwrap_or_default()
+}
+
+fn choose_font(button: &gtk::FontDialogButton, font: &str) {
+    button.set_font_desc(&gtk::pango::FontDescription::from_string(font));
+    settle(0.05);
+}
+
+fn font_tests(app: &gtk::Application) {
+    use gs_desktop::fonts::FontRole;
+    run("fonts_card_shows_the_backend_fonts_and_saves_each_choice", || {
+        let backend = FakeFonts::new(["Cantarell 11", "Noto Serif 11", "Source Code Pro 10", "sans 10"]);
+        let (test_host, page, c) = font_page(app, backend.clone());
+        let fonts = c.fonts.clone();
+        // After the Icons card (and the Pointer card when it is there), inside the page.
+        assert!(fonts.card.parent().is_some_and(|p| p == c.content));
+        let mut sibling = c.icons.card.next_sibling();
+        let mut found = false;
+        for _ in 0..2 {
+            if sibling.as_ref() == Some(fonts.card.upcast_ref()) {
+                found = true;
+            }
+            sibling = sibling.and_then(|s| s.next_sibling());
+        }
+        assert!(found, "the Fonts card follows the Icons card");
+        let shown: Vec<String> = FontRole::ALL.iter().map(|r| font_of(fonts.button(*r))).collect();
+        assert_eq!(shown, ["Cantarell 11", "Noto Serif 11", "Source Code Pro 10", "sans 10"]);
+        assert!(backend.writes.borrow().is_empty(), "nothing is saved on open");
+        assert!(!fonts.reset.is_sensitive(), "nothing differs from the defaults");
+        for (role, target) in [(FontRole::Interface, "font_interface"), (FontRole::Document, "font_document"),
+                               (FontRole::Monospace, "font_monospace"), (FontRole::Titlebar, "font_titlebar")] {
+            let targets = page.search_targets.borrow();
+            let widget = targets.get(target).unwrap_or_else(|| panic!("search target {target}"));
+            assert!(widget == fonts.button(role).upcast_ref::<gtk::Widget>());
+        }
+        choose_font(fonts.button(FontRole::Interface), "Noto Sans 10.5");
+        choose_font(fonts.button(FontRole::Document), "Noto Serif Italic 12");
+        choose_font(fonts.button(FontRole::Monospace), "Fira Code 10");
+        choose_font(fonts.button(FontRole::Titlebar), "Fira Code Bold 11");
+        assert_eq!(*backend.writes.borrow(), [(FontRole::Interface, "Noto Sans 10.5".to_owned()),
+            (FontRole::Document, "Noto Serif Italic 12".to_owned()), (FontRole::Monospace, "Fira Code 10".to_owned()),
+            (FontRole::Titlebar, "Fira Code Bold 11".to_owned())]);
+        // The same font again saves nothing.
+        choose_font(fonts.button(FontRole::Monospace), "Fira Code 10");
+        assert_eq!(backend.writes.borrow().len(), 4);
+        // The samples use the chosen fonts.
+        let attributes = |label: &gtk::Label| label.attributes().map(|a| a.to_str().to_string()).unwrap_or_default();
+        assert!(attributes(&fonts.sample).contains("Noto Sans 10.5"), "{}", attributes(&fonts.sample));
+        assert!(attributes(&fonts.monospace_sample).contains("Fira Code 10"), "{}", attributes(&fonts.monospace_sample));
+        assert!(fonts.reset.is_sensitive());
+        assert!(!fonts.status.is_visible());
+        fonts.reset.emit_clicked();
+        settle(0.05);
+        assert_eq!(backend.resets.get(), 1);
+        assert!(!fonts.reset.is_sensitive());
+        assert_eq!(font_of(fonts.button(FontRole::Interface)), "Cantarell 11");
+        assert_eq!(font_of(fonts.button(FontRole::Titlebar)), "sans 10");
+        assert_eq!(backend.writes.borrow().len(), 4, "a reset is not a choice");
+        // A failed save is reported and the saved font is shown again.
+        backend.fail.set(true);
+        choose_font(fonts.button(FontRole::Document), "Inter 9");
+        assert!(fonts.status.is_visible());
+        assert!(fonts.status.text().ends_with(": settings.ini: read-only"), "{}", fonts.status.text());
+        assert_eq!(font_of(fonts.button(FontRole::Document)), "Noto Serif 11");
+        // Another program changes a font: the card follows without saving.
+        backend.fail.set(false);
+        backend.values.borrow_mut()[2].1 = "DejaVu Sans Mono 9".into();
+        let handlers = backend.handlers.borrow().clone();
+        handlers.iter().for_each(|h| h());
+        assert_eq!(font_of(fonts.button(FontRole::Monospace)), "DejaVu Sans Mono 9");
+        assert_eq!(backend.writes.borrow().len(), 5);
+        assert!(fonts.reset.is_sensitive());
+        finish(&test_host, &page);
+        assert!(backend.handlers.borrow().is_empty());
+    });
+    run("fonts_system_backend_writes_keyfile_gsettings_ini_and_rc_xml", || {
+        let dir = scratch("fonts-system");
+        let config = dir.join("config");
+        std::fs::create_dir_all(config.join("labwc")).unwrap();
+        let rc = config.join("labwc/rc.xml");
+        let original = "<?xml version=\"1.0\"?>\n<labwc_config>\n  <theme>\n    <cornerRadius>8</cornerRadius>\n    <font place=\"MenuItem\"><name>Menu</name></font>\n  </theme>\n</labwc_config>\n";
+        std::fs::write(&rc, original).unwrap();
+        let keyfile = dir.join("dconf.ini");
+        let schema = gio::SettingsSchemaSource::default().unwrap().lookup("org.gnome.desktop.interface", true).unwrap();
+        let backend = gio::keyfile_settings_backend_new(keyfile.to_str().unwrap(), "/", None);
+        let keys = Rc::new(gs_desktop::fonts::GioInterfaceKeys::new(gio::Settings::new_full(&schema, Some(&backend), None)));
+        let reloads = Rc::new(Cell::new(0));
+        let counter = reloads.clone();
+        let system = Rc::new(gs_desktop::fonts::SystemFontSettings::new(Some(keys), config.clone(), rc.clone(),
+            Rc::new(move || { counter.set(counter.get() + 1); (true, None) })));
+        let (test_host, page, c) = font_page(app, system);
+        let fonts = c.fonts.clone();
+        assert!(!fonts.reset.is_sensitive());
+        choose_font(fonts.button(FontRole::Interface), "Inter 12");
+        choose_font(fonts.button(FontRole::Monospace), "Fira Code 10");
+        choose_font(fonts.button(FontRole::Titlebar), "Inter Bold Italic 13");
+        assert!(wait(|| std::fs::read_to_string(&keyfile).is_ok_and(|t| t.contains("monospace-font-name='Fira Code 10'"))));
+        let stored = std::fs::read_to_string(&keyfile).unwrap();
+        assert!(stored.contains("font-name='Inter 12'"), "{stored}");
+        assert_eq!(std::fs::read_to_string(config.join("gtk-4.0/settings.ini")).unwrap(), "[Settings]\ngtk-font-name=Inter 12\n");
+        let text = std::fs::read_to_string(&rc).unwrap();
+        assert!(text.contains("<font place=\"MenuItem\"><name>Menu</name></font>\n    <font place=\"ActiveWindow\">\n      <name>Inter</name>\n      <size>13</size>\n      <slant>italic</slant>\n      <weight>bold</weight>"), "{text}");
+        assert_eq!(reloads.get(), 1);
+        assert_eq!(font_of(fonts.button(FontRole::Titlebar)), "Inter Bold Italic 13");
+        assert!(fonts.reset.is_sensitive());
+        fonts.reset.emit_clicked();
+        settle(0.2);
+        assert!(!fonts.reset.is_sensitive());
+        // Back to the title font tessel-configure-session writes; the menu font stays.
+        let text = std::fs::read_to_string(&rc).unwrap();
+        assert!(text.starts_with("<?xml version=\"1.0\"?>\n<labwc_config>\n  <theme>\n    <cornerRadius>8</cornerRadius>\n    <font place=\"MenuItem\"><name>Menu</name></font>\n    <font place=\"ActiveWindow\">\n      <name>Sans</name>\n      <size>10</size>\n      <slant>normal</slant>\n      <weight>semibold</weight>"), "{text}");
+        assert_eq!(font_of(fonts.button(FontRole::Titlebar)), "Sans Semi-Bold 10");
+        assert_eq!(std::fs::read_to_string(config.join("gtk-4.0/settings.ini")).unwrap(), "[Settings]\n");
+        assert_eq!(reloads.get(), 2);
+        assert!(!fonts.status.is_visible(), "{}", fonts.status.text());
+        finish(&test_host, &page);
+    });
+    run("fonts_card_screenshots", || {
+        let dark = std::env::var("FONTS_DARK").is_ok_and(|v| v == "1");
+        if let Some(settings) = gtk::Settings::default() {
+            settings.set_gtk_application_prefer_dark_theme(dark);
+        }
+        let suffix = format!("{}{}", if dark { "dark" } else { "light" },
+                             std::env::var("LANGUAGE").map(|l| format!("-{l}")).unwrap_or_default());
+        let backend = FakeFonts::new(["Noto Sans 10", "Noto Sans Mono ExtraCondensed ExtraLight Italic 11",
+                                      "Noto Sans Mono 10", "Noto Sans Bold 10"]);
+        let (test_host, page, c) = font_page(app, backend.clone());
+        let _style = gs_base::style::install(&test_host.window);
+        test_host.window.set_default_size(900, 760);
+        let fonts = c.fonts.clone();
+        choose_font(fonts.button(FontRole::Interface), "Noto Sans 11");
+        let scrolled = fonts.card.ancestor(gtk::ScrolledWindow::static_type()).and_downcast::<gtk::ScrolledWindow>().unwrap();
+        GtkWindowExt::set_focus(&test_host.window, None::<&gtk::Widget>);
+        for _ in 0..3 {
+            settle(0.3);
+            let child = scrolled.child().unwrap();
+            let point = fonts.card.compute_point(&child, &gtk::graphene::Point::new(0.0, 0.0)).unwrap();
+            let adjustment = scrolled.vadjustment();
+            adjustment.set_value(adjustment.value() + point.y() as f64 - 12.0);
+        }
+        settle(0.4);
+        // A long name is shortened, not widening the page.
+        for (_, button) in &fonts.buttons {
+            let mut stack = vec![button.clone().upcast::<gtk::Widget>()];
+            while let Some(widget) = stack.pop() {
+                if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                    assert_eq!(label.ellipsize(), gtk::pango::EllipsizeMode::End);
+                }
+                let mut child = widget.first_child();
+                while let Some(c) = child {
+                    child = c.next_sibling();
+                    stack.push(c);
+                }
+            }
+        }
+        assert!(fonts.card.width() <= c.content.width(), "{} > {}", fonts.card.width(), c.content.width());
+        assert!(c.content.width() <= test_host.window.width());
+        let path = screenshot(&format!("fonts-{suffix}"));
+        if let Some(proof) = std::env::var_os("FONTS_PROOF").map(PathBuf::from) {
+            std::fs::create_dir_all(&proof).unwrap();
+            std::fs::copy(&path, proof.join(path.file_name().unwrap())).unwrap();
+        }
+        println!("screenshot {}", path.display());
+        finish(&test_host, &page);
+    });
+}
 
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
@@ -1962,7 +2492,7 @@ fn main() {
     let only = std::env::args().nth(1);
     let groups: Vec<(&str, fn(&gtk::Application))> = vec![("theme", theme_tests), ("icons", icon_tests), ("displays", display_tests), ("dock", dock_tests),
         ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests),
-        ("snap", snap_tests)];
+        ("snap", snap_tests), ("pointer", pointer_tests), ("fonts", font_tests)];
     for (name, group) in groups {
         if only.as_deref().is_none_or(|o| o == name) {
             group(&app);

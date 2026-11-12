@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "เส้นแบ่งระหว่างแถว {value1} และ {value2}",
   "Drag or use the arrow keys to resize the areas.": "ลากหรือใช้ปุ่มลูกศรเพื่อปรับขนาดพื้นที่",
   "Could not save the snap layout: {error}": "ไม่สามารถบันทึกเลย์เอาต์การจัดวางหน้าต่าง: {error}",
-  "Could not apply the snap layout: {error}": "ไม่สามารถใช้เลย์เอาต์การจัดวางหน้าต่าง: {error}"
+  "Could not apply the snap layout: {error}": "ไม่สามารถใช้เลย์เอาต์การจัดวางหน้าต่าง: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "เลือกชุดตัวชี้ที่เดสก์ท็อปและแอปพลิเคชันใช้",
+  "The pointer theme could not be changed: {error}": "ไม่สามารถเปลี่ยนชุดตัวชี้ได้: {error}",
+  "The shared pointer theme setting could not be changed.": "ไม่สามารถเปลี่ยนการตั้งค่าชุดตัวชี้ที่ใช้ร่วมกันได้",
+  "No pointer themes are installed.": "ไม่มีชุดตัวชี้ที่ติดตั้งไว้",
+  "Fonts": "แบบอักษร",
+  "Choose the fonts used by the desktop and applications.": "เลือกแบบอักษรที่เดสก์ท็อปและแอปพลิเคชันใช้",
+  "Interface text": "ข้อความส่วนติดต่อ",
+  "Document text": "ข้อความเอกสาร",
+  "Monospace text": "ข้อความความกว้างคงที่",
+  "Window titles": "ชื่อหน้าต่าง",
+  "Choose a font": "เลือกแบบอักษร",
+  "The quick brown fox jumps over the lazy dog.": "เป็นมนุษย์สุดประเสริฐเลิศคุณค่า",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "บางแอปพลิเคชันจะใช้แบบอักษรใหม่หลังจากเริ่มใหม่เท่านั้น ขนาดข้อความตั้งค่าได้ที่หน้าการช่วยการเข้าถึง",
+  "The font could not be changed: {error}": "ไม่สามารถเปลี่ยนแบบอักษรได้: {error}",
+  "The fonts could not be reset: {error}": "ไม่สามารถรีเซ็ตแบบอักษรได้: {error}",
+  "The shared font setting could not be changed.": "ไม่สามารถเปลี่ยนการตั้งค่าแบบอักษรที่ใช้ร่วมกันได้",
+  "The window manager did not reload its settings: {error}": "ตัวจัดการหน้าต่างไม่ได้โหลดการตั้งค่าใหม่: {error}"
 }

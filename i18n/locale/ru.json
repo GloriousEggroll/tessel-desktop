@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Граница между строками {value1} и {value2}",
   "Drag or use the arrow keys to resize the areas.": "Перетащите или используйте клавиши со стрелками, чтобы изменить размер областей.",
   "Could not save the snap layout: {error}": "Не удалось сохранить макет привязки: {error}",
-  "Could not apply the snap layout: {error}": "Не удалось применить макет привязки: {error}"
+  "Could not apply the snap layout: {error}": "Не удалось применить макет привязки: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Выберите тему указателя для рабочего стола и приложений.",
+  "The pointer theme could not be changed: {error}": "Не удалось изменить тему указателя: {error}",
+  "The shared pointer theme setting could not be changed.": "Не удалось изменить общий параметр темы указателя.",
+  "No pointer themes are installed.": "Темы указателя не установлены.",
+  "Fonts": "Шрифты",
+  "Choose the fonts used by the desktop and applications.": "Выберите шрифты для рабочего стола и приложений.",
+  "Interface text": "Текст интерфейса",
+  "Document text": "Текст документов",
+  "Monospace text": "Моноширинный текст",
+  "Window titles": "Заголовки окон",
+  "Choose a font": "Выберите шрифт",
+  "The quick brown fox jumps over the lazy dog.": "Съешь же ещё этих мягких французских булок, да выпей чаю.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Некоторые приложения начнут использовать новые шрифты только после перезапуска. Размер текста задаётся на странице «Специальные возможности».",
+  "The font could not be changed: {error}": "Не удалось изменить шрифт: {error}",
+  "The fonts could not be reset: {error}": "Не удалось сбросить шрифты: {error}",
+  "The shared font setting could not be changed.": "Не удалось изменить общий параметр шрифта.",
+  "The window manager did not reload its settings: {error}": "Оконный менеджер не перечитал свои настройки: {error}"
 }

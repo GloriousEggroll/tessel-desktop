@@ -404,8 +404,8 @@ fn theme_section(text: &str) -> Result<(String, String, usize, usize), Error> {
 fn font_block(place: &str, font: &[(String, String)], indent: &str) -> String {
     let inner = format!("{indent}  ");
     let mut out = format!("<font place=\"{place}\">\n");
-    for key in ["name", "size", "weight"] {
-        let value = &font.iter().find(|(k, _)| k == key).unwrap().1;
+    for key in ["name", "size", "slant", "weight"] {
+        let Some((_, value)) = font.iter().find(|(k, _)| k == key) else { continue };
         out.push_str(&format!("{inner}<{key}>{}</{key}>\n", html_escape(value, false)));
     }
     out.push_str(&format!("{indent}</font>"));
@@ -463,11 +463,18 @@ pub fn edit_theme(text: &str) -> Result<String, Error> {
     let mut indent = "    ".to_owned();
     if let Some((start, finish)) = active {
         let document = xml::parse(&text[start..finish])?;
-        for key in ["name", "size"] {
+        // Global Settings writes <slant> with the title font it saves; that
+        // font's weight and slant are the user's choice and are kept.
+        let slant = xml::findtext(document.root_element(), "slant").unwrap_or_default();
+        let chosen = !py_strip(&slant).is_empty();
+        for key in if chosen { &["name", "size", "weight"][..] } else { &["name", "size"][..] } {
             let value = xml::findtext(document.root_element(), key).unwrap_or_default();
             if !py_strip(&value).is_empty() {
                 font.iter_mut().find(|(k, _)| k == key).unwrap().1 = py_strip(&value).to_owned();
             }
+        }
+        if chosen {
+            font.insert(2, ("slant".to_owned(), py_strip(&slant).to_owned()));
         }
         let line_start = text[..start].rfind('\n').map_or(0, |index| index + 1);
         let leading = &text[line_start..start];
@@ -1302,5 +1309,37 @@ mod new_user_tests {
         std::fs::remove_dir_all(&home).unwrap();
         assert!(rc.contains("my-shot") && rc.contains("key=\"W-l\""), "{rc}");
         assert!(!rc.contains("tessel-capture") && !rc.contains("A-Tab") && !rc.contains("promptCommand"), "defaults must not be merged in:\n{rc}");
+    }
+}
+
+#[cfg(test)]
+mod title_font_tests {
+    use super::*;
+
+    fn fonts(text: &str) -> Vec<Vec<String>> {
+        let document = xml::parse(text).unwrap();
+        let theme = xml::findall(document.root_element(), "theme").next().unwrap();
+        xml::findall(theme, "font")
+            .map(|f| ["name", "size", "slant", "weight"].iter().map(|k| xml::findtext(f, k).unwrap_or_default()).collect())
+            .collect()
+    }
+
+    #[test]
+    fn a_title_font_chosen_in_global_settings_keeps_its_weight_and_slant() {
+        let chosen = "<labwc_config>\n  <theme>\n    <font place=\"ActiveWindow\">\n      <name>DejaVu Serif</name>\n      <size>12</size>\n      \
+                      <slant>italic</slant>\n      <weight>bold</weight>\n    </font>\n    <font place=\"InactiveWindow\">\n      \
+                      <name>DejaVu Serif</name>\n      <size>12</size>\n      <slant>italic</slant>\n      <weight>bold</weight>\n    </font>\n  \
+                      </theme>\n</labwc_config>\n";
+        let result = edit_theme(chosen).unwrap();
+        assert_eq!(fonts(&result), vec![vec!["DejaVu Serif", "12", "italic", "bold"]; 2]);
+        assert_eq!(edit_theme(&result).unwrap(), result);
+    }
+
+    #[test]
+    fn a_title_font_without_a_slant_gets_the_desktop_weight() {
+        let old = "<labwc_config>\n  <theme>\n    <font place=\"ActiveWindow\">\n      <name>Noto Sans</name>\n      <size>11</size>\n      \
+                   <weight>bold</weight>\n    </font>\n  </theme>\n</labwc_config>\n";
+        let result = edit_theme(old).unwrap();
+        assert_eq!(fonts(&result), vec![vec!["Noto Sans", "11", "", "SemiBold"]; 2]);
     }
 }

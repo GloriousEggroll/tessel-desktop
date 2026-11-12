@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "A(z) {value1}. és {value2}. sor közötti határ",
   "Drag or use the arrow keys to resize the areas.": "Húzással vagy a nyílbillentyűkkel méretezheti át a területeket.",
   "Could not save the snap layout: {error}": "Az illesztési elrendezés nem menthető: {error}",
-  "Could not apply the snap layout: {error}": "Az illesztési elrendezés nem alkalmazható: {error}"
+  "Could not apply the snap layout: {error}": "Az illesztési elrendezés nem alkalmazható: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Válassza ki az asztal és az alkalmazások által használt mutatótémát.",
+  "The pointer theme could not be changed: {error}": "A mutatótémát nem sikerült módosítani: {error}",
+  "The shared pointer theme setting could not be changed.": "A közös mutatótéma-beállítást nem sikerült módosítani.",
+  "No pointer themes are installed.": "Nincs telepítve mutatótéma.",
+  "Fonts": "Betűtípusok",
+  "Choose the fonts used by the desktop and applications.": "Válassza ki az asztal és az alkalmazások által használt betűtípusokat.",
+  "Interface text": "Felület szövege",
+  "Document text": "Dokumentumok szövege",
+  "Monospace text": "Rögzített szélességű szöveg",
+  "Window titles": "Ablakcímek",
+  "Choose a font": "Betűtípus kiválasztása",
+  "The quick brown fox jumps over the lazy dog.": "Árvíztűrő tükörfúrógép.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Egyes alkalmazások csak újraindítás után használják az új betűtípusokat. A szövegméretet az Akadálymentesség oldalon lehet beállítani.",
+  "The font could not be changed: {error}": "A betűtípust nem sikerült módosítani: {error}",
+  "The fonts could not be reset: {error}": "A betűtípusokat nem sikerült visszaállítani: {error}",
+  "The shared font setting could not be changed.": "A közös betűtípus-beállítást nem sikerült módosítani.",
+  "The window manager did not reload its settings: {error}": "Az ablakkezelő nem töltötte be újra a beállításait: {error}"
 }

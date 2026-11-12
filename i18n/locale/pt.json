@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Limite entre as linhas {value1} e {value2}",
   "Drag or use the arrow keys to resize the areas.": "Arraste ou use as teclas de seta para redimensionar as áreas.",
   "Could not save the snap layout: {error}": "Não foi possível guardar o esquema de encaixe: {error}",
-  "Could not apply the snap layout: {error}": "Não foi possível aplicar o esquema de encaixe: {error}"
+  "Could not apply the snap layout: {error}": "Não foi possível aplicar o esquema de encaixe: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Escolha o tema de ponteiro utilizado pelo ambiente de trabalho e pelas aplicações.",
+  "The pointer theme could not be changed: {error}": "Não foi possível alterar o tema de ponteiro: {error}",
+  "The shared pointer theme setting could not be changed.": "Não foi possível alterar a definição partilhada do tema de ponteiro.",
+  "No pointer themes are installed.": "Não há temas de ponteiro instalados.",
+  "Fonts": "Tipos de letra",
+  "Choose the fonts used by the desktop and applications.": "Escolha os tipos de letra usados pelo ambiente de trabalho e pelas aplicações.",
+  "Interface text": "Texto da interface",
+  "Document text": "Texto de documentos",
+  "Monospace text": "Texto monoespaçado",
+  "Window titles": "Títulos das janelas",
+  "Choose a font": "Escolha um tipo de letra",
+  "The quick brown fox jumps over the lazy dog.": "Luís argüia à Júlia que «brações, fé, chá, óxido, pôr, zângão» eram palavras do português.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Algumas aplicações só usam os novos tipos de letra depois de serem reiniciadas. O tamanho do texto define-se na página Acessibilidade.",
+  "The font could not be changed: {error}": "Não foi possível alterar o tipo de letra: {error}",
+  "The fonts could not be reset: {error}": "Não foi possível repor os tipos de letra: {error}",
+  "The shared font setting could not be changed.": "Não foi possível alterar a definição partilhada do tipo de letra.",
+  "The window manager did not reload its settings: {error}": "O gestor de janelas não voltou a carregar as definições: {error}"
 }

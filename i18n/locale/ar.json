@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "الحد بين الصفين {value1} و{value2}",
   "Drag or use the arrow keys to resize the areas.": "اسحب أو استخدم مفاتيح الأسهم لتغيير حجم المناطق.",
   "Could not save the snap layout: {error}": "تعذّر حفظ تخطيط الإلحاق: {error}",
-  "Could not apply the snap layout: {error}": "تعذّر تطبيق تخطيط الإلحاق: {error}"
+  "Could not apply the snap layout: {error}": "تعذّر تطبيق تخطيط الإلحاق: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "اختر سمة المؤشر التي يستخدمها سطح المكتب والتطبيقات.",
+  "The pointer theme could not be changed: {error}": "تعذّر تغيير سمة المؤشر: {error}",
+  "The shared pointer theme setting could not be changed.": "تعذّر تغيير إعداد سمة المؤشر المشترك.",
+  "No pointer themes are installed.": "لا توجد سمات مؤشر مثبّتة.",
+  "Fonts": "الخطوط",
+  "Choose the fonts used by the desktop and applications.": "اختر الخطوط التي يستخدمها سطح المكتب والتطبيقات.",
+  "Interface text": "نص الواجهة",
+  "Document text": "نص المستندات",
+  "Monospace text": "نص ثابت العرض",
+  "Window titles": "عناوين النوافذ",
+  "Choose a font": "اختر خطًا",
+  "The quick brown fox jumps over the lazy dog.": "صِف خَلقَ خَودِ كَمِثلِ الشَمسِ إِذ بَزَغَت.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "تستخدم بعض التطبيقات الخطوط الجديدة فقط بعد إعادة تشغيلها. يُضبط حجم النص في صفحة إمكانية الوصول.",
+  "The font could not be changed: {error}": "تعذّر تغيير الخط: {error}",
+  "The fonts could not be reset: {error}": "تعذّرت استعادة الخطوط الافتراضية: {error}",
+  "The shared font setting could not be changed.": "تعذّر تغيير إعداد الخط المشترك.",
+  "The window manager did not reload its settings: {error}": "لم يُعِد مدير النوافذ تحميل إعداداته: {error}"
 }

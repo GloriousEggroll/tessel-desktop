@@ -218,6 +218,12 @@ pub struct ThemeOptions {
     pub icon_settings: Option<Rc<dyn crate::icon_themes::IconThemeSettings>>,
     /// Icon theme search directories (default: the XDG icon paths).
     pub icon_dirs: Option<Vec<PathBuf>>,
+    /// Pointer theme storage (default: gsettings, GTK settings.ini, labwc's environment).
+    pub cursor_settings: Option<Rc<dyn crate::cursor_themes::CursorThemeSettings>>,
+    /// Pointer theme search directories (default: the XDG icon paths).
+    pub cursor_dirs: Option<Vec<PathBuf>>,
+    /// Font storage (default: gsettings, GTK settings.ini and labwc's rc.xml).
+    pub font_settings: Option<Rc<dyn crate::fonts::FontSettings>>,
 }
 
 pub struct ThemeWallpaperPage {
@@ -232,6 +238,8 @@ pub struct ThemeWallpaperPage {
     pub scheme_card: gtk::Box,
     scheme_handler: Cell<u64>,
     pub icons: Rc<crate::icon_themes::IconThemeChooser>,
+    pub cursors: Rc<crate::cursor_themes::CursorThemeChooser>,
+    pub fonts: Rc<crate::fonts::FontChooser>,
     pub r#match: gtk::Switch,
     pub dock_transparency: gtk::Scale,
     pub dock_transparency_enabled: gtk::Switch,
@@ -330,6 +338,17 @@ impl ThemeWallpaperPage {
             options.icon_dirs.unwrap_or_else(tessel_core::icon_theme::search_dirs));
         content.append(&icons.card);
 
+        // Pointer.
+        let cursors = crate::cursor_themes::CursorThemeChooser::new(options.cursor_settings
+            .unwrap_or_else(|| Rc::new(crate::cursor_themes::SystemCursorThemeSettings::from_session())),
+            options.cursor_dirs.unwrap_or_else(tessel_core::icon_theme::search_dirs));
+        content.append(&cursors.card);
+
+        // Fonts.
+        let fonts = crate::fonts::FontChooser::new(options.font_settings
+            .unwrap_or_else(|| Rc::new(crate::fonts::SystemFontSettings::from_session())));
+        content.append(&fonts.card);
+
         // Match wallpaper colors.
         let match_card = card(8);
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
@@ -379,6 +398,8 @@ impl ThemeWallpaperPage {
             host: host.clone(), widget, content: content.clone(),
             request: options.request.unwrap_or_else(|| Arc::new(wallpaper_request)), config_path,
             bridge: RefCell::new(None), color_settings, scheme_buttons, scheme_card, scheme_handler: Cell::new(0), icons,
+            cursors,
+            fonts,
             r#match: match_switch, dock_transparency, dock_transparency_enabled, apps_transparency,
             apps_transparency_enabled, toggles, strengths, status, cards: cards.clone(), discard_button: discard_button.clone(),
             apply_button: apply_button.clone(), rows: RefCell::new(IndexMap::new()), style_provider,
@@ -422,6 +443,8 @@ impl ThemeWallpaperPage {
                     Err(error) => {
                         gtk::style_context_remove_provider_for_display(&display, &page.style_provider);
                         page.icons.close();
+                        page.cursors.close();
+                        page.fonts.close();
                         return Err(error);
                     }
                 }
@@ -1025,6 +1048,8 @@ impl ThemeWallpaperPage {
     pub fn activate(self: &Rc<Self>) {
         self.flush_appearance();
         self.sync_scheme();
+        // The Accessibility page may have changed the size.
+        self.cursors.sync();
         let bridge = self.bridge();
         if bridge.has_async() {
             if !self.saving.get() {
@@ -1060,6 +1085,8 @@ impl ThemeWallpaperPage {
             }
         }
         self.icons.close();
+        self.cursors.close();
+        self.fonts.close();
         gtk::style_context_remove_provider_for_display(&crate::util::host_display(&self.host), &self.style_provider);
         for cancellable in self.dialogs.take() {
             cancellable.cancel();
@@ -1072,6 +1099,8 @@ impl ThemeWallpaperPage {
     pub fn register_targets(&self, page: &SettingsPage) {
         page.add_target("match", &self.r#match);
         page.add_target("icon_theme", &self.icons.dropdown);
+        page.add_target("cursor_theme", &self.cursors.dropdown);
+        self.fonts.register_targets(page);
         page.add_target("dock_transparency", &self.dock_transparency);
         page.add_target("apps_transparency", &self.apps_transparency);
         for field in ["frosted", "apps_frosted", "apps_rounded_corners"] {

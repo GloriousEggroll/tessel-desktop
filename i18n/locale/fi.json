@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Rivien {value1} ja {value2} välinen raja",
   "Drag or use the arrow keys to resize the areas.": "Muuta alueiden kokoa vetämällä tai nuolinäppäimillä.",
   "Could not save the snap layout: {error}": "Kiinnitysasettelua ei voitu tallentaa: {error}",
-  "Could not apply the snap layout: {error}": "Kiinnitysasettelua ei voitu ottaa käyttöön: {error}"
+  "Could not apply the snap layout: {error}": "Kiinnitysasettelua ei voitu ottaa käyttöön: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Valitse työpöydän ja sovellusten käyttämä osoitinteema.",
+  "The pointer theme could not be changed: {error}": "Osoitinteemaa ei voitu vaihtaa: {error}",
+  "The shared pointer theme setting could not be changed.": "Jaettua osoitinteeman asetusta ei voitu muuttaa.",
+  "No pointer themes are installed.": "Osoitinteemoja ei ole asennettu.",
+  "Fonts": "Fontit",
+  "Choose the fonts used by the desktop and applications.": "Valitse työpöydän ja sovellusten käyttämät fontit.",
+  "Interface text": "Käyttöliittymän teksti",
+  "Document text": "Asiakirjojen teksti",
+  "Monospace text": "Tasalevyinen teksti",
+  "Window titles": "Ikkunoiden otsikot",
+  "Choose a font": "Valitse fontti",
+  "The quick brown fox jumps over the lazy dog.": "Törkylempijävongahdus on ääkkösiä täynnä.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Jotkin sovellukset käyttävät uusia fontteja vasta, kun ne käynnistetään uudelleen. Tekstin koko asetetaan Esteettömyys-sivulla.",
+  "The font could not be changed: {error}": "Fonttia ei voitu vaihtaa: {error}",
+  "The fonts could not be reset: {error}": "Fontteja ei voitu palauttaa oletuksiin: {error}",
+  "The shared font setting could not be changed.": "Jaettua fonttiasetusta ei voitu muuttaa.",
+  "The window manager did not reload its settings: {error}": "Ikkunaohjelma ei ladannut asetuksiaan uudelleen: {error}"
 }

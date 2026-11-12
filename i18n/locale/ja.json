@@ -2152,5 +2152,22 @@
   "Border between rows {value1} and {value2}": "{value1} 行目と {value2} 行目の境界",
   "Drag or use the arrow keys to resize the areas.": "ドラッグするか矢印キーで領域のサイズを変更します。",
   "Could not save the snap layout: {error}": "スナップレイアウトを保存できませんでした: {error}",
-  "Could not apply the snap layout: {error}": "スナップレイアウトを適用できませんでした: {error}"
+  "Could not apply the snap layout: {error}": "スナップレイアウトを適用できませんでした: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "デスクトップとアプリケーションで使うポインターテーマを選択します。",
+  "The pointer theme could not be changed: {error}": "ポインターテーマを変更できませんでした: {error}",
+  "The shared pointer theme setting could not be changed.": "共有のポインターテーマ設定を変更できませんでした。",
+  "No pointer themes are installed.": "ポインターテーマがインストールされていません。",
+  "Fonts": "フォント",
+  "Choose the fonts used by the desktop and applications.": "デスクトップとアプリケーションで使うフォントを選びます。",
+  "Interface text": "インターフェースの文字",
+  "Document text": "文書の文字",
+  "Monospace text": "等幅の文字",
+  "Window titles": "ウィンドウのタイトル",
+  "Choose a font": "フォントを選択",
+  "The quick brown fox jumps over the lazy dog.": "いろはにほへと ちりぬるを わかよたれそ つねならむ",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "一部のアプリケーションは、再起動するまで新しいフォントを使いません。文字の大きさはアクセシビリティのページで設定します。",
+  "The font could not be changed: {error}": "フォントを変更できませんでした: {error}",
+  "The fonts could not be reset: {error}": "フォントを初期設定に戻せませんでした: {error}",
+  "The shared font setting could not be changed.": "共有のフォント設定を変更できませんでした。",
+  "The window manager did not reload its settings: {error}": "ウィンドウマネージャーが設定を再読み込みしませんでした: {error}"
 }

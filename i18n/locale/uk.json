@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Межа між рядками {value1} і {value2}",
   "Drag or use the arrow keys to resize the areas.": "Перетягніть або скористайтеся клавішами зі стрілками, щоб змінити розмір областей.",
   "Could not save the snap layout: {error}": "Не вдалося зберегти макет прив’язування: {error}",
-  "Could not apply the snap layout: {error}": "Не вдалося застосувати макет прив’язування: {error}"
+  "Could not apply the snap layout: {error}": "Не вдалося застосувати макет прив’язування: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Виберіть тему вказівника для стільниці та застосунків.",
+  "The pointer theme could not be changed: {error}": "Не вдалося змінити тему вказівника: {error}",
+  "The shared pointer theme setting could not be changed.": "Не вдалося змінити спільний параметр теми вказівника.",
+  "No pointer themes are installed.": "Теми вказівника не встановлено.",
+  "Fonts": "Шрифти",
+  "Choose the fonts used by the desktop and applications.": "Виберіть шрифти для робочого столу та застосунків.",
+  "Interface text": "Текст інтерфейсу",
+  "Document text": "Текст документів",
+  "Monospace text": "Моноширинний текст",
+  "Window titles": "Заголовки вікон",
+  "Choose a font": "Виберіть шрифт",
+  "The quick brown fox jumps over the lazy dog.": "Чуєш їх, доцю, га? Кумедна ж ти, прощайся без ґольфів!",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Деякі застосунки почнуть використовувати нові шрифти лише після перезапуску. Розмір тексту задається на сторінці «Доступність».",
+  "The font could not be changed: {error}": "Не вдалося змінити шрифт: {error}",
+  "The fonts could not be reset: {error}": "Не вдалося скинути шрифти: {error}",
+  "The shared font setting could not be changed.": "Не вдалося змінити спільний параметр шрифту.",
+  "The window manager did not reload its settings: {error}": "Віконний менеджер не перечитав свої налаштування: {error}"
 }

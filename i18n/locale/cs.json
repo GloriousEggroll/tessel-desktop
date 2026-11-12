@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Hranice mezi řádky {value1} a {value2}",
   "Drag or use the arrow keys to resize the areas.": "Velikost oblastí změníte tažením nebo klávesami šipek.",
   "Could not save the snap layout: {error}": "Rozvržení přichycení se nepodařilo uložit: {error}",
-  "Could not apply the snap layout: {error}": "Rozvržení přichycení se nepodařilo použít: {error}"
+  "Could not apply the snap layout: {error}": "Rozvržení přichycení se nepodařilo použít: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Vyberte motiv ukazatele, který používá pracovní prostředí a aplikace.",
+  "The pointer theme could not be changed: {error}": "Motiv ukazatele nelze změnit: {error}",
+  "The shared pointer theme setting could not be changed.": "Sdílené nastavení motivu ukazatele nelze změnit.",
+  "No pointer themes are installed.": "Nejsou nainstalovány žádné motivy ukazatele.",
+  "Fonts": "Písma",
+  "Choose the fonts used by the desktop and applications.": "Vyberte písma, která používá pracovní prostředí a aplikace.",
+  "Interface text": "Text rozhraní",
+  "Document text": "Text dokumentů",
+  "Monospace text": "Text s pevnou šířkou",
+  "Window titles": "Názvy oken",
+  "Choose a font": "Vyberte písmo",
+  "The quick brown fox jumps over the lazy dog.": "Příliš žluťoučký kůň úpěl ďábelské ódy.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Některé aplikace použijí nová písma až po restartu. Velikost textu se nastavuje na stránce Přístupnost.",
+  "The font could not be changed: {error}": "Písmo nelze změnit: {error}",
+  "The fonts could not be reset: {error}": "Písma nelze obnovit na výchozí: {error}",
+  "The shared font setting could not be changed.": "Sdílené nastavení písma nelze změnit.",
+  "The window manager did not reload its settings: {error}": "Správce oken znovu nenačetl svá nastavení: {error}"
 }

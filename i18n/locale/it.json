@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Bordo tra le righe {value1} e {value2}",
   "Drag or use the arrow keys to resize the areas.": "Trascina o usa i tasti freccia per ridimensionare le aree.",
   "Could not save the snap layout: {error}": "Impossibile salvare il layout di aggancio: {error}",
-  "Could not apply the snap layout: {error}": "Impossibile applicare il layout di aggancio: {error}"
+  "Could not apply the snap layout: {error}": "Impossibile applicare il layout di aggancio: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Scegli il tema del puntatore usato dal desktop e dalle applicazioni.",
+  "The pointer theme could not be changed: {error}": "Impossibile modificare il tema del puntatore: {error}",
+  "The shared pointer theme setting could not be changed.": "Impossibile modificare l'impostazione condivisa del tema del puntatore.",
+  "No pointer themes are installed.": "Nessun tema del puntatore installato.",
+  "Fonts": "Caratteri",
+  "Choose the fonts used by the desktop and applications.": "Scegli i caratteri usati dal desktop e dalle applicazioni.",
+  "Interface text": "Testo dell’interfaccia",
+  "Document text": "Testo dei documenti",
+  "Monospace text": "Testo a spaziatura fissa",
+  "Window titles": "Titoli delle finestre",
+  "Choose a font": "Scegli un carattere",
+  "The quick brown fox jumps over the lazy dog.": "Quel vituperabile xenofobo zelante assaggia il whisky ed esclama: alleluja!",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Alcune applicazioni usano i nuovi caratteri solo dopo essere state riavviate. La dimensione del testo si imposta nella pagina Accessibilità.",
+  "The font could not be changed: {error}": "Impossibile cambiare il carattere: {error}",
+  "The fonts could not be reset: {error}": "Impossibile ripristinare i caratteri: {error}",
+  "The shared font setting could not be changed.": "Impossibile modificare l’impostazione condivisa del carattere.",
+  "The window manager did not reload its settings: {error}": "Il gestore delle finestre non ha ricaricato le impostazioni: {error}"
 }

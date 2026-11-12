@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "{value1}. ve {value2}. satır arasındaki sınır",
   "Drag or use the arrow keys to resize the areas.": "Alanları yeniden boyutlandırmak için sürükleyin veya ok tuşlarını kullanın.",
   "Could not save the snap layout: {error}": "Yaslama düzeni kaydedilemedi: {error}",
-  "Could not apply the snap layout: {error}": "Yaslama düzeni uygulanamadı: {error}"
+  "Could not apply the snap layout: {error}": "Yaslama düzeni uygulanamadı: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Masaüstü ve uygulamalar tarafından kullanılan işaretçi temasını seçin.",
+  "The pointer theme could not be changed: {error}": "İşaretçi teması değiştirilemedi: {error}",
+  "The shared pointer theme setting could not be changed.": "Paylaşılan işaretçi teması ayarı değiştirilemedi.",
+  "No pointer themes are installed.": "Yüklü işaretçi teması yok.",
+  "Fonts": "Yazı tipleri",
+  "Choose the fonts used by the desktop and applications.": "Masaüstü ve uygulamaların kullandığı yazı tiplerini seçin.",
+  "Interface text": "Arayüz metni",
+  "Document text": "Belge metni",
+  "Monospace text": "Eş aralıklı metin",
+  "Window titles": "Pencere başlıkları",
+  "Choose a font": "Bir yazı tipi seçin",
+  "The quick brown fox jumps over the lazy dog.": "Pijamalı hasta yağız şoföre çabucak güvendi.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Bazı uygulamalar yeni yazı tiplerini ancak yeniden başlatıldıktan sonra kullanır. Metin boyutu Erişilebilirlik sayfasından ayarlanır.",
+  "The font could not be changed: {error}": "Yazı tipi değiştirilemedi: {error}",
+  "The fonts could not be reset: {error}": "Yazı tipleri sıfırlanamadı: {error}",
+  "The shared font setting could not be changed.": "Paylaşılan yazı tipi ayarı değiştirilemedi.",
+  "The window manager did not reload its settings: {error}": "Pencere yöneticisi ayarlarını yeniden yüklemedi: {error}"
 }

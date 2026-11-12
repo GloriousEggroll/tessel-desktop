@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Margine între rândurile {value1} și {value2}",
   "Drag or use the arrow keys to resize the areas.": "Trageți sau folosiți tastele săgeți pentru a redimensiona zonele.",
   "Could not save the snap layout: {error}": "Aspectul de fixare nu a putut fi salvat: {error}",
-  "Could not apply the snap layout: {error}": "Aspectul de fixare nu a putut fi aplicat: {error}"
+  "Could not apply the snap layout: {error}": "Aspectul de fixare nu a putut fi aplicat: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Alegeți tema de indicator folosită de desktop și de aplicații.",
+  "The pointer theme could not be changed: {error}": "Tema de indicator nu a putut fi schimbată: {error}",
+  "The shared pointer theme setting could not be changed.": "Setarea comună a temei de indicator nu a putut fi schimbată.",
+  "No pointer themes are installed.": "Nu este instalată nicio temă de indicator.",
+  "Fonts": "Fonturi",
+  "Choose the fonts used by the desktop and applications.": "Alegeți fonturile folosite de desktop și de aplicații.",
+  "Interface text": "Textul interfeței",
+  "Document text": "Textul documentelor",
+  "Monospace text": "Text cu lățime fixă",
+  "Window titles": "Titlurile ferestrelor",
+  "Choose a font": "Alegeți un font",
+  "The quick brown fox jumps over the lazy dog.": "Agera vulpe maronie sare peste câinele cel leneș.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Unele aplicații folosesc fonturile noi abia după ce sunt repornite. Dimensiunea textului se setează pe pagina Accesibilitate.",
+  "The font could not be changed: {error}": "Fontul nu a putut fi schimbat: {error}",
+  "The fonts could not be reset: {error}": "Fonturile nu au putut fi resetate: {error}",
+  "The shared font setting could not be changed.": "Setarea comună a fontului nu a putut fi schimbată.",
+  "The window manager did not reload its settings: {error}": "Managerul de ferestre nu și-a reîncărcat setările: {error}"
 }

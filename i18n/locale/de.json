@@ -2305,5 +2305,22 @@
   "Border between rows {value1} and {value2}": "Grenze zwischen Zeile {value1} und {value2}",
   "Drag or use the arrow keys to resize the areas.": "Ziehen oder die Pfeiltasten verwenden, um die Größe der Bereiche zu ändern.",
   "Could not save the snap layout: {error}": "Das Einrast-Layout konnte nicht gespeichert werden: {error}",
-  "Could not apply the snap layout: {error}": "Das Einrast-Layout konnte nicht angewendet werden: {error}"
+  "Could not apply the snap layout: {error}": "Das Einrast-Layout konnte nicht angewendet werden: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Wählen Sie das Zeigerthema für den Desktop und die Anwendungen.",
+  "The pointer theme could not be changed: {error}": "Das Zeigerthema konnte nicht geändert werden: {error}",
+  "The shared pointer theme setting could not be changed.": "Die gemeinsame Zeigerthema-Einstellung konnte nicht geändert werden.",
+  "No pointer themes are installed.": "Es sind keine Zeigerthemen installiert.",
+  "Fonts": "Schriftarten",
+  "Choose the fonts used by the desktop and applications.": "Wählen Sie die Schriftarten für den Desktop und die Anwendungen.",
+  "Interface text": "Oberflächentext",
+  "Document text": "Dokumenttext",
+  "Monospace text": "Text mit fester Breite",
+  "Window titles": "Fenstertitel",
+  "Choose a font": "Schriftart auswählen",
+  "The quick brown fox jumps over the lazy dog.": "Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Manche Anwendungen verwenden die neuen Schriftarten erst nach einem Neustart. Die Textgröße wird auf der Seite Barrierefreiheit eingestellt.",
+  "The font could not be changed: {error}": "Die Schriftart konnte nicht geändert werden: {error}",
+  "The fonts could not be reset: {error}": "Die Schriftarten konnten nicht zurückgesetzt werden: {error}",
+  "The shared font setting could not be changed.": "Die gemeinsame Schriftarteinstellung konnte nicht geändert werden.",
+  "The window manager did not reload its settings: {error}": "Die Fensterverwaltung hat ihre Einstellungen nicht neu geladen: {error}"
 }

@@ -1972,5 +1972,22 @@
   "Border between rows {value1} and {value2}": "Όριο μεταξύ των γραμμών {value1} και {value2}",
   "Drag or use the arrow keys to resize the areas.": "Σύρετε ή χρησιμοποιήστε τα πλήκτρα βέλους για να αλλάξετε το μέγεθος των περιοχών.",
   "Could not save the snap layout: {error}": "Δεν ήταν δυνατή η αποθήκευση της διάταξης προσκόλλησης: {error}",
-  "Could not apply the snap layout: {error}": "Δεν ήταν δυνατή η εφαρμογή της διάταξης προσκόλλησης: {error}"
+  "Could not apply the snap layout: {error}": "Δεν ήταν δυνατή η εφαρμογή της διάταξης προσκόλλησης: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Επιλέξτε το θέμα δείκτη που χρησιμοποιούν η επιφάνεια εργασίας και οι εφαρμογές.",
+  "The pointer theme could not be changed: {error}": "Δεν ήταν δυνατή η αλλαγή του θέματος δείκτη: {error}",
+  "The shared pointer theme setting could not be changed.": "Δεν ήταν δυνατή η αλλαγή της κοινής ρύθμισης θέματος δείκτη.",
+  "No pointer themes are installed.": "Δεν είναι εγκατεστημένα θέματα δείκτη.",
+  "Fonts": "Γραμματοσειρές",
+  "Choose the fonts used by the desktop and applications.": "Επιλέξτε τις γραμματοσειρές που χρησιμοποιούν η επιφάνεια εργασίας και οι εφαρμογές.",
+  "Interface text": "Κείμενο διεπαφής",
+  "Document text": "Κείμενο εγγράφων",
+  "Monospace text": "Κείμενο σταθερού πλάτους",
+  "Window titles": "Τίτλοι παραθύρων",
+  "Choose a font": "Επιλέξτε γραμματοσειρά",
+  "The quick brown fox jumps over the lazy dog.": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Ορισμένες εφαρμογές χρησιμοποιούν τις νέες γραμματοσειρές μόνο μετά την επανεκκίνησή τους. Το μέγεθος κειμένου ορίζεται στη σελίδα Προσβασιμότητα.",
+  "The font could not be changed: {error}": "Δεν ήταν δυνατή η αλλαγή της γραμματοσειράς: {error}",
+  "The fonts could not be reset: {error}": "Δεν ήταν δυνατή η επαναφορά των γραμματοσειρών: {error}",
+  "The shared font setting could not be changed.": "Δεν ήταν δυνατή η αλλαγή της κοινής ρύθμισης γραμματοσειράς.",
+  "The window manager did not reload its settings: {error}": "Ο διαχειριστής παραθύρων δεν φόρτωσε ξανά τις ρυθμίσεις του: {error}"
 }

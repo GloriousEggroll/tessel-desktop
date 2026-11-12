@@ -2305,5 +2305,22 @@
   "Border between rows {value1} and {value2}": "Borde entre las filas {value1} y {value2}",
   "Drag or use the arrow keys to resize the areas.": "Arrastra o usa las teclas de flecha para cambiar el tamaño de las áreas.",
   "Could not save the snap layout: {error}": "No se pudo guardar el diseño de ajuste: {error}",
-  "Could not apply the snap layout: {error}": "No se pudo aplicar el diseño de ajuste: {error}"
+  "Could not apply the snap layout: {error}": "No se pudo aplicar el diseño de ajuste: {error}",
+  "Choose the pointer theme used by the desktop and applications.": "Elige el tema de puntero que usan el escritorio y las aplicaciones.",
+  "The pointer theme could not be changed: {error}": "No se pudo cambiar el tema de puntero: {error}",
+  "The shared pointer theme setting could not be changed.": "No se pudo cambiar el ajuste compartido del tema de puntero.",
+  "No pointer themes are installed.": "No hay temas de puntero instalados.",
+  "Fonts": "Tipos de letra",
+  "Choose the fonts used by the desktop and applications.": "Elija los tipos de letra que usan el escritorio y las aplicaciones.",
+  "Interface text": "Texto de la interfaz",
+  "Document text": "Texto de documentos",
+  "Monospace text": "Texto monoespaciado",
+  "Window titles": "Títulos de ventanas",
+  "Choose a font": "Elija un tipo de letra",
+  "The quick brown fox jumps over the lazy dog.": "El veloz murciélago hindú comía feliz cardillo y kiwi.",
+  "Some applications use the new fonts only after they are restarted. Text size is set on the Accessibility page.": "Algunas aplicaciones usan los nuevos tipos de letra solo después de reiniciarlas. El tamaño del texto se ajusta en la página Accesibilidad.",
+  "The font could not be changed: {error}": "No se pudo cambiar el tipo de letra: {error}",
+  "The fonts could not be reset: {error}": "No se pudieron restablecer los tipos de letra: {error}",
+  "The shared font setting could not be changed.": "No se pudo cambiar el ajuste compartido de tipo de letra.",
+  "The window manager did not reload its settings: {error}": "El gestor de ventanas no volvió a cargar su configuración: {error}"
 }
