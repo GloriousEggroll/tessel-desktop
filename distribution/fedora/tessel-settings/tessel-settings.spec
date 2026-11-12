@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit acb2ca10dd57ab3b277e4672151d02a739dc0afa}
+%{!?commit:%global commit 839b47aed1e9549cd97437533b9965d6cb657d81}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        17%{?dist}
+Release:        18%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -42,6 +42,7 @@ BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
+Requires:       labwc >= 0.20.2-27
 Requires:       glib2
 Requires:       libinput
 Requires:       pciutils
@@ -107,6 +108,12 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-18
+- Desktop Behavior: snap layouts per screen (columns and rows with editable sizes); needs labwc 0.20.2-27
+- Notifications: Notification size
+- Keyboard shortcuts: typing a shortcut in the Change Shortcut dialog works, Enter saves
+- Displays: the brightness and contrast sliders no longer jump back while they are dragged
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-17
 - Dock: System tray icon size
 

@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit 839b47aed1e9549cd97437533b9965d6cb657d81}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-notifications
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel notifications
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -85,6 +85,10 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Notifications.desktop
 %{_datadir}/applications/org.tessel.Notifications.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Avatars and small or square images are shown as a thumbnail beside the text, and pictures are bounded in height, so popups are no longer oversized
+- New setting: Notification size (Small, Medium, Large)
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Window buttons are as far from the side of the window as from its top
 - Rounded corners are 8 px, as browsers' own windows have

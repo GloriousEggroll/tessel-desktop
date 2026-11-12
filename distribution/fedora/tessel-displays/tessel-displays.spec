@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit ecbdb9dec120d6dc9af554b2133ac9730142d6b6}
+%{!?commit:%global commit 839b47aed1e9549cd97437533b9965d6cb657d81}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -86,6 +86,9 @@ install -Dm644 packaging/defaults/etc/tessel/displays/cfg.yaml %{buildroot}%{_sy
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-9
+- The brightness and contrast sliders no longer jump back while they are dragged
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
 - Adaptive Sync is Automatic (only while an app is fullscreen), Always or Off per screen; Automatic is the default
 - A screen where Adaptive Sync is not available says so instead of failing
