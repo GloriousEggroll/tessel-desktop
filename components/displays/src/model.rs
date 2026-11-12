@@ -3,9 +3,37 @@
 //! CFG_SET / CFG_DEL computation (tessel-displays:1379-1431, 1432-2171,
 //! 2669-2897).
 
+use crate::daemon::config::VrrMode;
 use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use tessel_core::pyjson::{py_str, truthy};
+
+/// The adaptive sync choice of a head in the daemon's state: its `VRR_MODE`,
+/// or, from an older daemon, what `VRR_OFF` and `VRR_ALWAYS` in `cfg` say.
+pub fn vrr_mode_of(head: &Value, cfg: &Value) -> VrrMode {
+    if let Some(mode) = head.get("VRR_MODE").and_then(Value::as_str).and_then(VrrMode::from_name) {
+        return mode;
+    }
+    let screen = crate::daemon::layout::Head {
+        name: head.get("NAME").map(py_str).unwrap_or_default(),
+        description: head.get("DESCRIPTION").map(py_str).unwrap_or_default(),
+        ..Default::default()
+    };
+    let listed = |key: &str| cfg.get(key).and_then(Value::as_array)
+        .is_some_and(|items| items.iter().any(|item| crate::daemon::layout::matches(&screen, &py_str(item))));
+    if listed("VRR_OFF") {
+        VrrMode::Off
+    } else if listed("VRR_ALWAYS") {
+        VrrMode::Always
+    } else {
+        VrrMode::Auto
+    }
+}
+
+/// Whether the daemon found adaptive sync refused on this head. Unknown is capable.
+pub fn vrr_capable_of(head: &Value) -> bool {
+    head.get("VRR_CAPABLE").and_then(Value::as_bool).unwrap_or(true)
+}
 
 pub const SCALE: f64 = 0.08;
 
@@ -434,7 +462,7 @@ pub struct DesiredState {
     pub enabled: bool,
     pub enabled_changed: bool,
     pub primary: bool,
-    pub vrr: bool,
+    pub vrr: VrrMode,
     pub vrr_changed: bool,
     pub hdr: bool,
     pub hdr_changed: bool,
@@ -477,14 +505,16 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
     let mut scale_overrides = take_object(cfg.get("SCALE").filter(|v| truthy(v)));
     let mut transform_overrides = original_transforms.clone();
     let mut disabled_overrides = original_disabled.clone();
-    // CFG_SET adds members to VRR_OFF; sending an old full list would disable
-    // other monitors again after a change in another editor.
+    // CFG_SET adds members to VRR_OFF and VRR_ALWAYS; sending an old full list
+    // would change other monitors back after a change in another editor.
     let mut vrr_off: Vec<Value> = Vec::new();
+    let mut vrr_always: Vec<Value> = Vec::new();
     let mut transforms_to_delete = Map::new();
     let mut disabled_to_delete = Map::new();
     let mut scales_to_delete = Map::new();
     let mut any_auto_scale = false;
-    let mut vrr_to_delete: Vec<String> = Vec::new();
+    let mut vrr_off_to_delete: Vec<String> = Vec::new();
+    let mut vrr_always_to_delete: Vec<String> = Vec::new();
 
     for (index, state) in states.iter().enumerate() {
         let Some(state) = state else { continue };
@@ -502,13 +532,22 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
             "HZ": hz,
         }));
         if state.vrr_changed {
-            if state.vrr {
-                vrr_to_delete.push(desc.clone());
-                if let Some(name) = state.name.as_ref().filter(|n| !n.is_empty()) {
-                    vrr_to_delete.push(name.clone());
+            // Saved by description; an entry by connector name is removed too.
+            let mut keys = vec![desc.clone()];
+            keys.extend(state.name.clone().filter(|n| !n.is_empty()));
+            match state.vrr {
+                VrrMode::Auto => {
+                    vrr_off_to_delete.extend(keys.clone());
+                    vrr_always_to_delete.extend(keys);
                 }
-            } else {
-                vrr_off.push(Value::String(desc.clone()));
+                VrrMode::Always => {
+                    vrr_always.push(Value::String(desc.clone()));
+                    vrr_off_to_delete.extend(keys);
+                }
+                VrrMode::Off => {
+                    vrr_off.push(Value::String(desc.clone()));
+                    vrr_always_to_delete.extend(keys);
+                }
             }
         }
         if state.scale_auto {
@@ -560,6 +599,8 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
     set_or_remove(&mut cfg, "DISABLED", Value::Object(disabled_overrides), keep);
     let keep = !vrr_off.is_empty();
     set_or_remove(&mut cfg, "VRR_OFF", Value::Array(vrr_off), keep);
+    let keep = !vrr_always.is_empty();
+    set_or_remove(&mut cfg, "VRR_ALWAYS", Value::Array(vrr_always), keep);
     set_or_remove(&mut cfg, "CALLBACK_CMD", Value::String(callback.to_owned()), !callback.is_empty());
 
     let mut del_cfg = Map::new();
@@ -572,14 +613,16 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
     if !scales_to_delete.is_empty() {
         del_cfg.insert("SCALE".into(), Value::Object(scales_to_delete));
     }
-    if !vrr_to_delete.is_empty() {
+    for (key, items) in [("VRR_OFF", vrr_off_to_delete), ("VRR_ALWAYS", vrr_always_to_delete)] {
         let mut unique: Vec<String> = Vec::new();
-        for item in vrr_to_delete {
+        for item in items {
             if !unique.contains(&item) {
                 unique.push(item);
             }
         }
-        del_cfg.insert("VRR_OFF".into(), json!(unique));
+        if !unique.is_empty() {
+            del_cfg.insert(key.into(), json!(unique));
+        }
     }
     if callback.is_empty() && original_cfg.get("CALLBACK_CMD").is_some() {
         del_cfg.insert("CALLBACK_CMD".into(), json!(""));
@@ -635,11 +678,13 @@ pub fn revert_plan(before: &Value, after: &Value, enabled: &[(String, bool)]) ->
             entry[description.as_str()] = Value::Null;
         }
     }
-    let list = |config: &Value| -> Vec<Value> { config.get("VRR_OFF").and_then(Value::as_array).cloned().unwrap_or_default() };
-    let saved_vrr = list(before);
-    let added_vrr: Vec<Value> = list(after).into_iter().filter(|item| !saved_vrr.contains(item)).collect();
-    if !added_vrr.is_empty() {
-        del.insert("VRR_OFF".into(), Value::Array(added_vrr));
+    for key in ["VRR_OFF", "VRR_ALWAYS"] {
+        let list = |config: &Value| -> Vec<Value> { config.get(key).and_then(Value::as_array).cloned().unwrap_or_default() };
+        let saved = list(before);
+        let added: Vec<Value> = list(after).into_iter().filter(|item| !saved.contains(item)).collect();
+        if !added.is_empty() {
+            del.insert(key.into(), Value::Array(added));
+        }
     }
     if !before.get("ORDER").is_some_and(truthy) {
         if let Some(order) = after.get("ORDER").filter(|v| truthy(v)) {

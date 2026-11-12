@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Показувати на панелі, що зараз відтворюється, з кнопками керування відтворенням. Якщо вимкнено, панель перестає стежити за медіапрогравачами.",
   "More apps": "Інші застосунки",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Натисніть «Інші застосунки» в системному лотку, щоб показати решту аплетів. Увімкніть «Завжди видимі», щоб аплет залишався на виду.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Вибрані застосунки залишаються на виду в системному лотку без натискання «Інші застосунки»."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Вибрані застосунки залишаються на виду в системному лотку без натискання «Інші застосунки».",
+  "Automatic": "Автоматично",
+  "Always": "Завжди",
+  "Adaptive Sync (VRR)": "Адаптивна синхронізація (VRR)",
+  "On only while an app is fullscreen on this screen.": "Увімкнено, лише поки на цьому екрані застосунок відкрито на весь екран.",
+  "Adaptive Sync is not available on this screen.": "Адаптивна синхронізація недоступна на цьому екрані."
 }

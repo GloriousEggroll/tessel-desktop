@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Toon in het paneel wat er wordt afgespeeld, met afspeelknoppen. Als dit uit staat, volgt het paneel geen mediaspelers meer.",
   "More apps": "Meer apps",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klik op Meer apps in het systeemvak om de andere applets te tonen. Schakel Altijd zichtbaar in om een applet zichtbaar te houden.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Geselecteerde toepassingen blijven zichtbaar in het systeemvak zonder op Meer apps te klikken."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Geselecteerde toepassingen blijven zichtbaar in het systeemvak zonder op Meer apps te klikken.",
+  "Automatic": "Automatisch",
+  "Always": "Altijd",
+  "Adaptive Sync (VRR)": "Adaptieve synchronisatie (VRR)",
+  "On only while an app is fullscreen on this screen.": "Alleen aan terwijl een app schermvullend is op dit scherm.",
+  "Adaptive Sync is not available on this screen.": "Adaptieve synchronisatie is niet beschikbaar op dit scherm."
 }

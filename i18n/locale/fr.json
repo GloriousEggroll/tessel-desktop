@@ -2274,5 +2274,8 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Affiche dans le panneau ce qui est en cours de lecture, avec les commandes de lecture. Désactivé, le panneau cesse de suivre les lecteurs multimédias.",
   "More apps": "Plus d'applications",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Cliquez sur Plus d'applications dans la zone de notification pour afficher les autres applets. Activez Toujours visible pour garder un applet affiché.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Les applications sélectionnées restent affichées dans la zone de notification sans cliquer sur Plus d'applications."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Les applications sélectionnées restent affichées dans la zone de notification sans cliquer sur Plus d'applications.",
+  "Always": "Toujours",
+  "On only while an app is fullscreen on this screen.": "Activée uniquement lorsqu’une application est en plein écran sur cet écran.",
+  "Adaptive Sync is not available on this screen.": "La synchronisation adaptative n’est pas disponible sur cet écran."
 }

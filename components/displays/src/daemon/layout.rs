@@ -2,7 +2,7 @@
 //! Wayland in it. Compatible with the way-displays layout rules (MIT,
 //! Copyright 2021 Alexander Courtis), so saved layouts come out the same.
 
-use super::config::{Align, Arrange, Cfg, Condition, LidCondition, ModeChoice, Round, SCREEN_SIZE_DPI};
+use super::config::{Align, Arrange, Cfg, Condition, LidCondition, ModeChoice, Round, VrrMode, SCREEN_SIZE_DPI};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Mode {
@@ -26,6 +26,8 @@ pub struct State {
     pub x: i32,
     pub y: i32,
     pub transform: i32,
+    /// Adaptive sync is on right now. Only read: the compositor switches it
+    /// (labwc's `<adaptiveSyncOutputs>`), the daemon never asks for it.
     pub vrr: bool,
 }
 
@@ -48,8 +50,11 @@ pub struct Head {
     pub scaled: (i32, i32),
     /// A manual choice against a conditional DISABLED rule.
     pub override_enabled: Option<bool>,
-    pub vrr_failed: bool,
     pub reapply: bool,
+    /// Whether the compositor accepts adaptive sync here: `None` until a test says.
+    pub vrr_capable: Option<bool>,
+    /// The current mode the last capability answer was for.
+    pub vrr_probed: Option<u32>,
 }
 
 /// Lid state; `None` when there is no lid.
@@ -85,6 +90,29 @@ fn condition_met(condition: &Condition, heads: &[Head], lid: Lid, ignore_closed:
             Some(LidCondition::NotPresent) => lid.is_none(),
             None => true,
         }
+}
+
+/// The head's adaptive sync choice: in VRR_OFF is Off (also when it is in
+/// VRR_ALWAYS too), in VRR_ALWAYS is Always, in neither is Automatic.
+pub fn vrr_mode(cfg: &Cfg, head: &Head) -> VrrMode {
+    if cfg.vrr_off.iter().any(|name| matches(head, name)) {
+        VrrMode::Off
+    } else if cfg.vrr_always.iter().any(|name| matches(head, name)) {
+        VrrMode::Always
+    } else {
+        VrrMode::Auto
+    }
+}
+
+/// Connector name and adaptive sync choice of every connected head, for labwc.
+pub fn vrr_modes(cfg: &Cfg, heads: &[Head]) -> std::collections::BTreeMap<String, VrrMode> {
+    heads.iter().filter(|head| !head.name.is_empty()).map(|head| (head.name.clone(), vrr_mode(cfg, head))).collect()
+}
+
+/// The next head to test adaptive sync on: enabled, with a current mode that
+/// has no answer yet. A head with adaptive sync on right now needs no test.
+pub fn vrr_probe_candidate(heads: &[Head]) -> Option<usize> {
+    heads.iter().position(|head| head.cur.enabled && head.cur.mode.is_some() && head.vrr_probed != head.cur.mode)
 }
 
 /// Whether DISABLED turns this head off. A closed lid is ignored when the
@@ -240,9 +268,6 @@ pub fn desire(cfg: &Cfg, heads: &mut [Head], lid: Lid) {
                 fixed_scale(cfg, 1.0)
             };
             head.des.transform = cfg.transforms.iter().find(|(name, _)| matches(head, name)).map_or(0, |(_, transform)| *transform);
-            if !head.vrr_failed {
-                head.des.vrr = !cfg.vrr_off.iter().any(|name| matches(head, name));
-            }
             if let (Some(mode), true) = (mode, head.des.scale != 0) {
                 let (width, height) = if head.des.transform % 2 == 0 { (mode.width, mode.height) } else { (mode.height, mode.width) };
                 head.scaled = (scaled_length(cfg, head.des.scale, width), scaled_length(cfg, head.des.scale, height));
@@ -309,14 +334,14 @@ fn positions(cfg: &Cfg, heads: &mut [Head], order: &[usize]) {
     }
 }
 
-/// The next change to send. Reapplying, a mode change and a VRR change each
-/// travel alone, because a compositor can refuse those one by one.
+/// The next change to send. Reapplying and a mode change each travel alone,
+/// because a compositor can refuse those one by one. Adaptive sync is never
+/// part of a change: labwc switches it from rc.xml.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Plan {
     Nothing,
     Reapply(usize),
     Mode(usize),
-    Vrr(usize),
     All(Vec<usize>),
 }
 
@@ -330,9 +355,6 @@ pub fn plan(heads: &[Head]) -> Plan {
     }
     if let Some(&index) = changing.iter().find(|&&i| heads[i].des.mode != heads[i].cur.mode) {
         return Plan::Mode(index);
-    }
-    if let Some(&index) = changing.iter().find(|&&i| heads[i].des.vrr != heads[i].cur.vrr) {
-        return Plan::Vrr(index);
     }
     Plan::All(changing)
 }
@@ -535,28 +557,61 @@ mod tests {
     }
 
     #[test]
-    fn vrr_is_on_unless_turned_off_or_refused() {
-        let mut heads = pair();
-        let cfg = Cfg { vrr_off: vec!["HDMI".into()], ..Default::default() };
-        desire(&cfg, &mut heads, None);
-        assert!(!heads[0].des.vrr && heads[1].des.vrr);
-        heads[1].vrr_failed = true;
-        heads[1].cur.vrr = false;
-        desire(&cfg, &mut heads, None);
-        assert!(!heads[1].des.vrr, "a refused change is not asked for again");
+    fn vrr_mode_comes_from_the_two_lists_and_off_wins() {
+        let heads = pair();
+        let mut cfg = Cfg::default();
+        assert_eq!((vrr_mode(&cfg, &heads[0]), vrr_mode(&cfg, &heads[1])), (VrrMode::Auto, VrrMode::Auto), "in neither list");
+        cfg.vrr_off = vec!["UGU UGREEN-UHD 0x01000E00 (HDMI-A-1)".into()];
+        cfg.vrr_always = vec!["!^DP-".into()];
+        assert_eq!((vrr_mode(&cfg, &heads[0]), vrr_mode(&cfg, &heads[1])), (VrrMode::Off, VrrMode::Always), "by description and regex");
+        cfg.vrr_always.push("HDMI-A-1".into());
+        assert_eq!(vrr_mode(&cfg, &heads[0]), VrrMode::Off, "in both lists is Off");
+        let modes = vrr_modes(&cfg, &heads);
+        assert_eq!(modes.into_iter().collect::<Vec<_>>(), [("DP-2".to_owned(), VrrMode::Always), ("HDMI-A-1".to_owned(), VrrMode::Off)]);
+        let mut unnamed = heads.clone();
+        unnamed[0].name.clear();
+        assert_eq!(vrr_modes(&cfg, &unnamed).len(), 1, "a head without a name yet is left out");
     }
 
     #[test]
-    fn modes_and_vrr_change_one_at_a_time_before_the_rest() {
+    fn the_daemon_never_asks_for_adaptive_sync() {
+        let mut heads = pair();
+        heads[0].cur.vrr = true;
+        let cfg = Cfg { vrr_off: vec!["HDMI".into()], vrr_always: vec!["DP-2".into()], ..Default::default() };
+        desire(&cfg, &mut heads, None);
+        assert!(heads[0].des.vrr && !heads[1].des.vrr, "the desired state keeps what the compositor has");
+        for head in &mut heads {
+            head.cur = State { vrr: head.cur.vrr, ..head.des };
+        }
+        heads[1].cur.vrr = true;
+        desire(&cfg, &mut heads, None);
+        assert_eq!(plan(&heads), Plan::Nothing, "a screen labwc switched is no change to make");
+    }
+
+    #[test]
+    fn each_enabled_head_is_tested_once_per_mode() {
+        let mut heads = pair();
+        assert_eq!(vrr_probe_candidate(&heads), Some(0));
+        heads[0].vrr_probed = heads[0].cur.mode;
+        assert_eq!(vrr_probe_candidate(&heads), Some(1));
+        heads[1].vrr_probed = heads[1].cur.mode;
+        assert_eq!(vrr_probe_candidate(&heads), None);
+        heads[1].cur.mode = Some(21);
+        assert_eq!(vrr_probe_candidate(&heads), Some(1), "a new mode is tested again");
+        heads[1].cur.enabled = false;
+        assert_eq!(vrr_probe_candidate(&heads), None, "a disabled head is not tested");
+        heads[1].cur.enabled = true;
+        heads[1].cur.mode = None;
+        assert_eq!(vrr_probe_candidate(&heads), None, "nor one without a current mode");
+    }
+
+    #[test]
+    fn modes_change_one_at_a_time_before_the_rest() {
         let mut heads = pair();
         let cfg = Cfg { modes: vec![("DP-2".into(), ModeChoice::Size { width: 3840, height: 2160, mhz: Some(60000) })], scales: vec![("HDMI".into(), 2.0)], ..Default::default() };
         desire(&cfg, &mut heads, None);
         assert_eq!(plan(&heads), Plan::Mode(1));
         heads[1].cur.mode = heads[1].des.mode;
-        assert_eq!(plan(&heads), Plan::Vrr(0));
-        heads[0].cur.vrr = heads[0].des.vrr;
-        assert_eq!(plan(&heads), Plan::Vrr(1));
-        heads[1].cur.vrr = heads[1].des.vrr;
         match plan(&heads) {
             Plan::All(indices) => assert!(indices.contains(&0)),
             other => panic!("{other:?}"),

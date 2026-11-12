@@ -4,6 +4,7 @@
 use crate::brightness::BrightnessControls;
 use crate::color_controls::ColorControls;
 use crate::compat::brightness_client::BrightnessModel;
+use crate::daemon::config::VrrMode;
 use crate::layout::MonitorLayout;
 use crate::model::DesiredState;
 use crate::window::TesselDisplaysApp;
@@ -31,7 +32,7 @@ pub struct MonitorWidget {
     pub initial_enabled: Cell<bool>,
     pub initial_hdr: Cell<bool>,
     pub hdr_available: bool,
-    pub initial_vrr: Cell<bool>,
+    pub initial_vrr: Cell<VrrMode>,
     pub initial_scale_auto: bool,
     pub enable_switch: gtk::Switch,
     pub primary_switch: gtk::Switch,
@@ -41,11 +42,18 @@ pub struct MonitorWidget {
     pub rotation_buttons: Vec<(&'static str, gtk::ToggleButton)>,
     rotation_handlers: RefCell<Vec<glib::SignalHandlerId>>,
     pub flip_switch: gtk::Switch,
-    pub vrr_switch: gtk::Switch,
+    /// Adaptive sync: Automatic, Always, Off (`VRR_MODES` order).
+    pub vrr_combo: gtk::DropDown,
+    /// The dim line under the Adaptive Sync row.
+    pub vrr_hint: gtk::Label,
+    pub vrr_capable: Cell<bool>,
     pub hdr_switch: gtk::Switch,
     pub brightness_controls: Rc<BrightnessControls>,
     pub color_controls: Rc<ColorControls>,
 }
+
+/// The Adaptive Sync drop-down's items, in order.
+pub const VRR_MODES: [VrrMode; 3] = [VrrMode::Auto, VrrMode::Always, VrrMode::Off];
 
 /// `strftime`-free Python `f"{x:g}"` for the scale marks/values.
 pub fn general(value: f64) -> String {
@@ -174,10 +182,12 @@ impl MonitorWidget {
             rotation_buttons.push((rotation, button));
         }
         let flip_switch = gtk::Switch::new();
-        let vrr_state = monitor.get("DESIRED").filter(|d| truthy(d)).and_then(|d| d.get("VRR").cloned())
-            .unwrap_or_else(|| current.get("VRR").cloned().unwrap_or(Value::Bool(false)));
-        let vrr_switch = gtk::Switch::new();
-        vrr_switch.set_active(truthy(&vrr_state));
+        let vrr_mode = crate::model::vrr_mode_of(&monitor, &crate::ipc::cfg());
+        let vrr_capable = crate::model::vrr_capable_of(&monitor);
+        let vrr_combo = gtk::DropDown::from_strings(&[&tr!("Automatic"), &tr!("Always"), &tr!("Off")]);
+        vrr_combo.set_selected(VRR_MODES.iter().position(|mode| *mode == vrr_mode).unwrap_or(0) as u32);
+        let vrr_hint = gtk::Label::builder().xalign(0.0).wrap(true).build();
+        vrr_hint.add_css_class("dim-label");
         let hdr_switch = gtk::Switch::new();
         hdr_switch.set_active(hdr);
         hdr_switch.set_sensitive(enabled && hdr_available);
@@ -192,9 +202,10 @@ impl MonitorWidget {
 
         let this = Rc::new(Self {
             root, monitor: RefCell::new(monitor), app, layout_area: RefCell::new(layout_area), initial_enabled: Cell::new(enabled),
-            initial_hdr: Cell::new(hdr), hdr_available, initial_vrr: Cell::new(truthy(&vrr_state)), initial_scale_auto: scale_auto,
+            initial_hdr: Cell::new(hdr), hdr_available, initial_vrr: Cell::new(vrr_mode), initial_scale_auto: scale_auto,
             enable_switch, primary_switch, res_combo, scale_slider, scale_auto_switch, rotation_buttons,
-            rotation_handlers: RefCell::new(Vec::new()), flip_switch, vrr_switch, hdr_switch, brightness_controls, color_controls,
+            rotation_handlers: RefCell::new(Vec::new()), flip_switch, vrr_combo, vrr_hint, vrr_capable: Cell::new(vrr_capable), hdr_switch,
+            brightness_controls, color_controls,
         });
         let apply = |this: &Rc<Self>| {
             let weak = Rc::downgrade(this);
@@ -299,9 +310,19 @@ impl MonitorWidget {
         }
         this.transform_changed();
 
+        let weak = Rc::downgrade(&this);
+        this.vrr_combo.connect_selected_notify(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.update_vrr_hint();
+            }
+        });
         let a = apply(&this);
-        this.vrr_switch.connect_active_notify(move |_| a());
-        row(&color_card, &tr!("Adaptive Sync (VRR)"), &this.vrr_switch, None, false);
+        this.vrr_combo.connect_selected_notify(move |_| a());
+        let vrr_row = row(&color_card, &tr!("Adaptive Sync (VRR)"), &this.vrr_combo, None, false);
+        if let Some(labels) = vrr_row.first_child().and_downcast::<gtk::Box>() {
+            labels.append(&this.vrr_hint);
+        }
+        this.update_vrr_hint();
         let a = apply(&this);
         this.hdr_switch.connect_active_notify(move |_| a());
         row(&color_card, &tr!("HDR"), &this.hdr_switch, None, false);
@@ -316,6 +337,34 @@ impl MonitorWidget {
         });
         color_card.append(&this.color_controls.root);
         this
+    }
+
+    pub fn vrr_mode(&self) -> VrrMode {
+        VRR_MODES.get(self.vrr_combo.selected() as usize).copied().unwrap_or_default()
+    }
+
+    pub fn set_vrr_mode(&self, mode: VrrMode) {
+        self.vrr_combo.set_selected(VRR_MODES.iter().position(|m| *m == mode).unwrap_or(0) as u32);
+    }
+
+    /// A screen the compositor refused adaptive sync on cannot be set.
+    pub fn set_vrr_capable(&self, capable: bool) {
+        self.vrr_capable.set(capable);
+        self.update_vrr_hint();
+    }
+
+    fn update_vrr_hint(&self) {
+        let capable = self.vrr_capable.get();
+        self.vrr_combo.set_sensitive(capable);
+        let hint = if !capable {
+            tr!("Adaptive Sync is not available on this screen.")
+        } else if self.vrr_mode() == VrrMode::Auto {
+            tr!("On only while an app is fullscreen on this screen.")
+        } else {
+            String::new()
+        };
+        self.vrr_hint.set_visible(!hint.is_empty());
+        self.vrr_hint.set_text(&hint);
     }
 
     pub fn desc(&self) -> String {
@@ -426,8 +475,8 @@ impl MonitorWidget {
             enabled: self.enable_switch.is_active(),
             enabled_changed: self.enable_switch.is_active() != self.initial_enabled.get(),
             primary: self.primary_switch.is_active(),
-            vrr: self.vrr_switch.is_active(),
-            vrr_changed: self.vrr_switch.is_active() != self.initial_vrr.get(),
+            vrr: self.vrr_mode(),
+            vrr_changed: self.vrr_mode() != self.initial_vrr.get(),
             hdr: self.hdr_switch.is_active(),
             hdr_changed: self.hdr_switch.is_active() != self.initial_hdr.get(),
             scale: self.scale_slider.value(),

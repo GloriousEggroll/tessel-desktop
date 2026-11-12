@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Tampilkan yang sedang diputar di panel, dengan kontrol pemutaran. Saat nonaktif, panel berhenti mengikuti pemutar media.",
   "More apps": "Aplikasi lainnya",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klik Aplikasi lainnya di baki sistem untuk menampilkan applet lainnya. Aktifkan Selalu terlihat agar applet tetap ditampilkan.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Aplikasi yang dipilih tetap ditampilkan di baki sistem tanpa mengeklik Aplikasi lainnya."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Aplikasi yang dipilih tetap ditampilkan di baki sistem tanpa mengeklik Aplikasi lainnya.",
+  "Automatic": "Otomatis",
+  "Always": "Selalu",
+  "Adaptive Sync (VRR)": "Sinkronisasi Adaptif (VRR)",
+  "On only while an app is fullscreen on this screen.": "Aktif hanya saat aplikasi berjalan layar penuh di layar ini.",
+  "Adaptive Sync is not available on this screen.": "Sinkronisasi Adaptif tidak tersedia di layar ini."
 }

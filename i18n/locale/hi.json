@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "पैनल में दिखाएँ कि क्या चल रहा है, प्लेबैक नियंत्रणों के साथ। बंद होने पर पैनल मीडिया प्लेयर पर नज़र रखना बंद कर देता है।",
   "More apps": "और ऐप्स",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "अन्य एप्लेट दिखाने के लिए सिस्टम ट्रे में और ऐप्स पर क्लिक करें। किसी एप्लेट को दिखाए रखने के लिए हमेशा दृश्यमान चालू करें।",
-  "Selected applications stay shown in the system tray without clicking More apps.": "चुने गए एप्लिकेशन और ऐप्स पर क्लिक किए बिना सिस्टम ट्रे में दिखते रहते हैं।"
+  "Selected applications stay shown in the system tray without clicking More apps.": "चुने गए एप्लिकेशन और ऐप्स पर क्लिक किए बिना सिस्टम ट्रे में दिखते रहते हैं।",
+  "Automatic": "स्वचालित",
+  "Always": "हमेशा",
+  "Adaptive Sync (VRR)": "अनुकूली सिंक (VRR)",
+  "On only while an app is fullscreen on this screen.": "केवल तब चालू, जब इस स्क्रीन पर कोई ऐप पूर्ण स्क्रीन में हो।",
+  "Adaptive Sync is not available on this screen.": "इस स्क्रीन पर अनुकूली सिंक उपलब्ध नहीं है।"
 }

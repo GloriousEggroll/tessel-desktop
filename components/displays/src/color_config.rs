@@ -312,27 +312,11 @@ pub fn atomic_write(path: &Path, data: &[u8], mode: u32) -> Result<(), ColorErro
     fsx::atomic_write_with(path, data, mode, &prefix, &fsx::os_replace).map_err(ColorError::Os)
 }
 
-struct Lock(std::fs::File);
-
-impl Drop for Lock {
-    fn drop(&mut self) {
-        use std::os::fd::AsRawFd;
-        unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
-    }
-}
-
-fn locked(path: &Path) -> Result<Lock, ColorError> {
-    use std::os::fd::AsRawFd;
+/// The same rc.xml lock as the HDR and adaptive sync blocks (`crate::labwc::lock_rc`).
+fn locked(path: &Path) -> Result<crate::labwc::RcLock, ColorError> {
     let parent = path.parent().unwrap_or(Path::new("/"));
     std::fs::create_dir_all(parent).map_err(|e| ColorError::Os(os_error_path(&e, parent)))?;
-    let name = format!(".{}.color.lock", path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default());
-    let lock_path = parent.join(name);
-    let file = std::fs::OpenOptions::new().append(true).create(true).open(&lock_path)
-        .map_err(|e| ColorError::Os(os_error_path(&e, &lock_path)))?;
-    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX) } != 0 {
-        return Err(ColorError::Os(tessel_core::pyerr::os_error_text(&std::io::Error::last_os_error())));
-    }
-    Ok(Lock(file))
+    crate::labwc::lock_rc(path).map_err(|e| ColorError::Os(os_error_path(&e, &crate::labwc::rc_lock_path(path))))
 }
 
 /// `Path.resolve()` (non-strict).

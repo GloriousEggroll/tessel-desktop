@@ -43,6 +43,45 @@ impl Level {
     }
 }
 
+/// Adaptive sync for one screen. Automatic (in neither VRR_OFF nor VRR_ALWAYS)
+/// turns it on only while an app is fullscreen on that screen.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum VrrMode {
+    #[default]
+    Auto,
+    Always,
+    Off,
+}
+
+impl VrrMode {
+    /// The name in the daemon's state (`VRR_MODE`).
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Always => "always",
+            Self::Off => "off",
+        }
+    }
+
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "auto" => Some(Self::Auto),
+            "always" => Some(Self::Always),
+            "off" => Some(Self::Off),
+            _ => None,
+        }
+    }
+
+    /// The `mode` of labwc's `<adaptiveSyncOutputs><output>`.
+    pub fn labwc(self) -> &'static str {
+        match self {
+            Self::Auto => "fullscreen",
+            Self::Always => "yes",
+            Self::Off => "no",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModeChoice {
     Max,
@@ -77,6 +116,8 @@ pub struct Cfg {
     pub modes: Vec<(String, ModeChoice)>,
     pub transforms: Vec<(String, i32)>,
     pub vrr_off: Vec<String>,
+    /// Screens with adaptive sync always on. VRR_OFF wins over this.
+    pub vrr_always: Vec<String>,
     pub callback: String,
     pub lid_monitor: bool,
     pub threshold: Level,
@@ -88,7 +129,7 @@ impl Default for Cfg {
         Self {
             arrange: Arrange::Row, align: Align::Top, order: Vec::new(), scaling: true, round_base: 8, round: Round::Nearest,
             auto_scale: false, dpi: SCREEN_SIZE_DPI, auto_min: 1.0, auto_max: -1.0, scales: Vec::new(), modes: Vec::new(), transforms: Vec::new(),
-            vrr_off: Vec::new(), callback: DEFAULT_CALLBACK.into(), lid_monitor: true, threshold: Level::Warning,
+            vrr_off: Vec::new(), vrr_always: Vec::new(), callback: DEFAULT_CALLBACK.into(), lid_monitor: true, threshold: Level::Warning,
             disabled: vec![(LAPTOP_PANEL.into(), vec![Condition { lid: Some(LidCondition::Closed), ..Default::default() }])],
         }
     }
@@ -198,6 +239,7 @@ pub struct Partial {
     pub transform_keys: Vec<String>,
     pub transforms: Vec<(String, i32)>,
     pub vrr_off: Vec<String>,
+    pub vrr_always: Vec<String>,
     pub disabled: Vec<(String, Vec<Condition>)>,
 }
 
@@ -223,6 +265,7 @@ impl Partial {
         out.callback = map.get("CALLBACK_CMD").and_then(Value::as_str).map(str::to_owned);
         out.order = strings(map.get("ORDER"));
         out.vrr_off = strings(map.get("VRR_OFF"));
+        out.vrr_always = strings(map.get("VRR_ALWAYS"));
         if let Some(scales) = map.get("SCALE").and_then(Value::as_object) {
             for (name, value) in scales {
                 out.scale_keys.push(name.clone());
@@ -279,6 +322,7 @@ impl Cfg {
         cfg.modes = partial.modes;
         cfg.transforms = partial.transforms;
         cfg.vrr_off = partial.vrr_off;
+        cfg.vrr_always = partial.vrr_always;
         // A DISABLED key, even empty, replaces the default lid rule.
         if get("DISABLED").is_some() {
             cfg.disabled = partial.disabled;
@@ -341,9 +385,11 @@ impl Cfg {
         for (name, value) in &from.modes { upsert(&mut merged.modes, name.clone(), value.clone()); }
         for (name, value) in &from.transforms { upsert(&mut merged.transforms, name.clone(), *value); }
         for (name, value) in &from.disabled { upsert(&mut merged.disabled, name.clone(), value.clone()); }
-        for name in &from.vrr_off {
-            if !merged.vrr_off.contains(name) {
-                merged.vrr_off.push(name.clone());
+        for (list, names) in [(&mut merged.vrr_off, &from.vrr_off), (&mut merged.vrr_always, &from.vrr_always)] {
+            for name in names {
+                if !list.contains(name) {
+                    list.push(name.clone());
+                }
             }
         }
         if !from.order.is_empty() {
@@ -359,6 +405,7 @@ impl Cfg {
         merged.modes.retain(|(name, _)| !from.mode_keys.contains(name));
         merged.transforms.retain(|(name, _)| !from.transform_keys.contains(name));
         merged.vrr_off.retain(|name| !from.vrr_off.contains(name));
+        merged.vrr_always.retain(|name| !from.vrr_always.contains(name));
         merged.disabled.retain(|(name, _)| !from.disabled.iter().any(|(other, _)| other == name));
         // Any ORDER in a removal means no saved order at all.
         if !from.order.is_empty() {
@@ -376,10 +423,12 @@ impl Cfg {
         let mut merged = self.clone();
         if from.scaling.is_some() { merged.scaling = !merged.scaling; }
         if from.auto_scale.is_some() { merged.auto_scale = !merged.auto_scale; }
-        for name in &from.vrr_off {
-            match merged.vrr_off.iter().position(|other| other == name) {
-                Some(index) => { merged.vrr_off.remove(index); }
-                None => merged.vrr_off.push(name.clone()),
+        for (list, names) in [(&mut merged.vrr_off, &from.vrr_off), (&mut merged.vrr_always, &from.vrr_always)] {
+            for name in names {
+                match list.iter().position(|other| other == name) {
+                    Some(index) => { list.remove(index); }
+                    None => list.push(name.clone()),
+                }
             }
         }
         for (name, value) in &from.disabled {
@@ -415,6 +464,7 @@ impl Cfg {
         })).collect()));
         out.insert("TRANSFORM".into(), or_null(self.transforms.iter().map(|(name, value)| (name.clone(), transform_name(*value).into())).collect()));
         out.insert("VRR_OFF".into(), json!(self.vrr_off));
+        out.insert("VRR_ALWAYS".into(), json!(self.vrr_always));
         out.insert("CALLBACK_CMD".into(), self.callback.clone().into());
         out.insert("LAPTOP_LID_MONITOR".into(), self.lid_monitor.into());
         out.insert("LOG_THRESHOLD".into(), self.threshold.name().into());
@@ -491,6 +541,8 @@ TRANSFORM:
   HDMI-A-1: 90
 VRR_OFF:
 - (null) (null) (DP-2)
+VRR_ALWAYS:
+- '!^HDMI'
 CALLBACK_CMD: "# way-displays-gui primary output begin\nif true; then\n  echo 'a'\nfi\n"
 LAPTOP_LID_MONITOR: TRUE
 LOG_THRESHOLD: INFO
@@ -507,6 +559,7 @@ DISABLED:
         assert_eq!(cfg.modes[1].1, ModeChoice::Max);
         assert_eq!(cfg.transforms, vec![("HDMI-A-1".to_owned(), 1)]);
         assert_eq!(cfg.vrr_off, ["(null) (null) (DP-2)"]);
+        assert_eq!(cfg.vrr_always, ["!^HDMI"]);
         assert!(cfg.callback.starts_with("# way-displays-gui primary output begin\n") && cfg.callback.ends_with("fi\n"));
         assert_eq!(cfg.threshold, Level::Info);
         assert!(cfg.disabled.is_empty(), "an empty DISABLED turns the default lid rule off");
@@ -552,18 +605,20 @@ DISABLED:
     #[test]
     fn set_and_del_merge_like_the_gui_expects() {
         let cfg = Cfg::load(FILE).unwrap();
-        let set = Partial::from_value(&json!({"SCALE": {"X": 1.5}, "VRR_OFF": ["X"], "DISABLED": {"Y": null}, "ORDER": ["Z"], "TRANSFORM": {"Z": "FLIPPED-90"}}));
+        let set = Partial::from_value(&json!({"SCALE": {"X": 1.5}, "VRR_OFF": ["X"], "VRR_ALWAYS": ["W", "!^HDMI"], "DISABLED": {"Y": null}, "ORDER": ["Z"], "TRANSFORM": {"Z": "FLIPPED-90"}}));
         let merged = cfg.merged_set(&set);
         assert!(merged.scales.contains(&("X".to_owned(), 1.5)) && merged.scales.len() == 3);
         assert_eq!(merged.order, ["Z"]);
         assert!(merged.vrr_off.contains(&"X".to_owned()) && merged.vrr_off.contains(&"(null) (null) (DP-2)".to_owned()));
+        assert_eq!(merged.vrr_always, ["!^HDMI", "W"], "added once, after what was there");
         assert!(merged.transforms.contains(&("Z".to_owned(), 5)));
         assert_eq!(merged.disabled, vec![("Y".to_owned(), vec![])]);
 
-        let del = Partial::from_value(&json!({"SCALE": {"X": true}, "VRR_OFF": ["X"], "DISABLED": {"Y": null}, "TRANSFORM": {"Z": "NORMAL"}, "CALLBACK_CMD": ""}));
+        let del = Partial::from_value(&json!({"SCALE": {"X": true}, "VRR_OFF": ["X"], "VRR_ALWAYS": ["W"], "DISABLED": {"Y": null}, "TRANSFORM": {"Z": "NORMAL"}, "CALLBACK_CMD": ""}));
         let removed = merged.merged_del(&del);
         assert_eq!(removed.scales, cfg.scales);
         assert_eq!(removed.vrr_off, cfg.vrr_off);
+        assert_eq!(removed.vrr_always, cfg.vrr_always);
         assert!(removed.disabled.is_empty());
         assert_eq!(removed.transforms, cfg.transforms);
         assert_eq!(removed.callback, "", "CALLBACK_CMD in a removal turns the callback off");
@@ -572,12 +627,25 @@ DISABLED:
     #[test]
     fn toggle_flips_what_it_names() {
         let cfg = Cfg::load(FILE).unwrap();
-        let toggle = Partial::from_value(&json!({"AUTO_SCALE": true, "VRR_OFF": ["(null) (null) (DP-2)", "New"], "DISABLED": {"Y": null}}));
+        let toggle = Partial::from_value(&json!({"AUTO_SCALE": true, "VRR_OFF": ["(null) (null) (DP-2)", "New"], "VRR_ALWAYS": ["!^HDMI", "Other"], "DISABLED": {"Y": null}}));
         let flipped = cfg.merged_toggle(&toggle);
         assert!(!flipped.auto_scale);
         assert_eq!(flipped.vrr_off, ["New"]);
+        assert_eq!(flipped.vrr_always, ["Other"]);
         assert_eq!(flipped.disabled.len(), 1);
         assert_eq!(flipped.merged_toggle(&toggle).auto_scale, cfg.auto_scale);
+    }
+
+    #[test]
+    fn vrr_mode_names() {
+        for mode in [VrrMode::Auto, VrrMode::Always, VrrMode::Off] {
+            assert_eq!(VrrMode::from_name(mode.name()), Some(mode));
+        }
+        assert_eq!(VrrMode::default(), VrrMode::Auto);
+        assert_eq!((VrrMode::Auto.labwc(), VrrMode::Always.labwc(), VrrMode::Off.labwc()), ("fullscreen", "yes", "no"));
+        assert_eq!(VrrMode::from_name("on"), None);
+        let text = Cfg::default().file_text();
+        assert!(text.contains("VRR_OFF: []") && text.contains("VRR_ALWAYS: []"), "{text}");
     }
 
     #[test]

@@ -70,7 +70,7 @@ pub static SETTINGS: &[Setting] = &[
     Setting { section: "displays", key: "scale", title: "Scale Override", detail: "Change the size of text and controls on each monitor.", keywords: "display screen dpi scaling fractional zoom size", labels: &["Scale Override"], target: "", subpage: "" },
     Setting { section: "displays", key: "orientation", title: "Orientation", detail: "Rotate or flip a display.", keywords: "display rotation portrait landscape flip", labels: &["Orientation"], target: "", subpage: "" },
     Setting { section: "displays", key: "primary", title: "Primary", detail: "Choose the primary display.", keywords: "display primary main screen monitor", labels: &["Primary"], target: "", subpage: "" },
-    Setting { section: "displays", key: "vrr", title: "Adaptive Sync (VRR)", detail: "Configure variable refresh rate for each monitor.", keywords: "display vrr freesync gsync adaptive sync refresh", labels: &["Adaptive Sync (VRR)"], target: "", subpage: "" },
+    Setting { section: "displays", key: "vrr", title: "Adaptive Sync (VRR)", detail: "Configure variable refresh rate for each monitor.", keywords: "display vrr freesync gsync g-sync adaptive sync variable refresh rate fullscreen automatic always off", labels: &["Adaptive Sync (VRR)"], target: "", subpage: "" },
     Setting { section: "displays", key: "color_profile", title: "SDR display profile", detail: "Assign a calibrated ICC display profile.", keywords: "display color colour icc icm profile photo video editing calibration gamut", labels: &["SDR display profile"], target: "", subpage: "" },
     Setting { section: "displays", key: "calibration", title: "Apply calibration curves", detail: "Apply the ICC profile’s video card calibration.", keywords: "display color vcgt gamma calibration curves", labels: &["Apply calibration curves"], target: "", subpage: "" },
     Setting { section: "displays", key: "color_depth", title: "SDR color depth", detail: "Choose 8-bit or 10-bit SDR output independently of HDR.", keywords: "display color bit depth 10 bit banding precision photo video", labels: &["SDR color depth"], target: "", subpage: "" },
@@ -352,6 +352,9 @@ mod tests {
             ("media", "dock", "media"), ("music player", "dock", "media"),
         ] {
             assert!(keys(&index, query).contains(&(section, key)), "{query}");
+        }
+        for query in ["vrr", "adaptive sync", "freesync", "g-sync", "gsync", "variable refresh"] {
+            assert!(keys(&index, query).contains(&("displays", "vrr")), "{query}");
         }
         assert!(index.search("not_a_real_setting_zyx").is_empty());
         assert!(index.search("").is_empty());

@@ -2121,5 +2121,8 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "재생 중인 항목을 재생 컨트롤과 함께 패널에 표시합니다. 끄면 패널이 미디어 플레이어를 더 이상 따라가지 않습니다.",
   "More apps": "더 많은 앱",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "시스템 트레이에서 더 많은 앱을 클릭하면 다른 애플릿이 표시됩니다. 애플릿을 계속 표시하려면 항상 표시됨을 켜십시오.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "선택한 애플리케이션은 더 많은 앱을 클릭하지 않아도 시스템 트레이에 계속 표시됩니다."
+  "Selected applications stay shown in the system tray without clicking More apps.": "선택한 애플리케이션은 더 많은 앱을 클릭하지 않아도 시스템 트레이에 계속 표시됩니다.",
+  "Always": "항상",
+  "On only while an app is fullscreen on this screen.": "이 화면에서 앱이 전체 화면일 때만 켜집니다.",
+  "Adaptive Sync is not available on this screen.": "이 화면에서는 가변 주사율을 사용할 수 없습니다."
 }

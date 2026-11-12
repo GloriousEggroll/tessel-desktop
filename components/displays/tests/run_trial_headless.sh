@@ -29,7 +29,7 @@ export HOME="$R/home" XDG_CONFIG_HOME="$R/home/.config" XDG_CACHE_HOME="$R/home/
 "$TARGET/debug/tessel-displays" --daemon > "$R/daemon.log" 2>&1 &
 D=\$!
 sleep 2
-TESSEL_DISPLAYS_TRIAL_ISOLATED=1 TRIAL_SHOTS="$R/shots" DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none \
+TESSEL_DISPLAYS_TRIAL_ISOLATED=1 TRIAL_SHOTS="$R/shots" TRIAL_LABWC_RC="$R/cfg/rc.xml" DBUS_SYSTEM_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS" GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none \
 GSK_RENDERER=cairo GSETTINGS_BACKEND=memory TMPDIR="$R/tmp" timeout 90 "$BIN" > "$R/log" 2>&1; echo \$? > "$R/result"
 kill \$D; wait \$D 2>/dev/null
 labwc --exit

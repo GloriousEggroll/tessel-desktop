@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Zobrazovať na paneli, čo sa prehráva, s ovládaním prehrávania. Keď je vypnuté, panel prestane sledovať prehrávače médií.",
   "More apps": "Ďalšie aplikácie",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Kliknutím na Ďalšie aplikácie v oblasti oznámení zobrazíte ostatné applety. Zapnite Vždy viditeľné, aby applet zostal zobrazený.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Vybrané aplikácie zostanú zobrazené v oblasti oznámení bez kliknutia na Ďalšie aplikácie."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Vybrané aplikácie zostanú zobrazené v oblasti oznámení bez kliknutia na Ďalšie aplikácie.",
+  "Automatic": "Automaticky",
+  "Always": "Vždy",
+  "Adaptive Sync (VRR)": "Adaptívna synchronizácia (VRR)",
+  "On only while an app is fullscreen on this screen.": "Zapnutá len vtedy, keď je na tejto obrazovke aplikácia na celú obrazovku.",
+  "Adaptive Sync is not available on this screen.": "Adaptívna synchronizácia nie je na tejto obrazovke dostupná."
 }

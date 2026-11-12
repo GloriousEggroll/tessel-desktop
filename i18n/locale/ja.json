@@ -2121,5 +2121,8 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "再生中の内容を再生コントロール付きでパネルに表示します。オフにすると、パネルはメディアプレーヤーの監視を停止します。",
   "More apps": "その他のアプリ",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "システムトレイの「その他のアプリ」をクリックすると、ほかのアプレットが表示されます。アプレットを表示したままにするには「常に表示」をオンにします。",
-  "Selected applications stay shown in the system tray without clicking More apps.": "選択したアプリケーションは、「その他のアプリ」をクリックしなくてもシステムトレイに表示されたままになります。"
+  "Selected applications stay shown in the system tray without clicking More apps.": "選択したアプリケーションは、「その他のアプリ」をクリックしなくてもシステムトレイに表示されたままになります。",
+  "Always": "常に",
+  "On only while an app is fullscreen on this screen.": "この画面でアプリが全画面表示されている間だけオンになります。",
+  "Adaptive Sync is not available on this screen.": "この画面では可変リフレッシュレートを利用できません。"
 }

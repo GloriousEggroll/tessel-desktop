@@ -6,6 +6,11 @@
 //! Clients (the Displays window, Brightness, Global Settings) talk to it over
 //! `$XDG_RUNTIME_DIR/tessel-displays.sock` in the protocol way-displays used:
 //! `OP: <OP>\n<yaml>`, answered with YAML, then the socket closes.
+//!
+//! Adaptive sync is not switched through the protocol. The daemon writes each
+//! screen's choice (VRR_OFF, VRR_ALWAYS or neither: only while fullscreen) into
+//! a block of labwc's rc.xml, and tests each screen once per mode to tell
+//! whether the compositor accepts adaptive sync there.
 
 pub mod config;
 pub mod layout;
@@ -51,7 +56,13 @@ enum Phase { Idle, Outstanding, Succeeded, Failed, Cancelled }
 
 /// What the change in flight was, for telling how to handle its outcome.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Delta { None, Mode(u32, u32), Vrr(u32) }
+enum Delta {
+    None,
+    Mode(u32, u32),
+    /// A test (never applied) of adaptive sync on a head: its id, the current
+    /// mode tested and the serial used.
+    Probe(u32, Option<u32>, u32),
+}
 
 /// A client waiting for a change to finish.
 struct Operation {
@@ -79,6 +90,10 @@ struct Daemon {
     blocked: bool,
     lid: Lid,
     operation: Option<Operation>,
+    /// Heads or settings changed since rc.xml's adaptive sync block was checked.
+    vrr_sync: bool,
+    /// A capability test was cancelled with this serial: wait for a newer one.
+    probe_cancelled: Option<u32>,
 }
 
 impl Daemon {
@@ -86,7 +101,14 @@ impl Daemon {
         Self {
             cfg, file_text, heads: Vec::new(), head_proxies: HashMap::new(), mode_proxies: HashMap::new(), mode_owner: HashMap::new(),
             manager: None, serial: None, phase: Phase::Idle, delta: Delta::None, summary: String::new(), retries: 0, blocked: false,
-            lid: None, operation: None,
+            lid: None, operation: None, vrr_sync: true, probe_cancelled: None,
+        }
+    }
+
+    /// Print only: for what is no client's business (rc.xml upkeep).
+    fn note(&self, level: Level, message: &str) {
+        if level >= self.cfg.threshold {
+            eprintln!("tessel-displays: {}: {message}", level.name());
         }
     }
 
@@ -140,11 +162,20 @@ impl Daemon {
             Phase::Outstanding => return,
             Phase::Succeeded => {
                 self.phase = Phase::Idle;
-                self.handle_success();
+                if !self.finish_probe(Some(true)) {
+                    self.handle_success();
+                }
             }
             Phase::Failed => {
                 self.phase = Phase::Idle;
-                self.handle_failure();
+                if !self.finish_probe(Some(false)) {
+                    self.handle_failure();
+                }
+            }
+            // A cancelled test is tried again with the next serial, quietly.
+            Phase::Cancelled if matches!(self.delta, Delta::Probe(..)) => {
+                self.phase = Phase::Idle;
+                self.finish_probe(None);
             }
             Phase::Cancelled => {
                 self.phase = Phase::Idle;
@@ -164,17 +195,101 @@ impl Daemon {
         if self.serial.is_none() {
             return;
         }
+        self.sync_adaptive_sync();
         layout::desire(&self.cfg, &mut self.heads, self.lid);
-        for head in &mut self.heads {
-            // Without the protocol's adaptive sync there is nothing to ask for.
-            if self.head_proxies.get(&head.id).is_some_and(|proxy| proxy.version() < 4) {
-                head.vrr_failed = true;
-                head.des.vrr = head.cur.vrr;
-            }
-        }
         if !self.blocked {
             self.apply(qh);
         }
+        // Tests only while nothing else is in flight; they change nothing.
+        if self.phase == Phase::Idle {
+            self.probe(qh);
+        }
+    }
+
+    // ------------------------------------------------------ adaptive sync
+
+    /// Make rc.xml's adaptive sync block match every connected screen's choice.
+    fn sync_adaptive_sync(&mut self) {
+        if self.heads.is_empty() || !std::mem::take(&mut self.vrr_sync) {
+            return;
+        }
+        if std::env::var_os("LABWC_PID").is_none_or(|pid| pid.is_empty()) {
+            return self.note(Level::Debug, "Not running under labwc: adaptive sync is left to the compositor.");
+        }
+        let modes = layout::vrr_modes(&self.cfg, &self.heads);
+        let path = crate::labwc::labwc_config_path();
+        match crate::labwc::sync_adaptive_sync_with(&path, &modes, &crate::compat::fsx::os_replace, &reconfigure_labwc) {
+            Ok(crate::labwc::BlockWrite::NoFile) => {
+                self.note(Level::Debug, &format!("No {}: adaptive sync is left to the compositor.", path.display()));
+            }
+            Ok(crate::labwc::BlockWrite::Unchanged) => {}
+            Ok(crate::labwc::BlockWrite::Written) => {
+                let list: Vec<String> = modes.iter().map(|(name, mode)| format!("{name} {}", mode.labwc())).collect();
+                self.note(Level::Info, &format!("Adaptive sync in {}: {}", path.display(), list.join(", ")));
+            }
+            Err(error) => self.note(Level::Warning, &format!("Could not set adaptive sync in {}: {error}", path.display())),
+        }
+    }
+
+    /// Ask the compositor, with a test that changes nothing, whether the next
+    /// unknown head takes adaptive sync in its current mode.
+    fn probe(&mut self, qh: &QueueHandle<Self>) {
+        let (Some(manager), Some(serial)) = (self.manager.clone(), self.serial) else { return };
+        if self.probe_cancelled == Some(serial) {
+            return;
+        }
+        while let Some(index) = layout::vrr_probe_candidate(&self.heads) {
+            let head = &mut self.heads[index];
+            head.vrr_probed = head.cur.mode;
+            let (id, mode) = (head.id, head.cur.mode);
+            if head.cur.vrr {
+                self.set_capable(id, true);
+                continue;
+            }
+            // Without the protocol's adaptive sync it stays unknown.
+            let Some(proxy) = self.head_proxies.get(&id).filter(|proxy| proxy.version() >= 4) else { continue };
+            let configuration = manager.create_configuration(serial, qh, ());
+            configuration.enable_head(proxy, qh, ()).set_adaptive_sync(AdaptiveSyncState::Enabled);
+            configuration.test();
+            self.delta = Delta::Probe(id, mode, serial);
+            self.phase = Phase::Outstanding;
+            return;
+        }
+    }
+
+    /// The outcome of a capability test: `None` when it was cancelled. False
+    /// when no test was in flight.
+    fn finish_probe(&mut self, capable: Option<bool>) -> bool {
+        let Delta::Probe(id, mode, serial) = self.delta else { return false };
+        self.delta = Delta::None;
+        match capable {
+            Some(capable) => {
+                self.probe_cancelled = None;
+                self.set_capable(id, capable);
+            }
+            None => {
+                // Tested again with the next serial.
+                self.probe_cancelled = Some(serial);
+                if let Some(head) = self.head_mut(id).filter(|head| head.vrr_probed == mode) {
+                    head.vrr_probed = None;
+                }
+            }
+        }
+        true
+    }
+
+    fn set_capable(&mut self, id: u32, capable: bool) {
+        let Some(head) = self.head_mut(id) else { return };
+        if head.vrr_capable == Some(capable) {
+            return;
+        }
+        head.vrr_capable = Some(capable);
+        let message = if capable {
+            format!("{}: adaptive sync is available", head.name)
+        } else {
+            format!("{}: adaptive sync is not available (the compositor refused a test)", head.name)
+        };
+        self.log(Level::Info, &message);
     }
 
     fn handle_success(&mut self) {
@@ -186,13 +301,7 @@ impl Daemon {
                     head.cur.mode = Some(mode);
                 }
             }
-            // Some compositors report refused adaptive sync as success.
-            Delta::Vrr(id) => {
-                if self.heads.iter().find(|head| head.id == id).is_some_and(|head| head.des.vrr != head.cur.vrr) {
-                    return self.handle_failure();
-                }
-            }
-            Delta::None => {}
+            Delta::None | Delta::Probe(..) => {}
         }
         let summary = std::mem::take(&mut self.summary);
         self.log(Level::Info, &format!("Changes successful: {summary}"));
@@ -218,13 +327,7 @@ impl Daemon {
                     self.callback(Level::Error, &message);
                 }
             }
-            Delta::Vrr(id) => {
-                let Some(head) = self.head_mut(id) else { return };
-                head.vrr_failed = true;
-                let message = tr!("{name}: could not change adaptive sync.", name = head.name.as_str());
-                self.log(Level::Warning, &message);
-                self.callback(Level::Warning, &message);
-            }
+            Delta::Probe(..) => {}
             Delta::None => {
                 // Not fatal: exiting would only repeat this through the service's
                 // restarts. Wait until something changes instead.
@@ -261,18 +364,6 @@ impl Daemon {
                 self.delta = Delta::Mode(head.id, mode_id);
                 self.summary = describe_mode(head, mode_id);
                 configuration.enable_head(proxy, qh, ()).set_mode(mode);
-            }
-            Plan::Vrr(index) => {
-                let head = &self.heads[index];
-                let Some(proxy) = self.head_proxies.get(&head.id) else { return configuration.destroy() };
-                self.delta = Delta::Vrr(head.id);
-                self.summary = if head.des.vrr {
-                    tr!("{name}: adaptive sync on.", name = head.name.as_str())
-                } else {
-                    tr!("{name}: adaptive sync off.", name = head.name.as_str())
-                };
-                let state = if head.des.vrr { AdaptiveSyncState::Enabled } else { AdaptiveSyncState::Disabled };
-                configuration.enable_head(proxy, qh, ()).set_adaptive_sync(state);
             }
             Plan::All(indices) => {
                 let mut summary = Vec::new();
@@ -336,6 +427,10 @@ impl Daemon {
         }
         out.insert("MODES".into(), head.modes.iter().map(mode_value).collect());
         out.insert("MODES_FAILED".into(), head.modes_failed.iter().map(mode_value).collect());
+        out.insert("VRR_MODE".into(), layout::vrr_mode(&self.cfg, head).name().into());
+        if let Some(capable) = head.vrr_capable {
+            out.insert("VRR_CAPABLE".into(), capable.into());
+        }
         Value::Object(out)
     }
 
@@ -405,6 +500,7 @@ impl Daemon {
                 };
                 if merged != self.cfg {
                     self.cfg = merged;
+                    self.vrr_sync = true;
                 }
                 self.blocked = false;
             }
@@ -443,6 +539,7 @@ impl Daemon {
             Ok(cfg) => {
                 self.cfg = cfg;
                 self.blocked = false;
+                self.vrr_sync = true;
             }
             Err(error) => {
                 let message = tr!("Keeping the current display layout: {path} could not be read: {error}", path = path.display().to_string(), error = error);
@@ -470,6 +567,25 @@ fn transform(value: i32) -> wl_output::Transform {
         6 => wl_output::Transform::Flipped180,
         7 => wl_output::Transform::Flipped270,
         _ => wl_output::Transform::Normal,
+    }
+}
+
+/// `labwc --reconfigure`, not waited for: children of the daemon are reaped
+/// by the kernel (SIGCHLD is ignored), so there is no exit status to read.
+fn reconfigure_labwc() -> (bool, Option<String>) {
+    let mut command = std::process::Command::new("labwc");
+    command.arg("--reconfigure").stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null());
+    // SAFETY: only async-signal-safe calls between fork and exec.
+    unsafe {
+        command.pre_exec(|| {
+            libc::signal(libc::SIGCHLD, libc::SIG_DFL);
+            Ok(())
+        });
+    }
+    match command.spawn() {
+        Ok(_) => (true, None),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => (false, Some("labwc is not installed".into())),
+        Err(error) => (false, Some(error.to_string())),
     }
 }
 
@@ -529,6 +645,7 @@ impl Dispatch<Manager, ()> for Daemon {
                 state.serial = Some(serial);
                 // Monitors changed, so a refused layout may work now.
                 state.blocked = false;
+                state.vrr_sync = true;
             }
             zwlr_output_manager_v1::Event::Finished => state.manager = None,
             _ => {}
@@ -839,13 +956,64 @@ pub fn run() -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    fn daemon_with_head(cfg: Cfg) -> Daemon {
+        let mut daemon = Daemon::new(cfg, String::new());
+        daemon.heads.push(Head { id: 1, name: "DP-2".into(), description: "Dell Inc. AW3225QF (DP-2)".into(),
+                                 cur: layout::State { enabled: true, mode: Some(10), vrr: true, ..Default::default() }, ..Default::default() });
+        daemon
+    }
+
+    #[test]
+    fn the_state_names_each_screens_adaptive_sync_mode_and_capability() {
+        let mut daemon = daemon_with_head(Cfg::default());
+        let value = daemon.head_value(&daemon.heads[0]);
+        assert_eq!(value["VRR_MODE"], json!("auto"));
+        assert!(value.get("VRR_CAPABLE").is_none(), "unknown is left out");
+        assert_eq!(value["CURRENT"]["VRR"], json!(true), "VRR is what the screen does right now");
+        daemon.cfg.vrr_always = vec!["DP-2".into()];
+        daemon.heads[0].vrr_capable = Some(false);
+        let value = daemon.head_value(&daemon.heads[0]);
+        assert_eq!((value["VRR_MODE"].clone(), value["VRR_CAPABLE"].clone()), (json!("always"), json!(false)));
+        daemon.cfg.vrr_off = vec!["aw3225qf".into()];
+        daemon.heads[0].vrr_capable = Some(true);
+        let value = daemon.head_value(&daemon.heads[0]);
+        assert_eq!((value["VRR_MODE"].clone(), value["VRR_CAPABLE"].clone()), (json!("off"), json!(true)));
+        let reply = daemon.reply(true, true, Vec::new(), 0);
+        assert_eq!(reply["CFG"]["VRR_ALWAYS"], json!(["DP-2"]));
+        assert_eq!(reply["STATE"]["HEADS"][0]["VRR_MODE"], json!("off"));
+    }
+
+    #[test]
+    fn capability_tests_answer_cancel_and_leave_changes_alone() {
+        let mut daemon = daemon_with_head(Cfg::default());
+        daemon.heads[0].vrr_probed = Some(10);
+        daemon.delta = Delta::Probe(1, Some(10), 7);
+        assert!(daemon.finish_probe(None));
+        assert_eq!((daemon.probe_cancelled, daemon.heads[0].vrr_probed, daemon.delta), (Some(7), None, Delta::None),
+                   "a cancelled test is tried again with a newer serial");
+        assert_eq!(layout::vrr_probe_candidate(&daemon.heads), Some(0));
+        daemon.delta = Delta::Probe(1, Some(10), 8);
+        assert!(daemon.finish_probe(Some(false)));
+        assert_eq!((daemon.heads[0].vrr_capable, daemon.probe_cancelled), (Some(false), None));
+        daemon.delta = Delta::Probe(1, Some(10), 8);
+        assert!(daemon.finish_probe(Some(true)));
+        assert_eq!(daemon.heads[0].vrr_capable, Some(true));
+        daemon.delta = Delta::Probe(99, None, 8);
+        assert!(daemon.finish_probe(Some(true)), "a head that went away is ignored");
+        daemon.delta = Delta::Mode(1, 10);
+        assert!(!daemon.finish_probe(Some(true)), "the outcome of a real change is not a test's");
+        assert_eq!(daemon.delta, Delta::Mode(1, 10));
+    }
+
     /// Every message the daemon can show, in every language, with its placeholders intact.
-    const MESSAGES: [&str; 17] = [
+    const MESSAGES: [&str; 14] = [
         "Display settings", "Display warning", "Display error", "Display changes applied.", "{name}: reapplying settings.",
-        "{name}: {width}x{height} at {hz} Hz.", "{name}: adaptive sync on.", "{name}: adaptive sync off.",
+        "{name}: {width}x{height} at {hz} Hz.",
         "{name}: scale {scale} at position {x}, {y}.", "{name}: off.", "Display changes were cancelled. Retrying (attempt {attempt}).",
         "Display changes were cancelled after {retries} retries.", "{name}: could not set {width}x{height} at {hz} Hz. Trying another mode.",
-        "{name}: could not change adaptive sync.", "The compositor refused the display layout: {details}",
+        "The compositor refused the display layout: {details}",
         "Could not write {path}: {error}", "Keeping the current display layout: {path} could not be read: {error}",
     ];
 

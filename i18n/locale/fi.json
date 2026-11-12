@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Näytä paneelissa, mitä toistetaan, toiston säätimineen. Kun asetus on pois päältä, paneeli lakkaa seuraamasta mediasoittimia.",
   "More apps": "Lisää sovelluksia",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Napsauta ilmoitusalueen Lisää sovelluksia -painiketta nähdäksesi muut sovelmat. Ota Aina näkyvissä käyttöön, jotta sovelma pysyy näkyvissä.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Valitut sovellukset pysyvät näkyvissä ilmoitusalueella ilman Lisää sovelluksia -painikkeen napsauttamista."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Valitut sovellukset pysyvät näkyvissä ilmoitusalueella ilman Lisää sovelluksia -painikkeen napsauttamista.",
+  "Automatic": "Automaattinen",
+  "Always": "Aina",
+  "Adaptive Sync (VRR)": "Mukautuva synkronointi (VRR)",
+  "On only while an app is fullscreen on this screen.": "Käytössä vain, kun sovellus on koko näytön tilassa tällä näytöllä.",
+  "Adaptive Sync is not available on this screen.": "Mukautuva synkronointi ei ole käytettävissä tällä näytöllä."
 }

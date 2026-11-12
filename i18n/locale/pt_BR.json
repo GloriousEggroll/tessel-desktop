@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Mostrar no painel o que está tocando, com controles de reprodução. Quando desativado, o painel deixa de acompanhar os players de mídia.",
   "More apps": "Mais aplicativos",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Clique em Mais aplicativos na bandeja do sistema para mostrar os outros miniaplicativos. Ative Sempre visível para manter um miniaplicativo à vista.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Os aplicativos selecionados ficam à vista na bandeja do sistema sem clicar em Mais aplicativos."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Os aplicativos selecionados ficam à vista na bandeja do sistema sem clicar em Mais aplicativos.",
+  "Automatic": "Automático",
+  "Always": "Sempre",
+  "Adaptive Sync (VRR)": "Sincronização adaptativa (VRR)",
+  "On only while an app is fullscreen on this screen.": "Ativada somente enquanto um aplicativo estiver em tela cheia nesta tela.",
+  "Adaptive Sync is not available on this screen.": "A sincronização adaptativa não está disponível nesta tela."
 }

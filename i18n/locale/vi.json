@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Hiển thị nội dung đang phát trên bảng điều khiển, kèm các nút điều khiển phát. Khi tắt, bảng điều khiển ngừng theo dõi các trình phát đa phương tiện.",
   "More apps": "Thêm ứng dụng",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Nhấp vào Thêm ứng dụng trong khay hệ thống để hiện các applet khác. Bật Luôn hiển thị để giữ một applet luôn được hiện.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Các ứng dụng đã chọn vẫn được hiện trong khay hệ thống mà không cần nhấp vào Thêm ứng dụng."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Các ứng dụng đã chọn vẫn được hiện trong khay hệ thống mà không cần nhấp vào Thêm ứng dụng.",
+  "Automatic": "Tự động",
+  "Always": "Luôn luôn",
+  "Adaptive Sync (VRR)": "Đồng bộ thích ứng (VRR)",
+  "On only while an app is fullscreen on this screen.": "Chỉ bật khi có ứng dụng ở chế độ toàn màn hình trên màn hình này.",
+  "Adaptive Sync is not available on this screen.": "Đồng bộ thích ứng không khả dụng trên màn hình này."
 }

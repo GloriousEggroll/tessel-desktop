@@ -6,6 +6,8 @@
 set -eu
 R=${RUNROOT:-/run/user/1000/cbt/rust-${AGENT:-displays-daemon}}/${SOCK:-tessel}
 rm -rf "$R"; mkdir -p "$R/rt" "$R/cfg" "$R/home" "$R/tmp"; chmod 700 "$R/rt"
+# The nested labwc's own rc.xml: the daemon keeps each screen's adaptive sync mode in it.
+printf '<labwc_config>\n</labwc_config>\n' > "$R/cfg/rc.xml"
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 if [ -z "${DAEMON:-}" ]; then
     (cd "$ROOT" && cargo build -q -p tessel-displays)
@@ -51,9 +53,28 @@ for o in sorted(json.load(sys.stdin),key=lambda o:o["name"]):
     p=o.get("position") or {}
     print(o["name"],"on" if o["enabled"] else "off",o.get("scale"),o.get("transform"),p.get("x"),p.get("y"),o.get("adaptive_sync"))'; }
 ipc() { python3 -I "$R/ipc.py" "\$1"; }
+# Each screen's adaptive sync: rc.xml block, then the daemon's VRR_MODE and VRR_CAPABLE.
+vrr() { sleep 1; echo "== \$1"; python3 -I -c '
+import re,sys
+text=open(sys.argv[1]).read()
+block=re.search(r"adaptive sync begin -->(.*?)<!-- tessel-displays adaptive sync end",text,re.S)
+for name,mode in re.findall(r"name=\"([^\"]+)\" mode=\"([^\"]+)\"",block.group(1) if block else ""): print(name,"rc.xml",mode)' "$R/cfg/rc.xml"
+  ipc 'OP: GET\n' | python3 -I -c '
+import re,sys
+name=None
+for line in sys.stdin:
+    m=re.match(r"\s*-?\s*(NAME|VRR_MODE|VRR_CAPABLE): (.*)",line)
+    if not m: continue
+    if m.group(1)=="NAME": name=m.group(2)
+    elif name and name.startswith("HEADLESS"): print(name,m.group(1),m.group(2))'; }
 $DAEMON > "$R/tmp/daemon.log" 2>&1 &
 D=\$!
 layout "file: row, middle, order, scale, rotation"
+vrr "VRR_OFF !^HEADLESS: both off"
+ipc 'OP: CFG_SET\nCFG:\n  VRR_ALWAYS:\n  - HEADLESS-2\n' > /dev/null
+vrr "CFG_SET VRR_ALWAYS HEADLESS-2: VRR_OFF still wins"
+ipc 'OP: CFG_DEL\nCFG:\n  VRR_OFF:\n  - "!^HEADLESS"\n' > /dev/null
+vrr "CFG_DEL VRR_OFF: HEADLESS-1 automatic, HEADLESS-2 always"
 ipc 'OP: GET\n' > "$R/tmp/get"
 ipc 'OP: CFG_SET\nCFG:\n  ARRANGE: COLUMN\n  ALIGN: RIGHT\n  SCALE:\n    HEADLESS-1: 1.5\n' > "$R/tmp/set"
 layout "CFG_SET: column, right, new scale"

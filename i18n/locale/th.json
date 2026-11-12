@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "แสดงสิ่งที่กำลังเล่นบนแผง พร้อมปุ่มควบคุมการเล่น เมื่อปิด แผงจะหยุดติดตามโปรแกรมเล่นสื่อ",
   "More apps": "แอปเพิ่มเติม",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "คลิก แอปเพิ่มเติม ในถาดระบบเพื่อแสดงแอปเพล็ตอื่น ๆ เปิด มองเห็นเสมอ เพื่อให้แอปเพล็ตแสดงอยู่ตลอด",
-  "Selected applications stay shown in the system tray without clicking More apps.": "แอปพลิเคชันที่เลือกจะแสดงอยู่ในถาดระบบโดยไม่ต้องคลิก แอปเพิ่มเติม"
+  "Selected applications stay shown in the system tray without clicking More apps.": "แอปพลิเคชันที่เลือกจะแสดงอยู่ในถาดระบบโดยไม่ต้องคลิก แอปเพิ่มเติม",
+  "Automatic": "อัตโนมัติ",
+  "Always": "เสมอ",
+  "Adaptive Sync (VRR)": "การซิงค์แบบปรับได้ (VRR)",
+  "On only while an app is fullscreen on this screen.": "เปิดเฉพาะขณะที่มีแอปแสดงเต็มหน้าจอบนหน้าจอนี้",
+  "Adaptive Sync is not available on this screen.": "การซิงค์แบบปรับได้ใช้งานไม่ได้บนหน้าจอนี้"
 }

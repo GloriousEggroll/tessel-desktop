@@ -59,6 +59,22 @@ fn scale(name: &str) -> f64 {
     output(name)["scale"].as_f64().unwrap_or(0.0)
 }
 
+/// The nested labwc's rc.xml, which the daemon keeps the adaptive sync block in.
+fn labwc_rc() -> String {
+    std::fs::read_to_string(std::env::var("TRIAL_LABWC_RC").unwrap()).unwrap_or_default()
+}
+
+fn rc_says(connector: &str, mode: &str) -> bool {
+    tessel_displays::labwc::parse_adaptive_sync_block(&labwc_rc()).get(connector).map(String::as_str) == Some(mode)
+}
+
+/// The daemon's state of one head, fetched again.
+fn head(connector: &str) -> Value {
+    assert!(tessel_displays::ipc::get_config_data());
+    let data = tessel_displays::ipc::config_data();
+    data["STATE"]["HEADS"].as_array().unwrap().iter().find(|h| h["NAME"] == connector).cloned().unwrap()
+}
+
 fn main() {
     assert_eq!(std::env::var("TESSEL_DISPLAYS_TRIAL_ISOLATED").as_deref(), Ok("1"), "run tests/run_trial_headless.sh");
     gtk::init().unwrap();
@@ -116,6 +132,28 @@ fn main() {
     wait_for("Revert brings it back", 2.0, || scale("HEADLESS-1") == 1.0);
     assert_eq!(saved(), file_before);
     println!("ok Revert");
+
+    // Adaptive Sync: every screen starts Automatic, written into labwc's rc.xml.
+    // The headless backend refuses adaptive sync, so the test says not capable.
+    wait_for("the daemon writes the adaptive sync block", 3.0, || rc_says("HEADLESS-1", "fullscreen") && rc_says("HEADLESS-2", "fullscreen"));
+    wait_for("the capability test answers", 3.0, || head("HEADLESS-1")["VRR_CAPABLE"] == false && head("HEADLESS-2")["VRR_CAPABLE"] == false);
+    assert_eq!(head("HEADLESS-1")["VRR_MODE"], "auto");
+    window.load_monitor_data();
+    let target = widget(&window, "HEADLESS-1");
+    assert!(!target.vrr_combo.is_sensitive(), "a refused screen cannot be set");
+    assert_eq!(target.vrr_hint.text(), "Adaptive Sync is not available on this screen.");
+    println!("ok adaptive sync: written to rc.xml, refused screens cannot be set");
+    // Set anyway (as an older daemon would allow): live in rc.xml, reverted, not saved.
+    target.set_vrr_mode(tessel_displays::daemon::config::VrrMode::Always);
+    window.save_config();
+    wait_for("Always goes into rc.xml", 2.0, || rc_says("HEADLESS-1", "yes"));
+    assert_eq!(head("HEADLESS-1")["VRR_MODE"], "always");
+    assert!(rc_says("HEADLESS-2", "fullscreen"), "the other screen is unchanged");
+    window.revert_display_changes();
+    wait_for("Revert puts Automatic back", 2.0, || rc_says("HEADLESS-1", "fullscreen"));
+    assert_eq!(head("HEADLESS-1")["VRR_MODE"], "auto");
+    assert_eq!(saved(), file_before);
+    println!("ok adaptive sync: Always reverted in rc.xml, not saved");
 
     // Keep Changes: stays live, past the countdown, and is saved.
     let target = widget(&window, "HEADLESS-1");

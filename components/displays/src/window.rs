@@ -729,7 +729,7 @@ impl TesselDisplaysApp {
             return;
         }
         for widget in &widgets {
-            widget.initial_vrr.set(widget.vrr_switch.is_active());
+            widget.initial_vrr.set(widget.vrr_mode());
         }
         self.apply_primary_output();
         // Output changes can make XWayland rebuild its RandR topology just
@@ -741,20 +741,21 @@ impl TesselDisplaysApp {
             }
             ControlFlow::Break
         });
-        // Refresh only VRR after Apply. Other editors or a temporary compositor
-        // state must not turn a stale switch value into a persisted preference.
+        // Refresh only Adaptive Sync after Apply. Other editors must not turn
+        // a stale choice into a saved preference.
         if (hooks.get_config_data)() {
             let data = ipc::config_data();
             let heads: Vec<Value> = data.get("STATE").and_then(|s| s.get("HEADS")).and_then(Value::as_array).cloned().unwrap_or_default();
+            let cfg = data.get("CFG").cloned().unwrap_or_else(|| json!({}));
             self.new_configs.set(1);
             for widget in &widgets {
                 let name = widget.monitor.borrow().get("NAME").cloned().unwrap_or(Value::Null);
                 let head = heads.iter().rev().find(|h| h.get("NAME").cloned().unwrap_or(Value::Null) == name);
                 if let Some(head) = head {
-                    let vrr = head.get("DESIRED").filter(|d| truthy(d)).and_then(|d| d.get("VRR").cloned())
-                        .unwrap_or_else(|| head.get("CURRENT").and_then(|c| c.get("VRR")).cloned().unwrap_or(Value::Bool(false)));
-                    widget.initial_vrr.set(truthy(&vrr));
-                    widget.vrr_switch.set_active(truthy(&vrr));
+                    let mode = model::vrr_mode_of(head, &cfg);
+                    widget.initial_vrr.set(mode);
+                    widget.set_vrr_mode(mode);
+                    widget.set_vrr_capable(model::vrr_capable_of(head));
                 }
             }
         }

@@ -1939,5 +1939,10 @@
   "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Vis hva som spilles av i panelet, med avspillingskontroller. Når dette er av, slutter panelet å følge mediespillere.",
   "More apps": "Flere apper",
   "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klikk på Flere apper i systemkurven for å vise de andre miniprogrammene. Slå på Alltid synlig for å fortsette å vise et miniprogram.",
-  "Selected applications stay shown in the system tray without clicking More apps.": "Valgte programmer vises fortsatt i systemkurven uten at du klikker på Flere apper."
+  "Selected applications stay shown in the system tray without clicking More apps.": "Valgte programmer vises fortsatt i systemkurven uten at du klikker på Flere apper.",
+  "Automatic": "Automatisk",
+  "Always": "Alltid",
+  "Adaptive Sync (VRR)": "Adaptiv synkronisering (VRR)",
+  "On only while an app is fullscreen on this screen.": "Bare på mens et program er i fullskjerm på denne skjermen.",
+  "Adaptive Sync is not available on this screen.": "Adaptiv synkronisering er ikke tilgjengelig på denne skjermen."
 }

@@ -3,7 +3,9 @@
 //! CFG_DEL decisions) and the environment / HDR / IPC helpers.
 
 use crate::color_config::{self as color, ColorSettings};
+use crate::daemon::config::VrrMode;
 use crate::model::{self, DesiredState, LayoutModel};
+use crate::compat::fsx;
 use crate::{ipc, labwc, primary};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
@@ -231,6 +233,116 @@ fn hdr_overrides_read_and_write_only_managed_block() {
     assert_eq!(labwc::parse_labwc_hdr_xml("<labwc_config><hdrOutputs><output><name>X</name><enabled>yes</enabled></output></hdrOutputs></labwc_config>").1.get("X"), Some(&true));
 }
 
+// ------------------------------------------------------- adaptive sync
+
+fn vrr_modes(items: &[(&str, VrrMode)]) -> BTreeMap<String, VrrMode> {
+    items.iter().map(|(name, mode)| (name.to_string(), *mode)).collect()
+}
+
+#[test]
+fn adaptive_sync_block_is_inserted_replaced_and_left_alone() {
+    let dir = scratch("vrr");
+    let path = dir.join("rc.xml");
+    let before = "<?xml version=\"1.0\"?>\n<labwc_config>\n  <!-- my own comment -->\n  <core><adaptiveSync>yes</adaptiveSync></core>\n  <!-- tessel-displays HDR overrides begin -->\n  <hdrOutputs>\n    <output name=\"DP-2\" enabled=\"yes\" />\n  </hdrOutputs>\n  <!-- tessel-displays HDR overrides end -->\n</labwc_config>\n";
+    std::fs::write(&path, before).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o640)).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let reconfigure = || { calls.set(calls.get() + 1); (true, None) };
+    let modes = vrr_modes(&[("HDMI-A-1", VrrMode::Off), ("DP-2", VrrMode::Auto), ("DP-3", VrrMode::Always)]);
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &reconfigure), Ok(labwc::BlockWrite::Written));
+    assert_eq!(calls.get(), 1, "labwc reads the new block");
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(text, format!("{}\n\n  <!-- tessel-displays adaptive sync begin -->\n  <adaptiveSyncOutputs>\n    <output name=\"DP-2\" mode=\"fullscreen\" />\n    <output name=\"DP-3\" mode=\"yes\" />\n    <output name=\"HDMI-A-1\" mode=\"no\" />\n  </adaptiveSyncOutputs>\n  <!-- tessel-displays adaptive sync end -->\n</labwc_config>\n",
+                             before.trim_end().trim_end_matches("</labwc_config>").trim_end()));
+    assert_eq!(mode(&path), 0o640);
+    assert_eq!(labwc::parse_adaptive_sync_block(&text).get("DP-3").map(String::as_str), Some("yes"));
+    assert_eq!(labwc::read_labwc_hdr_config(&path).managed.get("DP-2"), Some(&true), "the HDR block is kept");
+    // The same choices: nothing written, labwc not asked.
+    let modified = std::fs::metadata(&path).unwrap().modified().unwrap();
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &reconfigure), Ok(labwc::BlockWrite::Unchanged));
+    assert_eq!((calls.get(), std::fs::metadata(&path).unwrap().modified().unwrap()), (1, modified));
+    // A change replaces only that block, once.
+    let changed = vrr_modes(&[("DP-2", VrrMode::Always)]);
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &changed, &fsx::os_replace, &reconfigure), Ok(labwc::BlockWrite::Written));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(text.matches(labwc::LABWC_VRR_BEGIN).count(), 1);
+    assert!(text.contains("<output name=\"DP-2\" mode=\"yes\" />") && !text.contains("HDMI-A-1"), "{text}");
+    assert!(text.contains("<!-- my own comment -->") && text.contains("<core><adaptiveSync>yes</adaptiveSync></core>"));
+    // The HDR writer keeps the adaptive sync block.
+    labwc::write_labwc_hdr_overrides(&path, &BTreeMap::from([("DP-2".to_owned(), false)]));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(labwc::parse_adaptive_sync_block(&text).get("DP-2").map(String::as_str), Some("yes"));
+    assert!(roxmltree::Document::parse(&text).is_ok(), "{text}");
+    // A refused reload is reported.
+    let refuse = || (false, Some("no labwc".to_owned()));
+    let err = labwc::sync_adaptive_sync_with(&path, &vrr_modes(&[("DP-2", VrrMode::Off)]), &fsx::os_replace, &refuse);
+    assert_eq!(err, Err("labwc did not reload rc.xml: no labwc".into()));
+    // The lock file sits next to rc.xml; no temporary file is left.
+    let names: Vec<String> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+    assert_eq!(names.len(), 2, "{names:?}");
+    assert!(names.contains(&"rc.xml.tessel-lock".to_owned()));
+}
+
+#[test]
+fn adaptive_sync_never_creates_an_rc_xml() {
+    let dir = scratch("vrr-missing");
+    let never = || -> (bool, Option<String>) { panic!("labwc must not be asked") };
+    let modes = vrr_modes(&[("DP-1", VrrMode::Auto)]);
+    for path in [dir.join("rc.xml"), dir.join("labwc/rc.xml")] {
+        assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &never), Ok(labwc::BlockWrite::NoFile));
+    }
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0, "not even a lock file");
+}
+
+#[test]
+fn adaptive_sync_opens_an_empty_root_and_upgrades_legacy_hdr_markers() {
+    let dir = scratch("vrr-legacy");
+    let path = dir.join("rc.xml");
+    let ok = || (true, None);
+    let modes = vrr_modes(&[("DP-1", VrrMode::Off)]);
+    std::fs::write(&path, "<?xml version=\"1.0\"?>\n<labwc_config />\n").unwrap();
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &ok), Ok(labwc::BlockWrite::Written));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(text, "<?xml version=\"1.0\"?>\n<labwc_config>\n\n  <!-- tessel-displays adaptive sync begin -->\n  <adaptiveSyncOutputs>\n    <output name=\"DP-1\" mode=\"no\" />\n  </adaptiveSyncOutputs>\n  <!-- tessel-displays adaptive sync end -->\n</labwc_config>\n");
+    std::fs::write(&path, "<labwc_config>\n  <!-- way-displays-gui HDR overrides begin -->\n  <hdrOutputs>\n    <output name=\"DP-1\" enabled=\"no\" />\n  </hdrOutputs>\n  <!-- way-displays-gui HDR overrides end -->\n</labwc_config>\n").unwrap();
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &ok), Ok(labwc::BlockWrite::Written));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(!text.contains("way-displays-gui") && text.contains(labwc::LABWC_HDR_BEGIN) && text.contains(labwc::LABWC_VRR_END), "{text}");
+    assert_eq!(labwc::read_labwc_hdr_config(&path).managed.get("DP-1"), Some(&false));
+    std::fs::write(&path, "<other/>").unwrap();
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &ok), Err("rc.xml has no closing labwc_config element".into()));
+    // A failed replace leaves rc.xml as it was and asks labwc nothing.
+    std::fs::write(&path, "<labwc_config>\n</labwc_config>\n").unwrap();
+    let fail = |_: &Path, _: &Path| Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "read only"));
+    let never = || -> (bool, Option<String>) { panic!("labwc must not be asked") };
+    assert_eq!(labwc::sync_adaptive_sync_with(&path, &modes, &fail, &never), Err("read only".into()));
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "<labwc_config>\n</labwc_config>\n");
+}
+
+#[test]
+fn rc_xml_writers_wait_for_each_other() {
+    let dir = scratch("vrr-lock");
+    let path = dir.join("rc.xml");
+    std::fs::write(&path, "<labwc_config>\n</labwc_config>\n").unwrap();
+    let held = labwc::lock_rc(&path).unwrap();
+    let writer = {
+        let path = path.clone();
+        std::thread::spawn(move || {
+            let ok = || (true, None);
+            labwc::sync_adaptive_sync_with(&path, &vrr_modes(&[("DP-1", VrrMode::Always)]), &fsx::os_replace, &ok)
+        })
+    };
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    assert!(!writer.is_finished(), "the writer waits for the lock");
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "<labwc_config>\n</labwc_config>\n");
+    // Another writer's change made while the lock was held is read, not lost.
+    std::fs::write(&path, "<labwc_config>\n  <core/>\n</labwc_config>\n").unwrap();
+    drop(held);
+    assert_eq!(writer.join().unwrap(), Ok(labwc::BlockWrite::Written));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(text.contains("<core/>") && text.contains("mode=\"yes\""), "{text}");
+}
+
 // ---------------------------------------------------------- colour config
 
 fn depth(value: i64) -> ColorSettings {
@@ -403,55 +515,133 @@ fn hdr_report_distinguishes_metadata_white_target_and_measurement() {
 
 fn state(desc: &str, name: &str) -> DesiredState {
     DesiredState { desc: desc.into(), name: Some(name.into()), width: json!(1920), height: json!(1080), refresh: json!(60000),
-                   enabled: true, enabled_changed: false, primary: false, vrr: false, vrr_changed: false, hdr: false,
+                   enabled: true, enabled_changed: false, primary: false, vrr: VrrMode::Auto, vrr_changed: false, hdr: false,
                    hdr_changed: false, scale: 1.0, scale_auto: false, transform: Some("STANDARD".into()) }
 }
 
-/// A fake daemon: CFG_SET adds VRR_OFF members, CFG_DEL removes them.
-fn apply_vrr(disabled: &mut Vec<String>, plan: &model::SavePlan) {
-    if let Some(items) = plan.del_cfg.get("VRR_OFF").and_then(Value::as_array) {
-        disabled.retain(|d| !items.iter().any(|i| i == d));
-    }
-    if let Some(items) = plan.cfg.get("VRR_OFF").and_then(Value::as_array) {
-        for item in items {
-            let item = item.as_str().unwrap().to_owned();
-            if !disabled.contains(&item) {
-                disabled.push(item);
+/// A fake daemon: CFG_SET adds VRR_OFF and VRR_ALWAYS members, CFG_DEL removes them.
+#[derive(Default)]
+struct VrrLists {
+    off: Vec<String>,
+    always: Vec<String>,
+}
+
+impl VrrLists {
+    fn apply(&mut self, plan: &model::SavePlan) {
+        for (key, list) in [("VRR_OFF", &mut self.off), ("VRR_ALWAYS", &mut self.always)] {
+            if let Some(items) = plan.del_cfg.get(key).and_then(Value::as_array) {
+                list.retain(|d| !items.iter().any(|i| i == d));
+            }
+            if let Some(items) = plan.cfg.get(key).and_then(Value::as_array) {
+                for item in items {
+                    let item = item.as_str().unwrap().to_owned();
+                    if !list.contains(&item) {
+                        list.push(item);
+                    }
+                }
             }
         }
     }
+
+    /// What the daemon makes of the lists (`layout::vrr_mode`, exact names here).
+    fn mode(&self, desc: &str) -> VrrMode {
+        if self.off.iter().any(|d| d == desc) {
+            VrrMode::Off
+        } else if self.always.iter().any(|d| d == desc) {
+            VrrMode::Always
+        } else {
+            VrrMode::Auto
+        }
+    }
+
+    fn cfg(&self) -> Value {
+        json!({"VRR_OFF": self.off, "VRR_ALWAYS": self.always})
+    }
+}
+
+#[test]
+fn every_adaptive_sync_change_saves_both_lists() {
+    let (a, name) = ("Same model DP-1", "DP-1");
+    let none = BTreeMap::new();
+    for from in [VrrMode::Auto, VrrMode::Always, VrrMode::Off] {
+        for to in [VrrMode::Auto, VrrMode::Always, VrrMode::Off] {
+            let mut lists = VrrLists::default();
+            match from {
+                VrrMode::Off => lists.off = vec![a.into(), name.into()],
+                VrrMode::Always => lists.always = vec![a.into(), name.into()],
+                VrrMode::Auto => {}
+            }
+            let mut screen = state(a, name);
+            screen.vrr = to;
+            screen.vrr_changed = from != to;
+            let plan = model::save_plan(Some(&lists.cfg()), &[Some(screen)], "", None, &none);
+            lists.apply(&plan);
+            assert_eq!(lists.mode(a), to, "{from:?} -> {to:?}: {plan:?}");
+            assert!(!lists.off.iter().chain(&lists.always).any(|d| d == name) || from == to,
+                    "{from:?} -> {to:?}: the connector-name entry is removed too");
+            let expected = |mode: VrrMode| if to == mode && from != to { Some(json!([a])) } else { None };
+            assert_eq!(plan.cfg.get("VRR_OFF").cloned(), expected(VrrMode::Off), "{from:?} -> {to:?}");
+            assert_eq!(plan.cfg.get("VRR_ALWAYS").cloned(), expected(VrrMode::Always), "{from:?} -> {to:?}");
+            if from == to {
+                assert!(plan.del_cfg.get("VRR_OFF").is_none() && plan.del_cfg.get("VRR_ALWAYS").is_none());
+            }
+        }
+    }
+    let mut screen = state(a, name);
+    (screen.vrr, screen.vrr_changed) = (VrrMode::Auto, true);
+    let plan = model::save_plan(None, &[Some(screen)], "", None, &none);
+    assert_eq!(plan.del_cfg["VRR_OFF"], json!([a, name]));
+    assert_eq!(plan.del_cfg["VRR_ALWAYS"], json!([a, name]));
 }
 
 #[test]
 fn vrr_changes_in_two_stale_editors_preserve_the_other_monitor() {
     let (a, b) = ("Same model DP-1", "Same model HDMI-A-1");
     let cfg = json!({"AUTO_SCALE": false, "CUSTOM_KEEP": {"untouched": true}, "VRR_OFF": [a, b]});
-    let mut disabled = vec![a.to_owned(), b.to_owned()];
+    let mut lists = VrrLists { off: vec![a.to_owned(), b.to_owned()], always: Vec::new() };
     let none = BTreeMap::new();
-    // First editor enables VRR on the first monitor.
+    // First editor sets the first monitor to Always.
     let mut first = [state(a, "DP-1"), state(b, "HDMI-A-1")];
-    first[0].vrr = true;
+    first[0].vrr = VrrMode::Always;
     first[0].vrr_changed = true;
+    first[1].vrr = VrrMode::Off;
     let plan = model::save_plan(Some(&cfg), &first.clone().map(Some), "", None, &none);
     assert_eq!(plan.del_cfg["VRR_OFF"], json!([a, "DP-1"]));
     assert!(plan.cfg.get("VRR_OFF").is_none());
+    assert_eq!(plan.cfg["VRR_ALWAYS"], json!([a]));
     assert_eq!(plan.cfg["CUSTOM_KEEP"], json!({"untouched": true}));
-    apply_vrr(&mut disabled, &plan);
-    assert_eq!(disabled, [b]);
-    // Second (stale) editor enables VRR on the other monitor.
+    lists.apply(&plan);
+    assert_eq!((lists.mode(a), lists.mode(b)), (VrrMode::Always, VrrMode::Off));
+    // Second (stale: both Off) editor sets the other monitor to Automatic.
     let mut second = [state(a, "DP-1"), state(b, "HDMI-A-1")];
-    second[1].vrr = true;
+    second[0].vrr = VrrMode::Off;
+    second[1].vrr = VrrMode::Auto;
     second[1].vrr_changed = true;
-    apply_vrr(&mut disabled, &model::save_plan(Some(&cfg), &second.clone().map(Some), "", None, &none));
-    assert!(disabled.is_empty());
-    // An unrelated Apply re-sends neither VRR setting.
+    lists.apply(&model::save_plan(Some(&cfg), &second.clone().map(Some), "", None, &none));
+    assert_eq!((lists.mode(a), lists.mode(b)), (VrrMode::Always, VrrMode::Auto), "the first editor's choice stays");
+    // An unrelated Apply re-sends neither setting.
     first[0].vrr_changed = false;
     let plan = model::save_plan(Some(&cfg), &first.clone().map(Some), "", None, &none);
-    assert!(plan.cfg.get("VRR_OFF").is_none() && plan.del_cfg.get("VRR_OFF").is_none());
-    second[1].vrr = false;
-    second[1].vrr_changed = true;
-    apply_vrr(&mut disabled, &model::save_plan(Some(&cfg), &second.map(Some), "", None, &none));
-    assert_eq!(disabled, [b]);
+    for key in ["VRR_OFF", "VRR_ALWAYS"] {
+        assert!(plan.cfg.get(key).is_none() && plan.del_cfg.get(key).is_none(), "{key}");
+    }
+    second[1].vrr = VrrMode::Off;
+    lists.apply(&model::save_plan(Some(&cfg), &second.map(Some), "", None, &none));
+    assert_eq!((lists.mode(a), lists.mode(b)), (VrrMode::Always, VrrMode::Off));
+}
+
+#[test]
+fn the_window_reads_the_daemons_vrr_mode_then_the_lists() {
+    let head = json!({"NAME": "DP-1", "DESCRIPTION": "Dell Inc. AW3225QF (DP-1)"});
+    assert_eq!(model::vrr_mode_of(&head, &json!({})), VrrMode::Auto);
+    assert_eq!(model::vrr_mode_of(&head, &json!({"VRR_ALWAYS": ["!^DP-"]})), VrrMode::Always);
+    assert_eq!(model::vrr_mode_of(&head, &json!({"VRR_ALWAYS": ["DP-1"], "VRR_OFF": ["aw3225qf"]})), VrrMode::Off, "both lists is Off");
+    let mut reported = head.clone();
+    reported["VRR_MODE"] = json!("always");
+    assert_eq!(model::vrr_mode_of(&reported, &json!({"VRR_OFF": ["DP-1"]})), VrrMode::Always, "the daemon's answer wins");
+    assert!(model::vrr_capable_of(&head), "unknown is capable");
+    reported["VRR_CAPABLE"] = json!(false);
+    assert!(!model::vrr_capable_of(&reported));
 }
 
 #[test]
@@ -604,6 +794,19 @@ fn revert_restores_values_and_removes_what_apply_added() {
 }
 
 #[test]
+fn revert_restores_each_screens_adaptive_sync_mode() {
+    // Before: A Off, B Always, C Automatic. Apply: A Always, B Automatic, C Off.
+    let before = json!({"VRR_OFF": ["A"], "VRR_ALWAYS": ["B"]});
+    let after = json!({"VRR_OFF": ["C"], "VRR_ALWAYS": ["A"]});
+    let (set, del) = crate::model::revert_plan(&before, &after, &[]);
+    assert_eq!(del["VRR_OFF"], json!(["C"]));
+    assert_eq!(del["VRR_ALWAYS"], json!(["A"]));
+    let mut lists = VrrLists { off: vec!["C".into()], always: vec!["A".into()] };
+    lists.apply(&model::SavePlan { cfg: set, del_cfg: del, hdr_overrides: BTreeMap::new(), hdr_changed: vec![], enabled_changed: vec![] });
+    assert_eq!((lists.mode("A"), lists.mode("B"), lists.mode("C")), (VrrMode::Off, VrrMode::Always, VrrMode::Auto));
+}
+
+#[test]
 fn revert_keeps_a_false_setting() {
     let (set, _) = crate::model::revert_plan(&json!({"AUTO_SCALE": false}), &json!({"AUTO_SCALE": true}), &[]);
     assert_eq!(set["AUTO_SCALE"], json!(false));
@@ -619,4 +822,29 @@ fn revert_switches_a_display_under_the_lid_rule_back_by_name() {
     assert!(set["DISABLED"].as_object().unwrap().contains_key("Panel"), "turned on by Apply: back off");
     assert!(del.get("DISABLED").is_none());
     assert!(set["DISABLED"].as_object().unwrap().contains_key("!^eDP-[0-9]"), "the rule is kept");
+}
+
+#[test]
+fn adaptive_sync_strings_are_translated_into_every_language() {
+    let strings = ["Adaptive Sync (VRR)", "Automatic", "Always", "Off", "On only while an app is fullscreen on this screen.",
+                   "Adaptive Sync is not available on this screen."];
+    let source = include_str!("monitor_widget.rs");
+    for text in strings {
+        assert!(source.contains(&format!("tr!(\"{text}\")")), "{text} is not used");
+    }
+    let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../i18n/locale");
+    let mut languages = 0;
+    for entry in std::fs::read_dir(directory).unwrap() {
+        let path = entry.unwrap().path();
+        if path.file_stem().is_some_and(|stem| stem == "en") {
+            continue;
+        }
+        languages += 1;
+        let catalog: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        for text in strings {
+            let translated = catalog[text].as_str().unwrap_or_else(|| panic!("{}: {text}", path.display()));
+            assert!(!translated.is_empty() && translated != text, "{}: {text}", path.display());
+        }
+    }
+    assert_eq!(languages, 30);
 }

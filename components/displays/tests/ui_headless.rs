@@ -17,6 +17,7 @@ use std::time::{Duration, Instant};
 use tessel_displays::brightness::BrightnessControls;
 use tessel_displays::color_config;
 use tessel_displays::compat::brightness_client::BrightnessModel;
+use tessel_displays::daemon::config::VrrMode;
 use tessel_displays::ipc;
 use tessel_displays::labwc::HdrConfig;
 use tessel_displays::overlay::MonitorOverlay;
@@ -517,45 +518,57 @@ fn hdr_report_distinguishes_metadata_white_target_and_measurement(app: &gtk::App
 
 fn vrr_changes_in_two_stale_editors_preserve_the_other_monitor(app: &gtk::Application) {
     let f = Fx::new(app);
-    let (first, second) = (f.window(), f.window());
-    let descriptions: Vec<String> = first.monitor_widgets.borrow().iter().map(|w| w.desc()).collect();
-    let disabled: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(descriptions.clone()));
-    // Both windows opened before either monitor's VRR was enabled.
-    ipc::with_config_data(|data| data["CFG"]["VRR_OFF"] = json!(descriptions));
+    let descriptions = ["Same model DP-1".to_owned(), "Same model HDMI-A-1".to_owned()];
+    // Both windows opened while both monitors had Adaptive Sync Off.
+    let data = json!({"CFG": {"AUTO_SCALE": false, "CUSTOM_KEEP": {"untouched": true}, "VRR_OFF": descriptions},
+                      "STATE": {"HEADS": [monitor("DP-1", 1920), monitor("HDMI-A-1", 1600)]}});
+    let (first, second) = (f.window_with(data.clone()), f.window_with(data));
+    assert!(first.monitor_widgets.borrow().iter().all(|w| w.vrr_mode() == VrrMode::Off), "read from VRR_OFF");
+    // The daemon's two lists, as CFG_SET and CFG_DEL change them.
+    let lists: Rc<RefCell<BTreeMap<&str, Vec<String>>>> =
+        Rc::new(RefCell::new(BTreeMap::from([("VRR_OFF", descriptions.to_vec()), ("VRR_ALWAYS", Vec::new())])));
+    let mode = |lists: &BTreeMap<&str, Vec<String>>, desc: &str| {
+        if lists["VRR_OFF"].iter().any(|d| d == desc) { VrrMode::Off }
+        else if lists["VRR_ALWAYS"].iter().any(|d| d == desc) { VrrMode::Always }
+        else { VrrMode::Auto }
+    };
     let operations: Rc<RefCell<Vec<(String, Value)>>> = Rc::default();
     for window in [&first, &second] {
         let mut hooks = window.hooks.borrow_mut();
         recording(&mut hooks, operations.clone(), Rc::default());
-        let (ops, set) = (operations.clone(), disabled.clone());
+        let (ops, lists) = (operations.clone(), lists.clone());
         hooks.ipc_config_operation = Rc::new(move |op, cfg| {
             ops.borrow_mut().push((op.to_owned(), cfg.clone()));
-            let items: Vec<String> = cfg.get("VRR_OFF").and_then(Value::as_array).map(|a| a.iter().map(|v| v.as_str().unwrap().to_owned()).collect()).unwrap_or_default();
-            let mut set = set.borrow_mut();
-            if op == "CFG_DEL" {
-                set.retain(|d| !items.contains(d));
-            } else {
-                for item in items {
-                    if !set.contains(&item) {
-                        set.push(item);
+            let mut lists = lists.borrow_mut();
+            for (key, list) in lists.iter_mut() {
+                let items: Vec<String> = cfg.get(*key).and_then(Value::as_array).map(|a| a.iter().map(|v| v.as_str().unwrap().to_owned()).collect()).unwrap_or_default();
+                if op == "CFG_DEL" {
+                    list.retain(|d| !items.contains(d));
+                } else {
+                    for item in items {
+                        if !list.contains(&item) {
+                            list.push(item);
+                        }
                     }
                 }
             }
             Ok(String::new())
         });
     }
-    first.monitor_widgets.borrow()[0].vrr_switch.set_active(true);
+    first.monitor_widgets.borrow()[0].set_vrr_mode(VrrMode::Always);
     first.save_config();
-    assert_eq!(*disabled.borrow(), [descriptions[1].clone()]);
-    second.monitor_widgets.borrow()[1].vrr_switch.set_active(true);
+    assert_eq!((mode(&lists.borrow(), &descriptions[0]), mode(&lists.borrow(), &descriptions[1])), (VrrMode::Always, VrrMode::Off));
+    second.monitor_widgets.borrow()[1].set_vrr_mode(VrrMode::Auto);
     second.save_config();
-    assert!(disabled.borrow().is_empty());
-    // A subsequent unrelated Apply must not re-send either VRR setting.
+    assert_eq!((mode(&lists.borrow(), &descriptions[0]), mode(&lists.borrow(), &descriptions[1])), (VrrMode::Always, VrrMode::Auto),
+               "the stale editor keeps the first editor's choice");
+    // A subsequent unrelated Apply must not re-send either setting.
     operations.borrow_mut().clear();
     first.save_config();
-    assert!(operations.borrow().iter().all(|(_, cfg)| cfg.get("VRR_OFF").is_none()));
-    second.monitor_widgets.borrow()[1].vrr_switch.set_active(false);
+    assert!(operations.borrow().iter().all(|(_, cfg)| cfg.get("VRR_OFF").is_none() && cfg.get("VRR_ALWAYS").is_none()));
+    second.monitor_widgets.borrow()[1].set_vrr_mode(VrrMode::Off);
     second.save_config();
-    assert_eq!(*disabled.borrow(), [descriptions[1].clone()]);
+    assert_eq!((mode(&lists.borrow(), &descriptions[0]), mode(&lists.borrow(), &descriptions[1])), (VrrMode::Always, VrrMode::Off));
     settle(0.65);
     println!("ok vrr_changes_in_two_stale_editors_preserve_the_other_monitor");
 }
@@ -811,15 +824,118 @@ fn a_failed_apply_reverts_without_asking(app: &gtk::Application) {
     println!("ok a_failed_apply_reverts_without_asking");
 }
 
-fn vrr_uses_desired_state_when_runtime_is_temporarily_off(app: &gtk::Application) {
+fn vrr_mode_and_capability_come_from_the_daemon_state(app: &gtk::Application) {
     let f = Fx::new(app);
     let window = f.window();
-    ipc::with_config_data(|data| data["STATE"]["HEADS"][0]["DESIRED"] = json!({"VRR": true}));
+    let automatic = "On only while an app is fullscreen on this screen.";
+    {
+        let widget = window.monitor_widgets.borrow()[0].clone();
+        assert_eq!(widget.vrr_mode(), VrrMode::Auto, "in neither list is Automatic");
+        assert!(widget.vrr_combo.is_sensitive(), "unknown capability is capable");
+        assert!(widget.vrr_hint.is_visible() && widget.vrr_hint.text() == automatic);
+        let items: Vec<String> = (0..3).map(|i| widget.vrr_combo.model().unwrap().item(i).and_downcast::<gtk::StringObject>().unwrap().string().into()).collect();
+        assert_eq!(items, ["Automatic", "Always", "Off"]);
+    }
+    // The state says Always for one (VRR is off right now, between fullscreen
+    // apps) and refused for the other; the lists in CFG are older news.
+    ipc::with_config_data(|data| {
+        data["CFG"]["VRR_OFF"] = json!(["Same model DP-1"]);
+        data["STATE"]["HEADS"][0]["VRR_MODE"] = json!("always");
+        data["STATE"]["HEADS"][0]["VRR_CAPABLE"] = json!(true);
+        data["STATE"]["HEADS"][0]["DESIRED"] = json!({"VRR": false});
+        data["STATE"]["HEADS"][1]["VRR_MODE"] = json!("auto");
+        data["STATE"]["HEADS"][1]["VRR_CAPABLE"] = json!(false);
+    });
     window.load_monitor_data();
+    let capable = window.monitor_widgets.borrow()[0].clone();
+    assert_eq!(capable.vrr_mode(), VrrMode::Always);
+    assert!(capable.vrr_combo.is_sensitive() && !capable.vrr_hint.is_visible());
+    assert!(!capable.get_desired_state().unwrap().vrr_changed);
+    capable.set_vrr_mode(VrrMode::Auto);
+    assert!(capable.vrr_hint.is_visible() && capable.vrr_hint.text() == automatic);
+    assert!(capable.get_desired_state().unwrap().vrr_changed);
+    assert!(window.save_btn.is_sensitive());
+    let refused = window.monitor_widgets.borrow()[1].clone();
+    assert!(!refused.vrr_combo.is_sensitive(), "a screen without adaptive sync cannot be set");
+    assert!(refused.vrr_hint.is_visible() && refused.vrr_hint.text() == "Adaptive Sync is not available on this screen.");
+    println!("ok vrr_mode_and_capability_come_from_the_daemon_state");
+}
+
+/// A fake daemon for Adaptive Sync: CFG_SET and CFG_DEL change the two lists in
+/// the window's data, and each head's VRR_MODE follows them (exact names).
+fn vrr_daemon(hooks: &mut Hooks, operations: Rc<RefCell<Vec<(String, Value)>>>) {
+    hooks.ipc_config_operation = Rc::new(move |op, cfg| {
+        operations.borrow_mut().push((op.to_owned(), cfg.clone()));
+        ipc::with_config_data(|data| {
+            for key in ["VRR_OFF", "VRR_ALWAYS"] {
+                let items: Vec<Value> = cfg.get(key).and_then(Value::as_array).cloned().unwrap_or_default();
+                let mut list: Vec<Value> = data["CFG"].get(key).and_then(Value::as_array).cloned().unwrap_or_default();
+                if op == "CFG_DEL" {
+                    list.retain(|d| !items.contains(d));
+                } else {
+                    for item in items {
+                        if !list.contains(&item) {
+                            list.push(item);
+                        }
+                    }
+                }
+                data["CFG"][key] = Value::Array(list);
+            }
+            let cfg = data["CFG"].clone();
+            for head in data["STATE"]["HEADS"].as_array_mut().unwrap() {
+                let listed = |key: &str| cfg[key].as_array().unwrap().iter().any(|d| *d == head["DESCRIPTION"] || *d == head["NAME"]);
+                let mode = if listed("VRR_OFF") { "off" } else if listed("VRR_ALWAYS") { "always" } else { "auto" };
+                head["VRR_MODE"] = json!(mode);
+                head["VRR_CAPABLE"] = json!(true);
+            }
+        });
+        Ok(String::new())
+    });
+}
+
+fn apply_refreshes_vrr_mode_and_capability_and_revert_restores_it(app: &gtk::Application) {
+    let f = Fx::new(app);
+    let folder = TestDir::new();
+    let window = f.window_with(json!({"CFG": {"AUTO_SCALE": false, "VRR_OFF": ["Same model DP-1"]},
+                                      "STATE": {"HEADS": [monitor("DP-1", 1920), monitor("HDMI-A-1", 1600)]}}));
+    let operations: Rc<RefCell<Vec<(String, Value)>>> = Rc::default();
+    let writes: Rc<RefCell<Vec<String>>> = Rc::default();
+    {
+        let mut hooks = window.hooks.borrow_mut();
+        recording(&mut hooks, operations.clone(), writes.clone());
+        vrr_daemon(&mut hooks, operations.clone());
+        hooks.get_config_data = Rc::new(|| true);
+        hooks.confirm_seconds = 30;
+        hooks.write_labwc_primary_xinitrc = Rc::new(tessel_displays::primary::write_labwc_primary_xinitrc);
+        hooks.write_labwc_primary_environment = Rc::new(tessel_displays::primary::write_labwc_primary_environment);
+        hooks.read_labwc_primary_environment = Rc::new(tessel_displays::primary::read_labwc_primary_environment);
+    }
+    window.labwc_environment_path.replace(folder.path().join("environment"));
+    window.labwc_config_path.replace(folder.path().join("rc.xml"));
+    std::fs::write(folder.path().join("rc.xml"), "<labwc_config>\n</labwc_config>\n").unwrap();
     let widget = window.monitor_widgets.borrow()[0].clone();
-    assert!(widget.vrr_switch.is_active());
+    assert_eq!(widget.vrr_mode(), VrrMode::Off, "read from VRR_OFF without a VRR_MODE");
+    widget.set_vrr_mode(VrrMode::Always);
+    window.save_config();
+    assert!(window.trial_dialog().is_some());
+    let set = operations.borrow().iter().rev().find(|(op, _)| op == "CFG_SET").unwrap().1.clone();
+    assert_eq!(set["VRR_ALWAYS"], json!(["Same model DP-1"]));
+    assert!(set.get("VRR_OFF").is_none(), "the other screen is not sent");
+    let del = operations.borrow().iter().find(|(op, _)| op == "CFG_DEL").unwrap().1.clone();
+    assert_eq!(del["VRR_OFF"], json!(["Same model DP-1", "DP-1"]));
+    assert_eq!((widget.vrr_mode(), widget.initial_vrr.get()), (VrrMode::Always, VrrMode::Always), "refreshed from VRR_MODE");
     assert!(!widget.get_desired_state().unwrap().vrr_changed);
-    println!("ok vrr_uses_desired_state_when_runtime_is_temporarily_off");
+    // Nobody keeps it: Always comes back out and Off is back.
+    window.revert_display_changes();
+    assert!(window.trial_dialog().is_none());
+    assert!(writes.borrow().iter().all(|op| op != "CFG_WRITE"), "a reverted choice is never saved");
+    let cfg = ipc::cfg();
+    assert_eq!((cfg["VRR_OFF"].clone(), cfg["VRR_ALWAYS"].clone()), (json!(["Same model DP-1"]), json!([])));
+    let rebuilt = window.monitor_widgets.borrow()[0].clone();
+    assert_eq!((rebuilt.vrr_mode(), rebuilt.initial_vrr.get()), (VrrMode::Off, VrrMode::Off));
+    assert_eq!(window.monitor_widgets.borrow()[1].vrr_mode(), VrrMode::Auto);
+    settle(0.65);
+    println!("ok apply_refreshes_vrr_mode_and_capability_and_revert_restores_it");
 }
 
 fn full_window_brightness_changes_preserve_apply_and_monitor_configuration(app: &gtk::Application) {
@@ -837,11 +953,11 @@ fn full_window_brightness_changes_preserve_apply_and_monitor_configuration(app: 
     let now: Vec<_> = window.monitor_widgets.borrow().iter().map(|w| w.get_desired_state()).collect();
     assert_eq!(now, original);
     assert_eq!(ipc::config_data(), initial);
-    window.monitor_widgets.borrow()[0].vrr_switch.set_active(true);
+    window.monitor_widgets.borrow()[0].set_vrr_mode(VrrMode::Always);
     assert!(window.save_btn.is_sensitive());
     f.client.set("/displays/0/brightness/value", json!(55));
     f.client.changed();
-    assert!(window.monitor_widgets.borrow()[0].vrr_switch.is_active());
+    assert_eq!(window.monitor_widgets.borrow()[0].vrr_mode(), VrrMode::Always);
     assert!(window.save_btn.is_sensitive());
     println!("ok full_window_brightness_changes_preserve_apply_and_monitor_configuration");
 }
@@ -1085,7 +1201,8 @@ fn main() {
     closing_the_question_or_the_window_reverts(&app);
     a_failed_apply_reverts_without_asking(&app);
     the_question_belongs_to_the_window_hosting_an_embedded_page(&app);
-    vrr_uses_desired_state_when_runtime_is_temporarily_off(&app);
+    vrr_mode_and_capability_come_from_the_daemon_state(&app);
+    apply_refreshes_vrr_mode_and_capability_and_revert_restores_it(&app);
     full_window_brightness_changes_preserve_apply_and_monitor_configuration(&app);
     window_follows_live_dock_palette_without_changing_display_settings(&app);
     rebuilt_tabs_and_window_close_cancel_old_debounce_and_client(&app);
