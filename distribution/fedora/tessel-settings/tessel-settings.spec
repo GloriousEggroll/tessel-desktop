@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d496d451a4dc2133ebf8bf31b1f4a00e089c3272}
+%{!?commit:%global commit 2750ba753e1b9c6ddbdd89f1d570ef89b14babe7}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        19%{?dist}
+Release:        20%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -108,6 +108,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-20
+- Displays: saved settings follow a monitor when its connector name changes
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-19
 - Theme: pointer theme with a preview, and the cursor size
 - Theme: interface, document, monospace and window title fonts

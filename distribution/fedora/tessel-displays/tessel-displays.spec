@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 839b47aed1e9549cd97437533b9965d6cb657d81}
+%{!?commit:%global commit 2750ba753e1b9c6ddbdd89f1d570ef89b14babe7}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -86,6 +86,9 @@ install -Dm644 packaging/defaults/etc/tessel/displays/cfg.yaml %{buildroot}%{_sy
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-10
+- Saved display settings follow a monitor when its connector name changes (two graphics cards, or another port)
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-9
 - The brightness and contrast sliders no longer jump back while they are dragged
 
