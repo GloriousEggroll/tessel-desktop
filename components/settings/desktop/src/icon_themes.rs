@@ -61,6 +61,11 @@ impl IconThemeSettings for SystemIconThemeSettings {
         if let Err(error) = icons::write_gtk_inis(&self.config_home, theme) {
             errors.push(error);
         }
+        // So the next login keeps this theme, also after another desktop
+        // wrote its own into the shared settings.
+        if let Err(error) = icons::write_choice(&self.config_home, theme) {
+            errors.push(error);
+        }
         if errors.is_empty() { Ok(()) } else { Err(errors.join(" ")) }
     }
 

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Tessel icon theme check
-Comment=Use Papirus-Dark when the configured icon theme is not installed
+Comment=Use the chosen icon theme or Papirus-Dark when the configured one is missing or another desktop's default
 Exec=tessel-icon-theme
 TryExec=tessel-icon-theme
 OnlyShowIn=labwc;

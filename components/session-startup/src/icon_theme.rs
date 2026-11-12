@@ -1,10 +1,18 @@
-//! `tessel-icon-theme`: at login, fall back to the suite's default icon
-//! theme (Papirus-Dark) when the configured one is not installed, e.g. after
-//! its package was removed. A valid user choice is never changed.
+//! `tessel-icon-theme`: at login, make sure Tessel has a usable icon theme.
 //!
 //! The configured theme is gsettings `org.gnome.desktop.interface icon-theme`,
-//! else `gtk-icon-theme-name` in `~/.config/gtk-4.0/settings.ini`. A repair
-//! writes gsettings and both GTK `settings.ini` files.
+//! else `gtk-icon-theme-name` in `~/.config/gtk-4.0/settings.ini`. It is
+//! replaced in two cases:
+//!
+//! - it is not installed, e.g. after its package was removed;
+//! - it is KDE's default (Breeze), which KDE writes into those shared settings
+//!   at every Plasma login and which lacks many of Tessel's icons, and it was
+//!   not chosen in Global Settings (`~/.config/tessel/icon-theme`).
+//!
+//! The replacement is the theme chosen in Global Settings when it is
+//! installed, else the suite's default (Papirus-Dark). It is written to
+//! gsettings and both GTK `settings.ini` files. Any other installed theme is
+//! never changed.
 use std::path::PathBuf;
 
 use tessel_core::icon_theme::{self as icons, DEFAULT};
@@ -58,40 +66,61 @@ impl Environment {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Outcome {
-    /// The configured theme is installed; nothing changed.
+    /// The configured theme is installed and stays.
     Kept(String),
-    /// The configured theme (if any) was missing; the default is set now
+    /// The configured theme (if any) was missing; `to` is set now
     /// (`Err` lists what could not be written).
-    Repaired { missing: Option<String>, result: Result<(), String> },
+    Repaired { missing: Option<String>, to: String, result: Result<(), String> },
     /// Would repair (`--check`).
-    WouldRepair { missing: Option<String> },
+    WouldRepair { missing: Option<String>, to: String },
+    /// The configured theme was another desktop's default, not one chosen
+    /// in Tessel; `to` is set now.
+    Switched { from: String, to: String, result: Result<(), String> },
+    /// Would switch (`--check`).
+    WouldSwitch { from: String, to: String },
     /// Neither the configured theme nor the default is installed.
     DefaultMissing { missing: Option<String> },
 }
 
-pub fn ensure(environment: &Environment, apply: bool) -> Outcome {
-    let configured = environment.configured();
-    if let Some(theme) = &configured {
-        if icons::is_installed(&environment.search_dirs, theme) {
-            return Outcome::Kept(theme.clone());
-        }
-    }
-    if !icons::is_installed(&environment.search_dirs, DEFAULT) {
-        return Outcome::DefaultMissing { missing: configured };
-    }
-    if !apply {
-        return Outcome::WouldRepair { missing: configured };
-    }
+fn write(environment: &Environment, theme: &str) -> Result<(), String> {
     let mut errors = Vec::new();
     if let Some(setting) = &environment.setting {
-        if !setting.set(DEFAULT) {
+        if !setting.set(theme) {
             errors.push(format!("could not set gsettings {}", icons::GSETTINGS_KEY));
         }
     }
-    if let Err(error) = icons::write_gtk_inis(&environment.config_home, DEFAULT) {
+    if let Err(error) = icons::write_gtk_inis(&environment.config_home, theme) {
         errors.push(error);
     }
-    Outcome::Repaired { missing: configured, result: if errors.is_empty() { Ok(()) } else { Err(errors.join("; ")) } }
+    if errors.is_empty() { Ok(()) } else { Err(errors.join("; ")) }
+}
+
+pub fn ensure(environment: &Environment, apply: bool) -> Outcome {
+    let installed = |theme: &str| icons::is_installed(&environment.search_dirs, theme);
+    let configured = environment.configured();
+    // What Tessel uses when the configured theme is not to be: the theme
+    // chosen in Global Settings, else the suite default.
+    let choice = icons::read_choice(&environment.config_home).filter(|theme| installed(theme));
+    let wanted = choice.clone().or_else(|| installed(DEFAULT).then(|| DEFAULT.to_owned()));
+    if let Some(theme) = configured.clone().filter(|theme| installed(theme)) {
+        // KDE writes its icon theme into the shared GTK settings at every
+        // Plasma login. Its default has no icons for much of Tessel.
+        let foreign = icons::KDE_DEFAULTS.contains(&theme.as_str()) && choice.as_deref() != Some(theme.as_str());
+        return match wanted {
+            Some(to) if foreign && !apply => Outcome::WouldSwitch { from: theme, to },
+            Some(to) if foreign => {
+                let result = write(environment, &to);
+                Outcome::Switched { from: theme, to, result }
+            }
+            _ => Outcome::Kept(theme),
+        };
+    }
+    let Some(to) = wanted else { return Outcome::DefaultMissing { missing: configured } };
+    if !apply {
+        return Outcome::WouldRepair { missing: configured, to };
+    }
+    let result = write(environment, &to);
+    Outcome::Repaired { missing: configured, to, result }
 }
 
 pub fn parser(prog: &str) -> Parser {
@@ -99,7 +128,8 @@ pub fn parser(prog: &str) -> Parser {
         usage: format!("usage: {prog} [-h] [--check]"),
         help: format!("usage: {prog} [-h] [--check]
 
-Use the default icon theme ({DEFAULT}) when the configured one is not installed.
+Use the icon theme chosen in Global Settings, else the default ({DEFAULT}), when
+the configured one is not installed or is another desktop's default.
 
 options:
   -h, --help  show this help message and exit
@@ -128,16 +158,28 @@ pub fn main(args: &[String], prog: &str, environment: &Environment) -> i32 {
             println!("Icon theme {theme} is installed; nothing to do.");
             0
         }
-        Outcome::WouldRepair { missing } => {
-            println!("The {}; would use {DEFAULT}.", describe(&missing));
+        Outcome::WouldRepair { missing, to } => {
+            println!("The {}; would use {to}.", describe(&missing));
             0
         }
-        Outcome::Repaired { missing, result: Ok(()) } => {
-            println!("The {}; now using {DEFAULT}.", describe(&missing));
+        Outcome::Repaired { missing, to, result: Ok(()) } => {
+            println!("The {}; now using {to}.", describe(&missing));
             0
         }
-        Outcome::Repaired { missing, result: Err(error) } => {
-            eprintln!("The {}; switching to {DEFAULT} failed: {error}", describe(&missing));
+        Outcome::Repaired { missing, to, result: Err(error) } => {
+            eprintln!("The {}; switching to {to} failed: {error}", describe(&missing));
+            1
+        }
+        Outcome::WouldSwitch { from, to } => {
+            println!("Icon theme {from} is KDE's default and was not chosen in Global Settings; would use {to}.");
+            0
+        }
+        Outcome::Switched { from, to, result: Ok(()) } => {
+            println!("Icon theme {from} is KDE's default and was not chosen in Global Settings; now using {to}.");
+            0
+        }
+        Outcome::Switched { from, to, result: Err(error) } => {
+            eprintln!("Icon theme {from} is KDE's default and was not chosen in Global Settings; switching to {to} failed: {error}");
             1
         }
         Outcome::DefaultMissing { missing } => {
@@ -202,7 +244,7 @@ mod tests {
         let f = fixture("missing", Some(Some("breeze")), &["Papirus-Dark", "Adwaita"]);
         std::fs::create_dir_all(f.root.join("config/gtk-3.0")).unwrap();
         std::fs::write(f.root.join("config/gtk-3.0/settings.ini"), "[Settings]\n# mine\ngtk-icon-theme-name=breeze\ngtk-theme-name=Adwaita\n").unwrap();
-        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: Some("breeze".into()), result: Ok(()) });
+        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: Some("breeze".into()), to: "Papirus-Dark".into(), result: Ok(()) });
         assert_eq!(*f.writes.borrow(), ["Papirus-Dark"]);
         assert_eq!(ini(&f.root, "3.0").unwrap(), "[Settings]\n# mine\ngtk-icon-theme-name=Papirus-Dark\ngtk-theme-name=Adwaita\n");
         assert_eq!(ini(&f.root, "4.0").unwrap(), "[Settings]\ngtk-icon-theme-name=Papirus-Dark\n");
@@ -229,18 +271,18 @@ mod tests {
         std::fs::write(f.root.join("config/gtk-4.0/settings.ini"), "[Settings]\ngtk-icon-theme-name=Adwaita\n").unwrap();
         assert_eq!(ensure(&f.environment, true), Outcome::Kept("Adwaita".into()));
         std::fs::write(f.root.join("config/gtk-4.0/settings.ini"), "[Settings]\ngtk-icon-theme-name=gone\n").unwrap();
-        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: Some("gone".into()), result: Ok(()) });
+        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: Some("gone".into()), to: "Papirus-Dark".into(), result: Ok(()) });
         assert_eq!(ini(&f.root, "4.0").unwrap(), "[Settings]\ngtk-icon-theme-name=Papirus-Dark\n");
         // An empty gsettings value also falls through to the ini.
         let f = fixture("empty", Some(None), &["Papirus-Dark"]);
-        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: None, result: Ok(()) });
+        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: None, to: "Papirus-Dark".into(), result: Ok(()) });
         assert_eq!(*f.writes.borrow(), ["Papirus-Dark"]);
     }
 
     #[test]
     fn check_only_reports_and_missing_default_changes_nothing() {
         let f = fixture("check", Some(Some("breeze")), &["Papirus-Dark"]);
-        assert_eq!(ensure(&f.environment, false), Outcome::WouldRepair { missing: Some("breeze".into()) });
+        assert_eq!(ensure(&f.environment, false), Outcome::WouldRepair { missing: Some("breeze".into()), to: "Papirus-Dark".into() });
         assert!(f.writes.borrow().is_empty());
         assert_eq!(ini(&f.root, "4.0"), None);
         assert_eq!(main(&["--check".into()], "tessel-icon-theme", &f.environment), 0);
@@ -262,5 +304,53 @@ mod tests {
         }
         assert_eq!(ini(&f.root, "4.0").unwrap(), "[Settings]\ngtk-icon-theme-name=Papirus-Dark\n");
         assert_eq!(main(&["--bogus".into()], "tessel-icon-theme", &f.environment), 2);
+    }
+
+    fn choose(f: &Fixture, theme: &str) {
+        icons::write_choice(&f.environment.config_home, theme).unwrap();
+    }
+
+    #[test]
+    fn kdes_default_is_replaced_unless_it_was_chosen_in_global_settings() {
+        // A Plasma login wrote Breeze into the shared settings.
+        let f = fixture("kde", Some(Some("breeze-dark")), &["Papirus-Dark", "breeze-dark", "breeze", "Tela"]);
+        assert_eq!(ensure(&f.environment, false), Outcome::WouldSwitch { from: "breeze-dark".into(), to: "Papirus-Dark".into() });
+        assert!(f.writes.borrow().is_empty());
+        assert_eq!(main(&["--check".into()], "tessel-icon-theme", &f.environment), 0);
+        assert_eq!(ensure(&f.environment, true),
+                   Outcome::Switched { from: "breeze-dark".into(), to: "Papirus-Dark".into(), result: Ok(()) });
+        assert_eq!(*f.writes.borrow(), ["Papirus-Dark"]);
+        assert_eq!(ini(&f.root, "4.0").unwrap(), "[Settings]\ngtk-icon-theme-name=Papirus-Dark\n");
+        assert_eq!(ensure(&f.environment, true), Outcome::Kept("Papirus-Dark".into()));
+        // The theme chosen in Global Settings comes back after the next Plasma login.
+        choose(&f, "Tela");
+        f.environment.setting.as_ref().unwrap().set("breeze");
+        assert_eq!(ensure(&f.environment, true), Outcome::Switched { from: "breeze".into(), to: "Tela".into(), result: Ok(()) });
+        assert_eq!(ensure(&f.environment, true), Outcome::Kept("Tela".into()));
+        // Breeze chosen in Global Settings is a choice like any other.
+        choose(&f, "breeze-dark");
+        f.environment.setting.as_ref().unwrap().set("breeze-dark");
+        assert_eq!(ensure(&f.environment, true), Outcome::Kept("breeze-dark".into()));
+        // The other Breeze is still KDE's, and goes back to the chosen one.
+        f.environment.setting.as_ref().unwrap().set("breeze");
+        assert_eq!(ensure(&f.environment, true), Outcome::Switched { from: "breeze".into(), to: "breeze-dark".into(), result: Ok(()) });
+    }
+
+    #[test]
+    fn kdes_default_stays_when_nothing_better_is_installed_and_a_removed_choice_is_not_used() {
+        let f = fixture("only", Some(Some("breeze-dark")), &["breeze-dark"]);
+        assert_eq!(ensure(&f.environment, true), Outcome::Kept("breeze-dark".into()));
+        assert!(f.writes.borrow().is_empty());
+        // The chosen theme's package is gone: the default, for a missing theme too.
+        let f = fixture("gonechoice", Some(Some("breeze")), &["Papirus-Dark", "breeze"]);
+        choose(&f, "Tela");
+        assert_eq!(ensure(&f.environment, true), Outcome::Switched { from: "breeze".into(), to: "Papirus-Dark".into(), result: Ok(()) });
+        let f = fixture("missingchoice", Some(Some("gone")), &["Papirus-Dark", "Tela"]);
+        choose(&f, "Tela");
+        assert_eq!(ensure(&f.environment, true), Outcome::Repaired { missing: Some("gone".into()), to: "Tela".into(), result: Ok(()) });
+        // Any other installed theme is nobody's default to undo.
+        let f = fixture("other", Some(Some("Tela")), &["Papirus-Dark", "Tela"]);
+        assert_eq!(ensure(&f.environment, true), Outcome::Kept("Tela".into()));
+        assert!(f.writes.borrow().is_empty());
     }
 }

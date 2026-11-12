@@ -20,6 +20,10 @@ pub const INI_KEY: &str = "gtk-icon-theme-name";
 pub const INI_SECTION: &str = "Settings";
 /// Marker of the dock's private recoloured Papirus mirrors.
 pub const MIRROR_MARKER: &str = ".tessel-dock-papirus.json";
+/// What KDE writes into the shared GTK settings at every Plasma login for a
+/// user on its default icons. Found there, it is KDE's default, not a choice
+/// made in Tessel, unless [`read_choice`] names it.
+pub const KDE_DEFAULTS: [&str; 2] = ["breeze", "breeze-dark"];
 /// Never offered as a choice: the fallback theme and the cursor alias.
 pub const HIDDEN_IDS: [&str; 2] = ["hicolor", "default"];
 
@@ -266,6 +270,34 @@ pub fn write_gtk_inis(config_home: &Path, theme: &str) -> Result<(), String> {
     if errors.is_empty() { Ok(()) } else { Err(errors.join("; ")) }
 }
 
+/// Where the theme chosen in Global Settings is recorded: the shared GTK
+/// settings alone cannot tell it from what another desktop wrote there.
+pub fn choice_path(config_home: &Path) -> PathBuf {
+    config_home.join("tessel/icon-theme")
+}
+
+/// The icon theme chosen in Global Settings, when one was.
+pub fn read_choice(config_home: &Path) -> Option<String> {
+    let text = std::fs::read_to_string(choice_path(config_home)).ok()?;
+    text.lines().next().map(str::trim).filter(|id| valid_id(id)).map(str::to_owned)
+}
+
+/// Record the icon theme chosen in Global Settings.
+pub fn write_choice(config_home: &Path, theme: &str) -> Result<(), String> {
+    let path = choice_path(config_home);
+    if read_choice(config_home).as_deref() == Some(theme) {
+        return Ok(());
+    }
+    let write = || {
+        let parent = path.parent().unwrap_or(Path::new("."));
+        std::fs::create_dir_all(parent)?;
+        let temporary = parent.join(format!(".icon-theme.{}.tmp", std::process::id()));
+        std::fs::write(&temporary, format!("{theme}\n"))?;
+        std::fs::rename(&temporary, &path).inspect_err(|_| { let _ = std::fs::remove_file(&temporary); })
+    };
+    write().map_err(|error: std::io::Error| crate::pyerr::os_error_path(&error, &path))
+}
+
 /// The shared `org.gnome.desktop.interface` settings when the schema has `icon-theme`.
 pub fn interface_settings() -> Option<gio::Settings> {
     let schema = gio::SettingsSchemaSource::default()?.lookup("org.gnome.desktop.interface", true)?;
@@ -384,5 +416,22 @@ mod tests {
         assert!(PAPIRUS_FAMILY.iter().all(|t| is_papirus_family(t)));
         assert!(!is_papirus_family("ePapirus"));
         assert!(!is_papirus_family("Adwaita"));
+    }
+
+    #[test]
+    fn the_theme_chosen_in_global_settings_is_recorded() {
+        let config = scratch("choice");
+        assert_eq!(read_choice(&config), None);
+        write_choice(&config, "Tela").unwrap();
+        assert_eq!(std::fs::read_to_string(config.join("tessel/icon-theme")).unwrap(), "Tela\n");
+        assert_eq!(read_choice(&config).as_deref(), Some("Tela"));
+        write_choice(&config, "Papirus-Dark").unwrap();
+        assert_eq!(read_choice(&config).as_deref(), Some("Papirus-Dark"));
+        // Nothing usable in the file is no choice.
+        std::fs::write(choice_path(&config), "../etc\n").unwrap();
+        assert_eq!(read_choice(&config), None);
+        std::fs::write(choice_path(&config), "\n").unwrap();
+        assert_eq!(read_choice(&config), None);
+        let _ = std::fs::remove_dir_all(&config);
     }
 }
