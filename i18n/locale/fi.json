@@ -1949,5 +1949,7 @@
   "Medium": "Keskikokoinen",
   "Large": "Suuri",
   "System tray icon size": "Ilmoitusalueen kuvakkeiden koko",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Tilakuvakkeiden, ilmoitusalueen sovellusten ja Lisää sovelluksia -painikkeen koko ilmoitusalueella."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Tilakuvakkeiden, ilmoitusalueen sovellusten ja Lisää sovelluksia -painikkeen koko ilmoitusalueella.",
+  "Notification size": "Ilmoitusten koko",
+  "How large notification popups are on screen.": "Kuinka suurina ilmoitusten ponnahdusikkunat näkyvät näytöllä."
 }

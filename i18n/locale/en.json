@@ -99,5 +99,7 @@
   "Medium": "Medium",
   "Large": "Large",
   "System tray icon size": "System tray icon size",
-  "The size of the status icons, tray applications and More apps in the system tray.": "The size of the status icons, tray applications and More apps in the system tray."
+  "The size of the status icons, tray applications and More apps in the system tray.": "The size of the status icons, tray applications and More apps in the system tray.",
+  "Notification size": "Notification size",
+  "How large notification popups are on screen.": "How large notification popups are on screen."
 }

@@ -1949,5 +1949,7 @@
   "Medium": "Sedang",
   "Large": "Besar",
   "System tray icon size": "Ukuran ikon baki sistem",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Ukuran ikon status, aplikasi baki, dan Aplikasi lainnya di baki sistem."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Ukuran ikon status, aplikasi baki, dan Aplikasi lainnya di baki sistem.",
+  "Notification size": "Ukuran notifikasi",
+  "How large notification popups are on screen.": "Seberapa besar popup notifikasi di layar."
 }

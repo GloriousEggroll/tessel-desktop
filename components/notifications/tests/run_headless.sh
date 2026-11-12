@@ -45,6 +45,8 @@ case "\$XDG_RUNTIME_DIR:\$WAYLAND_DISPLAY" in /run/user/1000:*|*:) labwc --exit;
 export NM_HEADLESS=1 GDK_BACKEND=wayland NO_AT_BRIDGE=1 GTK_A11Y=none GSK_RENDERER=cairo LANGUAGE=en
 export HOME="$R/home" XDG_STATE_HOME="$R/state" XDG_CACHE_HOME="$R/home/.cache" XDG_CONFIG_HOME="$R/home/.config"
 export NOTIFICATION_MANAGER_HELPER_DIR="$R/helpers" NM_FAKE_PROBE="$R/probe.json" NM_BIN="$NM_BIN" DISPLAY=:99
+# NM_PROOF_DIR=<dir> also saves grim screenshots of the popup sizes (taken inside this compositor).
+${NM_PROOF_DIR:+export NM_PROOF_DIR="$NM_PROOF_DIR"}
 timeout 120 "$BIN" ui > "$R/log-ui" 2>&1; echo \$? > "$R/result-ui"
 timeout 120 "$BIN" daemon > "$R/log-daemon" 2>&1; echo \$? > "$R/result-daemon"
 labwc --exit

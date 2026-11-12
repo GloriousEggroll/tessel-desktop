@@ -2282,5 +2282,7 @@
   "Medium": "Mittel",
   "Large": "Groß",
   "System tray icon size": "Symbolgröße der Kontrollleiste",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Die Größe der Statussymbole, der Anwendungen in der Kontrollleiste und von „Weitere Anwendungen“."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Die Größe der Statussymbole, der Anwendungen in der Kontrollleiste und von „Weitere Anwendungen“.",
+  "Notification size": "Größe der Benachrichtigungen",
+  "How large notification popups are on screen.": "Wie groß Benachrichtigungen auf dem Bildschirm erscheinen."
 }

@@ -1949,5 +1949,7 @@
   "Medium": "Средний",
   "Large": "Большой",
   "System tray icon size": "Размер значков системного лотка",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Размер значков состояния, приложений в лотке и кнопки «Другие приложения» в системном лотке."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Размер значков состояния, приложений в лотке и кнопки «Другие приложения» в системном лотке.",
+  "Notification size": "Размер уведомлений",
+  "How large notification popups are on screen.": "Насколько крупными будут всплывающие уведомления на экране."
 }

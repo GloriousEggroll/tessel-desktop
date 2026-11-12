@@ -120,6 +120,7 @@ Errors: ValueError/TypeError/OverflowError → `org.freedesktop.DBus.Error.Inval
 | `timeout_ms` | int 1000..60000 | 6000 |
 | `history_limit` | int 1..500 | 100 |
 | `muted_apps` | list ≤500 unique non-empty str ≤256, no NUL | [] |
+| `popup_size` | `"small"` \| `"medium"` \| `"large"` (Rust addition; SetSettings rejects other values; a bad stored value is dropped on load and reads as medium) | `"medium"` |
 Unknown keys reject the whole patch atomically. Patch with `do_not_disturb` but no `dnd_until` forces `dnd_until=0`. `dnd_deadline('hour')=now+3600`, `'tomorrow'` = next day 08:00 local, `'off'`=0.
 
 ## 4. Files
@@ -131,7 +132,7 @@ Unknown keys reject the whole patch atomically. Patch with `do_not_disturb` but 
 
 Example state.json:
 ```json
-{"version":1,"next_id":43,"settings":{"do_not_disturb":false,"dnd_until":0,"suppress_fullscreen":true,"timeout_ms":6000,"history_limit":100,"muted_apps":["org.mozilla.firefox"]},
+{"version":1,"next_id":43,"settings":{"do_not_disturb":false,"dnd_until":0,"suppress_fullscreen":true,"timeout_ms":6000,"history_limit":100,"muted_apps":["org.mozilla.firefox"],"popup_size":"medium"},
  "history":[{"id":42,"app_name":"notify-send","summary":"Hi","body":"","icon":"","image_path":"","image":null,"actions":[],"urgency":1,"progress":null,"timestamp":1761700000.1,"active":false,"read":true,"transient":false,"resident":false,"desktop_entry":"","category":"","stack_tag":"","output":"","workspace":false,"expire_timeout":6000,"close_reason":1}]}
 ```
 
@@ -139,14 +140,15 @@ Example state.json:
 
 | Surface | Kind | Details |
 |---|---|---|
-| Toast stack (notification_ui.py:511-608) | layer-shell, namespace `tessel-dock-notifications`, layer TOP (OVERLAY while fullscreen blocks / suppression disabled — notification_manager.py:249-251), exclusive zone 0 (→ -1 once dock placement is known), keyboard NONE, anchors TOP+RIGHT margin 12, then repositioned via `popup_placement.dock_placement(monitor,'service_apps')` + `anchor_popup(edge, offset, align)`; workspace items flip align | ≤3 cards per stack; one stack per (monitor, workspace) key; width `min(380,max(240,mon_w-24))`; shown with `set_visible` (never `present`) |
+| Toast stack (notification_ui.py:511-608) | layer-shell, namespace `tessel-dock-notifications`, layer TOP (OVERLAY while fullscreen blocks / suppression disabled — notification_manager.py:249-251), exclusive zone 0 (→ -1 once dock placement is known), keyboard NONE, anchors TOP+RIGHT margin 12, then repositioned via `popup_placement.dock_placement(monitor,'service_apps')` + `anchor_popup(edge, offset, align)`; workspace items flip align | ≤3 cards per stack; one stack per (monitor, workspace) key; width `min(W,max(240,mon_w-24))` with W from `popup_size` (small 300, medium 380, large 460), changed live on a settings change; shown with `set_visible` (never `present`) |
 | History center (`NotificationCenter` :611-780) | `tray_popup.PopupController` popup (layer OVERLAY, ns `desktop-applet`, click-away/Escape) | header via `popup_header`, count badge, settings button, DND switch + 3 timed buttons, grouped history (collapsible per app, per-app clear), Clear All, empty state "You're all caught up" |
 | Settings window (`NotificationSettings` :948-980) | normal `Gtk.ApplicationWindow` 650×410, `headerbar(...)`, close hides | contains `SettingsPage` |
-| `SettingsPage` (:782-945) | embeddable Gtk.Box | attrs `dnd_switch`, `fullscreen_switch`, `timeout_spin` (1..60 s), `dnd_options`, `status_label`, per-app mute switches |
+| `SettingsPage` (:782-945) | embeddable Gtk.Box | attrs `dnd_switch`, `fullscreen_switch`, `timeout_spin` (1..60 s), `popup_size` (Gtk.DropDown Small/Medium/Large, widget name `popup_size`, writes `{"popup_size": key}`), `dnd_options`, `status_label`, per-app mute switches |
 
-- Window classes: `tessel-notifications`, `tray-popup`. CSS classes (STYLE :31-70): `popup-surface`, `notification-card`, `card`, `critical`, `notification-avatar`, `notification-heading`, `notification-summary`, `notification-app`, `notification-time`, `notification-unread`, `muted`, `section-title`, `icon-button`, `popup-flat-icon`, `count-badge`, `settings-card`, `settings-description`, `group-header`, `group-toggle`, `group-cards`, `notification-group`, `dnd-options`, `notification-center-title`, `primary` (button for action key `default`), `error`, `flat`.
+- Window classes: `tessel-notifications`, `tray-popup`. CSS classes (STYLE :31-70): `popup-surface`, `notification-card`, `card`, `critical`, `notification-avatar`, `notification-picture`, `notification-body`, `size-small`/`size-medium`/`size-large` (on popup cards), `notification-heading`, `notification-summary`, `notification-app`, `notification-time`, `notification-unread`, `muted`, `section-title`, `icon-button`, `popup-flat-icon`, `count-badge`, `settings-card`, `settings-description`, `group-header`, `group-toggle`, `group-cards`, `notification-group`, `dnd-options`, `notification-center-title`, `primary` (button for action key `default`), `error`, `flat`.
 - Theme: `companion_theme.attach(window)` per window (palette follows monitor); `tray_popup.install_popup_css`.
-- Card: summary 2 lines (history 3), body 4 lines (history 12, selectable), word-char wrap + ellipsis; progress bar with `N%`; actions FlowBox max 3 per line, label ellipsized 18 chars; picture for real images (height 100), compact header icon / avatar for icon-like images.
+- Card: summary 2 lines (large 3; history 3), body 4 lines (small 3, large 6; history 12, selectable), word-char wrap + ellipsis; progress bar with `N%`; actions FlowBox max 3 per line, label ellipsized 18 chars; compact header icon / avatar for icon-like images.
+- Content images (Rust change, issue #7): an image whose longer side is ≤256 px, or whose aspect ratio is within 3:4..4:3 (avatars, album art), or any image at size small, is a thumbnail beside the text (avatar slot, 32/40/56 px for small/medium/large). Other images are a picture under the text, fitted inside (popup width − 26) × bound (medium 120 px, large 200 px), aspect kept, never upscaled; the paintable's natural size is that fitted size and a horizontal box keeps it from stretching to the card width. History cards always use the medium rules.
 - Images (:87-150): only local absolute paths or `file://` with empty/localhost host, no query/fragment; file ≤4 MiB, ≤2048 px; theme names ≤240 chars without `/` or `:`. App icon resolution: icon file → theme icon → desktop-entry icon (GioUnix.DesktopAppInfo) → app_name lower-cased with spaces→`-` → fallback `dialog-information-symbolic`.
 - Tessel Dock indicator (notification_status.py): newline-delimited JSON on stdout, only on change: `{"text": "" if DND else "", "tooltip": "Notifications\n<N unread | error>\n[Do Not Disturb is on | Popups paused for fullscreen]\nClick for history · Right-click for settings", "class": unavailable|paused|unread|notifications}`. Exits on SIGTERM/SIGINT/EPIPE.
 

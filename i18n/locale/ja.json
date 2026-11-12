@@ -2129,5 +2129,7 @@
   "Medium": "中",
   "Large": "大",
   "System tray icon size": "システムトレイのアイコンサイズ",
-  "The size of the status icons, tray applications and More apps in the system tray.": "システムトレイのステータスアイコン、トレイアプリ、「その他のアプリ」のサイズ。"
+  "The size of the status icons, tray applications and More apps in the system tray.": "システムトレイのステータスアイコン、トレイアプリ、「その他のアプリ」のサイズ。",
+  "Notification size": "通知のサイズ",
+  "How large notification popups are on screen.": "画面に表示される通知ポップアップの大きさです。"
 }

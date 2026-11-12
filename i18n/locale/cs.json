@@ -1949,5 +1949,7 @@
   "Medium": "Střední",
   "Large": "Velké",
   "System tray icon size": "Velikost ikon v oznamovací oblasti",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Velikost stavových ikon, aplikací v oznamovací oblasti a tlačítka Další aplikace."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Velikost stavových ikon, aplikací v oznamovací oblasti a tlačítka Další aplikace.",
+  "Notification size": "Velikost oznámení",
+  "How large notification popups are on screen.": "Jak velká jsou vyskakovací oznámení na obrazovce."
 }

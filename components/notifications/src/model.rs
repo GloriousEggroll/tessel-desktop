@@ -21,8 +21,119 @@ pub const MAX_TOTAL_IMAGE_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_ACTIVE: usize = 100;
 pub const MAX_HISTORY: i64 = 500;
 pub const MAX_STATE_BYTES: u64 = 32 * 1024 * 1024;
-pub const SETTING_KEYS: [&str; 6] =
-    ["do_not_disturb", "dnd_until", "suppress_fullscreen", "timeout_ms", "history_limit", "muted_apps"];
+pub const SETTING_KEYS: [&str; 7] =
+    ["do_not_disturb", "dnd_until", "suppress_fullscreen", "timeout_ms", "history_limit", "muted_apps", "popup_size"];
+pub const POPUP_SIZES: [&str; 3] = ["small", "medium", "large"];
+
+/// The `popup_size` setting: how large popups are on screen.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum PopupSize {
+    Small,
+    #[default]
+    Medium,
+    Large,
+}
+
+impl PopupSize {
+    /// Unknown or invalid values are medium.
+    pub fn from_value(value: Option<&Value>) -> Self {
+        match value.and_then(Value::as_str) {
+            Some("small") => Self::Small,
+            Some("large") => Self::Large,
+            _ => Self::Medium,
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Small => "small",
+            Self::Medium => "medium",
+            Self::Large => "large",
+        }
+    }
+
+    pub fn index(self) -> u32 {
+        match self {
+            Self::Small => 0,
+            Self::Medium => 1,
+            Self::Large => 2,
+        }
+    }
+
+    pub fn from_index(index: u32) -> Self {
+        match index {
+            0 => Self::Small,
+            2 => Self::Large,
+            _ => Self::Medium,
+        }
+    }
+
+    /// Popup width before the monitor clamp.
+    pub fn width(self) -> i32 {
+        match self {
+            Self::Small => 300,
+            Self::Medium => 380,
+            Self::Large => 460,
+        }
+    }
+
+    /// Largest picture height; 0 shows every image as a thumbnail.
+    pub fn picture_height(self) -> i32 {
+        match self {
+            Self::Small => 0,
+            Self::Medium => 120,
+            Self::Large => 200,
+        }
+    }
+
+    /// Thumbnail (avatar) size beside the text.
+    pub fn thumbnail(self) -> i32 {
+        match self {
+            Self::Small => 32,
+            Self::Medium => 40,
+            Self::Large => 56,
+        }
+    }
+
+    pub fn summary_lines(self) -> i32 {
+        match self {
+            Self::Large => 3,
+            _ => 2,
+        }
+    }
+
+    pub fn body_lines(self) -> i32 {
+        match self {
+            Self::Small => 3,
+            Self::Medium => 4,
+            Self::Large => 6,
+        }
+    }
+}
+
+/// Images up to this size on their longer side are avatars or icons.
+pub const THUMBNAIL_MAX_SIDE: i32 = 256;
+
+/// Whether an image is shown as a thumbnail beside the text rather than as a
+/// picture: small images, roughly square ones (3:4 to 4:3, avatars and album
+/// art), or any image when the size has no picture.
+pub fn image_is_thumbnail(width: i32, height: i32, size: PopupSize) -> bool {
+    if width <= 0 || height <= 0 || size.picture_height() <= 0 || width.max(height) <= THUMBNAIL_MAX_SIDE {
+        return true;
+    }
+    let (width, height) = (width as i64, height as i64);
+    4 * width >= 3 * height && 4 * height >= 3 * width
+}
+
+/// `(width, height)` of an image fitted inside `max_width` × `max_height`,
+/// keeping its aspect ratio and never upscaling.
+pub fn fit_size(width: i32, height: i32, max_width: i32, max_height: i32) -> (i32, i32) {
+    if width <= 0 || height <= 0 {
+        return (0, 0);
+    }
+    let scale = (max_width.max(1) as f64 / width as f64).min(max_height.max(1) as f64 / height as f64).min(1.0);
+    (((width as f64 * scale).round() as i32).max(1), ((height as f64 * scale).round() as i32).max(1))
+}
 
 /// `DEFAULT_SETTINGS`, in Python's key order.
 pub fn default_settings() -> Map<String, Value> {
@@ -35,6 +146,8 @@ pub fn default_settings() -> Map<String, Value> {
     map.insert("history_limit".into(), json!(100));
     // Application keys (see app_key) whose popups are muted; history is kept.
     map.insert("muted_apps".into(), json!([]));
+    // PopupSize key: small, medium or large.
+    map.insert("popup_size".into(), json!("medium"));
     map
 }
 
@@ -448,6 +561,10 @@ impl NotificationModel {
         self.settings.get("timeout_ms").and_then(Value::as_i64).unwrap_or(6000)
     }
 
+    pub fn popup_size(&self) -> PopupSize {
+        PopupSize::from_value(self.settings.get("popup_size"))
+    }
+
     pub fn history_limit(&self) -> usize {
         self.settings.get("history_limit").and_then(Value::as_i64).unwrap_or(100).max(0) as usize
     }
@@ -694,6 +811,9 @@ impl NotificationModel {
                         return Err("dnd_until must be a time in seconds or 0".into());
                     }
                 }
+                "popup_size" if !value.as_str().is_some_and(|v| POPUP_SIZES.contains(&v)) => {
+                    return Err("popup_size must be small, medium or large".into());
+                }
                 "muted_apps" => {
                     let valid = value.as_array().is_some_and(|list| {
                         let mut seen = std::collections::HashSet::new();
@@ -823,8 +943,14 @@ impl NotificationModel {
         if !version_one {
             return;
         }
-        let empty = json!({});
-        let Ok(settings) = Self::validate_settings(object.get("settings").unwrap_or(&empty)) else { return };
+        let mut settings = object.get("settings").cloned().unwrap_or_else(|| json!({}));
+        // An unknown size falls back to medium instead of discarding every setting.
+        if let Some(map) = settings.as_object_mut() {
+            if map.get("popup_size").is_some_and(|v| !v.as_str().is_some_and(|v| POPUP_SIZES.contains(&v))) {
+                map.remove("popup_size");
+            }
+        }
+        let Ok(settings) = Self::validate_settings(&settings) else { return };
         for (key, value) in settings.clone() {
             self.settings.insert(key, value);
         }

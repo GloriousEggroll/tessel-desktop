@@ -1949,5 +1949,7 @@
   "Medium": "Middel",
   "Large": "Groot",
   "System tray icon size": "Pictogramgrootte in het systeemvak",
-  "The size of the status icons, tray applications and More apps in the system tray.": "De grootte van de statuspictogrammen, de apps in het systeemvak en Meer apps."
+  "The size of the status icons, tray applications and More apps in the system tray.": "De grootte van de statuspictogrammen, de apps in het systeemvak en Meer apps.",
+  "Notification size": "Grootte van meldingen",
+  "How large notification popups are on screen.": "Hoe groot meldingen als pop-up op het scherm verschijnen."
 }

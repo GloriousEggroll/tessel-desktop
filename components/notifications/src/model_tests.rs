@@ -223,7 +223,7 @@ fn journal_format_matches_python() {
     f.model.close(ident, 1);
     let text = std::fs::read_to_string(f.dir.join("state.json")).unwrap();
     assert!(text.starts_with("{\"version\": 1, \"next_id\": 2, \"settings\": {\"do_not_disturb\": false, \"dnd_until\": 0, \
-                              \"suppress_fullscreen\": true, \"timeout_ms\": 6000, \"history_limit\": 100, \"muted_apps\": []}, \
+                              \"suppress_fullscreen\": true, \"timeout_ms\": 6000, \"history_limit\": 100, \"muted_apps\": [], \"popup_size\": \"medium\"}, \
                               \"history\": [{\"id\": 1, \"app_name\": \"notify-send\", \"summary\": \"Hi\", \"body\": \"\", \
                               \"icon\": \"test-symbolic\", \"image_path\": \"\", \"image\": null, \"actions\": [], \"urgency\": 1, \
                               \"progress\": null, \"timestamp\": 1000.0, \"active\": false, \"read\": false, \"transient\": false, \
@@ -449,4 +449,60 @@ fn storage_errors_are_reported_not_fatal() {
     model.notify(NotifyArgs { summary: "x".into(), ..Default::default() }, "");
     assert!(model.storage_error.starts_with("[Errno 20] Not a directory"), "{}", model.storage_error);
     assert_eq!(model.state()["storage_error"], json!(model.storage_error));
+}
+
+#[test]
+fn popup_size_setting_validates_saves_and_falls_back_to_medium() {
+    let mut f = fixture("popup-size");
+    assert_eq!(f.model.popup_size(), PopupSize::Medium);
+    assert_eq!(f.model.settings["popup_size"], json!("medium"));
+    f.model.set_settings(&json!({"popup_size": "large"})).unwrap();
+    assert_eq!(f.model.popup_size(), PopupSize::Large);
+    assert_eq!(f.reload().popup_size(), PopupSize::Large, "saved");
+    for bad in [json!("huge"), json!(2), json!(null), json!("Large")] {
+        assert_eq!(f.model.set_settings(&json!({"popup_size": bad})).unwrap_err(), "popup_size must be small, medium or large");
+    }
+    assert_eq!(f.model.popup_size(), PopupSize::Large);
+    // A bad stored size is medium and does not discard the other settings.
+    let path = f.dir.join("state.json");
+    std::fs::write(&path, "{\"version\": 1, \"settings\": {\"timeout_ms\": 9000, \"popup_size\": \"huge\"}}").unwrap();
+    let loaded = f.reload();
+    assert_eq!((loaded.popup_size(), loaded.timeout_ms()), (PopupSize::Medium, 9000));
+    assert_eq!(PopupSize::from_value(None), PopupSize::Medium);
+    assert_eq!(PopupSize::from_value(Some(&json!(["small"]))), PopupSize::Medium);
+    assert_eq!(PopupSize::from_value(Some(&json!("small"))), PopupSize::Small);
+}
+
+#[test]
+fn popup_sizes_scale_width_picture_thumbnail_and_lines() {
+    let sizes = [PopupSize::Small, PopupSize::Medium, PopupSize::Large];
+    let rows: Vec<_> = sizes.iter().map(|s| (s.key(), s.width(), s.picture_height(), s.thumbnail(), s.summary_lines(), s.body_lines()))
+        .collect();
+    assert_eq!(rows, [("small", 300, 0, 32, 2, 3), ("medium", 380, 120, 40, 2, 4), ("large", 460, 200, 56, 3, 6)]);
+    for size in sizes {
+        assert_eq!(PopupSize::from_index(size.index()), size);
+        assert_eq!(PopupSize::from_value(Some(&json!(size.key()))), size);
+    }
+}
+
+#[test]
+fn avatar_like_images_are_thumbnails_and_wide_images_are_pictures() {
+    use crate::model::{fit_size, image_is_thumbnail};
+    let medium = PopupSize::Medium;
+    // The Discord case: a 256×256 avatar, and bigger square ones.
+    assert!(image_is_thumbnail(256, 256, medium));
+    assert!(image_is_thumbnail(1024, 1024, medium));
+    assert!(image_is_thumbnail(800, 1000, medium), "4:5 is roughly square");
+    assert!(image_is_thumbnail(256, 64, medium), "small images are never pictures");
+    assert!(image_is_thumbnail(0, 0, medium));
+    assert!(!image_is_thumbnail(1920, 1080, medium), "a screenshot keeps a picture");
+    assert!(!image_is_thumbnail(1080, 2400, medium), "so does a tall one");
+    assert!(image_is_thumbnail(1920, 1080, PopupSize::Small), "small popups only show thumbnails");
+    assert!(!image_is_thumbnail(1920, 1080, PopupSize::Large));
+    // Pictures fit the bound, keep their aspect ratio and are never upscaled.
+    assert_eq!(fit_size(1920, 1080, 354, 120), (213, 120));
+    assert_eq!(fit_size(3000, 500, 354, 120), (354, 59));
+    assert_eq!(fit_size(1080, 2400, 354, 200), (90, 200));
+    assert_eq!(fit_size(300, 100, 354, 120), (300, 100));
+    assert_eq!(fit_size(0, 5, 10, 10), (0, 0));
 }

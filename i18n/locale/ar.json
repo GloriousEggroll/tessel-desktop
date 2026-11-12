@@ -1949,5 +1949,7 @@
   "Medium": "متوسط",
   "Large": "كبير",
   "System tray icon size": "حجم أيقونات صينية النظام",
-  "The size of the status icons, tray applications and More apps in the system tray.": "حجم أيقونات الحالة وتطبيقات الصينية وزر «مزيد من التطبيقات» في صينية النظام."
+  "The size of the status icons, tray applications and More apps in the system tray.": "حجم أيقونات الحالة وتطبيقات الصينية وزر «مزيد من التطبيقات» في صينية النظام.",
+  "Notification size": "حجم الإشعارات",
+  "How large notification popups are on screen.": "حجم نوافذ الإشعارات المنبثقة على الشاشة."
 }

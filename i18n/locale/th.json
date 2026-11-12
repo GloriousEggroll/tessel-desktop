@@ -1949,5 +1949,7 @@
   "Medium": "กลาง",
   "Large": "ใหญ่",
   "System tray icon size": "ขนาดไอคอนถาดระบบ",
-  "The size of the status icons, tray applications and More apps in the system tray.": "ขนาดของไอคอนสถานะ แอปในถาด และปุ่มแอปเพิ่มเติมในถาดระบบ"
+  "The size of the status icons, tray applications and More apps in the system tray.": "ขนาดของไอคอนสถานะ แอปในถาด และปุ่มแอปเพิ่มเติมในถาดระบบ",
+  "Notification size": "ขนาดการแจ้งเตือน",
+  "How large notification popups are on screen.": "ขนาดของป๊อปอัปการแจ้งเตือนบนหน้าจอ"
 }

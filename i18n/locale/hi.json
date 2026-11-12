@@ -1949,5 +1949,7 @@
   "Medium": "मध्यम",
   "Large": "बड़ा",
   "System tray icon size": "सिस्टम ट्रे आइकन का आकार",
-  "The size of the status icons, tray applications and More apps in the system tray.": "सिस्टम ट्रे में स्थिति आइकन, ट्रे ऐप्स और और ऐप्स बटन का आकार।"
+  "The size of the status icons, tray applications and More apps in the system tray.": "सिस्टम ट्रे में स्थिति आइकन, ट्रे ऐप्स और और ऐप्स बटन का आकार।",
+  "Notification size": "सूचनाओं का आकार",
+  "How large notification popups are on screen.": "स्क्रीन पर सूचना पॉपअप कितने बड़े दिखते हैं।"
 }

@@ -320,6 +320,7 @@ fn embedded_settings_sync_avoids_spurious_writes(ui: &mut Ui) {
     page.refresh();
     assert!(!page.0.dnd_switch.is_sensitive());
     assert!(!page.0.timeout_spin.is_sensitive());
+    assert!(!page.0.popup_size.is_sensitive());
     assert_eq!(page.0.status_label.text(), "Service stopped");
     assert!(page.0.status_label.has_css_class("error"));
 }
@@ -424,11 +425,135 @@ fn icon_images_stay_compact_and_real_images_use_the_picture(ui: &mut Ui) {
     view.update(&[notification(1, json!({"image_path": "avatar-default-symbolic"}))]);
     assert!(!card.0.picture.get_visible());
     assert_eq!(card.0.avatar.get_visible(), card.0.avatar.storage_type() != gtk::ImageType::Empty);
-    // Real image data keeps the large picture.
+    // Small image data is a thumbnail beside the text, not a picture.
     let data = json!({"width": 2, "height": 2, "rowstride": 8, "channels": 4, "has_alpha": true,
                       "data": tessel_core::base64::encode(&[0xff; 16])});
     view.update(&[notification(1, json!({"image": data}))]);
-    assert!(card.0.picture.get_visible());
+    assert!(!card.0.picture_box.get_visible());
+    assert!(card.0.avatar.get_visible());
+    // A real picture keeps a (bounded) picture.
+    view.update(&[notification(1, json!({"image": image_json(800, 450, false)}))]);
+    assert!(card.0.picture_box.get_visible() && card.0.picture.get_visible());
+    assert!(!card.0.avatar.get_visible());
+}
+
+/// Raw image data like a chat app's `image-data`: `(width, height, rowstride, has_alpha, pixels)`.
+fn image_pixels(width: i32, height: i32, avatar: bool) -> (i32, bool, Vec<u8>) {
+    let channels = if avatar { 4 } else { 3 };
+    let mut pixels = Vec::with_capacity((width * height * channels) as usize);
+    let (cx, cy, radius) = (width as f64 / 2.0, height as f64 / 2.0, width.min(height) as f64 / 2.0);
+    for y in 0..height {
+        for x in 0..width {
+            if avatar {
+                // A round avatar: a teal disc with a face-coloured centre on transparency.
+                let d = ((x as f64 - cx).powi(2) + (y as f64 - cy).powi(2)).sqrt();
+                let face = ((x as f64 - cx).powi(2) + (y as f64 - cy * 0.9).powi(2)).sqrt() < radius * 0.45;
+                let (r, g, b) = if face { (245, 214, 190) } else { (90, 200, 210) };
+                pixels.extend_from_slice(&[r, g, b, if d <= radius { 255 } else { 0 }]);
+            } else {
+                // A screenshot-like picture: a title bar, a sidebar and a gradient.
+                let (r, g, b) = if y < height / 12 { (40, 44, 52) } else if x < width / 5 { (60, 64, 72) }
+                    else { ((x * 200 / width) as u8 + 30, (y * 180 / height) as u8 + 40, 170) };
+                pixels.extend_from_slice(&[r, g, b]);
+            }
+        }
+    }
+    (width * channels, avatar, pixels)
+}
+
+fn image_json(width: i32, height: i32, avatar: bool) -> Value {
+    let (rowstride, alpha, pixels) = image_pixels(width, height, avatar);
+    json!({"width": width, "height": height, "rowstride": rowstride, "channels": if alpha { 4 } else { 3 },
+           "has_alpha": alpha, "data": tessel_core::base64::encode(&pixels)})
+}
+
+fn natural_height(widget: &impl IsA<gtk::Widget>, for_width: i32) -> i32 {
+    widget.measure(gtk::Orientation::Vertical, for_width).1
+}
+
+fn avatar_images_are_thumbnails_and_pictures_stay_bounded(ui: &mut Ui) {
+    use tessel_notifications::model::PopupSize;
+    let view = ui.toast();
+    // The Discord case: a 256×256 avatar under a one-word message.
+    view.update(&[notification(1, json!({"summary": "Someone", "body": "Yeah", "actions": [], "image": image_json(256, 256, true)}))]);
+    let card = view.card(1).unwrap();
+    assert!(card.0.avatar.get_visible(), "the avatar is a thumbnail beside the text");
+    assert!(!card.0.picture_box.get_visible(), "never the big picture");
+    assert_eq!(card.0.avatar.pixel_size(), 40);
+    assert!(settle_until(|| view.window().is_mapped() && view.window().height() > 0, 3.0));
+    settle(0.2);
+    let (width, height) = (view.window().width(), view.window().height());
+    assert_eq!(width, 380);
+    assert!(height < 140, "a one-word message with an avatar stays short: {height}");
+    // A square photo of any size is also a thumbnail.
+    view.update(&[notification(1, json!({"image": image_json(600, 600, false)}))]);
+    assert!(card.0.avatar.get_visible() && !card.0.picture_box.get_visible());
+    // A wide screenshot keeps a picture, bounded to 120 px and never stretched to the card width.
+    view.update(&[notification(1, json!({"image": image_json(800, 450, false)}))]);
+    assert!(card.0.picture_box.get_visible() && !card.0.avatar.get_visible());
+    let paintable = card.0.picture.paintable().unwrap();
+    assert_eq!((paintable.intrinsic_width(), paintable.intrinsic_height()), (213, 120));
+    assert!(natural_height(&card.0.picture_box, 2000) <= 120, "{}", natural_height(&card.0.picture_box, 2000));
+    settle(0.2);
+    assert!(card.0.picture.height() <= 120 && card.0.picture.width() <= 354, "{}x{}", card.0.picture.width(), card.0.picture.height());
+    // A tiny wide image is not upscaled.
+    view.update(&[notification(1, json!({"image": image_json(300, 60, false)}))]);
+    let paintable = card.0.picture.paintable().unwrap();
+    assert_eq!((paintable.intrinsic_width(), paintable.intrinsic_height()), (300, 60));
+    assert!(natural_height(&card.0.picture_box, 2000) <= 60);
+    // Each size: width, picture bound, thumbnail and line limits.
+    view.update(&[notification(1, json!({"image": image_json(800, 450, false)}))]);
+    for (size, width, bound, thumb, lines) in [(PopupSize::Small, 300, 0, 32, 3), (PopupSize::Large, 460, 200, 56, 6),
+                                               (PopupSize::Medium, 380, 120, 40, 4)] {
+        view.set_size(size);
+        assert_eq!(view.size(), size);
+        assert_eq!(card.0.avatar.pixel_size(), thumb);
+        assert_eq!(card.0.body_label.lines(), lines);
+        if bound == 0 {
+            assert!(!card.0.picture_box.get_visible() && card.0.avatar.get_visible(), "small shows only the thumbnail");
+        } else {
+            assert!(card.0.picture_box.get_visible());
+            assert!(natural_height(&card.0.picture_box, 2000) <= bound);
+        }
+        assert!(settle_until(|| view.window().width() == width, 3.0), "{size:?}: {} != {width}", view.window().width());
+        assert!(card.widget().has_css_class(&format!("size-{}", size.key())));
+    }
+    // Long text is cut by line limits, so it never makes the popup very tall.
+    let long = "word ".repeat(3000);
+    view.update(&[notification(1, json!({"summary": long, "body": long, "image": "", "actions": []}))]);
+    settle(0.3);
+    assert!(view.window().height() < 220, "long text height {}", view.window().height());
+}
+
+fn history_cards_use_the_same_bounded_rules(ui: &mut Ui) {
+    ui.client.set("notifications", json!([notification(1, json!({"image": image_json(800, 450, false), "active": false})),
+                                          notification(2, json!({"image": image_json(256, 256, true), "active": false}))]));
+    let view = ui.center();
+    view.refresh();
+    let picture = view.card(1).unwrap();
+    assert!(picture.0.picture_box.get_visible() && !picture.0.avatar.get_visible());
+    assert!(natural_height(&picture.0.picture_box, 2000) <= 120);
+    let avatar = view.card(2).unwrap();
+    assert!(avatar.0.avatar.get_visible() && !avatar.0.picture_box.get_visible());
+}
+
+fn settings_popup_size_dropdown_writes_and_follows_the_setting(ui: &mut Ui) {
+    let page = ui.page();
+    let dropdown = page.0.popup_size.clone();
+    assert_eq!(dropdown.widget_name(), "popup_size");
+    assert_eq!(dropdown.selected(), 1, "no setting is medium");
+    assert!(ui.client.actions().is_empty(), "refresh never writes");
+    dropdown.set_selected(2);
+    assert_eq!(ui.client.actions(), [json!(["settings", {"popup_size": "large"}])]);
+    dropdown.set_selected(0);
+    assert_eq!(ui.client.actions().last().unwrap(), &json!(["settings", {"popup_size": "small"}]));
+    ui.client.set_setting("popup_size", json!("bogus"));
+    page.refresh();
+    assert_eq!(dropdown.selected(), 1, "an invalid value is medium");
+    ui.client.set_setting("popup_size", json!("large"));
+    page.refresh();
+    assert_eq!(dropdown.selected(), 2);
+    assert_eq!(ui.client.actions().len(), 2, "syncing from the setting does not write it back");
 }
 
 fn header_uses_the_application_icon_before_the_info_fallback(ui: &mut Ui) {
@@ -507,6 +632,9 @@ fn run_ui() -> Vec<&'static str> {
         ("header_uses_the_application_icon_before_the_info_fallback", header_uses_the_application_icon_before_the_info_fallback),
         ("dnd_choices_wrap_instead_of_truncating", dnd_choices_wrap_instead_of_truncating),
         ("images_are_bounded_and_never_remote", images_are_bounded_and_never_remote),
+        ("avatar_images_are_thumbnails_and_pictures_stay_bounded", avatar_images_are_thumbnails_and_pictures_stay_bounded),
+        ("history_cards_use_the_same_bounded_rules", history_cards_use_the_same_bounded_rules),
+        ("settings_popup_size_dropdown_writes_and_follows_the_setting", settings_popup_size_dropdown_writes_and_follows_the_setting),
     ];
     gtk::init().expect("GTK on the private compositor");
     let mut failed = Vec::new();
@@ -758,6 +886,87 @@ fn borderless_probe_holds_replacement_and_preserves_history(case: &DaemonCase) {
     model.close(ident, 2);
 }
 
+/// Saves a `grim` screenshot of the popup corner inside the private
+/// compositor when `NM_PROOF_DIR` is set (run_headless.sh passes it through).
+fn proof_screenshot(stack: &ToastStack, name: &str) {
+    let Ok(dir) = std::env::var("NM_PROOF_DIR") else { return };
+    let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
+    let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_default();
+    assert!(runtime != "/run/user/1000" && !display.is_empty(), "screenshots only inside the private compositor");
+    let monitor = gdk::Display::default().unwrap().monitors().item(0).and_downcast::<gdk::Monitor>().unwrap();
+    let g = monitor.geometry();
+    let (w, h) = (stack.window().width() + 48, stack.window().height() + 48);
+    let region = format!("{},{} {}x{}", g.x() + g.width() - w, g.y(), w, h.min(g.height()));
+    let path = format!("{dir}/{name}.png");
+    let mut child = std::process::Command::new("grim").args(["-g", &region, &path]).spawn().unwrap();
+    assert!(settle_until(|| child.try_wait().ok().flatten().is_some(), 5.0));
+    println!("proof {path} popup {}x{}", stack.window().width(), stack.window().height());
+}
+
+fn image_hint(width: i32, height: i32, avatar: bool) -> Variant {
+    let (rowstride, alpha, pixels) = image_pixels(width, height, avatar);
+    (width, height, rowstride, alpha, 8i32, if alpha { 4i32 } else { 3 }, pixels).to_variant()
+}
+
+fn popup_size_applies_live_and_bounds_images(case: &DaemonCase) {
+    use tessel_notifications::model::PopupSize;
+    let model = case.model();
+    model.clear_history();
+    let stack_of = |ident: u32| case.daemon.toast_stacks().into_iter().find(|(_, s)| s.card_ids().contains(&ident)).map(|e| e.1);
+    let show = |title: &str, body: &str, app: &str, actions: Vec<String>, hints: Vec<(&str, Variant)>| {
+        let hints: std::collections::HashMap<String, Variant> = hints.into_iter().map(|(k, v)| (k.to_owned(), v)).collect();
+        let params = (app, 0u32, "", title, body, actions, hints, 0i32).to_variant();
+        let ident = case.call("Notify", Some(params), "org.freedesktop.Notifications").child_value(0).get::<u32>().unwrap();
+        assert!(settle_until(|| stack_of(ident).is_some_and(|s| s.window().is_mapped() && s.window().height() > 0), 3.0));
+        settle(0.4);
+        (ident, stack_of(ident).unwrap())
+    };
+    for size in [PopupSize::Small, PopupSize::Medium, PopupSize::Large] {
+        model.set_settings(&json!({"popup_size": size.key()})).unwrap();
+        let key = size.key();
+        // (a) The Discord case: a 256×256 avatar and a one-word body.
+        let (ident, stack) = show("Someone", "Yeah", "discord", vec![], vec![("image-data", image_hint(256, 256, true))]);
+        let card = stack.card(ident).unwrap();
+        assert!(card.0.avatar.get_visible() && !card.0.picture_box.get_visible());
+        assert_eq!(stack.window().width(), size.width(), "{key}");
+        assert!(stack.window().height() <= size.thumbnail() + 90, "{key} avatar popup height {}", stack.window().height());
+        proof_screenshot(&stack, &format!("{key}-a-avatar-256"));
+        model.close(ident, 2);
+        // (b) A wide, screenshot-like picture.
+        let (ident, stack) = show("Screenshot saved", "Screenshot from 2026-11-12 10-24-31.png", "Screenshot",
+                                  vec!["edit".into(), "Edit".into(), "default".into(), "Open".into()],
+                                  vec![("image-data", image_hint(800, 450, false))]);
+        proof_screenshot(&stack, &format!("{key}-b-wide-picture"));
+        let card = stack.card(ident).unwrap();
+        if size.picture_height() == 0 {
+            assert!(!card.0.picture_box.get_visible() && card.0.avatar.get_visible());
+        } else {
+            assert!(card.0.picture_box.get_visible());
+            assert!(card.0.picture.height() <= size.picture_height(), "{key} picture {}", card.0.picture.height());
+        }
+        // The bound plus the header, two text lines and the buttons.
+        assert!(stack.window().height() <= size.picture_height().max(size.thumbnail()) + 175,
+                "{key} picture popup height {}", stack.window().height());
+        model.close(ident, 2);
+        // (c) Text only, with two action buttons.
+        let (ident, stack) = show("Updates are ready", "Review the available updates whenever you're ready.", "Software",
+                                  vec!["default".into(), "View updates".into(), "later".into(), "Later".into()], vec![]);
+        proof_screenshot(&stack, &format!("{key}-c-text-actions"));
+        model.close(ident, 2);
+    }
+    // A change applies to a popup already on screen, without a restart.
+    model.set_settings(&json!({"popup_size": "medium"})).unwrap();
+    let (ident, stack) = show("Someone", "Yeah", "discord", vec![], vec![("image-data", image_hint(256, 256, true))]);
+    assert_eq!(stack.window().width(), 380);
+    model.set_settings(&json!({"popup_size": "large"})).unwrap();
+    assert!(settle_until(|| stack.window().width() == 460, 3.0), "live width {}", stack.window().width());
+    assert_eq!(stack.card(ident).unwrap().0.avatar.pixel_size(), 56);
+    model.set_settings(&json!({"popup_size": "small"})).unwrap();
+    assert!(settle_until(|| stack.window().width() == 300, 3.0), "live shrink {}", stack.window().width());
+    model.close(ident, 2);
+    model.set_settings(&json!({"popup_size": "medium"})).unwrap();
+}
+
 type DaemonTest = fn(&DaemonCase);
 
 fn run_daemon() -> Vec<&'static str> {
@@ -766,6 +975,7 @@ fn run_daemon() -> Vec<&'static str> {
         ("critical_bypasses_dnd_and_fullscreen_but_muted_apps_never_pop_up", critical_bypasses_dnd_and_fullscreen_but_muted_apps_never_pop_up),
         ("fullscreen_history_no_backlog_timeout_center_and_headless_cli", fullscreen_history_no_backlog_timeout_center_and_headless_cli),
         ("borderless_probe_holds_replacement_and_preserves_history", borderless_probe_holds_replacement_and_preserves_history),
+        ("popup_size_applies_live_and_bounds_images", popup_size_applies_live_and_bounds_images),
     ];
     let daemon = Daemon::new();
     let failed = Rc::new(RefCell::new(Vec::new()));

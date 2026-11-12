@@ -2129,5 +2129,7 @@
   "Medium": "中",
   "Large": "大",
   "System tray icon size": "系統匣圖示大小",
-  "The size of the status icons, tray applications and More apps in the system tray.": "系統匣中狀態圖示、系統匣應用程式與「更多應用程式」按鈕的大小。"
+  "The size of the status icons, tray applications and More apps in the system tray.": "系統匣中狀態圖示、系統匣應用程式與「更多應用程式」按鈕的大小。",
+  "Notification size": "通知大小",
+  "How large notification popups are on screen.": "通知彈出視窗在螢幕上顯示的大小。"
 }

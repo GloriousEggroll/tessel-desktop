@@ -35,6 +35,7 @@ fn register_targets(page: &SettingsPage, view: &NotificationSettingsPage) {
     page.add_target("dnd_switch", &view.0.dnd_switch);
     page.add_target("fullscreen_switch", &view.0.fullscreen_switch);
     page.add_target("timeout_spin", &view.0.timeout_spin);
+    page.add_target("popup_size", &view.0.popup_size);
 }
 
 pub(crate) fn build(host: &Host, factories: &Factories) -> Result<SettingsPage, String> {

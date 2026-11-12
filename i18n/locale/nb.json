@@ -1949,5 +1949,7 @@
   "Medium": "Middels",
   "Large": "Stor",
   "System tray icon size": "Ikonstørrelse i systemkurven",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Størrelsen på statusikonene, programmene i systemkurven og Flere apper."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Størrelsen på statusikonene, programmene i systemkurven og Flere apper.",
+  "Notification size": "Størrelse på varsler",
+  "How large notification popups are on screen.": "Hvor store varsler i sprettoppvinduer er på skjermen."
 }

@@ -1949,5 +1949,7 @@
   "Medium": "Średni",
   "Large": "Duży",
   "System tray icon size": "Rozmiar ikon zasobnika systemowego",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Rozmiar ikon stanu, aplikacji w zasobniku i przycisku Więcej aplikacji w zasobniku systemowym."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Rozmiar ikon stanu, aplikacji w zasobniku i przycisku Więcej aplikacji w zasobniku systemowym.",
+  "Notification size": "Rozmiar powiadomień",
+  "How large notification popups are on screen.": "Jak duże są wyskakujące powiadomienia na ekranie."
 }

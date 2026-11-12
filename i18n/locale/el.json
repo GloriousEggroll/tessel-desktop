@@ -1949,5 +1949,7 @@
   "Medium": "Μεσαίο",
   "Large": "Μεγάλο",
   "System tray icon size": "Μέγεθος εικονιδίων περιοχής ειδοποιήσεων",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Το μέγεθος των εικονιδίων κατάστασης, των εφαρμογών της περιοχής ειδοποιήσεων και του κουμπιού «Περισσότερες εφαρμογές»."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Το μέγεθος των εικονιδίων κατάστασης, των εφαρμογών της περιοχής ειδοποιήσεων και του κουμπιού «Περισσότερες εφαρμογές».",
+  "Notification size": "Μέγεθος ειδοποιήσεων",
+  "How large notification popups are on screen.": "Πόσο μεγάλες εμφανίζονται οι αναδυόμενες ειδοποιήσεις στην οθόνη."
 }

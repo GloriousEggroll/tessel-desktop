@@ -423,6 +423,7 @@ impl Daemon {
             stack.destroy();
         }
         let layer = if suppress && !guard.blocked() { Layer::Top } else { Layer::Overlay };
+        let size = model.with(|m| m.popup_size());
         for (key, items) in groups {
             let existing = self.0.toast_stacks.borrow().iter().find(|(k, _)| *k == key).map(|e| e.1.clone());
             let stack = match existing {
@@ -442,6 +443,7 @@ impl Daemon {
             if gtk4_layer_shell::is_supported() {
                 stack.window().set_layer(layer);
             }
+            stack.set_size(size);
             stack.update(&items);
         }
     }

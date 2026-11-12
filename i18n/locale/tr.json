@@ -1949,5 +1949,7 @@
   "Medium": "Orta",
   "Large": "Büyük",
   "System tray icon size": "Sistem tepsisi simge boyutu",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Sistem tepsisindeki durum simgelerinin, tepsi uygulamalarının ve Diğer uygulamalar düğmesinin boyutu."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Sistem tepsisindeki durum simgelerinin, tepsi uygulamalarının ve Diğer uygulamalar düğmesinin boyutu.",
+  "Notification size": "Bildirim boyutu",
+  "How large notification popups are on screen.": "Bildirim açılır pencerelerinin ekranda ne kadar büyük olduğu."
 }

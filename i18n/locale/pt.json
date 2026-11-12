@@ -1949,5 +1949,7 @@
   "Medium": "Médio",
   "Large": "Grande",
   "System tray icon size": "Tamanho dos ícones da área de notificação",
-  "The size of the status icons, tray applications and More apps in the system tray.": "O tamanho dos ícones de estado, das aplicações da área de notificação e de Mais aplicações."
+  "The size of the status icons, tray applications and More apps in the system tray.": "O tamanho dos ícones de estado, das aplicações da área de notificação e de Mais aplicações.",
+  "Notification size": "Tamanho das notificações",
+  "How large notification popups are on screen.": "O tamanho das notificações pop-up no ecrã."
 }

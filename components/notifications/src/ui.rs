@@ -5,9 +5,10 @@
 //! take keyboard focus for a toast and never deserialize notification markup:
 //! every label uses `set_text`.
 
-use crate::model::{app_groups, dnd_deadline, AppGroup};
+use crate::model::{app_groups, dnd_deadline, fit_size, image_is_thumbnail, AppGroup, PopupSize};
 use gtk::prelude::*;
-use gtk::{gdk, gio, glib, pango};
+use gtk::subclass::prelude::*;
+use gtk::{gdk, gio, glib, graphene, gsk, pango};
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use serde_json::{json, Map, Value};
 use std::cell::{Cell, RefCell};
@@ -34,6 +35,11 @@ window.tessel-notifications.tray-popup { background: transparent; }
 }
 .tessel-notifications .notification-card.popup-surface { border-radius: 8px; }
 .tessel-notifications .notification-avatar { border-radius: 8px; }
+.tessel-notifications .notification-picture { border-radius: 6px; }
+.tessel-notifications .notification-card.size-small { padding: 10px; }
+.tessel-notifications .notification-card.size-large { padding: 14px; }
+.tessel-notifications .size-large .notification-summary { font-size: 11.5pt; }
+.tessel-notifications .size-large .notification-body { font-size: 11pt; }
 .tessel-notifications .notification-card.critical {
     border-color: alpha(@theme_selected_bg_color, .7);
 }
@@ -206,6 +212,74 @@ pub fn notification_texture(value: &Value) -> Option<gdk::Paintable> {
     data.resize((rowstride * height) as usize, 0);
     let format = if alpha { gdk::MemoryFormat::R8g8b8a8 } else { gdk::MemoryFormat::R8g8b8 };
     Some(gdk::MemoryTexture::new(width as i32, height as i32, format, &glib::Bytes::from_owned(data), rowstride as usize).upcast())
+}
+
+mod scaled {
+    use super::*;
+
+    #[derive(Default)]
+    pub struct Inner {
+        pub texture: RefCell<Option<gdk::Texture>>,
+        pub size: Cell<(i32, i32)>,
+    }
+
+    #[glib::object_subclass]
+    impl ObjectSubclass for Inner {
+        const NAME: &'static str = "TesselNotificationImage";
+        type Type = super::ScaledImage;
+        type Interfaces = (gdk::Paintable,);
+    }
+
+    impl ObjectImpl for Inner {}
+
+    impl PaintableImpl for Inner {
+        fn intrinsic_width(&self) -> i32 { self.size.get().0 }
+        fn intrinsic_height(&self) -> i32 { self.size.get().1 }
+        fn flags(&self) -> gdk::PaintableFlags { gdk::PaintableFlags::STATIC_SIZE | gdk::PaintableFlags::STATIC_CONTENTS }
+        fn snapshot(&self, snapshot: &gdk::Snapshot, width: f64, height: f64) {
+            let (Some(texture), Some(snapshot)) = (self.texture.borrow().clone(), snapshot.downcast_ref::<gtk::Snapshot>()) else { return };
+            let bounds = graphene::Rect::new(0.0, 0.0, width as f32, height as f32);
+            snapshot.append_scaled_texture(&texture, gsk::ScalingFilter::Trilinear, &bounds);
+        }
+    }
+}
+
+glib::wrapper! {
+    /// A texture whose natural size is a smaller logical size, so a picture
+    /// or thumbnail never asks for the image's full pixel size.
+    pub struct ScaledImage(ObjectSubclass<scaled::Inner>) @implements gdk::Paintable;
+}
+
+impl ScaledImage {
+    pub fn new(texture: &gdk::Texture, width: i32, height: i32) -> Self {
+        let image: Self = glib::Object::new();
+        image.imp().texture.replace(Some(texture.clone()));
+        image.imp().size.set((width.max(1), height.max(1)));
+        image
+    }
+}
+
+/// The card's inner width: popup width minus the card padding and border.
+pub fn picture_max_width(size: PopupSize) -> i32 {
+    size.width() - 26
+}
+
+/// What a content image becomes: a thumbnail beside the text or a bounded
+/// picture under it.
+pub enum ContentImage {
+    Thumbnail(ScaledImage),
+    Picture(ScaledImage),
+}
+
+pub fn content_image(texture: &gdk::Texture, size: PopupSize) -> ContentImage {
+    let (width, height) = (texture.width(), texture.height());
+    if image_is_thumbnail(width, height, size) {
+        let (w, h) = fit_size(width, height, size.thumbnail(), size.thumbnail());
+        ContentImage::Thumbnail(ScaledImage::new(texture, w, h))
+    } else {
+        let (w, h) = fit_size(width, height, picture_max_width(size), size.picture_height());
+        ContentImage::Picture(ScaledImage::new(texture, w, h))
+    }
 }
 
 // Icons inside these directories are application or theme icons, not content
@@ -388,7 +462,10 @@ pub struct CardInner {
     hovered: Cell<bool>,
     notification: RefCell<Map<String, Value>>,
     image_value: RefCell<Option<Value>>,
+    image_size: Cell<Option<PopupSize>>,
     image_icon: RefCell<Option<IconValue>>,
+    thumbnail: RefCell<Option<IconValue>>,
+    size: Cell<PopupSize>,
     action_signature: RefCell<Option<Vec<(String, String)>>>,
     pub action_buttons: RefCell<HashMap<String, gtk::Button>>,
     pub icon: gtk::Image,
@@ -400,6 +477,7 @@ pub struct CardInner {
     pub summary_label: gtk::Label,
     pub body_label: gtk::Label,
     pub picture: gtk::Picture,
+    pub picture_box: gtk::Box,
     pub progress: gtk::ProgressBar,
     pub action_box: gtk::FlowBox,
 }
@@ -409,6 +487,13 @@ pub struct NotificationCard(pub Rc<CardInner>);
 
 impl NotificationCard {
     pub fn new(notification: &Value, dismiss: Dismiss, activate: Activate, history: bool, hover: Option<Hover>) -> Self {
+        Self::with_size(notification, dismiss, activate, history, hover, PopupSize::Medium)
+    }
+
+    /// History cards always use the medium rules: the center has a fixed width.
+    pub fn with_size(notification: &Value, dismiss: Dismiss, activate: Activate, history: bool, hover: Option<Hover>,
+                     size: PopupSize) -> Self {
+        let size = if history { PopupSize::Medium } else { size };
         let root = gtk::Box::new(gtk::Orientation::Vertical, 8);
         root.add_css_class("notification-card");
         root.add_css_class(if history { "card" } else { "popup-surface" });
@@ -437,7 +522,7 @@ impl NotificationCard {
         top.append(&close_button);
         root.append(&top);
         let message = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        let avatar = gtk::Image::builder().pixel_size(40).valign(gtk::Align::Start).visible(false).build();
+        let avatar = gtk::Image::builder().pixel_size(size.thumbnail()).valign(gtk::Align::Start).visible(false).build();
         avatar.add_css_class("notification-avatar");
         message.append(&avatar);
         let texts = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(4).hexpand(true).build();
@@ -446,20 +531,28 @@ impl NotificationCard {
         let summary_label = gtk::Label::builder().xalign(0.0).wrap(true).build();
         summary_label.set_wrap_mode(pango::WrapMode::WordChar);
         summary_label.set_max_width_chars(38);
-        summary_label.set_lines(if history { 3 } else { 2 });
+        summary_label.set_lines(if history { 3 } else { size.summary_lines() });
         summary_label.set_ellipsize(pango::EllipsizeMode::End);
         summary_label.add_css_class("notification-summary");
         texts.append(&summary_label);
         let body_label = gtk::Label::builder().xalign(0.0).wrap(true).build();
         body_label.set_wrap_mode(pango::WrapMode::WordChar);
         body_label.set_max_width_chars(40);
-        body_label.set_lines(if history { 12 } else { 4 });
+        body_label.set_lines(if history { 12 } else { size.body_lines() });
         body_label.set_ellipsize(pango::EllipsizeMode::End);
+        body_label.add_css_class("notification-body");
         body_label.set_selectable(history);
         texts.append(&body_label);
-        let picture = gtk::Picture::builder().can_shrink(true).height_request(100).hexpand(true).build();
+        // The picture's paintable is already fitted to the size's bound; a
+        // horizontal box gives it its natural width, so it is never
+        // stretched to the card width (and so never taller than the bound).
+        let picture = gtk::Picture::builder().can_shrink(true).build();
         picture.set_content_fit(gtk::ContentFit::Contain);
-        root.append(&picture);
+        picture.add_css_class("notification-picture");
+        picture.set_overflow(gtk::Overflow::Hidden);
+        let picture_box = gtk::Box::builder().halign(gtk::Align::Center).visible(false).build();
+        picture_box.append(&picture);
+        root.append(&picture_box);
         let progress = gtk::ProgressBar::builder().show_text(true).build();
         root.append(&progress);
         let action_box = gtk::FlowBox::builder().selection_mode(gtk::SelectionMode::None).build();
@@ -472,10 +565,12 @@ impl NotificationCard {
         root.append(&action_box);
         let card = Self(Rc::new(CardInner {
             root: root.clone(), history, dismiss, activate, hover, hovered: Cell::new(false),
-            notification: RefCell::new(Map::new()), image_value: RefCell::new(None), image_icon: RefCell::new(None),
+            notification: RefCell::new(Map::new()), image_value: RefCell::new(None), image_size: Cell::new(None),
+            image_icon: RefCell::new(None), thumbnail: RefCell::new(None), size: Cell::new(size),
             action_signature: RefCell::new(None), action_buttons: RefCell::new(HashMap::new()), icon, app_label,
-            unread_dot, time_label, close_button, avatar, summary_label, body_label, picture, progress, action_box,
+            unread_dot, time_label, close_button, avatar, summary_label, body_label, picture, picture_box, progress, action_box,
         }));
+        card.apply_size_classes();
         close_slot.replace(Rc::downgrade(&card.0));
         let motion = gtk::EventControllerMotion::new();
         let weak = Rc::downgrade(&card.0);
@@ -488,6 +583,30 @@ impl NotificationCard {
     }
 
     pub fn widget(&self) -> &gtk::Box { &self.0.root }
+
+    pub fn size(&self) -> PopupSize { self.0.size.get() }
+
+    /// Change a popup card's size; history cards keep the medium rules.
+    pub fn set_size(&self, size: PopupSize) {
+        let inner = &self.0;
+        if inner.history || inner.size.replace(size) == size {
+            return;
+        }
+        inner.avatar.set_pixel_size(size.thumbnail());
+        inner.summary_label.set_lines(size.summary_lines());
+        inner.body_label.set_lines(size.body_lines());
+        self.apply_size_classes();
+        let notification = Value::Object(self.notification());
+        self.update(&notification);
+    }
+
+    fn apply_size_classes(&self) {
+        let size = self.0.size.get();
+        for other in [PopupSize::Small, PopupSize::Medium, PopupSize::Large] {
+            let class = format!("size-{}", other.key());
+            if other == size { self.0.root.add_css_class(&class) } else { self.0.root.remove_css_class(&class) }
+        }
+    }
 
     pub fn notification_id(&self) -> u32 {
         self.0.notification.borrow().get("id").and_then(Value::as_u64).unwrap_or(0) as u32
@@ -544,27 +663,42 @@ impl NotificationCard {
         inner.body_label.set_visible(!inner.body_label.text().is_empty());
         let app_icon = app_icon(&map);
         let value = map.get("image").filter(|v| tessel_core::pyjson::truthy(v)).or_else(|| map.get("image_path")).cloned();
-        if *inner.image_value.borrow() != value {
+        let size = inner.size.get();
+        if *inner.image_value.borrow() != value || inner.image_size.get() != Some(size) {
             inner.image_value.replace(value.clone());
+            inner.image_size.set(Some(size));
             let icon_like = image_is_icon(value.as_ref(), &map);
             // Icon names and app-icon files are not content: they belong in
-            // the header (or a small avatar), never the full-width picture.
+            // the header (or a small avatar), never the picture.
             inner.image_icon.replace(if icon_like { icon_value(value.as_ref()) } else { None });
-            let texture = if icon_like { None } else { value.as_ref().and_then(notification_texture) };
-            inner.picture.set_paintable(texture.as_ref());
+            let texture = if icon_like { None } else {
+                value.as_ref().and_then(notification_texture).and_then(|p| p.downcast::<gdk::Texture>().ok())
+            };
+            // Avatars and small images (a chat contact, album art) become a
+            // thumbnail; only real pictures get the bounded picture.
+            let (thumbnail, picture) = match texture.map(|t| content_image(&t, size)) {
+                Some(ContentImage::Thumbnail(image)) => (Some(IconValue::Paintable(image.upcast())), None),
+                Some(ContentImage::Picture(image)) => (None, Some(image)),
+                None => (None, None),
+            };
+            inner.thumbnail.replace(thumbnail);
+            inner.picture.set_paintable(picture.as_ref());
         }
         let image_icon = inner.image_icon.borrow().clone();
         set_image(&inner.icon, app_icon.as_ref().or(image_icon.as_ref()));
-        // A different icon (a contact's avatar, say) sits beside the text.
-        let show_avatar = match (&image_icon, &app_icon) {
-            (Some(_), Some(app)) => !same_icon(value.as_ref(), &map, app),
-            _ => false,
-        };
-        if show_avatar {
-            set_image(&inner.avatar, image_icon.as_ref());
+        // A content thumbnail or a different icon (a contact's avatar, say)
+        // sits beside the text.
+        let avatar = inner.thumbnail.borrow().clone().or_else(|| match (&image_icon, &app_icon) {
+            (Some(icon), Some(app)) if !same_icon(value.as_ref(), &map, app) => Some(icon.clone()),
+            _ => None,
+        });
+        if avatar.is_some() {
+            set_image(&inner.avatar, avatar.as_ref());
         }
-        inner.avatar.set_visible(show_avatar);
-        inner.picture.set_visible(inner.picture.paintable().is_some());
+        inner.avatar.set_visible(avatar.is_some());
+        let has_picture = inner.picture.paintable().is_some();
+        inner.picture.set_visible(has_picture);
+        inner.picture_box.set_visible(has_picture);
         let progress = map.get("progress").and_then(|p| match p {
             Value::Number(n) => n.as_f64(),
             _ => None,
@@ -717,6 +851,12 @@ pub struct ToastInner {
     pub cards: RefCell<indexmap::IndexMap<u32, NotificationCard>>,
     pub container: gtk::Box,
     pub theme: WindowTheme,
+    size: Cell<PopupSize>,
+}
+
+/// The popup width for a size, clamped to the monitor.
+pub fn popup_width(size: PopupSize, monitor_width: Option<i32>) -> i32 {
+    monitor_width.map_or(size.width(), |width| size.width().min(240.max(width - 24)))
 }
 
 #[derive(Clone)]
@@ -735,7 +875,7 @@ impl ToastStack {
         let container = gtk::Box::new(gtk::Orientation::Vertical, 10);
         container.set_valign(gtk::Align::Start);
         let geometry = monitor.map(|m| m.geometry());
-        let width = geometry.map_or(380, |g| 380.min(240.max(g.width() - 24)));
+        let width = popup_width(PopupSize::Medium, geometry.map(|g| g.width()));
         window.set_default_size(width, -1);
         window.set_size_request(width, -1);
         let scroller = gtk::ScrolledWindow::builder().propagate_natural_height(true).build();
@@ -763,7 +903,7 @@ impl ToastStack {
         let stack = Self(Rc::new(ToastInner {
             window, css, destroyed: Cell::new(false), monitor: monitor.cloned(), workspace,
             placement_ready: Cell::new(!supported), wants_visible: Cell::new(false), dismiss, activate, hover,
-            cards: RefCell::new(indexmap::IndexMap::new()), container, theme,
+            cards: RefCell::new(indexmap::IndexMap::new()), container, theme, size: Cell::new(PopupSize::Medium),
         }));
         stack.position();
         stack
@@ -774,6 +914,26 @@ impl ToastStack {
     pub fn card_ids(&self) -> Vec<u32> { self.0.cards.borrow().keys().copied().collect() }
 
     pub fn card(&self, ident: u32) -> Option<NotificationCard> { self.0.cards.borrow().get(&ident).cloned() }
+
+    pub fn size(&self) -> PopupSize { self.0.size.get() }
+
+    pub fn width(&self) -> i32 {
+        popup_width(self.0.size.get(), self.0.monitor.as_ref().map(|m| m.geometry().width()))
+    }
+
+    /// Resize the stack and its cards to a `popup_size` setting.
+    pub fn set_size(&self, size: PopupSize) {
+        if self.0.destroyed.get() || self.0.size.replace(size) == size {
+            return;
+        }
+        let width = self.width();
+        self.0.window.set_size_request(width, -1);
+        self.0.window.set_default_size(width, -1);
+        let cards: Vec<NotificationCard> = self.0.cards.borrow().values().cloned().collect();
+        for card in cards {
+            card.set_size(size);
+        }
+    }
 
     pub fn position(&self) {
         if !gtk4_layer_shell::is_supported() {
@@ -825,7 +985,8 @@ impl ToastStack {
                     card
                 }
                 None => {
-                    let card = NotificationCard::new(entry, self.0.dismiss.clone(), self.0.activate.clone(), false, self.0.hover.clone());
+                    let card = NotificationCard::with_size(entry, self.0.dismiss.clone(), self.0.activate.clone(), false,
+                                                           self.0.hover.clone(), self.0.size.get());
                     self.0.cards.borrow_mut().insert(ident, card.clone());
                     self.0.container.append(card.widget());
                     card
@@ -1166,6 +1327,7 @@ pub struct PageInner {
     pub dnd_switch: gtk::Switch,
     pub fullscreen_switch: gtk::Switch,
     pub timeout_spin: gtk::SpinButton,
+    pub popup_size: gtk::DropDown,
     pub dnd_until_label: gtk::Label,
     pub dnd_options: gtk::Box,
     pub dnd_buttons: HashMap<&'static str, gtk::Button>,
@@ -1227,6 +1389,15 @@ impl SettingsPage {
         row.append(&timeout_spin);
         row.append(&gtk::Label::new(Some(&tr!("seconds"))));
         root.append(&row);
+        let (row, _) = settings_row("Notification size", "How large notification popups are on screen.");
+        let sizes = [tr!("Small"), tr!("Medium"), tr!("Large")];
+        let popup_size = gtk::DropDown::from_strings(&sizes.iter().map(String::as_str).collect::<Vec<_>>());
+        popup_size.set_selected(PopupSize::Medium.index());
+        popup_size.set_valign(gtk::Align::Center);
+        popup_size.set_widget_name("popup_size");
+        accessible(&popup_size, &tr!("Notification size"));
+        row.append(&popup_size);
+        root.append(&row);
         let (row, labels) = settings_row("Do Not Disturb duration", "Pause popups for a while. Critical notifications still appear.");
         row.set_orientation(gtk::Orientation::Vertical);
         row.set_spacing(10);
@@ -1264,7 +1435,8 @@ impl SettingsPage {
         root.append(&status_label);
         let page = Self(Rc::new(PageInner {
             root, client, syncing: Cell::new(false), destroyed: Cell::new(false), css, dnd_switch: dnd_switch.clone(),
-            fullscreen_switch: fullscreen_switch.clone(), timeout_spin: timeout_spin.clone(), dnd_until_label, dnd_options,
+            fullscreen_switch: fullscreen_switch.clone(), timeout_spin: timeout_spin.clone(), popup_size: popup_size.clone(),
+            dnd_until_label, dnd_options,
             dnd_buttons, apps_box, apps_empty, app_switches: RefCell::new(indexmap::IndexMap::new()),
             apps_signature: RefCell::new(None), status_label,
         }));
@@ -1286,6 +1458,14 @@ impl SettingsPage {
             if let Some(inner) = weak.upgrade() {
                 if !inner.syncing.get() && !inner.destroyed.get() {
                     inner.client.set_settings(json!({"timeout_ms": spin.value_as_int() * 1000}));
+                }
+            }
+        });
+        let weak = Rc::downgrade(&page.0);
+        popup_size.connect_selected_notify(move |dropdown| {
+            if let Some(inner) = weak.upgrade() {
+                if !inner.syncing.get() && !inner.destroyed.get() {
+                    inner.client.set_settings(json!({"popup_size": PopupSize::from_index(dropdown.selected()).key()}));
                 }
             }
         });
@@ -1372,6 +1552,10 @@ impl SettingsPage {
         inner.dnd_switch.set_active(settings.get("do_not_disturb").is_some_and(tessel_core::pyjson::truthy));
         inner.fullscreen_switch.set_active(settings.get("suppress_fullscreen").map_or(true, tessel_core::pyjson::truthy));
         inner.timeout_spin.set_value(settings.get("timeout_ms").and_then(Value::as_f64).unwrap_or(6000.0) / 1000.0);
+        let size = PopupSize::from_value(settings.get("popup_size")).index();
+        if inner.popup_size.selected() != size {
+            inner.popup_size.set_selected(size);
+        }
         let until = dnd_until_text(&settings);
         inner.dnd_until_label.set_text(&if until.is_empty() { String::new() } else { tr!("Paused until {time}", time = until.as_str()) });
         inner.dnd_until_label.set_visible(!until.is_empty());
@@ -1390,6 +1574,7 @@ impl SettingsPage {
         inner.dnd_switch.set_sensitive(ready);
         inner.fullscreen_switch.set_sensitive(ready);
         inner.timeout_spin.set_sensitive(ready);
+        inner.popup_size.set_sensitive(ready);
         inner.dnd_options.set_sensitive(ready);
         for (_, switch) in switches {
             switch.set_sensitive(ready);

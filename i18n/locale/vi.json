@@ -1949,5 +1949,7 @@
   "Medium": "Vừa",
   "Large": "Lớn",
   "System tray icon size": "Kích thước biểu tượng khay hệ thống",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Kích thước của biểu tượng trạng thái, ứng dụng trong khay và nút Thêm ứng dụng trong khay hệ thống."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Kích thước của biểu tượng trạng thái, ứng dụng trong khay và nút Thêm ứng dụng trong khay hệ thống.",
+  "Notification size": "Kích thước thông báo",
+  "How large notification popups are on screen.": "Kích thước của cửa sổ thông báo bật lên trên màn hình."
 }

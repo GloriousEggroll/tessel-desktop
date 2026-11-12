@@ -1949,5 +1949,7 @@
   "Medium": "Közepes",
   "Large": "Nagy",
   "System tray icon size": "Rendszertálca ikonmérete",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Az állapotikonok, a tálcán lévő alkalmazások és a További alkalmazások gomb mérete a rendszertálcán."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Az állapotikonok, a tálcán lévő alkalmazások és a További alkalmazások gomb mérete a rendszertálcán.",
+  "Notification size": "Értesítések mérete",
+  "How large notification popups are on screen.": "Mekkorák legyenek a felugró értesítések a képernyőn."
 }

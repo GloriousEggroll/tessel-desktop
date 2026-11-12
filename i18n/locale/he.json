@@ -1949,5 +1949,7 @@
   "Medium": "בינוני",
   "Large": "גדול",
   "System tray icon size": "גודל הסמלים במגש המערכת",
-  "The size of the status icons, tray applications and More apps in the system tray.": "גודל סמלי המצב, יישומי המגש והלחצן „יישומים נוספים” במגש המערכת."
+  "The size of the status icons, tray applications and More apps in the system tray.": "גודל סמלי המצב, יישומי המגש והלחצן „יישומים נוספים” במגש המערכת.",
+  "Notification size": "גודל ההתראות",
+  "How large notification popups are on screen.": "עד כמה גדולים חלונות ההתראה הקופצים על המסך."
 }

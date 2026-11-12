@@ -1949,5 +1949,7 @@
   "Medium": "Medie",
   "Large": "Mare",
   "System tray icon size": "Dimensiunea pictogramelor din tava de sistem",
-  "The size of the status icons, tray applications and More apps in the system tray.": "Dimensiunea pictogramelor de stare, a aplicațiilor din tavă și a butonului Mai multe aplicații din tava de sistem."
+  "The size of the status icons, tray applications and More apps in the system tray.": "Dimensiunea pictogramelor de stare, a aplicațiilor din tavă și a butonului Mai multe aplicații din tava de sistem.",
+  "Notification size": "Dimensiunea notificărilor",
+  "How large notification popups are on screen.": "Cât de mari sunt notificările pop-up pe ecran."
 }

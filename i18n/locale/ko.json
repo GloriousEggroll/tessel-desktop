@@ -2129,5 +2129,7 @@
   "Medium": "보통",
   "Large": "크게",
   "System tray icon size": "시스템 트레이 아이콘 크기",
-  "The size of the status icons, tray applications and More apps in the system tray.": "시스템 트레이의 상태 아이콘, 트레이 앱 및 더 많은 앱 버튼의 크기입니다."
+  "The size of the status icons, tray applications and More apps in the system tray.": "시스템 트레이의 상태 아이콘, 트레이 앱 및 더 많은 앱 버튼의 크기입니다.",
+  "Notification size": "알림 크기",
+  "How large notification popups are on screen.": "화면에 표시되는 알림 팝업의 크기입니다."
 }
