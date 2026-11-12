@@ -11,4 +11,11 @@ if [ ! -x "$HOME/.local/lib/tessel/tessel-configure-session" ] &&
         "$libdir/tessel-xdg-autostart" --apply >/dev/null 2>&1 &&
         mkdir -p "$state" && printf '%s\n' "$version" > "$state/session-version"
 fi
+# For a bug report: `touch ~/.config/tessel/compositor-debug` makes the
+# compositor log everything it does (labwc -d) from the next login on, to the
+# journal with the rest of the session (journalctl -b -t tessel-session).
+# Remove the file afterwards; the log is large.
+if [ -e "${XDG_CONFIG_HOME:-$HOME/.config}/tessel/compositor-debug" ]; then
+    set -- -d "$@"
+fi
 exec /usr/bin/labwc "$@"
