@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit f402599157c929aabde4b092e752ae7c4edfcb71}
+%{!?commit:%global commit 3cab8928eac55fcccf6411d12cfbe039068b0b49}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -98,6 +98,11 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
+- One system tray: the applets and the tray icons share a section. It opens
+  with the More apps button and no longer expands on hover
+- Saved settings with a separate system tray are carried over
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
 - The panel's Media switch turns media on and off: when off, the panel does
   not follow media players at all. It is off by default
