@@ -17,5 +17,13 @@ if [ ! -x /usr/libexec/at-spi-bus-launcher ] && [ ! -x /usr/lib/at-spi-bus-launc
     export GTK_A11Y=none
 fi
 umask 077
-exec /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/tessel/login/labwc \
+set -- /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/tessel/login/labwc \
     --session /usr/local/lib/tessel/tessel-login
+# Keep what the compositor and the greeter say in the journal (identifier
+# tessel-login-greeter). greetd gives them the console, where a login screen
+# that never appears leaves nothing to read afterwards.
+if [ -z "${TESSEL_LOGIN_CONSOLE:-}" ] && command -v systemd-cat >/dev/null 2>&1 \
+    && systemd-cat --identifier=tessel-login-greeter true 2>/dev/null; then
+    set -- systemd-cat --identifier=tessel-login-greeter --stderr-priority=warning "$@"
+fi
+exec "$@"

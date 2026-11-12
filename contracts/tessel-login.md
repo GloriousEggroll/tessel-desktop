@@ -128,6 +128,8 @@ Fields/defaults: `picture="/usr/share/wallpapers/tessel/slate-3840x2160.png"` (`
 | `/etc/pam.d/tessel-login-auth` | 0644 | generated from `/etc/pam.d/system-auth` (validated) |
 | `/etc/pam.d/tessel-lock-password`, `tessel-lock-fingerprint` | 0644 | generated when applicable |
 | `/etc/tessel-login/appearance.json`, `/etc/security/tessel-login-faillock.conf` | 0644 | only if absent |
+`tessel-start-greeter`: the greeter's compositor and the greeter itself write to the journal under the identifier `tessel-login-greeter` (`journalctl -b -t tessel-login-greeter`), through `systemd-cat` when it is available; `TESSEL_LOGIN_CONSOLE=1` leaves them on the console.
+
 `start-session`: unsets the greeter's bus vars; if `$XDG_RUNTIME_DIR/bus` is a socket, exports `DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus` and `exec "$@"`, else `exec dbus-run-session -- "$@"`.
 The installer never enables/starts a DM; the Rust port does not change any of these files (the swap only changes the greeter command, §9).
 
