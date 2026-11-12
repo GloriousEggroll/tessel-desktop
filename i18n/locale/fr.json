@@ -2270,5 +2270,6 @@
   "Revert": "Rétablir",
   "Resize the tiles on both sides of the gap": "Redimensionner les tuiles de part et d’autre de l’espace",
   "Split bar into islands": "Diviser la barre en îlots",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Dessine le début, le centre et la fin de la barre comme des éléments séparés, le fond d’écran restant visible entre eux. S’applique aux barres, pas aux docks."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Dessine le début, le centre et la fin de la barre comme des éléments séparés, le fond d’écran restant visible entre eux. S’applique aux barres, pas aux docks.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Affiche dans le panneau ce qui est en cours de lecture, avec les commandes de lecture. Désactivé, le panneau cesse de suivre les lecteurs multimédias."
 }

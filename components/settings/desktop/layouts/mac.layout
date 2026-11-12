@@ -89,7 +89,7 @@
       "running": true,
       "files": true,
       "workspaces": false,
-      "media": true,
+      "media": false,
       "system_tray": true,
       "service_apps": true,
       "weather": false,
@@ -117,7 +117,7 @@
     "transparency_enabled": true,
     "window_buttons_left": true
   },
-  "workspaces": 4,
+  "workspaces": 1,
   "gapless": true,
   "clock": {
     "stacked": false,

@@ -1935,5 +1935,6 @@
   "Revert": "Revenire",
   "Resize the tiles on both sides of the gap": "Redimensionează plăcile de pe ambele părți ale spațiului",
   "Split bar into islands": "Împarte bara în insule",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Desenează începutul, centrul și sfârșitul barei ca piese separate, cu imaginea de fundal vizibilă între ele. Se aplică barelor, nu dock-urilor."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Desenează începutul, centrul și sfârșitul barei ca piese separate, cu imaginea de fundal vizibilă între ele. Se aplică barelor, nu dock-urilor.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Afișează în panou ce se redă, cu comenzi de redare. Când este dezactivat, panoul nu mai urmărește playerele media."
 }

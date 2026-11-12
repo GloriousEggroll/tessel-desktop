@@ -1935,5 +1935,6 @@
   "Revert": "تراجع",
   "Resize the tiles on both sides of the gap": "تغيير حجم النوافذ المتجانبة على جانبي الفجوة",
   "Split bar into islands": "تقسيم الشريط إلى جزر",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "ارسم بداية الشريط ووسطه ونهايته كقطع منفصلة تظهر الخلفية بينها. ينطبق على الأشرطة، وليس على الأرصفة."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "ارسم بداية الشريط ووسطه ونهايته كقطع منفصلة تظهر الخلفية بينها. ينطبق على الأشرطة، وليس على الأرصفة.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "عرض ما يتم تشغيله في اللوحة مع عناصر التحكم في التشغيل. عند الإيقاف، تتوقف اللوحة عن متابعة مشغلات الوسائط."
 }

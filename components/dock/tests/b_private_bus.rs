@@ -732,7 +732,7 @@ fn status_backend_real_services_on_private_bus() {
     let seen = errors.clone();
     let backend = StatusBackend::new(|| {}, Some(Box::new(move |error: &str| seen.borrow_mut().push(error.into()))),
         StatusOptions { program: std::rc::Rc::new(|name| std::path::Path::new("/nonexistent").join(name)), job_factory: factory, scheduler: Rc::new(tessel_core::scheduler::GlibScheduler::default()),
-                        services: Services::real(), on_show_desktop: None });
+                        services: Services::real(), on_show_desktop: None, media: true });
     backend.start();
     let tooltip = |name: &str| backend.get(name).unwrap()["tooltip"].as_str().unwrap().to_owned();
     check!(spin_until(|| tooltip("idle_inhibitor") == "Keep Awake is not running in this session.", 5.0));
@@ -740,6 +740,15 @@ fn status_backend_real_services_on_private_bus() {
     check!(backend.get("bluetooth").unwrap()["classes"] == json!(["unavailable"]));
     check!(spin_until(|| backend.get("media").unwrap().get("title").is_some(), 5.0));
     check!(backend.get("media").unwrap()["tooltip"] == "Media\nNothing playing");
+    // The Media switch stops and restarts the real MPRIS watcher live.
+    for _ in 0..2 {
+        backend.set_media_enabled(false);
+        check!(!backend.media_running() && backend.get("media").unwrap().get("title").is_none());
+        settle(0.1);
+        check!(backend.get("media").unwrap().get("title").is_none());
+        backend.set_media_enabled(true);
+        check!(spin_until(|| backend.get("media").unwrap().get("title").is_some(), 5.0));
+    }
     check!(backend.get("screen_record").unwrap()["state"] == "idle");
     check!(spin_until(|| tooltip("discovery") != "Discover Network Devices: waiting for status", 5.0));
     backend.close();

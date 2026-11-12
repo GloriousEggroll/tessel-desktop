@@ -1935,5 +1935,6 @@
   "Revert": "Tilbakestill",
   "Resize the tiles on both sides of the gap": "Endre størrelse på flisene på begge sider av mellomrommet",
   "Split bar into islands": "Del linjen i øyer",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Tegn starten, midten og slutten av linjen som separate deler med bakgrunnsbildet synlig mellom dem. Gjelder linjer, ikke dokker."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Tegn starten, midten og slutten av linjen som separate deler med bakgrunnsbildet synlig mellom dem. Gjelder linjer, ikke dokker.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Vis hva som spilles av i panelet, med avspillingskontroller. Når dette er av, slutter panelet å følge mediespillere."
 }

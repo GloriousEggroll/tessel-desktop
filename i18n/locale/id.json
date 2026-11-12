@@ -1935,5 +1935,6 @@
   "Revert": "Kembalikan",
   "Resize the tiles on both sides of the gap": "Ubah ukuran ubin di kedua sisi celah",
   "Split bar into islands": "Pisahkan bilah menjadi pulau",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Gambar bagian awal, tengah, dan akhir bilah sebagai potongan terpisah dengan wallpaper terlihat di antaranya. Berlaku untuk bilah, bukan dok."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Gambar bagian awal, tengah, dan akhir bilah sebagai potongan terpisah dengan wallpaper terlihat di antaranya. Berlaku untuk bilah, bukan dok.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Tampilkan yang sedang diputar di panel, dengan kontrol pemutaran. Saat nonaktif, panel berhenti mengikuti pemutar media."
 }

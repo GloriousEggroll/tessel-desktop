@@ -1935,5 +1935,6 @@
   "Revert": "Palauta",
   "Resize the tiles on both sides of the gap": "Muuta välin molemmilla puolilla olevien ruutujen kokoa",
   "Split bar into islands": "Jaa palkki saarekkeisiin",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Piirrä palkin alku, keskiosa ja loppu erillisinä osina, joiden välistä taustakuva näkyy. Koskee palkkeja, ei telakoita."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Piirrä palkin alku, keskiosa ja loppu erillisinä osina, joiden välistä taustakuva näkyy. Koskee palkkeja, ei telakoita.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Näytä paneelissa, mitä toistetaan, toiston säätimineen. Kun asetus on pois päältä, paneeli lakkaa seuraamasta mediasoittimia."
 }

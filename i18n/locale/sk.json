@@ -1935,5 +1935,6 @@
   "Revert": "Vrátiť späť",
   "Resize the tiles on both sides of the gap": "Zmeniť veľkosť dlaždíc na oboch stranách medzery",
   "Split bar into islands": "Rozdeliť lištu na ostrovčeky",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vykreslí začiatok, stred a koniec lišty ako samostatné časti, medzi ktorými je vidieť tapetu. Platí pre lišty, nie pre doky."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vykreslí začiatok, stred a koniec lišty ako samostatné časti, medzi ktorými je vidieť tapetu. Platí pre lišty, nie pre doky.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Zobrazovať na paneli, čo sa prehráva, s ovládaním prehrávania. Keď je vypnuté, panel prestane sledovať prehrávače médií."
 }

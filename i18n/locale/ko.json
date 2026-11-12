@@ -2117,5 +2117,6 @@
   "Revert": "되돌리기",
   "Resize the tiles on both sides of the gap": "간격 양쪽의 타일 크기 조정",
   "Split bar into islands": "막대를 섬으로 나누기",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "막대의 시작, 가운데, 끝을 따로 떨어진 조각으로 그리고 그 사이로 배경 화면이 보이게 합니다. 독이 아닌 막대에 적용됩니다."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "막대의 시작, 가운데, 끝을 따로 떨어진 조각으로 그리고 그 사이로 배경 화면이 보이게 합니다. 독이 아닌 막대에 적용됩니다.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "재생 중인 항목을 재생 컨트롤과 함께 패널에 표시합니다. 끄면 패널이 미디어 플레이어를 더 이상 따라가지 않습니다."
 }

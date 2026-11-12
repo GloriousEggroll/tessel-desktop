@@ -123,6 +123,7 @@ pub static SETTINGS: &[Setting] = &[
     Setting { section: "dock", key: "bar_border", title: "Bar border", detail: "Show a border on any of the bar's top, bottom, left or right edges. Follow wallpaper colors or choose a custom color.", keywords: "dock panel bar border outline sides edges color colour matching custom picker", labels: &[], target: "bar_border_enabled", subpage: "" },
     Setting { section: "dock", key: "app_dock_group_layout", title: "App dock group positions and order", detail: "Position and reorder the separate dock's application menu, pinned apps, open windows, and Home, Settings and Trash independently of the bar.", keywords: "separate dock layout group position order move up down top left center bottom right pinned apps menu home trash", labels: &["App dock group positions and order"], target: "app_dock_layout_controls", subpage: "" },
     Setting { section: "dock", key: "groups", title: "Visible groups", detail: "Show or hide menu, pinned apps, workspaces, tray, applets, and clock groups.", keywords: "dock panel bar groups show hide pinned apps workspace tray weather menu clock home trash settings", labels: &["Visible groups"], target: "", subpage: "" },
+    Setting { section: "dock", key: "media", title: "Media", detail: "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.", keywords: "dock panel bar media music video player playback song now playing mpris controls enable disable show hide", labels: &[], target: "group_media", subpage: "" },
     Setting { section: "dock", key: "group_layout", title: "Group positions and order", detail: "Assign groups to Top/Left, Center or Bottom/Right and reorder them within each position.", keywords: "layout position order move groups up down top left center bottom right weather workspaces home trash pinned activities focused title clock time date media music playback tray default apps session", labels: &["Group positions and order", "Reset layout"], target: "", subpage: "" },
     Setting { section: "dock", key: "default_apps", title: "Always-visible applets", detail: "Choose which applet icons stay visible when the applets collapse.", keywords: "always visible applets icons hover expand collapse sound audio displays minimize maximize keep awake", labels: &["Always-visible applets", "Default apps", "Always visible"], target: "", subpage: "" },
     Setting { section: "dock", key: "tray", title: "System tray", detail: "Choose which running tray applications to always show to the left of the always-visible applets.", keywords: "system tray always show app icons collapse applets", labels: &["System tray", "Always show"], target: "", subpage: "" },
@@ -326,6 +327,8 @@ mod tests {
         }
         assert_eq!(index.search("Time format")[0].key, "format");
         assert_eq!(index.search("Audio")[0].key, "__section__");
+        // The panel's Media switch is the first answer for "Media".
+        assert_eq!(keys(&index, "Media")[0], ("dock", "media"));
     }
 
     #[test]
@@ -340,6 +343,7 @@ mod tests {
             ("lock screen weather", "lock", "weather"), ("lock screen forecast", "lock", "forecast"),
             ("pause media", "lock", "pause_media"), ("lock screen media controls", "lock", "media"),
             ("icon theme", "theme", "icons"), ("papirus", "theme", "icons"),
+            ("media", "dock", "media"), ("music player", "dock", "media"),
         ] {
             assert!(keys(&index, query).contains(&(section, key)), "{query}");
         }

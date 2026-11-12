@@ -11,6 +11,9 @@
 //! - `.refresh(Some(name))` / `.refresh(None)`, `.action(name) -> bool` (`idle_inhibitor`,
 //!   `showdesktop`, `media-previous|toggle|next`), `.set_show_desktop(bool)`,
 //!   `.set_on_show_desktop(cb)`, `.audio_scroll(step)`, `.media_icon()`.
+//! - Media is optional (the dock's Media switch, off by default): `StatusOptions.media`
+//!   decides whether `start()` starts tessel-media's MediaStatus;
+//!   `.set_media_enabled(bool)` starts a fresh one or closes it and clears `"media"`.
 //! - pure helpers: `indicator`, `plain_text`, `audio_status`, `bluetooth_status`,
 //!   `status_title`, `ICONS`, `STREAMS`.
 //! `on_changed` is coalesced through a 0 ms scheduler timer and only fires when
@@ -328,6 +331,9 @@ pub struct StatusOptions {
     pub scheduler: Rc<dyn Scheduler>,
     pub services: Services,
     pub on_show_desktop: Option<Rc<dyn Fn() -> bool>>,
+    /// The dock's Media switch: follow media players from `start()`.
+    /// Off by default, like the switch; [`StatusBackend::set_media_enabled`] changes it live.
+    pub media: bool,
 }
 
 impl Default for StatusOptions {
@@ -338,6 +344,7 @@ impl Default for StatusOptions {
             scheduler: Rc::new(GlibScheduler::default()),
             services: Services::real(),
             on_show_desktop: None,
+            media: false,
         }
     }
 }
@@ -365,6 +372,9 @@ struct Inner {
     bus_pending: Cell<bool>,
     capture_status: RefCell<Option<Rc<dyn CaptureSource>>>,
     media_status: RefCell<Option<Rc<dyn MediaSource>>>,
+    media_enabled: Cell<bool>,
+    /// Bumped per media service so a closed one can never publish again.
+    media_generation: Cell<u64>,
     keep_awake_status: RefCell<Option<Rc<dyn KeepAwakeSource>>>,
     discovery_status: RefCell<Option<Rc<dyn DiscoverySource>>>,
 }
@@ -389,7 +399,7 @@ impl StatusBackend {
             services: options.services, status: RefCell::new(status), jobs: RefCell::default(), job_serial: Cell::new(0),
             sources: RefCell::default(), errors: RefCell::default(), started: Cell::new(false), closed: Cell::new(false),
             audio_steps: Cell::new(0), bus_pending: Cell::new(false), capture_status: RefCell::new(None),
-            media_status: RefCell::new(None), keep_awake_status: RefCell::new(None), discovery_status: RefCell::new(None),
+            media_status: RefCell::new(None), media_enabled: Cell::new(options.media), media_generation: Cell::new(0), keep_awake_status: RefCell::new(None), discovery_status: RefCell::new(None),
         }))
     }
 
@@ -484,13 +494,61 @@ impl StatusBackend {
         }));
         self.0.capture_status.replace(Some(capture));
         self.capture_changed("idle");
+        if self.0.media_enabled.get() {
+            self.start_media();
+        }
+        self.refresh(None);
+    }
+
+    /// The Media switch is on: the dock follows media players.
+    pub fn media_enabled(&self) -> bool { self.0.media_enabled.get() }
+
+    /// A media status service is running (diagnostics and tests).
+    pub fn media_running(&self) -> bool { self.0.media_status.borrow().is_some() }
+
+    /// Turn the media status service on or off without restarting the dock.
+    /// Off closes it (bus subscriptions, pending calls, the player icon) and
+    /// clears the published `"media"` status; on starts a fresh one.
+    pub fn set_media_enabled(&self, enabled: bool) {
+        if self.0.closed.get() || self.0.media_enabled.replace(enabled) == enabled {
+            return;
+        }
+        if !self.0.started.get() {
+            return;
+        }
+        if enabled {
+            self.start_media();
+        } else {
+            self.stop_media();
+        }
+    }
+
+    fn start_media(&self) {
+        if self.0.media_status.borrow().is_some() {
+            return;
+        }
+        let generation = self.0.media_generation.get() + 1;
+        self.0.media_generation.set(generation);
         let weak = self.weak();
         let media = (self.0.services.media)(Rc::new(move |value: Status| {
-            if let Some(inner) = weak.upgrade() { StatusBackend(inner).set("media", value) }
+            if let Some(inner) = weak.upgrade() {
+                let backend = StatusBackend(inner);
+                if backend.0.media_enabled.get() && backend.0.media_generation.get() == generation {
+                    backend.set("media", value);
+                }
+            }
         }));
         self.0.media_status.replace(Some(media.clone()));
         media.start();
-        self.refresh(None);
+    }
+
+    fn stop_media(&self) {
+        self.0.media_generation.set(self.0.media_generation.get() + 1);
+        let media = self.0.media_status.take();
+        if let Some(media) = media {
+            media.close();
+        }
+        self.set("media", unavailable("media", format!("{}: waiting for status", status_title("media"))));
     }
 
     fn capture_changed(&self, state: &str) {

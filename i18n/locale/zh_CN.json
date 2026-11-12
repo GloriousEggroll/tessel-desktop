@@ -2117,5 +2117,6 @@
   "Revert": "还原",
   "Resize the tiles on both sides of the gap": "调整间隙两侧平铺窗口的大小",
   "Split bar into islands": "将栏拆分为岛",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "将栏的起始、中间和末尾部分绘制为相互分离的小块，中间露出壁纸。适用于栏，不适用于停靠栏。"
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "将栏的起始、中间和末尾部分绘制为相互分离的小块，中间露出壁纸。适用于栏，不适用于停靠栏。",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "在面板中显示正在播放的内容及播放控制。关闭后，面板将不再跟踪媒体播放器。"
 }

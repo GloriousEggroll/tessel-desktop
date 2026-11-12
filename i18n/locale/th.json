@@ -1935,5 +1935,6 @@
   "Revert": "ย้อนกลับ",
   "Resize the tiles on both sides of the gap": "ปรับขนาดไทล์ทั้งสองด้านของช่องว่าง",
   "Split bar into islands": "แบ่งแถบออกเป็นเกาะ",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "วาดส่วนต้น ส่วนกลาง และส่วนท้ายของแถบเป็นชิ้นแยกกัน โดยมองเห็นวอลเปเปอร์ระหว่างชิ้น ใช้กับแถบ ไม่ใช่ด็อก"
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "วาดส่วนต้น ส่วนกลาง และส่วนท้ายของแถบเป็นชิ้นแยกกัน โดยมองเห็นวอลเปเปอร์ระหว่างชิ้น ใช้กับแถบ ไม่ใช่ด็อก",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "แสดงสิ่งที่กำลังเล่นบนแผง พร้อมปุ่มควบคุมการเล่น เมื่อปิด แผงจะหยุดติดตามโปรแกรมเล่นสื่อ"
 }

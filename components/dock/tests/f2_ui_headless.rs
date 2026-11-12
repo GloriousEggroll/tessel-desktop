@@ -1195,7 +1195,15 @@ fn media_inline_controls_and_popup_button() -> TestResult {
     media_state(&app);
     let icon_name = available_icon().ok_or("no themed icon available")?;
     app.media_icon.replace(Some(gio::ThemedIcon::from_names(&["multimedia-player", &icon_name]).upcast()));
-    let dock = make_dock(&app, 0, "HEADLESS-1", |c| { c.mode = "bar".into(); c.application_display = "title".into(); c.edge = "top".into(); });
+    // Media is off by default: the group is hidden.
+    let hidden = make_dock(&app, 0, "HEADLESS-1", |c| { c.mode = "bar".into(); c.edge = "top".into(); });
+    hidden.refresh_groups();
+    ensure!(!hidden.panel().media().widget().get_visible(), "media is hidden by default");
+    hidden.destroy(&app);
+    let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+        c.mode = "bar".into(); c.application_display = "title".into(); c.edge = "top".into();
+        c.group_visibility.insert("media", true);
+    });
     let panel = dock.panel();
     let media = panel.media();
     let media_button = panel.button("media").unwrap();
@@ -1292,7 +1300,10 @@ fn media_titles_and_controls_fit_all_edges() -> TestResult {
     app.status_set("media", "title", json!("An extremely long song name ".repeat(15)));
     for edge in ["top", "bottom", "left", "right"] {
         for mode in ["bar", "dock"] {
-            let dock = make_dock(&app, 0, "HEADLESS-1", |c| { c.mode = mode.into(); c.edge = edge.into(); c.application_display = "title".into(); });
+            let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+                c.mode = mode.into(); c.edge = edge.into(); c.application_display = "title".into();
+                c.group_visibility.insert("media", true);
+            });
             let media = dock.panel().media();
             settle(0.15);
             ensure!(media.widget().is_mapped(), "{mode} {edge}");

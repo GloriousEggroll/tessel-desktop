@@ -1935,5 +1935,6 @@
   "Revert": "Przywróć",
   "Resize the tiles on both sides of the gap": "Zmień rozmiar kafelków po obu stronach odstępu",
   "Split bar into islands": "Podziel pasek na wyspy",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rysuje początek, środek i koniec paska jako osobne części, między którymi widać tapetę. Dotyczy pasków, nie doków."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rysuje początek, środek i koniec paska jako osobne części, między którymi widać tapetę. Dotyczy pasków, nie doków.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Pokazuj na panelu, co jest odtwarzane, wraz z przyciskami odtwarzania. Gdy wyłączone, panel przestaje śledzić odtwarzacze multimediów."
 }

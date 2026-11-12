@@ -1935,5 +1935,6 @@
   "Revert": "Terugzetten",
   "Resize the tiles on both sides of the gap": "Formaat van de tegels aan beide kanten van de tussenruimte wijzigen",
   "Split bar into islands": "Balk in eilanden splitsen",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Teken het begin, het midden en het einde van de balk als losse delen, met de achtergrond ertussen zichtbaar. Geldt voor balken, niet voor docks."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Teken het begin, het midden en het einde van de balk als losse delen, met de achtergrond ertussen zichtbaar. Geldt voor balken, niet voor docks.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Toon in het paneel wat er wordt afgespeeld, met afspeelknoppen. Als dit uit staat, volgt het paneel geen mediaspelers meer."
 }

@@ -1935,5 +1935,6 @@
   "Revert": "Visszaállítás",
   "Resize the tiles on both sides of the gap": "A rés két oldalán lévő csempék átméretezése",
   "Split bar into islands": "Sáv felosztása szigetekre",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "A sáv elejét, közepét és végét külön darabokként rajzolja ki, köztük látszik a háttérkép. Sávokra vonatkozik, dokkokra nem."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "A sáv elejét, közepét és végét külön darabokként rajzolja ki, köztük látszik a háttérkép. Sávokra vonatkozik, dokkokra nem.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Megjeleníti a panelen, mi szól éppen, lejátszásvezérlőkkel. Kikapcsolva a panel nem követi tovább a médialejátszókat."
 }

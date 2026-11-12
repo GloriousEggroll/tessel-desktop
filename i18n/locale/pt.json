@@ -1935,5 +1935,6 @@
   "Revert": "Repor",
   "Resize the tiles on both sides of the gap": "Redimensionar os mosaicos de ambos os lados do espaço",
   "Split bar into islands": "Dividir a barra em ilhas",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Desenha o início, o centro e o fim da barra como partes separadas, com o fundo do ambiente de trabalho visível entre elas. Aplica-se a barras, não a docas."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Desenha o início, o centro e o fim da barra como partes separadas, com o fundo do ambiente de trabalho visível entre elas. Aplica-se a barras, não a docas.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Mostrar no painel o que está a tocar, com controlos de reprodução. Quando desligado, o painel deixa de acompanhar os leitores multimédia."
 }

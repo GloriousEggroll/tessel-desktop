@@ -1935,5 +1935,6 @@
   "Revert": "Hoàn nguyên",
   "Resize the tiles on both sides of the gap": "Đổi kích thước các ô ở hai bên khoảng trống",
   "Split bar into islands": "Chia thanh thành các đảo",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vẽ phần đầu, giữa và cuối của thanh thành các mảnh riêng, với hình nền hiện ra giữa chúng. Áp dụng cho thanh, không áp dụng cho dock."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vẽ phần đầu, giữa và cuối của thanh thành các mảnh riêng, với hình nền hiện ra giữa chúng. Áp dụng cho thanh, không áp dụng cho dock.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Hiển thị nội dung đang phát trên bảng điều khiển, kèm các nút điều khiển phát. Khi tắt, bảng điều khiển ngừng theo dõi các trình phát đa phương tiện."
 }

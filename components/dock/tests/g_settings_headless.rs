@@ -492,10 +492,15 @@ fn cancel_keeps_visibility_and_hotkey_unchanged(app: &Rc<FakeApp>) -> R {
     let c = window.controls();
     ensure_eq!(c.group_switches.keys().cloned().collect::<Vec<_>>(), GROUPS.iter().map(|(n, _)| n.to_string()).collect::<Vec<_>>());
     ensure!(!c.menu_hotkey_fullscreen.is_active(), "hotkey");
-    for toggle in c.group_switches.values() {
-        ensure!(toggle.is_active(), "group default");
-        toggle.set_active(false);
+    for (name, toggle) in c.group_switches.iter() {
+        // Media is the only group that starts off.
+        ensure!(toggle.is_active() == (name != "media"), "group default {name}");
+        toggle.set_active(!toggle.is_active());
     }
+    // The Media switch explains that it also stops following media players.
+    let root: gtk::Widget = window.window().clone().upcast();
+    ensure!(descendants(&root).iter().filter_map(|w| w.downcast_ref::<gtk::Label>().map(|l| l.text().to_string()))
+        .any(|text| text.contains("the panel stops following media players")), "media detail");
     c.menu_hotkey_fullscreen.set_active(true);
     settle(0.05);
     ensure_eq!(app.config(), before);

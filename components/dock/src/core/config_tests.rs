@@ -256,11 +256,12 @@ fn effective_monitor_config_does_not_mutate_or_alias_global_preferences() {
 }
 
 #[test]
-fn legacy_config_defaults_fullscreen_menu_hotkey_off_and_all_groups_visible() {
+fn legacy_config_defaults_fullscreen_menu_hotkey_off_and_all_groups_but_media_visible() {
     let config = from(json!({"version": 1, "pins": ["app.desktop"]}));
     assert!(!config.menu_hotkey_fullscreen);
-    assert_eq!(config.group_visibility, GROUPS.iter().map(|(n, _)| (*n, true)).collect());
-    assert!(GROUPS.iter().all(|(name, _)| config.is_group_visible(name)));
+    assert_eq!(config.group_visibility, GROUPS.iter().map(|(n, _)| (*n, *n != "media")).collect());
+    assert!(GROUPS.iter().all(|(name, _)| config.is_group_visible(name) == (*name != "media")));
+    assert!(!config.media_enabled());
     assert_eq!(config.pins, s(&["app.desktop"]));
     // Python: True == 1 == 1.0.
     from(json!({"version": true}));
@@ -295,6 +296,7 @@ fn partial_group_settings_default_visible() {
     assert!(!config.is_group_visible("weather"));
     assert!(!config.is_group_visible("clock"));
     assert!(config.is_group_visible("app_menu"));
+    assert!(!config.is_group_visible("media"), "media is off unless saved on");
     assert_eq!(config.group_visibility.len(), GROUPS.len());
     // Normalized into GROUPS order.
     assert_eq!(config.group_visibility.keys().collect::<Vec<_>>(), GROUPS.iter().map(|g| g.0).collect::<Vec<_>>());
@@ -665,4 +667,30 @@ fn bar_islands_is_off_by_default_and_only_splits_bars() {
     assert!(from(json!({"mode": "bar", "bar_islands": true})).uses_bar_islands());
     assert!(!from(json!({"mode": "dock", "bar_islands": true})).uses_bar_islands());
     assert_eq!(from(json!({"mode": "bar", "bar_islands": true})).to_value()["bar_islands"], json!(true));
+}
+
+#[test]
+fn media_is_off_by_default_and_a_saved_choice_is_kept() {
+    let default = DockConfig::default();
+    assert!(!default.media_enabled() && !default.group_visibility["media"]);
+    assert!(GROUPS.iter().filter(|(n, _)| *n != "media").all(|(n, _)| default.is_group_visible(n)));
+    let mut missing = DockConfig::default();
+    missing.group_visibility.remove("media");
+    assert!(!missing.is_group_visible("media"));
+    assert!(from(json!({"group_visibility": {"media": true}})).media_enabled());
+    assert!(!from(json!({"group_visibility": {"media": false}})).media_enabled());
+    // Every saved config names every group, so a config saved before media was
+    // off by default keeps media on.
+    let saved = save_bytes(&DockConfig { group_visibility: GROUPS.iter().map(|(n, _)| (*n, true)).collect(), ..Default::default() });
+    let value: serde_json::Value = serde_json::from_str(&saved).unwrap();
+    assert_eq!(value["group_visibility"]["media"], json!(true));
+    assert!(from(value).media_enabled());
+    // The old always-visible Media applet meant on, unless a saved switch says otherwise.
+    assert!(from(json!({"always_visible_apps": ["media"]})).media_enabled());
+    assert!(!from(json!({"always_visible_apps": ["media"], "group_visibility": {"media": false}})).media_enabled());
+}
+
+#[test]
+fn new_users_start_with_media_off() {
+    assert!(!new_user_config().media_enabled());
 }

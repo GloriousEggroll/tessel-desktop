@@ -42,6 +42,7 @@ Run: `cargo test -p tessel-dock --lib dbus status` and
 | BlueZ GetManagedObjects every 5 s | yes | `bluetooth_multi_adapter...`, real-services bus test (unavailable on private bus) |
 | systemd1 discovery → reuses `network_discovery::backend::DiscoveryBackend` in-process | yes | `discovery_observes_once...`, real-services bus test |
 | MPRIS → reuses `media_manager::dock_status::MediaStatus` (wired into status `media`, dict keys as Python) | yes | real-services bus test (`Media\nNothing playing`) |
+| Tessel change: MediaStatus runs only while the dock's Media group is on (`StatusOptions.media`, `StatusBackend::set_media_enabled` from `App::save_config`; off by default). Off closes it and puts `media` back to its waiting value; on creates a fresh one | n/a (no Python equivalent) | `status::backend::tests::media_*`, real-services bus test toggles it twice |
 
 ## Contract §7 — status sources (status_backend.py)
 
@@ -83,7 +84,8 @@ rejected host in `sni_rejected_host_registration...`. 5 → status backend tests
 - `StatusTrayBackend::new(Some(notify_ready), None).start()`; `ServiceReadiness::update(startup_done,
   Some(&tray))` from that callback and when startup completes (log Err like Python's OSError).
 - `StatusBackend::new(panel_changed, Some(backend_error), StatusOptions { on_show_desktop:
-  Some(toggle_show_desktop), ..Default::default() }).start()`; `set_show_desktop` from the show-desktop owner.
+  Some(toggle_show_desktop), media: config.media_enabled(), ..Default::default() }).start()`;
+  `set_media_enabled(config.media_enabled())` after every saved config; `set_show_desktop` from the show-desktop owner.
 - UI agent: `register_capture_controls` (panel_ui.py:116-152): app actions `prepare-capture` (param `b`:
   true → popdown record menu; false → keep it, autohide off with unmap/map) and `finish-screenshot`
   (restore autohide) — not implemented here.

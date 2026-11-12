@@ -761,7 +761,9 @@ impl SettingsWindow {
             let title = tr!(title);
             let toggle = switch(config.is_group_visible(name));
             accessible_name(&toggle, &tr!("Show {value1}", value1 = title.as_str()));
-            group_labels.insert(name.to_string(), b.row(&title, &toggle, None));
+            // Media is also the dock's media player watcher: off stops it.
+            let detail = (*name == "media").then(|| tr!("Show what is playing in the panel, with playback controls. When off, the panel stops following media players."));
+            group_labels.insert(name.to_string(), b.row(&title, &toggle, detail.as_deref()));
             group_switches.insert(name.to_string(), toggle);
         }
 

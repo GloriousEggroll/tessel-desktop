@@ -348,6 +348,9 @@ impl DockPage {
             page.add_target("background_color", &c.background_color.button);
             page.add_target("bar_border_enabled", &c.bar_border_enabled);
             page.add_target("app_dock_layout_controls", c.app_dock_layout_controls.widget());
+            if let Some(media) = c.group_switches.get("media") {
+                page.add_target("group_media", media);
+            }
         } else {
             page.add_target("hot_corner_delay", &c.hot_corner_delay);
             page.add_target("menu_hotkey_fullscreen", &c.menu_hotkey_fullscreen);

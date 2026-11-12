@@ -1935,5 +1935,6 @@
   "Revert": "ביטול השינויים",
   "Resize the tiles on both sides of the gap": "שינוי גודל האריחים משני צידי הרווח",
   "Split bar into islands": "פיצול הסרגל לאיים",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "ציור ההתחלה, המרכז והסוף של הסרגל כחלקים נפרדים, כשהרקע נראה ביניהם. חל על סרגלים, לא על מעגנים."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "ציור ההתחלה, המרכז והסוף של הסרגל כחלקים נפרדים, כשהרקע נראה ביניהם. חל על סרגלים, לא על מעגנים.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "הצגת מה שמתנגן בלוח, עם פקדי ניגון. כשהאפשרות כבויה, הלוח מפסיק לעקוב אחר נגני מדיה."
 }

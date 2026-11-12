@@ -87,5 +87,6 @@
   "Revert": "Revert",
   "Resize the tiles on both sides of the gap": "Resize the tiles on both sides of the gap",
   "Split bar into islands": "Split bar into islands",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Show what is playing in the panel, with playback controls. When off, the panel stops following media players."
 }

@@ -16,6 +16,7 @@
 //!   (validates, atomic `.dock-settings-*` + fsync + replace, indent 2,
 //!   `ensure_ascii=False`, trailing newline), [`save_bytes`] for the exact bytes.
 //! - [`cairo_pins`], [`initial_pins`], [`PinCatalog`] (implemented by `AppCatalog`).
+//! - [`group_default_visible`] / [`GROUPS_OFF_BY_DEFAULT`] (Media starts off), [`DockConfig::media_enabled`].
 //! - Constants [`GROUPS`], [`CORNERS`], [`DEFAULT_APPS`], [`ALWAYS_VISIBLE_APPS`], [`BORDER_SIDES`].
 
 use std::path::{Path, PathBuf};
@@ -41,6 +42,15 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("activities", "Activities"),
     ("focused_title", "Focused window title"),
 ];
+
+/// Groups that are off until the user turns them on. Media also stops the
+/// dock watching media players while it is off.
+pub const GROUPS_OFF_BY_DEFAULT: &[&str] = &["media"];
+
+/// Whether a group is shown when the settings do not say.
+pub fn group_default_visible(name: &str) -> bool {
+    !GROUPS_OFF_BY_DEFAULT.contains(&name)
+}
 
 pub const CORNERS: &[(&str, &str)] =
     &[("top_left", "Top left"), ("top_right", "Top right"), ("bottom_left", "Bottom left"), ("bottom_right", "Bottom right")];
@@ -232,7 +242,7 @@ impl Default for DockConfig {
             bar_border_color: "#777777".into(),
             hide_on_fullscreen: true,
             menu_hotkey_fullscreen: false,
-            group_visibility: GROUPS.iter().map(|(name, _)| (*name, true)).collect(),
+            group_visibility: GROUPS.iter().map(|(name, _)| (*name, group_default_visible(name))).collect(),
             hot_corners: OrderedMap::new(),
             hot_corner_delay_ms: 150,
             auto_hide: false,
@@ -324,7 +334,11 @@ impl DockConfig {
         if self.mode == "bar" { self.bar_float_mode } else { self.float_mode }
     }
     pub fn is_group_visible(&self, name: &str) -> bool {
-        self.group_visibility.get(name).copied().unwrap_or(true)
+        self.group_visibility.get(name).copied().unwrap_or_else(|| group_default_visible(name))
+    }
+    /// The dock's media item is on: shown, and the dock follows media players.
+    pub fn media_enabled(&self) -> bool {
+        self.is_group_visible("media")
     }
     /// The bar is drawn as separate islands (start, center, end).
     pub fn uses_bar_islands(&self) -> bool {
@@ -495,9 +509,14 @@ impl DockConfig {
                 known.insert(strength, copied);
             }
         }
+        // Media used to be an always-visible applet: keeping it there meant it was on.
+        let mut legacy_media = false;
         if let Some(Value::Array(apps)) = known.get_mut("always_visible_apps") {
+            legacy_media = apps.iter().any(|name| name.as_str() == Some("media"));
             apps.retain(|name| name.as_str() != Some("media"));
         }
+        let saved_media = known.get("group_visibility").and_then(Value::as_object).is_some_and(|v| v.contains_key("media"));
+        let legacy_media = legacy_media && !saved_media;
         // `cls(**known)`: defaults for missing fields, values untyped until checked.
         let mut c = match DockConfig::default().to_value() {
             Value::Object(map) => map,
@@ -633,8 +652,12 @@ impl DockConfig {
         if visibility.values().any(|v| !v.is_boolean()) {
             return Err("Dock group visibility values must be true or false.".into());
         }
-        let group_visibility: OrderedMap<bool> =
-            GROUPS.iter().map(|(name, _)| (*name, visibility.get(*name).and_then(Value::as_bool).unwrap_or(true))).collect();
+        let group_visibility: OrderedMap<bool> = GROUPS.iter().map(|(name, _)| {
+            if *name == "media" && legacy_media {
+                return (*name, true);
+            }
+            (*name, visibility.get(*name).and_then(Value::as_bool).unwrap_or_else(|| group_default_visible(name)))
+        }).collect();
         if !c["auto_hide"].is_boolean() {
             return Err("Invalid automatic hiding setting.".into());
         }

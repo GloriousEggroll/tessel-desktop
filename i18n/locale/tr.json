@@ -1935,5 +1935,6 @@
   "Revert": "Geri Al",
   "Resize the tiles on both sides of the gap": "Boşluğun iki yanındaki döşemeleri yeniden boyutlandır",
   "Split bar into islands": "Çubuğu adalara böl",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Çubuğun başını, ortasını ve sonunu, aralarında duvar kâğıdı görünecek şekilde ayrı parçalar olarak çizer. Çubuklar için geçerlidir, rıhtımlar için değil."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Çubuğun başını, ortasını ve sonunu, aralarında duvar kâğıdı görünecek şekilde ayrı parçalar olarak çizer. Çubuklar için geçerlidir, rıhtımlar için değil.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Panelde neyin çaldığını oynatma denetimleriyle birlikte gösterir. Kapalıyken panel medya oynatıcılarını izlemeyi bırakır."
 }

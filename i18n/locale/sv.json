@@ -1935,5 +1935,6 @@
   "Revert": "Återställ",
   "Resize the tiles on both sides of the gap": "Ändra storlek på rutorna på båda sidor om mellanrummet",
   "Split bar into islands": "Dela upp fältet i öar",
-  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rita fältets början, mitt och slut som separata delar med bakgrundsbilden synlig mellan dem. Gäller fält, inte dockor."
+  "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rita fältets början, mitt och slut som separata delar med bakgrundsbilden synlig mellan dem. Gäller fält, inte dockor.",
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Visa vad som spelas i panelen, med uppspelningskontroller. När det är av slutar panelen följa mediespelare."
 }

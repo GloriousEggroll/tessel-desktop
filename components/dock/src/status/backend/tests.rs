@@ -64,10 +64,14 @@ struct Fixture {
     keep_awake: Rc<FakeClient>,
     discovery: Rc<FakeClient>,
     discovery_changed: Rc<RefCell<Option<Notify>>>,
+    /// Every media status service created, with the callback it publishes through.
+    media: Rc<RefCell<Vec<(Rc<FakeClient>, Rc<dyn Fn(Status)>)>>>,
 }
 
 impl Fixture {
-    fn new() -> Self {
+    fn new() -> Self { Self::with_media(false) }
+
+    fn with_media(media_enabled: bool) -> Self {
         let scheduler = Rc::new(FakeScheduler::default());
         let created: Rc<RefCell<Vec<Rc<FakeJob>>>> = Rc::default();
         let errors: Rc<RefCell<Vec<String>>> = Rc::default();
@@ -82,19 +86,25 @@ impl Fixture {
             jobs.borrow_mut().push(job.clone());
             job as Rc<dyn StatusJob>
         });
-        let (k, d, dc) = (keep_awake.clone(), discovery.clone(), discovery_changed.clone());
+        let media: Rc<RefCell<Vec<(Rc<FakeClient>, Rc<dyn Fn(Status)>)>>> = Rc::default();
+        let (k, d, dc, m) = (keep_awake.clone(), discovery.clone(), discovery_changed.clone(), media.clone());
         let services = Services {
             keep_awake: Rc::new(move |_changed| k.clone() as Rc<dyn KeepAwakeSource>),
             discovery: Rc::new(move |changed| { dc.replace(Some(changed)); d.clone() as Rc<dyn DiscoverySource> }),
             capture: Rc::new(|_changed| Rc::new(FakeClient::default()) as Rc<dyn CaptureSource>),
-            media: Rc::new(|_changed| Rc::new(FakeClient::default()) as Rc<dyn MediaSource>),
+            media: Rc::new(move |changed| {
+                let client = Rc::new(FakeClient::default());
+                m.borrow_mut().push((client.clone(), changed));
+                client as Rc<dyn MediaSource>
+            }),
             bluetooth: Rc::new(NoBluetooth),
             tessel_capture_exists: Rc::new(|| false),
         };
         let (e, c) = (errors.clone(), changed.clone());
         let backend = StatusBackend::new(move || c.set(c.get() + 1), Some(Box::new(move |error: &str| e.borrow_mut().push(error.into()))),
-            StatusOptions { program: Rc::new(|name| std::path::Path::new("/test bin").join(name)), job_factory: factory, scheduler: scheduler.clone(), services, on_show_desktop: None });
-        Self { backend, scheduler, created, errors, changed, keep_awake, discovery, discovery_changed }
+            StatusOptions { program: Rc::new(|name| std::path::Path::new("/test bin").join(name)), job_factory: factory, scheduler: scheduler.clone(), services, on_show_desktop: None,
+                           media: media_enabled });
+        Self { backend, scheduler, created, errors, changed, keep_awake, discovery, discovery_changed, media }
     }
 
     fn job(&self, name: &str) -> Rc<FakeJob> {
@@ -501,4 +511,77 @@ fn errors_keep_python_dict_insertion_order() {
     let job = f.job("network");
     job.finish(None);
     assert_eq!(names(&f).last().map(String::as_str), Some("network"));
+}
+
+fn playing(title: &str) -> Status {
+    json!({"text": "\u{f001}", "tooltip": format!("Media\n{title}"), "visible": true, "title": title}).as_object().unwrap().clone()
+}
+
+#[test]
+fn media_is_off_by_default_and_never_watched() {
+    assert!(!StatusOptions::default().media);
+    let f = Fixture::new();
+    f.backend.start();
+    assert!(f.media.borrow().is_empty(), "no media service while the switch is off");
+    assert!(!f.backend.media_enabled() && !f.backend.media_running());
+    assert_eq!(f.status("media")["classes"], json!(["unavailable"]));
+    assert!(!f.backend.action("media-toggle"));
+    assert!(f.backend.media_icon().is_none());
+}
+
+#[test]
+fn media_on_at_start_starts_one_service_and_close_stops_it() {
+    let f = Fixture::with_media(true);
+    f.backend.start();
+    assert_eq!(f.media.borrow().len(), 1);
+    let (client, changed) = f.media.borrow()[0].clone();
+    assert_eq!(client.starts.get(), 1);
+    changed(playing("Song"));
+    assert_eq!(f.status("media")["title"], "Song");
+    assert!(f.backend.action("media-toggle"));
+    f.backend.close();
+    assert_eq!(client.closes.get(), 1);
+}
+
+#[test]
+fn media_switch_starts_and_stops_the_service_live_and_repeatedly() {
+    let f = Fixture::new();
+    // Before start() the switch is only remembered.
+    f.backend.set_media_enabled(true);
+    assert!(f.media.borrow().is_empty());
+    f.backend.set_media_enabled(false);
+    f.backend.start();
+    assert!(f.media.borrow().is_empty());
+    let mut previous: Option<Rc<dyn Fn(Status)>> = None;
+    for round in 0..3 {
+        f.backend.set_media_enabled(true);
+        f.backend.set_media_enabled(true);
+        assert_eq!(f.media.borrow().len(), round + 1, "one fresh service per switch-on");
+        let (client, changed) = f.media.borrow()[round].clone();
+        assert_eq!((client.starts.get(), client.closes.get()), (1, 0));
+        assert!(f.backend.media_enabled() && f.backend.media_running());
+        if let Some(stale) = previous.take() {
+            // A previous, closed service cannot publish into the new one.
+            stale(playing("Stale"));
+            assert!(f.status("media").get("title").is_none());
+        }
+        changed(playing("Song"));
+        assert_eq!(f.status("media")["title"], "Song");
+        assert!(f.backend.action("media-toggle"));
+        f.backend.set_media_enabled(false);
+        f.backend.set_media_enabled(false);
+        assert_eq!(client.closes.get(), 1, "switching off closes the service once");
+        assert!(!f.backend.media_running() && f.backend.media_icon().is_none());
+        // The published status is cleared and a late callback cannot bring it back.
+        assert!(f.status("media").get("title").is_none());
+        assert_eq!(f.status("media")["classes"], json!(["unavailable"]));
+        changed(playing("Late"));
+        assert!(f.status("media").get("title").is_none());
+        assert!(!f.backend.action("media-next"));
+        previous = Some(changed);
+    }
+    assert!(f.media.borrow().iter().all(|(client, _)| client.starts.get() == 1 && client.closes.get() == 1));
+    f.backend.close();
+    f.backend.set_media_enabled(true);
+    assert_eq!(f.media.borrow().len(), 3, "a closed backend never starts media again");
 }

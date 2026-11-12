@@ -275,6 +275,7 @@ impl App {
             Some(Box::new(move |message: &str| if let Some(app) = failed.upgrade() { app.backend_error(message) })),
             StatusOptions {
                 on_show_desktop: Some(Rc::new(move || desktop.upgrade().is_some_and(|app| app.toggle_show_desktop()))),
+                media: self.config().media_enabled(),
                 ..Default::default()
             },
         );
@@ -788,6 +789,11 @@ impl App {
                 return false;
             }
         };
+        // The one place the Media switch takes effect: every dock surface on
+        // every monitor shares this status backend.
+        if let Some(status) = self.status_backend() {
+            status.set_media_enabled(self.config().media_enabled());
+        }
         if rebuild {
             self.rebuild_docks();
         }

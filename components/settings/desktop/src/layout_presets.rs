@@ -514,4 +514,24 @@ mod tests {
             assert!(config.always_visible_apps.iter().any(|name| name == "tiling"));
         }
     }
+
+    /// Media in the panel starts off in every layout. Win and Mac have one
+    /// workspace and no workspace indicator, which keeps its place in the
+    /// group order so turning it back on puts it where it was.
+    #[test]
+    fn media_is_off_everywhere_and_win_and_mac_have_one_workspace() {
+        for (key, bytes, icon) in BUILTIN {
+            let preset = parse_preset(key, &decode(bytes).unwrap(), PresetIcon::Embedded(icon)).unwrap();
+            let config = merged_config(&DockConfig::default(), &preset.dock).unwrap();
+            assert_eq!(preset.dock["group_visibility"]["media"], Value::Bool(false), "{key}");
+            assert!(!config.media_enabled(), "{key}");
+            let single = matches!(*key, "win" | "mac");
+            assert_eq!(preset.workspaces, Some(if single { 1 } else { 4 }), "{key}");
+            assert_eq!(config.is_group_visible("workspaces"), !single, "{key}");
+            let placed = preset.dock["group_layouts"].as_object().unwrap().values()
+                .flat_map(|layout| layout.as_object().unwrap().values())
+                .any(|names| names.as_array().unwrap().iter().any(|name| name == "workspaces"));
+            assert!(placed, "{key} keeps the workspaces group in its order");
+        }
+    }
 }

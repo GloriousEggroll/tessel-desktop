@@ -86,8 +86,8 @@
       "pinned": true,
       "running": true,
       "files": true,
-      "workspaces": true,
-      "media": true,
+      "workspaces": false,
+      "media": false,
       "system_tray": true,
       "service_apps": true,
       "weather": true,
@@ -113,7 +113,7 @@
     "transparency_enabled": true,
     "window_buttons_left": false
   },
-  "workspaces": 4,
+  "workspaces": 1,
   "gapless": true,
   "clock": {
     "stacked": true,
