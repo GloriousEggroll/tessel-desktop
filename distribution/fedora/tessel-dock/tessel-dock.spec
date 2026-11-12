@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit f402599157c929aabde4b092e752ae7c4edfcb71}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -98,6 +98,11 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
+- The panel's Media switch turns media on and off: when off, the panel does
+  not follow media players at all. It is off by default
+- New users start with Media off
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
 - The application menu button shows the Nobara mark
 - New users start on the Tessel layout

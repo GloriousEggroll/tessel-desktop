@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit c69c12c5a0805d25c461aeb64969b3b3731056f3}
+%{!?commit:%global commit f402599157c929aabde4b092e752ae7c4edfcb71}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        12%{?dist}
+Release:        13%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -107,6 +107,11 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-13
+- Dock/Panel: the Media switch says what it does; search finds it under Media
+- Win and Mac layouts start with one workspace and no workspace indicator
+- Media is off in every layout
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
 - Theme & Wallpaper and Login Screen: the picker lists wallpapers in
   subfolders, such as the ones packages install below /usr/share/wallpapers
