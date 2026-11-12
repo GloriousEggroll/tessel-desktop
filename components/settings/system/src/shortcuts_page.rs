@@ -79,6 +79,8 @@ impl RebindDialog {
         let weak = Rc::downgrade(&this);
         this.save.connect_clicked(move |_| if let Some(t) = weak.upgrade() { t.apply_key() });
         let weak = Rc::downgrade(&this);
+        this.entry.connect_activate(move |_| if let Some(t) = weak.upgrade() { t.apply_key() });
+        let weak = Rc::downgrade(&this);
         key_controller(&this.window, true, move |_, keyval, keycode, state| {
             weak.upgrade().map(|t| t.key_pressed(keyval, keycode, state)).unwrap_or(glib::Propagation::Proceed)
         });
@@ -93,14 +95,14 @@ impl RebindDialog {
     pub fn present(&self) { self.window.present() }
 
     fn key_pressed(&self, keyval: gdk::Key, keycode: u32, state: gdk::ModifierType) -> glib::Propagation {
-        let held = gdk::ModifierType::SUPER_MASK | gdk::ModifierType::CONTROL_MASK | gdk::ModifierType::ALT_MASK;
-        if self.entry.has_focus() && !state.intersects(held) {
-            return glib::Propagation::Proceed;
-        }
         let plain = !state.intersects(gdk::ModifierType::from_bits_truncate(0x1c00_1fff));
         if keyval == gdk::Key::Escape && plain {
             self.window.close();
             return glib::Propagation::Stop;
+        }
+        let held = gdk::ModifierType::SUPER_MASK | gdk::ModifierType::CONTROL_MASK | gdk::ModifierType::ALT_MASK;
+        if self.entry_focused() && !state.intersects(held) && edits_text(keyval) {
+            return glib::Propagation::Proceed;
         }
         if keyval == gdk::Key::BackSpace && plain {
             self.set("", false);
@@ -111,6 +113,11 @@ impl RebindDialog {
             self.set(&key, false);
         }
         glib::Propagation::Stop
+    }
+
+    /// The focus sits on the entry's inner text widget, never on the entry itself.
+    fn entry_focused(&self) -> bool {
+        GtkWindowExt::focus(&self.window).is_some_and(|w| &w == self.entry.upcast_ref::<gtk::Widget>() || w.is_ancestor(&self.entry))
     }
 
     /// `_set(key, from_entry)`.
@@ -161,6 +168,14 @@ impl RebindDialog {
             self.window.close();
         }
     }
+}
+
+/// Keys the entry needs for typing; everything else (Print, F9, …) is captured.
+fn edits_text(keyval: gdk::Key) -> bool {
+    use gdk::Key;
+    keyval.to_unicode().is_some_and(|c| !c.is_control())
+        || [Key::BackSpace, Key::Delete, Key::KP_Delete, Key::Left, Key::Right, Key::KP_Left, Key::KP_Right, Key::Home, Key::End,
+            Key::KP_Home, Key::KP_End, Key::Tab, Key::ISO_Left_Tab, Key::Return, Key::KP_Enter].contains(&keyval)
 }
 
 /// Let compositor-bound combinations reach the dialog while it is open.

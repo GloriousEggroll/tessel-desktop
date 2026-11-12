@@ -302,6 +302,227 @@ fn cheat_sheet_filters_and_closes(app: &gtk::Application) -> Result<(), String> 
     Ok(())
 }
 
+// ---- rebind dialog vs compositor keybinds ----------------------------------
+
+/// The private compositor's rc.xml; the original comes back on drop.
+struct Compositor {
+    pid: i32,
+    rc: PathBuf,
+    original: String,
+}
+
+impl Compositor {
+    /// Only the labwc that headless.sh started with `-C $GS_ROOT/cfg`.
+    fn private() -> Result<Compositor, String> {
+        let root = std::env::var("GS_ROOT").unwrap_or_default();
+        let pid: i32 = std::env::var("LABWC_PID").ok().and_then(|p| p.parse().ok()).ok_or("no LABWC_PID")?;
+        let cmdline = std::fs::read(format!("/proc/{pid}/cmdline")).unwrap_or_default();
+        let config = format!("{root}/cfg");
+        check!(!root.is_empty() && cmdline.split(|b| *b == 0).any(|a| a == config.as_bytes()), "labwc {pid} is not the private compositor");
+        let rc = PathBuf::from(&config).join("rc.xml");
+        Ok(Compositor { pid, original: read(&rc), rc })
+    }
+
+    fn load(&self, text: &str) {
+        std::fs::write(&self.rc, text).unwrap();
+        // SAFETY: plain kill(2) on the private compositor checked above.
+        unsafe { libc::kill(self.pid, libc::SIGHUP) };
+        settle(0.6);
+    }
+}
+
+impl Drop for Compositor {
+    fn drop(&mut self) { self.load(&self.original.clone()) }
+}
+
+/// Type one combination with a virtual keyboard into the private compositor.
+fn press(mods: &[&str], key: &str) {
+    let display = std::env::var("WAYLAND_DISPLAY").unwrap();
+    let mut args: Vec<&str> = Vec::new();
+    for m in mods {
+        args.extend(["-M", m]);
+    }
+    args.extend(["-k", key]);
+    for m in mods.iter().rev() {
+        args.extend(["-m", m]);
+    }
+    let mut child = std::process::Command::new("/usr/bin/wtype").args(&args).env("WAYLAND_DISPLAY", display).spawn().expect("wtype");
+    while child.try_wait().unwrap().is_none() {
+        settle(0.01);
+    }
+}
+
+/// A virtual keyboard that stays plugged in, so the seat has a keyboard and windows get focus.
+struct Keyboard(std::process::Child);
+
+impl Keyboard {
+    fn plug() -> Keyboard {
+        let display = std::env::var("WAYLAND_DISPLAY").unwrap();
+        let child = std::process::Command::new("/usr/bin/wtype").args(["-s", "600000"]).env("WAYLAND_DISPLAY", display).spawn().expect("wtype");
+        settle(0.5);
+        Keyboard(child)
+    }
+}
+
+impl Drop for Keyboard {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
+fn focus_title(title: &str) {
+    let display = std::env::var("WAYLAND_DISPLAY").unwrap();
+    let _ = std::process::Command::new("/usr/bin/wlrctl").args(["toplevel", "focus", &format!("title:{title}")])
+        .env("WAYLAND_DISPLAY", display).status();
+}
+
+fn inhibited(window: &gtk::Window) -> bool {
+    window.surface().and_downcast::<gtk::gdk::Toplevel>().is_some_and(|t| t.is_shortcuts_inhibited())
+}
+
+/// (wtype modifiers, wtype key, labwc / dialog key, marker)
+const COMBOS: &[(&[&str], &str, &str, &str)] = &[
+    (&[], "Print", "Print", "print"),
+    (&[], "F9", "F9", "f9"),
+    (&["ctrl"], "Print", "C-Print", "c-print"),
+    (&["shift"], "Print", "S-Print", "s-print"),
+    (&["logo"], "e", "W-e", "w-e"),
+    (&["alt"], "F4", "A-F4", "a-f4"),
+    (&["logo"], "Left", "W-Left", ""),
+    (&["alt"], "Tab", "A-Tab", ""),
+];
+
+fn bound_rc(markers: &Path) -> String {
+    let mut binds = String::new();
+    for (_, _, key, marker) in COMBOS {
+        if marker.is_empty() {
+            continue;
+        }
+        binds += &format!("<keybind key=\"{key}\"><action name=\"Execute\"><command>touch {}</command></action></keybind>\n",
+                          markers.join(marker).display());
+    }
+    binds += "<keybind key=\"W-Left\"><action name=\"SnapToEdge\" direction=\"left\"/></keybind>\n";
+    binds += "<keybind key=\"A-Tab\"><action name=\"NextWindow\"/></keybind>\n";
+    format!("<?xml version=\"1.0\"?>\n<labwc_config><keyboard>\n{binds}</keyboard></labwc_config>\n")
+}
+
+fn fired(markers: &Path) -> Vec<String> {
+    let mut names: Vec<String> = std::fs::read_dir(markers).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+    names.sort();
+    for name in &names {
+        let _ = std::fs::remove_file(markers.join(name));
+    }
+    names
+}
+
+/// Issue #5: while the dialog listens, combinations labwc has bound (Print takes a
+/// screenshot) must reach the dialog instead of running. wtype is a virtual keyboard,
+/// which labwc matches by keysym only; the inhibitor check is shared with keycodes.
+fn rebind_dialog_keeps_compositor_shortcuts_from_firing(app: &gtk::Application) -> Result<(), String> {
+    let _keyboard = Keyboard::plug();
+    let base = Base::new(app, "rebind-inhibit");
+    base.window.set_title(Some("Shortcuts parent"));
+    let markers = base.root.join("fired");
+    std::fs::create_dir_all(&markers).unwrap();
+    let compositor = Compositor::private()?;
+    compositor.load(&bound_rc(&markers));
+    let rc = base.root.join("rc.xml");
+    std::fs::write(&rc, RC).unwrap();
+    let page = base.show(gs_system::shortcuts_page::build_page_with(Some(store(&rc))));
+    let c = page.controller::<ShortcutsPage>().unwrap();
+    check!(wait(|| base.window.is_active(), 3.0), "parent never became active");
+    let seen = Rc::new(RefCell::new(Vec::<String>::new()));
+    let s = seen.clone();
+    tessel_gtk::utils::key_controller(&base.window, true, move |_, keyval, _, _| {
+        s.borrow_mut().push(keyval.name().map(|n| n.to_string()).unwrap_or_default());
+        glib::Propagation::Proceed
+    });
+    // Without the dialog every combination belongs to the compositor.
+    for (mods, key, name, marker) in COMBOS {
+        press(mods, key);
+        settle(0.3);
+        let got = fired(&markers);
+        check!(seen.borrow().is_empty(), "{name} reached the parent: {:?}", seen.borrow());
+        check!(marker.is_empty() || got == [marker.to_string()], "{name} did not fire: {got:?}");
+        focus_title("Shortcuts parent");
+        settle(0.1);
+    }
+    let lock = c.shortcuts.borrow().iter().find(|s| s.key == "W-l").cloned().unwrap();
+    let dialog = RebindDialog::new(Some(base.window.upcast_ref()), &lock, &c.shortcuts.borrow(), c.apply_callback());
+    dialog.present();
+    wait(|| dialog.window.is_active() && inhibited(&dialog.window), 3.0);
+    check!(dialog.window.is_active(), "dialog never became active");
+    let capture = |name: &str, entry: bool| -> Result<(), String> {
+        let (mods, key, _, _) = COMBOS.iter().find(|c| c.2 == name).unwrap();
+        dialog.set("", false);
+        if entry {
+            dialog.entry.grab_focus();
+            settle(0.05);
+        }
+        press(mods, key);
+        wait(|| !dialog.key.borrow().is_empty(), 1.0);
+        settle(0.1);
+        let got = fired(&markers);
+        check!(got.is_empty(), "{name} fired while the dialog listened: {got:?}");
+        check!(*dialog.key.borrow() == name, "{name}: dialog got {:?}", dialog.key.borrow());
+        Ok(())
+    };
+    for (_, _, name, _) in COMBOS {
+        capture(name, false)?;
+    }
+    check!(inhibited(&dialog.window));
+    // Typing in the entry still works, and bare keys are still captured there.
+    dialog.set("", false);
+    dialog.entry.grab_focus();
+    settle(0.05);
+    press(&[], "a");
+    press(&[], "minus");
+    check!(wait(|| dialog.entry.text() == "a-", 1.0), "typed {:?}", dialog.entry.text());
+    for name in ["Print", "F9", "S-Print", "W-e"] {
+        capture(name, true)?;
+    }
+    // Focus moves to another window and back: the inhibitor stays.
+    let other = gtk::Window::builder().title("Other window").default_width(200).default_height(100).build();
+    other.present();
+    check!(wait(|| other.is_active() && !dialog.window.is_active(), 3.0), "other window never took focus");
+    press(&["ctrl"], "Print");
+    settle(0.3);
+    check!(fired(&markers) == ["c-print"], "C-Print in another window should fire");
+    focus_title("Change Shortcut");
+    check!(wait(|| dialog.window.is_active(), 3.0), "dialog did not get focus back");
+    check!(inhibited(&dialog.window));
+    capture("W-e", false)?;
+    other.destroy();
+    settle(0.2);
+    check!(wait(|| dialog.window.is_active(), 3.0));
+    capture("C-Print", false)?;
+    // A combination another shortcut uses: explained, not saved, the dialog keeps listening.
+    dialog.set("", false);
+    press(&["logo"], "t");
+    check!(wait(|| *dialog.key.borrow() == "W-t", 1.0));
+    check!(dialog.message.text().starts_with("Already used by"), "{}", dialog.message.text());
+    check!(!dialog.save.is_sensitive());
+    press(&["logo"], "a");
+    check!(wait(|| *dialog.key.borrow() == "W-a", 1.0));
+    check!(dialog.save.is_sensitive());
+    // Escape closes even from the entry; then the compositor gets the combinations again.
+    dialog.entry.grab_focus();
+    settle(0.05);
+    let window = dialog.window.clone();
+    press(&[], "Escape");
+    check!(wait(|| !window.is_visible(), 1.0), "Escape did not close the dialog");
+    check!(!inhibited(&window));
+    check!(wait(|| base.window.is_active(), 3.0));
+    press(&["ctrl"], "Print");
+    settle(0.3);
+    check!(fired(&markers) == ["c-print"], "C-Print should fire after the dialog closed");
+    check!(*dialog.key.borrow() == "W-a");
+    drop(compositor);
+    base.keep(page);
+    Ok(())
+}
+
 // ---- about / users ---------------------------------------------------------
 
 fn about_values_copy_and_restart_command(app: &gtk::Application) -> Result<(), String> {
@@ -897,6 +1118,7 @@ fn main() {
         ("keyboard_layout_edits_and_repeat_are_saved_to_private_files", keyboard_layout_edits_and_repeat_are_saved_to_private_files),
         ("shortcuts_listing_search_conflicts_and_rebinding", shortcuts_listing_search_conflicts_and_rebinding),
         ("cheat_sheet_filters_and_closes", cheat_sheet_filters_and_closes),
+        ("rebind_dialog_keeps_compositor_shortcuts_from_firing", rebind_dialog_keeps_compositor_shortcuts_from_firing),
         ("about_values_copy_and_restart_command", about_values_copy_and_restart_command),
         ("users_name_and_password_flow", users_name_and_password_flow),
         ("default_apps_set_through_backend", default_apps_set_through_backend),
