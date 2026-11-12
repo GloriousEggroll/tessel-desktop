@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit ecbdb9dec120d6dc9af554b2133ac9730142d6b6}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -36,6 +36,8 @@ BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
+# Per-screen adaptive sync modes in rc.xml
+Requires:       labwc >= 0.20.2-26
 Requires:       wlr-randr
 Requires:       libnotify
 Requires:       lcms2
@@ -84,6 +86,10 @@ install -Dm644 packaging/defaults/etc/tessel/displays/cfg.yaml %{buildroot}%{_sy
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
+- Adaptive Sync is Automatic (only while an app is fullscreen), Always or Off per screen; Automatic is the default
+- A screen where Adaptive Sync is not available says so instead of failing
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
 - Window buttons are as far from the side of the window as from its top
 - Rounded corners are 8 px, as browsers' own windows have
