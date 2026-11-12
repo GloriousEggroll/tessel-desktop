@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 298b8efe23d8adfc4538af309a4e8708d8912a87}
+%{!?commit:%global commit b733a1f7039557730d0d310e6c18b6a9a836a38c}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-login
