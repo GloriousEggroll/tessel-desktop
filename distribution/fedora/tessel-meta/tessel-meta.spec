@@ -1,7 +1,7 @@
 # Installs the complete Tessel desktop. It ships no files of its own.
 Name:           tessel-meta
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        The complete Tessel desktop
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -53,6 +53,7 @@ Requires:       labwc-session
 Requires:       ptyxis
 Requires:       xdg-desktop-portal-wlr >= 0.8.4-4
 Requires:       xdg-desktop-portal
+Requires:       xdg-desktop-portal-gtk
 Requires:       greetd
 Requires:       NetworkManager
 Requires:       nm-connection-editor
@@ -67,6 +68,9 @@ compositor, the Ptyxis terminal and the xdg-desktop-portal-wlr screen-share port
 %files
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Require xdg-desktop-portal-gtk, which passes font and other interface settings to running GTK 4 applications
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Require tessel-wallpapers, the default wallpaper
 
