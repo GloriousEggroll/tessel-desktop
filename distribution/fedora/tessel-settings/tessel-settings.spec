@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit ecbdb9dec120d6dc9af554b2133ac9730142d6b6}
+%{!?commit:%global commit c639f399ea3627b5fdc0d922676cdae1b46469a6}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        15%{?dist}
+Release:        16%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -107,6 +107,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.GlobalSettings.desktop
 %{_datadir}/applications/org.tessel.GlobalSettings.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-16
+- The icon theme chosen in Global Settings is recorded, so it survives a Plasma login
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-15
 - Displays: Adaptive Sync is Automatic, Always or Off per screen
 
