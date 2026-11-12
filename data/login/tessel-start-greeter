@@ -17,13 +17,18 @@ if [ ! -x /usr/libexec/at-spi-bus-launcher ] && [ ! -x /usr/lib/at-spi-bus-launc
     export GTK_A11Y=none
 fi
 umask 077
-set -- /usr/bin/dbus-run-session -- /usr/bin/labwc --config-dir /etc/tessel/login/labwc \
-    --session /usr/local/lib/tessel/tessel-login
 # Keep what the compositor and the greeter say in the journal (identifier
 # tessel-login-greeter). greetd gives them the console, where a login screen
-# that never appears leaves nothing to read afterwards.
+# that never appears leaves nothing to read afterwards. In the journal the
+# compositor is verbose (-V): which screens and GPU it found and when its
+# console was taken away are what explain a login screen that is not shown.
+verbose=
+journal=
 if [ -z "${TESSEL_LOGIN_CONSOLE:-}" ] && command -v systemd-cat >/dev/null 2>&1 \
     && systemd-cat --identifier=tessel-login-greeter true 2>/dev/null; then
-    set -- systemd-cat --identifier=tessel-login-greeter --stderr-priority=warning "$@"
+    verbose=-V
+    journal="systemd-cat --identifier=tessel-login-greeter --stderr-priority=warning"
 fi
+set -- $journal /usr/bin/dbus-run-session -- /usr/bin/labwc $verbose --config-dir /etc/tessel/login/labwc \
+    --session /usr/local/lib/tessel/tessel-login
 exec "$@"
