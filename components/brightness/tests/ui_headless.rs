@@ -264,6 +264,89 @@ fn submitted_value_survives_unrelated_refresh_until_hardware_reply() {
     println!("ok submitted_value_survives_unrelated_refresh_until_hardware_reply");
 }
 
+/// Emit `signal` on the capture-phase click gesture of a popup slider.
+fn pointer(scale: &gtk::Scale, signal: &str) {
+    let controllers = scale.observe_controllers();
+    let gesture = (0..controllers.n_items()).rev().filter_map(|i| controllers.item(i).and_downcast::<gtk::GestureClick>())
+        .find(|g| g.propagation_phase() == gtk::PropagationPhase::Capture).expect("slider gesture");
+    match signal {
+        "stopped" => gesture.emit_by_name::<()>("stopped", &[]),
+        "unpaired-release" => gesture.emit_by_name::<()>(signal, &[&10.0f64, &5.0f64, &1u32, &None::<gtk::gdk::EventSequence>]),
+        _ => gesture.emit_by_name::<()>(signal, &[&1i32, &10.0f64, &5.0f64]),
+    }
+}
+
+/// Issue #10: a drag writes as it goes, one write at a time, and the slow
+/// write's busy/old-value states never move the handle.
+fn drag_writes_while_moving_and_never_rubber_bands() {
+    let f = Fx::new();
+    f.client.commit.set(false);
+    let popup = f.popup();
+    let brightness = row(&popup, "brightness");
+    let scale = brightness.scale();
+    pointer(&scale, "pressed");
+    // GtkScale claims the drag: the click gesture stops, the button stays down.
+    pointer(&scale, "stopped");
+    for step in 0..12 {
+        scale.set_value(70.0 - step as f64);
+        settle(0.03);
+    }
+    assert_eq!(f.client.history().len(), 1, "a continuous drag adjusts the display while it moves, one write at a time");
+    let Call::Value(_, _, first, _) = f.client.history()[0].clone() else { panic!() };
+    assert!(first < 70.0);
+    assert_eq!(scale.value(), 59.0);
+    f.client.set(|s| s["displays"][0]["brightness"]["busy"] = true.into());
+    popup.refresh();
+    assert_eq!((scale.value(), brightness.value_label().text().to_string()), (59.0, "59%".to_owned()));
+    assert!(scale.is_sensitive());
+    scale.set_value(50.0);
+    settle(0.25);
+    assert_eq!(f.client.history().len(), 1);
+    f.client.set(|s| { s["displays"][0]["brightness"]["busy"] = false.into(); s["displays"][0]["brightness"]["value"] = first.into(); });
+    popup.refresh();
+    assert_eq!(scale.value(), 50.0, "the finished older write must not move the handle");
+    assert!(wait_until(|| f.client.history().len() == 2, 1.0));
+    assert_eq!(f.client.history()[1], value("DP-2", "brightness", 50.0, "dell-id"));
+    // Held still after the write: a state change elsewhere waits for the release.
+    f.client.set(|s| s["displays"][0]["brightness"]["value"] = 50.into());
+    popup.refresh();
+    f.client.set(|s| s["displays"][0]["brightness"]["value"] = 20.into());
+    popup.refresh();
+    assert_eq!(scale.value(), 50.0, "the handle under the pressed pointer does not move");
+    pointer(&scale, "unpaired-release");
+    assert_eq!((scale.value(), brightness.value_label().text().to_string()), (20.0, "20%".to_owned()));
+    settle(0.25);
+    assert_eq!(f.client.history().len(), 2);
+    println!("ok drag_writes_while_moving_and_never_rubber_bands");
+}
+
+fn rounded_readback_stale_error_and_silence_do_not_freeze_or_snap() {
+    let f = Fx::new();
+    f.client.commit.set(false);
+    f.client.set(|s| s["displays"][0]["brightness"]["error"] = "The display reported 40 after requesting 41.".into());
+    let popup = f.popup();
+    let brightness = row(&popup, "brightness");
+    let scale = brightness.scale();
+    scale.set_value(55.0);
+    assert!(wait_until(|| f.client.history().len() == 1, 1.0));
+    popup.refresh();
+    assert_eq!(scale.value(), 55.0, "an error left over from an earlier write is not this write failing");
+    // A backlight with 255 steps reads back 55.29%.
+    f.client.set(|s| { s["displays"][0]["brightness"]["error"] = "".into(); s["displays"][0]["brightness"]["value"] = 55.294.into(); });
+    popup.refresh();
+    f.client.set(|s| s["displays"][0]["brightness"]["value"] = 30.into());
+    popup.refresh();
+    assert_eq!(scale.value(), 30.0, "a rounded readback confirms the write");
+    scale.set_value(60.0);
+    assert!(wait_until(|| f.client.history().len() == 2, 1.0));
+    f.client.set(|s| s["displays"][0]["brightness"]["value"] = 33.into());
+    popup.refresh();
+    assert_eq!(scale.value(), 60.0);
+    settle(3.2);
+    assert_eq!(scale.value(), 33.0, "a write the service never answers is given up");
+    println!("ok rounded_readback_stale_error_and_silence_do_not_freeze_or_snap");
+}
+
 fn replaced_display_cannot_receive_old_debounced_command_even_without_refresh() {
     let f = Fx::new();
     let popup = f.popup();
@@ -554,6 +637,8 @@ fn main() {
     debounce_coalesces_gesture_and_other_feature_refresh_does_not_reset_it();
     busy_feature_keeps_latest_pending_value_and_remains_interactive();
     submitted_value_survives_unrelated_refresh_until_hardware_reply();
+    drag_writes_while_moving_and_never_rubber_bands();
+    rounded_readback_stale_error_and_silence_do_not_freeze_or_snap();
     replaced_display_cannot_receive_old_debounced_command_even_without_refresh();
     dismiss_destroy_and_gear_cancel_pending_slider_changes();
     dismiss_racing_asynchronous_show_still_cancels_pending_slider();

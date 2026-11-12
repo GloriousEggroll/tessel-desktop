@@ -69,6 +69,9 @@ struct FakeClient {
     reject: Cell<bool>,
     /// test_local_policy_value…: SetAutoDim stays in flight (busy).
     pending_auto: Cell<bool>,
+    /// A slow DDC write: SetValue is accepted but the state keeps the old
+    /// value until the test calls `finish`.
+    slow: Cell<bool>,
 }
 
 impl FakeClient {
@@ -78,8 +81,21 @@ impl FakeClient {
             state: RefCell::new(json!({"displays": [display("DP-1", 70, true), display("HDMI-A-1", 40, false)],
                 "settings": {"version": 1, "auto_dim": false, "dim_after": 300, "dim_percent": 30, "preserve_this": "existing setting"}})),
             calls: RefCell::new(Vec::new()), started: Cell::new(false), closed: Cell::new(false), reject: Cell::new(false),
-            pending_auto: Cell::new(false),
+            pending_auto: Cell::new(false), slow: Cell::new(false),
         })
+    }
+
+    /// The slow write is running: the service reports busy and still the old value.
+    fn busy(&self, busy: bool) {
+        self.set("/displays/0/brightness/busy", json!(busy));
+        self.changed();
+    }
+
+    /// The slow write finished with `value` read back from the monitor.
+    fn finish(&self, value: i64) {
+        self.set("/displays/0/brightness/value", json!(value));
+        self.set("/displays/0/brightness/busy", json!(false));
+        self.changed();
     }
 
     fn changed(&self) {
@@ -112,6 +128,9 @@ impl BrightnessModel for FakeClient {
             let mut state = self.state.borrow_mut();
             let target = state["displays"].as_array_mut().unwrap().iter_mut().find(|d| d["connector"] == connector).unwrap();
             assert_eq!(expected_id, Some(&target["id"]), "A write did not capture the expected display identity");
+            if self.slow.get() {
+                return Ok(true);
+            }
             target[feature]["value"] = json!(value as i64);
         }
         self.changed();
@@ -385,6 +404,155 @@ fn busy_feature_defers_existing_pending_value_without_losing_it(app: &gtk::Appli
     settle(0.06);
     assert_eq!(f.client.calls(), [Call::Value("DP-1".into(), "brightness".into(), 65)]);
     println!("ok busy_feature_defers_existing_pending_value_without_losing_it");
+}
+
+/// Emit `signal` on the capture-phase click gesture BrightnessControls puts on a slider.
+fn pointer(scale: &gtk::Scale, signal: &str) {
+    let controllers = scale.observe_controllers();
+    let gesture = (0..controllers.n_items()).rev().filter_map(|i| controllers.item(i).and_downcast::<gtk::GestureClick>())
+        .find(|g| g.propagation_phase() == gtk::PropagationPhase::Capture);
+    let Some(gesture) = gesture else { return };
+    match signal {
+        "stopped" => gesture.emit_by_name::<()>("stopped", &[]),
+        _ => gesture.emit_by_name::<()>(signal, &[&1i32, &10.0f64, &5.0f64]),
+    }
+}
+
+fn brightness(connector: &str, value: i64) -> Call {
+    Call::Value(connector.into(), "brightness".into(), value)
+}
+
+/// Issue #10: while a slow write runs the service reports busy and the old
+/// value; the handle must stay where the user put it and keep the drag.
+fn slider_drag_does_not_rubber_band_while_a_slow_write_runs(app: &gtk::Application) {
+    let f = Fx::new(app);
+    f.client.slow.set(true);
+    let (controls, other) = (f.controls("DP-1"), f.controls("DP-1"));
+    let scale = controls.scales["brightness"].clone();
+    let label = controls.value_labels["brightness"].clone();
+    pointer(&scale, "pressed");
+    // GtkScale claims the drag; the click gesture stops but the button is still down.
+    pointer(&scale, "stopped");
+    scale.set_value(60.0);
+    assert!(wait(|| !f.client.calls().is_empty()), "the first value is written during the drag");
+    assert_eq!(f.client.calls(), [brightness("DP-1", 60)]);
+    assert_eq!(scale.value(), 60.0, "the reply before the service turns busy still carries the old value");
+    f.client.busy(true);
+    for _ in 0..3 {
+        f.refresh();
+    }
+    settle(0.15);
+    assert_eq!(scale.value(), 60.0, "rubber band: the busy state moved the handle back");
+    assert!(scale.is_sensitive(), "our own write must not make the slider insensitive (that ends the drag)");
+    assert_eq!(label.text(), "60%");
+    scale.set_value(55.0);
+    scale.set_value(50.0);
+    f.refresh();
+    settle(0.25);
+    assert_eq!(f.client.calls().len(), 1, "one write in flight per display and feature");
+    assert_eq!((scale.value(), label.text().to_string()), (50.0, "50%".to_owned()));
+    assert!(scale.is_sensitive());
+    f.client.finish(60);
+    assert_eq!(scale.value(), 50.0, "the finished older write must not move the handle");
+    assert!(wait(|| f.client.calls().len() == 2), "the newest value is sent as soon as the service is free");
+    assert_eq!(f.client.calls()[1], brightness("DP-1", 50));
+    f.client.busy(true);
+    scale.set_value(45.0);
+    pointer(&scale, "released");
+    f.refresh();
+    assert_eq!(scale.value(), 45.0);
+    f.client.finish(50);
+    assert_eq!(scale.value(), 45.0);
+    assert!(wait(|| f.client.calls().len() == 3), "the value chosen at release is sent after the write in flight");
+    assert_eq!(f.client.calls()[2], brightness("DP-1", 45));
+    f.client.busy(true);
+    f.client.finish(45);
+    settle(0.25);
+    assert_eq!(f.client.calls().len(), 3);
+    assert_eq!((scale.value(), label.text().to_string()), (45.0, "45%".to_owned()));
+    assert_eq!(other.scales["brightness"].value(), 45.0, "the windows agree when idle");
+    // Confirmed: changes made elsewhere show up again, in both windows.
+    f.client.set("/displays/0/brightness/value", json!(30));
+    f.refresh();
+    assert_eq!((scale.value(), label.text().to_string()), (30.0, "30%".to_owned()));
+    assert_eq!(other.scales["brightness"].value(), 30.0);
+    assert_eq!(f.client.calls().len(), 3);
+    println!("ok slider_drag_does_not_rubber_band_while_a_slow_write_runs");
+}
+
+fn held_slider_ignores_service_changes_until_release(app: &gtk::Application) {
+    let f = Fx::new(app);
+    let controls = f.controls("DP-1");
+    let scale = controls.scales["brightness"].clone();
+    pointer(&scale, "pressed");
+    pointer(&scale, "stopped");
+    f.client.set("/displays/0/brightness/value", json!(20));
+    f.client.set("/displays/0/brightness/busy", json!(true));
+    f.refresh();
+    assert_eq!(scale.value(), 70.0, "the handle under the pressed pointer does not move");
+    assert!(scale.is_sensitive(), "a held slider keeps its drag");
+    f.client.set("/displays/0/brightness/busy", json!(false));
+    pointer(&scale, "released");
+    assert_eq!(scale.value(), 20.0);
+    assert!(f.client.calls().is_empty());
+    println!("ok held_slider_ignores_service_changes_until_release");
+}
+
+fn slider_shows_the_real_value_once_the_write_is_confirmed(app: &gtk::Application) {
+    let f = Fx::new(app);
+    f.client.slow.set(true);
+    let controls = f.controls("DP-1");
+    let scale = controls.scales["brightness"].clone();
+    scale.set_value(61.0);
+    assert!(wait(|| !f.client.calls().is_empty()));
+    f.client.busy(true);
+    assert_eq!(scale.value(), 61.0);
+    // The monitor clamped the request.
+    f.client.finish(58);
+    assert_eq!((scale.value(), controls.value_labels["brightness"].text().to_string()), (58.0, "58%".to_owned()));
+    // A write the service never acknowledges is given up after a few seconds.
+    scale.set_value(40.0);
+    assert!(wait(|| f.client.calls().len() == 2));
+    f.client.set("/displays/0/brightness/value", json!(33));
+    f.refresh();
+    assert_eq!(scale.value(), 40.0);
+    settle(3.2);
+    assert_eq!(scale.value(), 33.0, "an unconfirmed write must not freeze the slider");
+    println!("ok slider_shows_the_real_value_once_the_write_is_confirmed");
+}
+
+fn genuine_unavailability_still_disables_the_slider(app: &gtk::Application) {
+    let f = Fx::new(app);
+    let controls = f.controls("DP-1");
+    let scale = controls.scales["brightness"].clone();
+    // Busy without a write of ours (probing, auto-dim reading).
+    f.client.set("/displays/0/brightness/busy", json!(true));
+    f.refresh();
+    assert!(!scale.is_sensitive());
+    f.client.set("/displays/0/brightness/busy", json!(false));
+    f.client.state.borrow_mut()["displays"][0]["brightness"]["hdr_locked"] = json!(true);
+    f.refresh();
+    assert!(!scale.is_sensitive());
+    f.client.set("/displays/0/brightness/hdr_locked", json!(false));
+    f.refresh();
+    assert!(scale.is_sensitive());
+    // A write in flight does not keep a display that went away writable.
+    f.client.slow.set(true);
+    scale.set_value(50.0);
+    assert!(wait(|| !f.client.calls().is_empty()));
+    f.client.busy(true);
+    assert!(scale.is_sensitive());
+    scale.set_value(45.0);
+    f.client.set("/displays/0/enabled", json!(false));
+    f.client.finish(50);
+    assert!(!scale.is_sensitive());
+    settle(0.25);
+    assert_eq!(f.client.calls(), [brightness("DP-1", 50)], "the queued value is dropped with the display");
+    f.client.set("/displays/0/enabled", json!(true));
+    f.client.ready.set(false);
+    f.refresh();
+    assert!(!scale.is_sensitive());
+    println!("ok genuine_unavailability_still_disables_the_slider");
 }
 
 fn loading_feature_is_distinct_from_unsupported_feature(app: &gtk::Application) {
@@ -1186,6 +1354,10 @@ fn main() {
     missing_monitor_and_write_failure_do_not_show_fake_success(&app);
     hotplug_identity_change_cancels_value_for_previous_display(&app);
     busy_feature_defers_existing_pending_value_without_losing_it(&app);
+    slider_drag_does_not_rubber_band_while_a_slow_write_runs(&app);
+    held_slider_ignores_service_changes_until_release(&app);
+    slider_shows_the_real_value_once_the_write_is_confirmed(&app);
+    genuine_unavailability_still_disables_the_slider(&app);
     loading_feature_is_distinct_from_unsupported_feature(&app);
     shared_auto_dim_settings_refresh_all_tabs_without_extra_writes(&app);
     busy_policy_does_not_overwrite_in_flight_settings(&app);

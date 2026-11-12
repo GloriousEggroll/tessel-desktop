@@ -62,8 +62,44 @@ fn capitalize(text: &str) -> String {
     }
 }
 
-/// `(source, value, expected_id)`; `source == None` is Python's `0`.
-type Pending = (Option<glib::SourceId>, i64, Value);
+/// Slider writes: one in flight per feature, the newest wanted value goes
+/// next, and the first value of a gesture waits this long so a quick drag or
+/// key repeat is coalesced. DDC itself is the rate limit once a write runs.
+pub const SEND_INTERVAL_MS: u64 = 100;
+/// A write the service never reported as busy or applied is given up after this.
+pub const CONFIRM_TIMEOUT_MS: u64 = 3000;
+/// A write the service reports as busy is waited for at most this long.
+pub const BUSY_TIMEOUT_MS: u64 = 15000;
+
+/// A value sent to the service and not yet confirmed.
+struct Sent {
+    value: i64,
+    id: Value,
+    seen_busy: bool,
+    errors: (String, String),
+    since: std::time::Instant,
+}
+
+/// Local slider state: while any of it is set the handle shows the user's value.
+#[derive(Default)]
+struct Slider {
+    /// `(value, expected_id)` chosen by the user, not sent yet.
+    wanted: Option<(i64, Value)>,
+    timer: Option<glib::SourceId>,
+    sent: Option<Sent>,
+    watchdog: Option<glib::SourceId>,
+    pressed: bool,
+}
+
+impl Slider {
+    fn local(&self) -> Option<i64> {
+        self.wanted.as_ref().map(|w| w.0).or(self.sent.as_ref().map(|s| s.value))
+    }
+
+    fn ours(&self) -> bool {
+        self.wanted.is_some() || self.sent.is_some() || self.pressed
+    }
+}
 
 pub struct BrightnessControls {
     pub root: gtk::Box,
@@ -72,7 +108,7 @@ pub struct BrightnessControls {
     pub client_error: RefCell<String>,
     syncing: Cell<bool>,
     closed: Cell<bool>,
-    pending: RefCell<BTreeMap<&'static str, Pending>>,
+    sliders: RefCell<BTreeMap<&'static str, Slider>>,
     pending_policy: RefCell<Option<serde_json::Map<String, Value>>>,
     local_error: RefCell<String>,
     delay_values: RefCell<Vec<i64>>,
@@ -151,7 +187,7 @@ impl BrightnessControls {
 
         let this = Rc::new(Self {
             root, connector: connector.to_owned(), client, client_error: RefCell::new(client_error.to_owned()),
-            syncing: Cell::new(false), closed: Cell::new(false), pending: RefCell::new(BTreeMap::new()),
+            syncing: Cell::new(false), closed: Cell::new(false), sliders: RefCell::new(FEATURES.iter().map(|f| (*f, Slider::default())).collect()),
             pending_policy: RefCell::new(None), local_error: RefCell::new(String::new()),
             delay_values: RefCell::new(DELAYS.to_vec()), scales, value_labels, feature_rows, auto_switch, dim_row,
             delay_choice, dim_level, status_label, me: RefCell::new(std::rc::Weak::new()),
@@ -164,6 +200,18 @@ impl BrightnessControls {
                     this.value_changed(scale, feature);
                 }
             });
+            // "stopped" fires as GtkScale claims the drag; the real release
+            // arrives as "released" or "unpaired-release".
+            let pointer = gtk::GestureClick::new();
+            pointer.set_button(1);
+            pointer.set_propagation_phase(gtk::PropagationPhase::Capture);
+            let weak = Rc::downgrade(&this);
+            pointer.connect_pressed(move |_, _, _, _| if let Some(this) = weak.upgrade() { this.pressed(feature, true) });
+            let weak = Rc::downgrade(&this);
+            pointer.connect_released(move |_, _, _, _| if let Some(this) = weak.upgrade() { this.pressed(feature, false) });
+            let weak = Rc::downgrade(&this);
+            pointer.connect_unpaired_release(move |_, _, _, _, _| if let Some(this) = weak.upgrade() { this.pressed(feature, false) });
+            this.scales[feature].add_controller(pointer);
         }
         let weak = Rc::downgrade(&this);
         this.auto_switch.connect_active_notify(move |switch| {
@@ -205,21 +253,43 @@ impl BrightnessControls {
         display.get(feature).filter(|v| truthy(v)).cloned().unwrap_or_else(|| json!({}))
     }
 
-    fn feature_ready(&self, feature: &str) -> bool {
-        let display = self.display();
-        let data = Self::feature_data(&display, feature);
+    /// Everything but `busy`: genuine availability of the control.
+    fn feature_usable(&self, display: &Value, feature: &str) -> bool {
+        let data = Self::feature_data(display, feature);
         self.ready() && display.get("enabled").is_none_or(truthy)
             && display.get("id").is_some_and(truthy)
             && data.get("supported").is_some_and(truthy)
             && number(data.get("value")).is_some_and(f64::is_finite)
-            && !data.get("busy").is_some_and(truthy)
             && !data.get("hdr_locked").is_some_and(truthy)
     }
 
+    /// Usable, and not busy for a reason other than this slider's own write or gesture.
+    fn feature_ready(&self, feature: &str) -> bool {
+        let display = self.display();
+        let busy = Self::feature_data(&display, feature).get("busy").is_some_and(truthy);
+        self.feature_usable(&display, feature) && (!busy || self.sliders.borrow()[feature].ours())
+    }
+
     fn cancel_value(&self, feature: &str) {
-        let pending = self.pending.borrow_mut().remove(feature);
-        if let Some((Some(source), _, _)) = pending {
+        let (timer, watchdog) = {
+            let mut sliders = self.sliders.borrow_mut();
+            let Some(slider) = sliders.get_mut(feature) else { return };
+            slider.wanted = None;
+            slider.sent = None;
+            (slider.timer.take(), slider.watchdog.take())
+        };
+        for source in [timer, watchdog].into_iter().flatten() {
             tessel_core::glib_compat::source_remove(source);
+        }
+    }
+
+    fn pressed(&self, feature: &'static str, pressed: bool) {
+        if self.closed.get() {
+            return;
+        }
+        self.sliders.borrow_mut().get_mut(feature).unwrap().pressed = pressed;
+        if !pressed {
+            self.refresh();
         }
     }
 
@@ -231,42 +301,112 @@ impl BrightnessControls {
             self.refresh();
             return;
         }
-        self.cancel_value(feature);
         let value = py_round(scale.value());
         let expected_id = self.display().get("id").cloned().unwrap_or(Value::Null);
         self.value_labels[feature].set_text(&format!("{value}%"));
-        let source = self.schedule(180, feature, value, expected_id.clone());
-        self.pending.borrow_mut().insert(feature, (Some(source), value, expected_id));
+        let idle = {
+            let mut sliders = self.sliders.borrow_mut();
+            let slider = sliders.get_mut(feature).unwrap();
+            slider.wanted = Some((value, expected_id));
+            slider.timer.is_none() && slider.sent.is_none()
+        };
+        // Not re-armed by later changes: a long drag still writes as it goes.
+        if idle {
+            self.schedule(SEND_INTERVAL_MS, feature);
+        }
     }
 
-    fn schedule(&self, delay: u64, feature: &'static str, value: i64, expected_id: Value) -> glib::SourceId {
+    fn schedule(&self, delay: u64, feature: &'static str) {
         let weak = self.me.borrow().clone();
-        glib::timeout_add_local(Duration::from_millis(delay), move || {
+        let source = glib::timeout_add_local(Duration::from_millis(delay), move || {
             if let Some(this) = weak.upgrade() {
-                this.send_value(feature, value, expected_id.clone());
+                this.sliders.borrow_mut().get_mut(feature).unwrap().timer = None;
+                this.send_value(feature);
             }
             ControlFlow::Break
-        })
+        });
+        if let Some(old) = self.sliders.borrow_mut().get_mut(feature).unwrap().timer.replace(source) {
+            tessel_core::glib_compat::source_remove(old);
+        }
     }
 
-    fn send_value(&self, feature: &'static str, value: i64, expected_id: Value) {
-        self.pending.borrow_mut().remove(feature);
+    fn watch(&self, delay: u64, feature: &'static str) {
+        let weak = self.me.borrow().clone();
+        let source = glib::timeout_add_local(Duration::from_millis(delay), move || {
+            if let Some(this) = weak.upgrade() {
+                this.sliders.borrow_mut().get_mut(feature).unwrap().watchdog = None;
+                this.confirm_timeout(feature);
+            }
+            ControlFlow::Break
+        });
+        if let Some(old) = self.sliders.borrow_mut().get_mut(feature).unwrap().watchdog.replace(source) {
+            tessel_core::glib_compat::source_remove(old);
+        }
+    }
+
+    fn confirm_timeout(&self, feature: &'static str) {
+        let busy = Self::feature_data(&self.display(), feature).get("busy").is_some_and(truthy);
+        let wait = self.sliders.borrow()[feature].sent.as_ref()
+            .is_some_and(|s| s.seen_busy && busy && s.since.elapsed() < Duration::from_millis(BUSY_TIMEOUT_MS));
+        if wait {
+            self.watch(1000, feature);
+            return;
+        }
+        self.sliders.borrow_mut().get_mut(feature).unwrap().sent = None;
+        self.refresh();
+    }
+
+    /// Send the newest wanted value if no write of this slider is in flight.
+    fn send_value(&self, feature: &'static str) {
+        let wanted = {
+            let sliders = self.sliders.borrow();
+            let slider = &sliders[feature];
+            if slider.sent.is_some() {
+                return;
+            }
+            slider.wanted.clone()
+        };
+        let Some((value, expected_id)) = wanted else { return };
         let display = self.display();
         let data = Self::feature_data(&display, feature);
         let same = display.get("id").cloned().unwrap_or(Value::Null) == expected_id;
-        if self.ready() && same && data.get("supported").is_some_and(truthy) {
-            if data.get("busy").is_some_and(truthy) {
-                self.pending.borrow_mut().insert(feature, (None, value, expected_id));
-            } else if self.feature_ready(feature) {
-                let client = self.client.clone().unwrap();
-                let connector = self.connector.clone();
-                self.request(move || client.set_value(&connector, feature, value as f64, Some(&expected_id)));
-            } else {
-                self.refresh();
-            }
-        } else {
+        if !self.feature_usable(&display, feature) || !same {
+            self.cancel_value(feature);
             self.refresh();
+            return;
         }
+        if data.get("busy").is_some_and(truthy) {
+            // Busy for someone else: refresh sends it once the service is free.
+            return;
+        }
+        let errors = (data.get("error").filter(|e| truthy(e)).map(py_str).unwrap_or_default(),
+                      self.client.as_ref().map(|c| c.error()).unwrap_or_default());
+        {
+            let mut sliders = self.sliders.borrow_mut();
+            let slider = sliders.get_mut(feature).unwrap();
+            slider.wanted = None;
+            if number(data.get("value")).map(py_round) == Some(value) {
+                drop(sliders);
+                self.refresh();
+                return;
+            }
+            slider.sent = Some(Sent { value, id: expected_id.clone(), seen_busy: false, errors, since: std::time::Instant::now() });
+        }
+        self.watch(CONFIRM_TIMEOUT_MS, feature);
+        let client = self.client.clone().unwrap();
+        let connector = self.connector.clone();
+        self.local_error.replace(String::new());
+        let failure = match client.set_value(&connector, feature, value as f64, Some(&expected_id)) {
+            Ok(true) => None,
+            Ok(false) => Some(client.error()).filter(|e| !e.is_empty())
+                .unwrap_or_else(|| tr!("The brightness setting could not be changed.")).into(),
+            Err(error) => Some(error),
+        };
+        if let Some(error) = failure {
+            self.local_error.replace(error);
+            self.cancel_value(feature);
+        }
+        self.refresh();
     }
 
     fn request(&self, action: impl FnOnce() -> Result<bool, String>) {
@@ -352,20 +492,58 @@ impl BrightnessControls {
             let checking = ready && has_display && data.get("supported").is_none_or(Value::is_null);
             let value = number(data.get("value"));
             let readable = supported && value.is_some_and(f64::is_finite);
-            let enabled = self.feature_ready(feature);
-            self.scales[feature].set_sensitive(enabled);
-            let pending = self.pending.borrow().get(feature).map(|p| (p.0.is_some(), p.1, p.2.clone()));
+            let busy = data.get("busy").is_some_and(truthy);
             let display_id = display.get("id").cloned().unwrap_or(Value::Null);
+            let (stale, confirmed) = {
+                let mut sliders = self.sliders.borrow_mut();
+                let slider = sliders.get_mut(feature).unwrap();
+                let stale = slider.wanted.as_ref().is_some_and(|w| w.1 != display_id)
+                    || slider.sent.as_ref().is_some_and(|s| s.id != display_id);
+                let errors = (data.get("error").filter(|e| truthy(e)).map(py_str).unwrap_or_default(),
+                              self.client.as_ref().map(|c| c.error()).unwrap_or_default());
+                let mut confirmed = false;
+                if let Some(sent) = slider.sent.as_mut() {
+                    let failed = (!errors.0.is_empty() && errors.0 != sent.errors.0)
+                        || (!errors.1.is_empty() && errors.1 != sent.errors.1);
+                    if busy {
+                        sent.seen_busy = true;
+                    } else if value.map(py_round) == Some(sent.value) || sent.seen_busy || failed {
+                        confirmed = true;
+                    }
+                }
+                (stale, confirmed)
+            };
             if !ready || !supported || !display.get("enabled").is_none_or(truthy)
-                || pending.as_ref().is_some_and(|p| p.2 != display_id) {
+                || data.get("hdr_locked").is_some_and(truthy) || stale {
                 self.cancel_value(feature);
-            } else if let Some((false, value, id)) = pending.clone() {
-                if enabled {
-                    let source = self.schedule(1, feature, value, id.clone());
-                    self.pending.borrow_mut().insert(feature, (Some(source), value, id));
+            } else if confirmed {
+                let watchdog = {
+                    let mut sliders = self.sliders.borrow_mut();
+                    let slider = sliders.get_mut(feature).unwrap();
+                    slider.sent = None;
+                    slider.watchdog.take()
+                };
+                if let Some(source) = watchdog {
+                    tessel_core::glib_compat::source_remove(source);
                 }
             }
-            if !self.pending.borrow().contains_key(feature) {
+            let (local, ours, waiting) = {
+                let sliders = self.sliders.borrow();
+                let slider = &sliders[feature];
+                (slider.local(), slider.ours(), slider.wanted.is_some() && slider.sent.is_none() && slider.timer.is_none())
+            };
+            // The newest value goes as soon as the service is free.
+            if waiting && !busy {
+                self.schedule(1, feature);
+            }
+            let enabled = self.feature_usable(&display, feature) && (!busy || ours);
+            self.scales[feature].set_sensitive(enabled);
+            let pressed = self.sliders.borrow()[feature].pressed;
+            if let Some(local) = local {
+                self.value_labels[feature].set_text(&format!("{local}%"));
+            } else if pressed && enabled {
+                self.value_labels[feature].set_text(&format!("{}%", py_round(self.scales[feature].value())));
+            } else {
                 if readable {
                     self.scales[feature].set_value(value.unwrap().clamp(0.0, 100.0));
                 }
@@ -447,8 +625,7 @@ impl BrightnessControls {
 
     pub fn close(&self) {
         self.closed.set(true);
-        let features: Vec<&str> = self.pending.borrow().keys().copied().collect();
-        for feature in features {
+        for feature in FEATURES {
             self.cancel_value(feature);
         }
     }

@@ -359,6 +359,30 @@ fn multiple_pending_manual_writes_keep_busy_until_all_complete() {
 }
 
 #[test]
+fn slider_values_arriving_during_a_slow_write_keep_only_the_newest() {
+    let fx = Fx::new();
+    let done = Rc::new(RefCell::new(Vec::new()));
+    let callback = |name: &'static str| -> Option<Callback> {
+        let done = done.clone();
+        Some(Box::new(move |ok, _| done.borrow_mut().push((name, ok))))
+    };
+    fx.core().set_value("DP-1", "brightness", 60.0, "one", callback("60")).unwrap();
+    // The 60 write is in flight; a drag sends more values meanwhile.
+    for value in [55.0, 50.0, 45.0] {
+        fx.core().set_value("DP-1", "brightness", value, "one", None).unwrap();
+    }
+    fx.core().set_value("DP-1", "contrast", 40.0, "one", callback("contrast")).unwrap();
+    fx.core().set_value("DP-1", "brightness", 42.0, "one", callback("42")).unwrap();
+    assert!(fx.core().busy());
+    fx.backend.finish();
+    assert_eq!(*fx.backend.writes.borrow(), vec![("DP-1".into(), "brightness".into(), 60), ("DP-1".into(), "contrast".into(), 40),
+                                                 ("DP-1".into(), "brightness".into(), 42)]);
+    assert_eq!(*done.borrow(), vec![("60", true), ("contrast", true), ("42", true)]);
+    assert!(!fx.core().busy());
+    assert_eq!(fx.core().error(), "");
+}
+
+#[test]
 fn stop_waits_for_earlier_manual_requests() {
     let fx = Fx::new();
     fx.dim();

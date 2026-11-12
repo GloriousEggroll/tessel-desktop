@@ -55,6 +55,9 @@ pub struct Inner {
     want_dim: Cell<bool>,
     epoch: Cell<u64>,
     waiting: RefCell<Vec<Box<dyn FnOnce()>>>,
+    /// Newest `set_value` per (connector, feature): older waiting ones are skipped.
+    latest: RefCell<HashMap<(String, String), u64>>,
+    requests: Cell<u64>,
     retry: RefCell<HashMap<String, Instant>>,
     pumping: Cell<bool>,
     draining: Cell<bool>,
@@ -74,7 +77,8 @@ impl BrightnessCore {
             backend, changed: Box::new(changed), config_path: config.join("settings.json"),
             journal_path: state.join("restore.json"), settings: RefCell::new(defaults()),
             error: RefCell::new(String::new()), entries: RefCell::new(Map::new()), pending: RefCell::new(HashMap::new()),
-            want_dim: Cell::new(false), epoch: Cell::new(0), waiting: RefCell::new(Vec::new()), retry: RefCell::new(HashMap::new()),
+            want_dim: Cell::new(false), epoch: Cell::new(0), waiting: RefCell::new(Vec::new()),
+            latest: RefCell::new(HashMap::new()), requests: Cell::new(0), retry: RefCell::new(HashMap::new()),
             pumping: Cell::new(false), draining: Cell::new(false), journal_valid: Cell::new(true),
             writer: RefCell::new(Box::new(|path: &Path, value: &Value| fsutil::write_json(path, value))),
         }));
@@ -374,10 +378,25 @@ impl BrightnessCore {
             return Err("Choose a value from 0% to 100%.".into());
         }
         self.0.error.replace(String::new());
+        let request = self.0.requests.get() + 1;
+        self.0.requests.set(request);
+        let key = (connector.to_owned(), feature.to_owned());
+        self.0.latest.borrow_mut().insert(key.clone(), request);
         let (weak, connector, feature, expected_id) = (self.weak(), connector.to_owned(), feature.to_owned(), expected_id.to_owned());
         self.restore_all(Some(Box::new(move || {
             let Some(inner) = weak.upgrade() else { return };
             let core = BrightnessCore(inner);
+            // A slider drag must not build a backlog behind a slow DDC write:
+            // a newer value for the same control replaces one still waiting.
+            {
+                let mut latest = core.0.latest.borrow_mut();
+                if latest.get(&key) != Some(&request) {
+                    drop(latest);
+                    model::call(callback, true, "");
+                    return;
+                }
+                latest.remove(&key);
+            }
             if core.record(&expected_id, Some(&connector)).is_none() {
                 model::call(callback, false, "This display is no longer connected.");
                 return;

@@ -78,6 +78,22 @@ fn schedule(timer: &RefCell<Option<glib::SourceId>>, callback: impl FnOnce() + '
     timer.replace(Some(glib::timeout_add_local_once(Duration::from_millis(200), callback)));
 }
 
+/// Slider writes: one in flight, the newest pending value next. Unlike
+/// `schedule`, later changes do not push the write back, so a long drag
+/// still adjusts the display as it goes; DDC is the rate limit while a
+/// write runs.
+pub const SEND_INTERVAL_MS: u64 = 100;
+/// A write the service never reported as busy or applied is given up after this.
+pub const CONFIRM_TIMEOUT_MS: u64 = 3000;
+/// A write the service reports as busy is waited for at most this long.
+pub const BUSY_TIMEOUT_MS: u64 = 15000;
+
+fn schedule_once(timer: &RefCell<Option<glib::SourceId>>, delay: u64, callback: impl FnOnce() + 'static) {
+    if timer.borrow().is_none() {
+        timer.replace(Some(glib::timeout_add_local_once(Duration::from_millis(delay), callback)));
+    }
+}
+
 fn unschedule(timer: &RefCell<Option<glib::SourceId>>) {
     if let Some(source) = timer.take() {
         source.remove();
@@ -101,6 +117,10 @@ pub struct FeatureRowInner {
     pending: Cell<Option<i64>>,
     submitted: Cell<Option<f64>>,
     submitted_busy: Cell<bool>,
+    /// Feature and client errors when the value was sent; a new one means it failed.
+    submitted_errors: RefCell<(String, String)>,
+    submitted_at: Cell<Option<std::time::Instant>>,
+    watchdog: RefCell<Option<glib::SourceId>>,
     message: RefCell<String>,
 }
 
@@ -130,7 +150,9 @@ impl FeatureRow {
         let row = Self(Rc::new(FeatureRowInner {
             root, value_label, scale, hint, client, connector: connector.into(), identity: identity.into(), feature: feature.into(),
             syncing: Cell::new(false), dragging: Cell::new(false), destroyed: Cell::new(false), timer: RefCell::new(None),
-            pending: Cell::new(None), submitted: Cell::new(None), submitted_busy: Cell::new(false), message: RefCell::new(String::new()),
+            pending: Cell::new(None), submitted: Cell::new(None), submitted_busy: Cell::new(false),
+            submitted_errors: RefCell::default(), submitted_at: Cell::new(None), watchdog: RefCell::new(None),
+            message: RefCell::new(String::new()),
         }));
         let weak = row.weak();
         row.0.scale.connect_value_changed(move |_| if let Some(r) = weak.upgrade().map(FeatureRow) { r.changed() });
@@ -141,8 +163,10 @@ impl FeatureRow {
         gesture.connect_pressed(move |_, _, _, _| if let Some(r) = weak.upgrade().map(FeatureRow) { r.pressed() });
         let weak = row.weak();
         gesture.connect_released(move |_, _, _, _| if let Some(r) = weak.upgrade().map(FeatureRow) { r.released() });
+        // "stopped" fires as GtkScale claims the drag, not when it ends; the
+        // release then arrives unpaired.
         let weak = row.weak();
-        gesture.connect_stopped(move |_| if let Some(r) = weak.upgrade().map(FeatureRow) { r.released() });
+        gesture.connect_unpaired_release(move |_, _, _, _, _| if let Some(r) = weak.upgrade().map(FeatureRow) { r.released() });
         row.0.scale.add_controller(gesture);
         let weak = row.weak();
         row.0.root.connect_unrealize(move |_| if let Some(r) = weak.upgrade().map(FeatureRow) { r.destroy() });
@@ -177,6 +201,7 @@ impl FeatureRow {
         if self.0.pending.get().is_some() {
             self.schedule();
         }
+        self.refresh();
     }
 
     fn changed(&self) {
@@ -192,7 +217,8 @@ impl FeatureRow {
 
     fn schedule(&self) {
         let weak = self.weak();
-        schedule(&self.0.timer, move || if let Some(r) = weak.upgrade().map(FeatureRow) { r.0.timer.replace(None); r.send() });
+        schedule_once(&self.0.timer, SEND_INTERVAL_MS,
+                      move || if let Some(r) = weak.upgrade().map(FeatureRow) { r.0.timer.replace(None); r.send() });
     }
 
     fn send(&self) {
@@ -203,21 +229,62 @@ impl FeatureRow {
             self.refresh();
             return;
         }
+        // One write in flight: the newest value goes once it is confirmed.
+        if self.0.submitted.get().is_some() {
+            return;
+        }
         if feature.get("busy").is_some_and(model::truthy) {
             self.schedule();
             return;
         }
         self.0.pending.set(None);
-        if percent(&feature) == Some(value as f64) {
+        if percent(&feature).map(f64::round_ties_even) == Some(value as f64) {
             self.refresh();
             return;
         }
         self.0.submitted.set(Some(value as f64));
         self.0.submitted_busy.set(false);
+        self.0.submitted_errors.replace((Self::feature_error(&feature), self.0.client.error()));
+        self.0.submitted_at.set(Some(std::time::Instant::now()));
+        self.watch(CONFIRM_TIMEOUT_MS);
         if !self.0.client.set_value(&self.0.connector, &self.0.feature, value as f64, Some(&self.0.identity)) {
             self.0.submitted.set(None);
+            unschedule(&self.0.watchdog);
             let error = self.0.client.error();
             self.0.message.replace(if error.is_empty() { tr!("The display could not be adjusted.") } else { error });
+        }
+        self.refresh();
+    }
+
+    fn feature_error(feature: &Value) -> String {
+        feature.get("error").filter(|e| model::truthy(e)).map(|e| e.as_str().map(String::from).unwrap_or_else(|| e.to_string()))
+            .unwrap_or_default()
+    }
+
+    fn watch(&self, delay: u64) {
+        unschedule(&self.0.watchdog);
+        let weak = self.weak();
+        self.0.watchdog.replace(Some(glib::timeout_add_local_once(Duration::from_millis(delay), move || {
+            if let Some(r) = weak.upgrade().map(FeatureRow) {
+                r.0.watchdog.replace(None);
+                r.confirm_timeout();
+            }
+        })));
+    }
+
+    fn confirm_timeout(&self) {
+        if self.0.destroyed.get() || self.0.submitted.get().is_none() {
+            return;
+        }
+        let busy = self.available().1.get("busy").is_some_and(model::truthy);
+        let recent = self.0.submitted_at.get().is_some_and(|t| t.elapsed() < Duration::from_millis(BUSY_TIMEOUT_MS));
+        if self.0.submitted_busy.get() && busy && recent {
+            self.watch(1000);
+            return;
+        }
+        self.0.submitted.set(None);
+        if self.0.pending.get().is_some() {
+            self.schedule();
         }
         self.refresh();
     }
@@ -232,10 +299,18 @@ impl FeatureRow {
             self.cancel();
         }
         if let Some(submitted) = self.0.submitted.get() {
+            let errors = self.0.submitted_errors.borrow().clone();
+            let (feature_error, client_error) = (Self::feature_error(&feature), self.0.client.error());
+            let failed = (!feature_error.is_empty() && feature_error != errors.0)
+                || (!client_error.is_empty() && client_error != errors.1);
             if feature.get("busy").is_some_and(model::truthy) {
                 self.0.submitted_busy.set(true);
-            } else if observed == Some(submitted) || self.0.submitted_busy.get() || feature.get("error").is_some_and(model::truthy) {
+            } else if observed.map(f64::round_ties_even) == Some(submitted) || self.0.submitted_busy.get() || failed {
                 self.0.submitted.set(None);
+                unschedule(&self.0.watchdog);
+                if self.0.pending.get().is_some() {
+                    self.schedule();
+                }
             }
         }
         self.0.scale.set_sensitive(available);
@@ -285,6 +360,7 @@ impl FeatureRow {
 
     pub fn cancel(&self) {
         unschedule(&self.0.timer);
+        unschedule(&self.0.watchdog);
         self.0.pending.set(None);
         self.0.submitted.set(None);
         self.0.dragging.set(false);
