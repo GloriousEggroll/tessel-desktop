@@ -12,7 +12,7 @@
 
 Name:           tessel-login
 Version:        0.1.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Tessel login screen (greetd greeter)
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -100,6 +100,15 @@ if [ "$1" -eq 1 ]; then
         ""|greetd.service)
             systemctl --no-reload disable greetd.service >/dev/null 2>&1 || :
             systemctl --no-reload enable --force tessel-login.service >/dev/null 2>&1 || :
+            # A system that had no display manager may start to the text
+            # console (multi-user.target), where no login screen is started and
+            # this one would never appear. Only that default is changed, and
+            # only when there was no display manager at all.
+            if [ -z "$manager" ] && [ "$(systemctl get-default 2>/dev/null)" = "multi-user.target" ]; then
+                if systemctl set-default graphical.target >/dev/null 2>&1; then
+                    echo "tessel-login: the system now starts to the graphical login. To go back to the text console: systemctl set-default multi-user.target"
+                fi
+            fi
             ;;
         *)
             echo "tessel-login: keeping ${manager##*/}. To use the Tessel login screen: systemctl enable --force tessel-login.service"
@@ -130,6 +139,11 @@ fi
 %{_unitdir}/tessel-login.service
 
 %changelog
+* Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
+- First install on a system with no display manager: also start to the
+  graphical login when the system was set to start to the text console, where
+  the login screen was enabled but never started
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - The login screen's compositor and greeter write to the journal (identifier
   tessel-login-greeter), so a login screen that does not appear can be diagnosed

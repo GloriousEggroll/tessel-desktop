@@ -57,6 +57,9 @@ Raise `Version:` in every spec together, because every package requires at least
 - `tessel-login` runs its own greetd instance with `/etc/greetd/tessel-config.toml`. greetd's own
   service and `/etc/greetd/config.toml` are not changed. A first install enables it when no display
   manager is enabled, or in place of `greetd.service`; another display manager is left alone.
+  When there was no display manager at all and the system was set to start to the text console
+  (`multi-user.target`), that first install also sets `graphical.target`, since the login screen
+  would otherwise be enabled but never started; any other default target is left alone.
   Updates never change this choice, and it takes effect at the next boot.
   - To use the Tessel login screen: `systemctl enable --force tessel-login.service`
   - To use normal greetd: `systemctl disable tessel-login.service`, then `systemctl enable --force greetd.service`
