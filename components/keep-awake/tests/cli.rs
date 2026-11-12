@@ -148,7 +148,7 @@ fn cli() {
     let status = env.status();
     assert_eq!((status["class"].as_str(), status["text"].as_str()), (Some("active"), Some("\u{f06e}")));
     assert_eq!(status["tooltip"],
-        "Keep Awake: Active\nAutomatic dimming, display off, and sleep are paused.\nClick for controls · Right-click to toggle");
+        "Keep Awake: Active\nAutomatic dimming, display off, and sleep are paused.\nClick to toggle · Right-click for controls");
 
     let (code, _, _) = env.run(&["--disable"]);
     assert_eq!(code, 0);

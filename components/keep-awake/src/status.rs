@@ -29,7 +29,7 @@ pub fn status(backend: &Snapshot) -> Value {
     } else if active {
         tooltip += "\nAutomatic dimming, display off, and sleep are paused.";
     }
-    tooltip += "\nClick for controls · Right-click to toggle";
+    tooltip += "\nClick to toggle · Right-click for controls";
     let until = if backend.requested { backend.until } else { None };
     let class = if active { "active" } else if !backend.ready { "unavailable" } else if pending { "pending" } else { "inactive" };
     let mut map = Map::new();
@@ -83,9 +83,9 @@ mod tests {
         let backend = Snapshot { active: true, ready: true, requested: true, duration: 30, until: Some(2800.0),
                                  ..Default::default() };
         assert_eq!(status_text(&backend),
-            r#"{"text": "\uf06e", "tooltip": "Keep Awake: Active\nAutomatic dimming, display off, and sleep are paused.\nClick for controls \u00b7 Right-click to toggle", "duration": 30, "until": 2800.0, "class": "active", "active": true, "ready": true, "requested": true, "pending": false, "error": ""}"#);
+            r#"{"text": "\uf06e", "tooltip": "Keep Awake: Active\nAutomatic dimming, display off, and sleep are paused.\nClick to toggle \u00b7 Right-click for controls", "duration": 30, "until": 2800.0, "class": "active", "active": true, "ready": true, "requested": true, "pending": false, "error": ""}"#);
         let backend = Snapshot { error: "System power management is unavailable.".into(), until: Some(5.0), ..Default::default() };
         assert_eq!(status_text(&backend),
-            r#"{"text": "\uf070", "tooltip": "Keep Awake: Inactive\nSystem power management is unavailable.\nClick for controls \u00b7 Right-click to toggle", "duration": 0, "until": null, "class": "unavailable", "active": false, "ready": false, "requested": false, "pending": false, "error": "System power management is unavailable."}"#);
+            r#"{"text": "\uf070", "tooltip": "Keep Awake: Inactive\nSystem power management is unavailable.\nClick to toggle \u00b7 Right-click for controls", "duration": 0, "until": null, "class": "unavailable", "active": false, "ready": false, "requested": false, "pending": false, "error": "System power management is unavailable."}"#);
     }
 }

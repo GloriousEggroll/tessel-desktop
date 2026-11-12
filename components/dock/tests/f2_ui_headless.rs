@@ -1588,12 +1588,13 @@ fn indicators_clicks_offsets_and_record_presets() -> TestResult {
     panel.set_apps_expanded(true);
     settle(0.1);
     // Left = popup, right = settings (bluetooth has no right-click handler,
-    // idle_inhibitor right-click toggles, capslock does nothing).
+    // idle_inhibitor toggles on the left and has its popup on the right,
+    // capslock does nothing).
     for (name, mouse, expected) in [
         ("power", "left", format!("panel-open power settings=false edge=top offset={offset}")),
         ("power", "right", format!("panel-open power settings=true edge=top offset={offset}")),
-        ("idle_inhibitor", "right", "panel-action idle_inhibitor".to_string()),
-        ("idle_inhibitor", "left", format!("panel-open idle_inhibitor settings=false edge=top offset={offset}")),
+        ("idle_inhibitor", "left", "panel-action idle_inhibitor".to_string()),
+        ("idle_inhibitor", "right", format!("panel-open idle_inhibitor settings=true edge=top offset={offset}")),
         ("network", "left", format!("panel-open network settings=false edge=top offset={offset}")),
     ] {
         let button = panel.button(name).unwrap();

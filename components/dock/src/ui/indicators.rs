@@ -595,22 +595,25 @@ impl DockIndicators {
         }
         self.0.buttons.borrow_mut().insert(name.to_owned(), button.clone());
         let ident = name.to_owned();
-        if name == "showdesktop" {
+        // A left click acts at once on these two: Keep Awake switches on or
+        // off, and its controls are on the right click.
+        if name == "showdesktop" || name == "idle_inhibitor" {
             let app = self.0.app.clone();
-            button.button.connect_clicked(move |_| { app.status_action(&ident); });
+            let target = ident.clone();
+            button.button.connect_clicked(move |_| { app.status_action(&target); });
         } else if name != "capslock" {
             let weak = self.weak();
             let target = ident.clone();
             button.button.connect_clicked(move |_| {
                 if let Some(panel) = Self::upgrade(&weak) { panel.open(&target, false); }
             });
-            if name != "bluetooth" {
-                let weak = self.weak();
-                let target = ident.clone();
-                click(&button.button, 3, false, true, move |_, event| {
-                    Self::upgrade(&weak).is_some_and(|panel| panel.right_click(event.button, &target))
-                });
-            }
+        }
+        if !["showdesktop", "capslock", "bluetooth"].contains(&name) {
+            let weak = self.weak();
+            let target = ident.clone();
+            click(&button.button, 3, false, true, move |_, event| {
+                Self::upgrade(&weak).is_some_and(|panel| panel.right_click(event.button, &target))
+            });
         }
         if name == "audio" {
             let weak = self.weak();
@@ -910,11 +913,7 @@ impl DockIndicators {
 
     fn right_click(&self, button: u32, name: &str) -> bool {
         if button == 3 {
-            if name == "idle_inhibitor" {
-                self.0.app.status_action(name);
-            } else {
-                self.open(name, true);
-            }
+            self.open(name, true);
             return true;
         }
         false

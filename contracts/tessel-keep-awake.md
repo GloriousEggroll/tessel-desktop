@@ -59,7 +59,7 @@ Role: resident manual idle/sleep inhibitor (logind `idle:sleep` block FD) + a sm
  "active": bool, "ready": bool, "requested": bool, "pending": bool, "error": ""}
 ```
 - `pending = requested && !active`; class precedence: active > unavailable(!ready) > pending > inactive.
-- tooltip: `tr("Keep Awake: {value1}")` with value1 = literal **"Active"** (NOT translated — quirk) / `tr("Turning on…")` / `tr("Inactive")`; then `\n`+error, or if active `\nAutomatic dimming, display off, and sleep are paused.` (untranslated); then `\nClick for controls · Right-click to toggle` (untranslated).
+- tooltip: `tr("Keep Awake: {value1}")` with value1 = literal **"Active"** (NOT translated — quirk) / `tr("Turning on…")` / `tr("Inactive")`; then `\n`+error, or if active `\nAutomatic dimming, display off, and sleep are paused.` (untranslated); then `\nClick to toggle · Right-click for controls` (untranslated).
 - `until` only reported while `requested`; `duration` always.
 
 ### 2.4 Other IPC
@@ -108,8 +108,8 @@ Legacy wrapper scripts (`~/.config/waybar/scripts/idle_inhibit.sh` → `--status
 | Who | How |
 |---|---|
 | tessel-dock panel indicator `idle_inhibitor` | `SettingsClient('org.tessel.KeepAwake', 'org.tessel.KeepAwake.Controls')` → `GetState` + `Changed`; uses JSON `text`/`tooltip`/`class` through `indicator()` (`tessel-dock/status_backend.py:278-311`). Name-owner loss → "Keep Awake is not running in this session." |
-| tessel-dock right-click/action | `/usr/bin/python3 ~/.config/waybar/scripts/tessel-keep-awake/keep_awake.py --toggle` (`tessel-dock/status_backend.py:393-394`) |
-| tessel-dock left-click | `systemd-run --user … -- python3 keep_awake.py --popup --popup-edge E --popup-offset N` (`tessel-dock/panel_actions.py:16,46-49`; `idle_inhibitor` never gets `--settings`) |
+| tessel-dock left-click/action | `/usr/bin/python3 ~/.config/waybar/scripts/tessel-keep-awake/keep_awake.py --toggle` (`tessel-dock/status_backend.py:393-394`) |
+| tessel-dock right-click | `systemd-run --user … -- python3 keep_awake.py --popup --popup-edge E --popup-offset N` (`tessel-dock/panel_actions.py:16,46-49`; `idle_inhibitor` never gets `--settings`) |
 | Global Settings | imports `keep_awake_client.KeepAwakeClient` + `keep_awake_ui.KeepAwakePopup` (Python) from the installed dir (`tessel-settings/applet_pages.py:13-21,427-452`) → `SetEnabled`, `SetDuration` (raw call on `.Duration` interface, `keep_awake_client.py:40-56`) |
 | tessel-power / tessel-brightness | indirectly: logind `ListInhibitors` sees the `idle:sleep` block and skips automatic dim/lock/display-off/sleep (`tessel-power/power_backend.py:145-155,793-807`) |
 | install_gtk4 / install_switcher | `--status`, `--enable` |
