@@ -916,7 +916,10 @@ impl Worker {
         self.hooks.delete_called.store(true, std::sync::atomic::Ordering::SeqCst);
         self.check()?;
         let cancellable = self.cancellable();
-        if source.query_file_type(FLAGS, Some(&cancellable)) == gio::FileType::Directory {
+        // The Trash removes a trashed folder as a whole and refuses to delete
+        // anything inside one, so its items are never emptied first.
+        let whole = source.has_uri_scheme("trash");
+        if !whole && source.query_file_type(FLAGS, Some(&cancellable)) == gio::FileType::Directory {
             for (child, _) in children(source, Some(&cancellable))? {
                 self.delete(&child)?;
             }

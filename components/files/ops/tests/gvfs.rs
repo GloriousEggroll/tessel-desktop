@@ -278,6 +278,39 @@ fn test_trash_undo_group_preserves_directory_and_symlink() {
     assert_eq!(std::fs::read_link(&link).unwrap(), folder);
 }
 
+/// Empty Trash: the Trash deletes a trashed folder as a whole and refuses to
+/// delete anything inside one.
+#[test]
+fn test_delete_of_a_trashed_folder_with_contents() {
+    let Some(env) = isolated() else { return };
+    let fixture = Fixture::new(&env);
+    if !same_filesystem(&env, &fixture.0) {
+        return;
+    }
+    let ops = Operations::new();
+    let folder = fixture.0.join("prefix");
+    std::fs::create_dir_all(folder.join("pfx/drive_c")).unwrap();
+    std::fs::write(folder.join("version"), b"1").unwrap();
+    std::fs::write(folder.join("pfx/drive_c/file.txt"), b"data").unwrap();
+    // As a Wine prefix has: a link out of the folder, which must be left alone.
+    let outside = fixture.0.join("outside");
+    std::fs::create_dir(&outside).unwrap();
+    std::fs::write(outside.join("keep.txt"), b"keep").unwrap();
+    symlink(&outside, folder.join("pfx/z:")).unwrap();
+    operation(&ops, "trash", &[file(&folder)], None);
+    assert!(!folder.exists());
+    let found = ours(&folder);
+    assert_eq!(found.len(), 1);
+    // Why Delete inside the Trash deletes instead: its items cannot be trashed.
+    let error = found[0].file.trash(gio::Cancellable::NONE).unwrap_err();
+    assert!(error.matches(gio::IOErrorEnum::NotSupported), "{error}");
+    let result = operation(&ops, "delete", &[found[0].file.clone()], None);
+    assert!(result.success(), "{:?}", result.failures);
+    assert!(ours(&folder).is_empty(), "the folder is gone from the Trash");
+    assert_eq!(trashinfo_count(&env, "prefix"), 0);
+    assert_eq!(std::fs::read(outside.join("keep.txt")).unwrap(), b"keep");
+}
+
 #[test]
 fn test_trash_undo_refuses_missing_item_and_keeps_existing_replacement() {
     let Some(env) = isolated() else { return };

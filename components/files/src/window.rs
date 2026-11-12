@@ -1042,6 +1042,9 @@ impl FilesWindow {
             "new-folder" | "new-file" => self.create(name == "new-folder"),
             "rename" => self.rename(),
             "trash" | "delete" => {
+                // Nothing in the Trash can be moved to the Trash: Delete there
+                // deletes for good, after asking.
+                let name = if pane.current().has_uri_scheme("trash") { "delete" } else { name };
                 let items = pane.selected();
                 let files: Vec<gio::File> = items.iter().map(|i| i.file()).collect();
                 if files.is_empty() {
