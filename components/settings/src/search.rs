@@ -125,8 +125,8 @@ pub static SETTINGS: &[Setting] = &[
     Setting { section: "dock", key: "groups", title: "Visible groups", detail: "Show or hide menu, pinned apps, workspaces, tray, applets, and clock groups.", keywords: "dock panel bar groups show hide pinned apps workspace tray weather menu clock home trash settings", labels: &["Visible groups"], target: "", subpage: "" },
     Setting { section: "dock", key: "media", title: "Media", detail: "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.", keywords: "dock panel bar media music video player playback song now playing mpris controls enable disable show hide", labels: &[], target: "group_media", subpage: "" },
     Setting { section: "dock", key: "group_layout", title: "Group positions and order", detail: "Assign groups to Top/Left, Center or Bottom/Right and reorder them within each position.", keywords: "layout position order move groups up down top left center bottom right weather workspaces home trash pinned activities focused title clock time date media music playback tray default apps session", labels: &["Group positions and order", "Reset layout"], target: "", subpage: "" },
-    Setting { section: "dock", key: "default_apps", title: "Always-visible applets", detail: "Choose which applet icons stay visible when the applets collapse.", keywords: "always visible applets icons hover expand collapse sound audio displays minimize maximize keep awake", labels: &["Always-visible applets", "Default apps", "Always visible"], target: "", subpage: "" },
-    Setting { section: "dock", key: "tray", title: "System tray", detail: "Choose which running tray applications to always show to the left of the always-visible applets.", keywords: "system tray always show app icons collapse applets", labels: &["System tray", "Always show"], target: "", subpage: "" },
+    Setting { section: "dock", key: "default_apps", title: "Always-visible applets", detail: "Choose which applet icons stay visible when the applets collapse.", keywords: "always visible applets icons more apps expand collapse system tray sound audio displays minimize maximize keep awake", labels: &["Always-visible applets", "Default apps", "Always visible"], target: "", subpage: "" },
+    Setting { section: "dock", key: "tray", title: "System tray", detail: "Choose which running tray applications to always show to the left of the always-visible applets.", keywords: "system tray always show app icons more apps expand collapse applets default apps", labels: &["System tray", "Always show"], target: "", subpage: "" },
     Setting { section: "datetime", key: "automatic", title: "Automatic date & time", detail: "Synchronize the system clock online.", keywords: "date time automatic ntp clock sync network", labels: &["Automatic date & time"], target: "ntp_switch", subpage: "" },
     Setting { section: "datetime", key: "timezone", title: "Time zone", detail: "Choose the local time zone when automatic date and time is off.", keywords: "date time timezone zone city region local", labels: &["Time zone"], target: "timezone_entry", subpage: "" },
     Setting { section: "datetime", key: "time", title: "Time (24-hour)", detail: "Set the system time manually.", keywords: "date time manual hours minutes seconds clock", labels: &["Time (24-hour)"], target: "hour_spin", subpage: "" },
@@ -329,6 +329,12 @@ mod tests {
         assert_eq!(index.search("Audio")[0].key, "__section__");
         // The panel's Media switch is the first answer for "Media".
         assert_eq!(keys(&index, "Media")[0], ("dock", "media"));
+        // The system tray (tray applications and applets in one group).
+        assert_eq!(keys(&index, "System tray")[0], ("dock", "tray"));
+        for query in ["more apps", "applets", "tray"] {
+            let found = keys(&index, query);
+            assert!(found.contains(&("dock", "tray")) && found.contains(&("dock", "default_apps")), "{query}: {found:?}");
+        }
     }
 
     #[test]

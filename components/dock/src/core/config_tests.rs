@@ -290,6 +290,38 @@ fn group_visibility_and_fullscreen_hotkey_round_trip_in_both_modes() {
     }
 }
 
+/// The old `system_tray` group merged into `service_apps`, the system tray: a
+/// saved config (this shape is a real one) loads, keeps the tray where the
+/// applets were, shows it if either old group was shown, and saves one id.
+#[test]
+fn the_old_tray_group_loads_into_the_system_tray() {
+    let saved = json!({"version": 1, "mode": "bar", "edge": "top", "always_show_tray": ["id:dnf-app-center-updater", "id:steam"],
+        "always_visible_apps": ["idle_inhibitor", "capslock", "bluetooth", "audio", "tiling", "showdesktop"],
+        "group_layouts": {"bar": {"start": ["app_menu", "workspaces", "pinned", "running", "files"], "center": ["clock", "weather"],
+                                  "end": ["media", "system_tray", "service_apps", "session", "activities", "focused_title"]}},
+        "group_visibility": {"app_menu": true, "pinned": true, "running": true, "files": true, "workspaces": true, "media": true,
+                             "system_tray": true, "service_apps": true, "weather": true, "clock": true, "session": true,
+                             "activities": false, "focused_title": false}});
+    let config = from(saved);
+    assert_eq!(config.group_layouts["bar"]["end"], s(&["media", "service_apps", "session", "activities", "focused_title"]));
+    assert!(config.is_group_visible("service_apps") && config.is_group_visible("media"));
+    assert!(!config.group_visibility.contains_key("system_tray"));
+    assert_eq!(config.always_show_tray, s(&["id:dnf-app-center-updater", "id:steam"]));
+    assert_eq!(config.always_visible_apps, s(&["idle_inhibitor", "capslock", "bluetooth", "audio", "tiling", "showdesktop"]));
+    let bytes = save_bytes(&config);
+    assert!(!bytes.contains("system_tray"), "{bytes}");
+    assert_eq!(from(serde_json::from_str(&bytes).unwrap()), config);
+    // Shown when either was shown; hidden only when both were.
+    for (tray, applets, shown) in [(true, true, true), (true, false, true), (false, true, true), (false, false, false)] {
+        let config = from(json!({"group_visibility": {"system_tray": tray, "service_apps": applets}}));
+        assert_eq!(config.is_group_visible("service_apps"), shown, "{tray} {applets}");
+    }
+    // Without the old key, the saved value stands (new saves never write it).
+    assert!(!from(json!({"group_visibility": {"service_apps": false}})).is_group_visible("service_apps"));
+    assert!(from(json!({"group_visibility": {"system_tray": false}})).is_group_visible("service_apps"));
+    assert!(DockConfig::from_value(&json!({"group_visibility": {"system_tray": 1}})).is_err());
+}
+
 #[test]
 fn partial_group_settings_default_visible() {
     let config = from(json!({"group_visibility": {"weather": false, "clock": false}}));

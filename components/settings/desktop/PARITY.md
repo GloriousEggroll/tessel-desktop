@@ -2,7 +2,7 @@
 
 Python sources: `tessel-settings/{desktop_pages,dock_pages,layout_page,layout_presets,lock_page,login_page}.py`,
 `tessel-lock/{lock_settings,lock_config,lock_weather}.py`, `tessel-power/power_client.py`,
-`tessel-login/login_model.py`. Layout data: `layouts/{gnome,kde,mac,win}.{layout,svg}` copied byte-identical (the old `gnome` is now `gnome-ubuntu`, named "GNOME (Ubuntu)"; `gnome` is a new stock-GNOME preset). `tessel` is Tessel's own preset (one floating top bar split into islands, `bar_islands`; the copied presets gained `"bar_islands": false` so they turn it off again; every preset has `"media": false` (Media in the panel is off by default), and `win`/`mac` set `"workspaces": 1` with the workspaces group hidden but still placed in `group_layouts`)
+`tessel-login/login_model.py`. Layout data: `layouts/{gnome,kde,mac,win}.{layout,svg}` copied byte-identical (the old `gnome` is now `gnome-ubuntu`, named "GNOME (Ubuntu)"; `gnome` is a new stock-GNOME preset). `tessel` is Tessel's own preset (one floating top bar split into islands, `bar_islands`; the copied presets gained `"bar_islands": false` so they turn it off again; every preset has `"media": false` (Media in the panel is off by default), and `win`/`mac` set `"workspaces": 1` with the workspaces group hidden but still placed in `group_layouts`; no preset names the old `system_tray` group any more, which is part of the system tray, `service_apps`)
 into `components/settings/desktop/layouts/` and embedded with `include_bytes!`.
 
 Tests: unit = `cargo test -p gs-desktop` (23, src/tests.rs + module tests); headless =

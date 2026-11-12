@@ -2271,5 +2271,8 @@
   "Resize the tiles on both sides of the gap": "Größe der Kacheln auf beiden Seiten der Lücke ändern",
   "Split bar into islands": "Leiste in Inseln aufteilen",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Anfang, Mitte und Ende der Leiste als getrennte Teile zeichnen, zwischen denen das Hintergrundbild sichtbar ist. Gilt für Leisten, nicht für Docks.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Zeigt in der Leiste, was gerade abgespielt wird, mit Wiedergabesteuerung. Wenn ausgeschaltet, verfolgt die Leiste keine Mediaplayer mehr."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Zeigt in der Leiste, was gerade abgespielt wird, mit Wiedergabesteuerung. Wenn ausgeschaltet, verfolgt die Leiste keine Mediaplayer mehr.",
+  "More apps": "Weitere Anwendungen",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klicken Sie in der Kontrollleiste auf „Weitere Anwendungen“, um die übrigen Applets anzuzeigen. Aktivieren Sie „Immer sichtbar“, damit ein Applet angezeigt bleibt.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Ausgewählte Anwendungen bleiben in der Kontrollleiste sichtbar, ohne auf „Weitere Anwendungen“ zu klicken."
 }

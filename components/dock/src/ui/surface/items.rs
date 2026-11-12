@@ -455,8 +455,9 @@ impl DockSurface {
 
     /// `popup_menu(widget, event, entries)`.
     pub fn popup_menu(&self, widget: &gtk::Widget, entries: Vec<Entry>) {
-        if let Some(expander) = self.indicators().and_then(|i| i.tray_expander()) {
-            expander.set_expanded(false);
+        // A menu inside the system tray keeps it open; any other closes it.
+        if let Some(indicators) = self.indicators() {
+            indicators.tray_menu_opening(widget);
         }
         if let Some(expander) = self.application_expander() {
             expander.menu_active(true);
@@ -503,7 +504,7 @@ impl DockSurface {
                 dock.leave("menu");
             }
             if let Some(indicators) = dock.indicators() {
-                indicators.schedule_apps_collapse();
+                indicators.tray_menu_closed();
             }
             if let Some(expander) = dock.application_expander() {
                 expander.menu_active(false);

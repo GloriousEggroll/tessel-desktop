@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Redimensionează plăcile de pe ambele părți ale spațiului",
   "Split bar into islands": "Împarte bara în insule",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Desenează începutul, centrul și sfârșitul barei ca piese separate, cu imaginea de fundal vizibilă între ele. Se aplică barelor, nu dock-urilor.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Afișează în panou ce se redă, cu comenzi de redare. Când este dezactivat, panoul nu mai urmărește playerele media."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Afișează în panou ce se redă, cu comenzi de redare. Când este dezactivat, panoul nu mai urmărește playerele media.",
+  "More apps": "Mai multe aplicații",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Faceți clic pe Mai multe aplicații în tava de sistem pentru a afișa celelalte applet-uri. Activați Mereu vizibil pentru ca un applet să rămână afișat.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Aplicațiile selectate rămân afișate în tava de sistem fără să faceți clic pe Mai multe aplicații."
 }

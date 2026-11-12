@@ -452,10 +452,10 @@ fn bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window()
         "mode": "bar", "edge": "top", "bar_float_mode": true, "bar_rounded_corners": false, "gap": 8, "bar_islands": true,
         "match_wallpaper": false, "background_color": "#00aa00", "transparency_enabled": false, "frosted": false,
         "group_layouts": {"bar": {"start": ["app_menu"], "center": ["clock"],
-            "end": ["session", "pinned", "running", "files", "workspaces", "media", "system_tray", "service_apps", "weather",
+            "end": ["session", "pinned", "running", "files", "workspaces", "media", "service_apps", "weather",
                     "activities", "focused_title"]}},
         "group_visibility": {"pinned": false, "running": false, "files": false, "workspaces": false, "media": false,
-            "system_tray": false, "service_apps": false, "weather": false}}))?;
+            "service_apps": false, "weather": false}}))?;
     pointer(400, 400);
     settle(0.5);
     let bar = |p: [u8; 3]| p[1] > 100 && p[1] as i32 > p[0] as i32 + 60 && p[1] as i32 > p[2] as i32 + 60;
@@ -702,7 +702,9 @@ fn custom_group_positions_and_hidden_utilities() -> Result<(), String> {
     let dock = Dock::start("groups", serde_json::json!({"mode": "dock", "monitor": "HEADLESS-1", "group_layouts": layout}))?;
     let check = dock.check()?;
     let groups: Vec<&str> = check["visible_groups"]["HEADLESS-1"].as_array().unwrap().iter().filter_map(Value::as_str).collect();
-    let order: Vec<&str> = ["clock", "files", "pinned", "running", "app_menu", "system_tray", "session"].into_iter()
+    // A saved layout naming the old tray group: the system tray takes its place.
+    ensure!(!groups.contains(&"system_tray"), "the old tray group is gone: {groups:?}");
+    let order: Vec<&str> = ["clock", "files", "pinned", "running", "app_menu", "service_apps", "session"].into_iter()
         .filter(|g| groups.contains(g)).collect();
     ensure!(groups.iter().filter(|g| order.contains(g)).copied().collect::<Vec<_>>() == order, "custom order {groups:?}");
     ensure!(groups.first() == Some(&"clock"), "start group first: {groups:?}");
@@ -791,7 +793,7 @@ fn menu_icon_follows_a_dark_and_a_light_bar() -> Result<(), String> {
 fn custom_layout_center_groups_render() -> Result<(), String> {
     let bar = serde_json::json!({"start": ["weather", "workspaces", "focused_title"],
                                  "center": ["app_menu", "activities", "pinned", "running", "files"],
-                                 "end": ["media", "system_tray", "service_apps", "clock", "session"]});
+                                 "end": ["media", "service_apps", "clock", "session"]});
     let center_only = serde_json::json!({"start": ["clock"], "center": ["app_menu", "pinned", "running", "files"], "end": ["session"]});
     let cases = [
         ("bottom-bar", serde_json::json!({"mode": "bar", "edge": "bottom", "monitor": "HEADLESS-1", "group_layouts": {"bar": bar}})),
@@ -840,7 +842,7 @@ fn custom_layout_center_groups_render() -> Result<(), String> {
 fn custom_layout_center_survives_auto_hide() -> Result<(), String> {
     let bar = serde_json::json!({"start": ["weather", "workspaces", "focused_title"],
                                  "center": ["app_menu", "activities", "pinned", "running", "files"],
-                                 "end": ["media", "system_tray", "service_apps", "clock", "session"]});
+                                 "end": ["media", "service_apps", "clock", "session"]});
     let observer = Observer::new()?;
     let dock = Dock::start("center-auto-hide", serde_json::json!({"mode": "bar", "edge": "bottom", "monitor": "HEADLESS-1",
         "auto_hide": true, "hide_delay_ms": 0, "reveal_delay_ms": 0, "group_layouts": {"bar": bar}}))?;

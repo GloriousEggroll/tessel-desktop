@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Змінити розмір плиток з обох боків проміжку",
   "Split bar into islands": "Розділити панель на острівці",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Малювати початок, середину та кінець панелі окремими частинами, між якими видно шпалери. Стосується панелей, а не доків.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Показувати на панелі, що зараз відтворюється, з кнопками керування відтворенням. Якщо вимкнено, панель перестає стежити за медіапрогравачами."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Показувати на панелі, що зараз відтворюється, з кнопками керування відтворенням. Якщо вимкнено, панель перестає стежити за медіапрогравачами.",
+  "More apps": "Інші застосунки",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Натисніть «Інші застосунки» в системному лотку, щоб показати решту аплетів. Увімкніть «Завжди видимі», щоб аплет залишався на виду.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Вибрані застосунки залишаються на виду в системному лотку без натискання «Інші застосунки»."
 }

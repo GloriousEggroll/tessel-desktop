@@ -2118,5 +2118,8 @@
   "Resize the tiles on both sides of the gap": "调整间隙两侧平铺窗口的大小",
   "Split bar into islands": "将栏拆分为岛",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "将栏的起始、中间和末尾部分绘制为相互分离的小块，中间露出壁纸。适用于栏，不适用于停靠栏。",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "在面板中显示正在播放的内容及播放控制。关闭后，面板将不再跟踪媒体播放器。"
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "在面板中显示正在播放的内容及播放控制。关闭后，面板将不再跟踪媒体播放器。",
+  "More apps": "更多应用",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "点击系统托盘中的“更多应用”可显示其他小程序。开启“始终可见”可让小程序一直显示。",
+  "Selected applications stay shown in the system tray without clicking More apps.": "所选应用程序会一直显示在系统托盘中，无需点击“更多应用”。"
 }

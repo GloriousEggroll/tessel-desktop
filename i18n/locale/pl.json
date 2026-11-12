@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Zmień rozmiar kafelków po obu stronach odstępu",
   "Split bar into islands": "Podziel pasek na wyspy",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rysuje początek, środek i koniec paska jako osobne części, między którymi widać tapetę. Dotyczy pasków, nie doków.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Pokazuj na panelu, co jest odtwarzane, wraz z przyciskami odtwarzania. Gdy wyłączone, panel przestaje śledzić odtwarzacze multimediów."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Pokazuj na panelu, co jest odtwarzane, wraz z przyciskami odtwarzania. Gdy wyłączone, panel przestaje śledzić odtwarzacze multimediów.",
+  "More apps": "Więcej aplikacji",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Kliknij Więcej aplikacji w zasobniku systemowym, aby pokazać pozostałe aplety. Włącz Zawsze widoczne, aby aplet pozostał widoczny.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Wybrane aplikacje pozostają widoczne w zasobniku systemowym bez klikania Więcej aplikacji."
 }

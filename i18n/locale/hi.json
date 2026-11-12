@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "अंतराल के दोनों ओर की टाइलों का आकार बदलें",
   "Split bar into islands": "बार को द्वीपों में बाँटें",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "बार के आरंभ, मध्य और अंत को अलग-अलग टुकड़ों के रूप में बनाएँ, जिनके बीच वॉलपेपर दिखाई दे। यह बार पर लागू होता है, डॉक पर नहीं।",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "पैनल में दिखाएँ कि क्या चल रहा है, प्लेबैक नियंत्रणों के साथ। बंद होने पर पैनल मीडिया प्लेयर पर नज़र रखना बंद कर देता है।"
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "पैनल में दिखाएँ कि क्या चल रहा है, प्लेबैक नियंत्रणों के साथ। बंद होने पर पैनल मीडिया प्लेयर पर नज़र रखना बंद कर देता है।",
+  "More apps": "और ऐप्स",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "अन्य एप्लेट दिखाने के लिए सिस्टम ट्रे में और ऐप्स पर क्लिक करें। किसी एप्लेट को दिखाए रखने के लिए हमेशा दृश्यमान चालू करें।",
+  "Selected applications stay shown in the system tray without clicking More apps.": "चुने गए एप्लिकेशन और ऐप्स पर क्लिक किए बिना सिस्टम ट्रे में दिखते रहते हैं।"
 }

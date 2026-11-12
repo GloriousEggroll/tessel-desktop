@@ -325,6 +325,8 @@ impl SettingsApi {
     }
 
     pub fn popup_placement(&self, monitor: &str, group: &str) -> Result<Value, String> {
+        // The old tray group is now part of the system tray (`service_apps`).
+        let group = if group == crate::core::config::LEGACY_TRAY_GROUP { "service_apps" } else { group };
         if !LAYOUT_GROUPS.iter().any(|(name, _)| *name == group) {
             return Err("Unknown popup group".into());
         }

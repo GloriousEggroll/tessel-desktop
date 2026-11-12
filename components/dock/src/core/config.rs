@@ -17,6 +17,10 @@
 //!   `ensure_ascii=False`, trailing newline), [`save_bytes`] for the exact bytes.
 //! - [`cairo_pins`], [`initial_pins`], [`PinCatalog`] (implemented by `AppCatalog`).
 //! - [`group_default_visible`] / [`GROUPS_OFF_BY_DEFAULT`] (Media starts off), [`DockConfig::media_enabled`].
+//! - [`LEGACY_TRAY_GROUP`]: `system_tray`, merged into `service_apps` (the
+//!   system tray). Loading accepts it in `group_visibility` (shown = either was
+//!   shown) and in `group_layouts` (see `group_layout::validate_layouts`);
+//!   saving never writes it.
 //! - Constants [`GROUPS`], [`CORNERS`], [`DEFAULT_APPS`], [`ALWAYS_VISIBLE_APPS`], [`BORDER_SIDES`].
 
 use std::path::{Path, PathBuf};
@@ -34,14 +38,19 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("files", "Home and Trash"),
     ("workspaces", "Workspaces"),
     ("media", "Media"),
-    ("system_tray", "System tray"),
-    ("service_apps", "Applets"),
+    // The system tray: tray applications and the built-in applets, with
+    // "More apps" for the hidden ones. The id is the old applets group's.
+    ("service_apps", "System tray"),
     ("weather", "Weather"),
     ("clock", "Time and date"),
     ("session", "Logout and Show Desktop"),
     ("activities", "Activities"),
     ("focused_title", "Focused window title"),
 ];
+
+/// The old separate tray group, merged into `service_apps`. Saved settings and
+/// layout files may still name it; it is read and never written.
+pub const LEGACY_TRAY_GROUP: &str = "system_tray";
 
 /// Groups that are off until the user turns them on. Media also stops the
 /// dock watching media players while it is off.
@@ -646,7 +655,7 @@ impl DockConfig {
         let Some(visibility) = c["group_visibility"].as_object() else {
             return Err("Dock group visibility must be an object.".into());
         };
-        if visibility.keys().any(|k| !GROUPS.iter().any(|(g, _)| g == k)) {
+        if visibility.keys().any(|k| k != LEGACY_TRAY_GROUP && !GROUPS.iter().any(|(g, _)| g == k)) {
             return Err("Unknown dock group visibility setting.".into());
         }
         if visibility.values().any(|v| !v.is_boolean()) {
@@ -656,7 +665,14 @@ impl DockConfig {
             if *name == "media" && legacy_media {
                 return (*name, true);
             }
-            (*name, visibility.get(*name).and_then(Value::as_bool).unwrap_or_else(|| group_default_visible(name)))
+            let saved = visibility.get(*name).and_then(Value::as_bool).unwrap_or_else(|| group_default_visible(name));
+            // The merged system tray shows when either old group was shown.
+            if *name == "service_apps" {
+                if let Some(tray) = visibility.get(LEGACY_TRAY_GROUP).and_then(Value::as_bool) {
+                    return (*name, saved || tray);
+                }
+            }
+            (*name, saved)
         }).collect();
         if !c["auto_hide"].is_boolean() {
             return Err("Invalid automatic hiding setting.".into());

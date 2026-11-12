@@ -74,7 +74,6 @@
         ],
         "end": [
           "media",
-          "system_tray",
           "service_apps",
           "session",
           "weather"
@@ -88,7 +87,6 @@
       "files": true,
       "workspaces": true,
       "media": false,
-      "system_tray": true,
       "service_apps": true,
       "weather": false,
       "clock": true,

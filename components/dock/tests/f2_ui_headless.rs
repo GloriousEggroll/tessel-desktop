@@ -26,7 +26,7 @@ use tessel_dock::dbus::sni::{Action, StatusTrayBackend, TrayItem, ITEM, WATCHER,
 use tessel_dock::status::backend::{indicator, Status, ICONS};
 use tessel_dock::ui::capture_controls::register_capture_controls;
 use tessel_dock::ui::host::{surface, transparent_area, translate, DockApp, DockView, MenuEntry, TrayBackend};
-use tessel_dock::ui::indicators::DockIndicators;
+use tessel_dock::ui::indicators::{DockIndicators, INDICATORS};
 use tessel_dock::ui::tray::{ExpanderOptions, Hole, StatusTray, TrayExpander, TrayMenu, TrayOptions};
 use tessel_dock::wl::Workspace;
 
@@ -395,8 +395,8 @@ impl DockView for FakeDock {
     fn context_menu(&self) -> Option<gtk::Popover> { self.context_menu.borrow().clone() }
     /// dock_ui.popup_menu.
     fn popup_menu(&self, anchor: &gtk::Widget, _position: Option<(f64, f64)>, entries: Vec<MenuEntry>) {
-        if let Some(expander) = self.indicators.borrow().clone().and_then(|panel| panel.tray_expander()) {
-            expander.set_expanded(false);
+        if let Some(panel) = self.indicators.borrow().clone() {
+            panel.tray_menu_opening(anchor);
         }
         if let Some(expander) = self.application_expander.borrow().clone() {
             expander.menu_active(true);
@@ -424,7 +424,7 @@ impl DockView for FakeDock {
                 dock.leave("menu");
             }
             if let Some(panel) = dock.indicators.borrow().clone() {
-                panel.schedule_apps_collapse();
+                panel.tray_menu_closed();
             }
             if let Some(expander) = dock.application_expander.borrow().clone() {
                 expander.menu_active(false);
@@ -487,6 +487,22 @@ fn assert_closed(expander: &TrayExpander, edge: &str, old: &[gtk::Window]) -> Te
     Ok(())
 }
 
+/// The system tray is collapsed: no catchers, hidden items hidden, the dock's
+/// hover token released and "More apps" says so.
+fn assert_tray_closed(dock: &FakeDock, old: &[gtk::Window]) -> TestResult {
+    let panel = dock.panel();
+    let expander = panel.tray_expander().ok_or("no tray expander")?;
+    ensure!(!expander.expanded() && !panel.apps_expanded());
+    ensure!(expander.button() == panel.apps_toggle());
+    ensure!(!panel.tray().unwrap().widget().get_visible(), "regular tray items stay hidden");
+    ensure!(expander.backdrops().is_empty());
+    ensure!(old.iter().all(|window| !window.is_mapped()));
+    ensure!(!dock.holds.borrow().contains(&"tray-expanded".to_string()), "hover token released: {:?}", dock.holds.borrow());
+    ensure!(panel.apps_toggle().tooltip_text().as_deref() == Some("More apps"));
+    ensure!(tessel_dock::ui::host::accessible_name_of(&panel.apps_toggle()).as_deref() == Some("More apps"));
+    Ok(())
+}
+
 fn application_expander(app: &Rc<FakeApp>, dock: &Rc<FakeDock>, extra_holes: Option<Rc<dyn Fn() -> Vec<Hole>>>)
                         -> (TrayExpander, Rc<RefCell<(bool, bool, usize)>>) {
     let content = gtk::Box::new(dock.orientation(), 0);
@@ -501,6 +517,7 @@ fn application_expander(app: &Rc<FakeApp>, dock: &Rc<FakeDock>, extra_holes: Opt
         enabled: Some(Rc::new(move || e.borrow().1)),
         close_content: Some(Rc::new(move || c.borrow_mut().2 += 1)),
         extra_holes,
+        ..Default::default()
     });
     dock.application_expander.replace(Some(expander.clone()));
     dock.core.prepend(&expander.widget());
@@ -530,8 +547,10 @@ fn always_tray_routing_all_layouts_and_return_to_normal_tray() -> TestResult {
                 ensure!(!keys(&tray).contains(&items[0].key()));
                 ensure!(tray.keys().len() == 2);
                 ensure!(always.widget().is_mapped(), "{mode} {display} {edge}");
-                ensure!(children(&panel.service_area()) == vec![always.widget().upcast::<gtk::Widget>(), panel.apps().upcast()]);
+                ensure!(children(&panel.service_area())
+                        == vec![tray.widget().upcast::<gtk::Widget>(), always.widget().upcast(), panel.apps().upcast()]);
                 let order = children(&panel.apps());
+                ensure!(order.last() == Some(&panel.apps_toggle().upcast::<gtk::Widget>()), "More apps comes last");
                 let brightness = order.iter().position(|w| Some(w) == panel.button("brightness").map(|b| b.upcast()).as_ref()).unwrap();
                 ensure!(order[brightness + 1] == panel.showdesktop().upcast::<gtk::Widget>());
                 ensure!(!order.iter().any(|w| w.is::<gtk::Separator>()));
@@ -933,13 +952,12 @@ fn expander_toggle_and_outside_click_on_each_monitor() -> TestResult {
     let receivers: Vec<_> = (0..n_monitors()).map(|i| receiver(&monitor(i))).collect();
     let dock = make_dock(&app, 0, "HEADLESS-1", |_| {});
     let expander = dock.panel().tray_expander().unwrap();
-    assert_closed(&expander, "bottom", &[])?;
+    assert_tray_closed(&dock, &[])?;
     ensure!(expander.content() == dock.panel().tray().unwrap().widget().upcast::<gtk::Widget>());
     for (index, (_window, received)) in receivers.iter().enumerate() {
         let (x, y) = dock.point(&expander.button());
         pointer_click(x, y, "left");
         ensure!(expander.expanded());
-        ensure!(expander.arrow().icon_name().as_deref() == Some("pan-down-symbolic"));
         ensure!(expander.content().get_visible());
         ensure!(expander.backdrops().len() == n_monitors() as usize);
         ensure!(dock.holds.borrow().contains(&"tray-expanded".to_string()));
@@ -958,7 +976,7 @@ fn expander_toggle_and_outside_click_on_each_monitor() -> TestResult {
         let before = received.get();
         let backdrops = expander.backdrops();
         pointer_click(x, y, "left");
-        assert_closed(&expander, "bottom", &backdrops).map_err(|e| format!("monitor {index} outside click: {e}"))?;
+        assert_tray_closed(&dock, &backdrops).map_err(|e| format!("monitor {index} outside click: {e}"))?;
         ensure!(received.get() == before, "The dismissal click is consumed");
         ensure!(!dock.holds.borrow().contains(&"tray-expanded".to_string()));
         pointer_click(x, y, "left");
@@ -972,7 +990,7 @@ fn expander_toggle_and_outside_click_on_each_monitor() -> TestResult {
     // The centered dock grew with the inline tray: aim at the button's new place.
     let (x, y) = dock.point(&expander.button());
     pointer_click(x, y, "left");
-    assert_closed(&expander, "bottom", &backdrops).map_err(|e| format!("toggle off: {e}"))?;
+    assert_tray_closed(&dock, &backdrops).map_err(|e| format!("toggle off: {e}"))?;
     for (window, _) in receivers {
         window.destroy();
     }
@@ -1004,27 +1022,102 @@ fn expander_cloned_docks_remain_clickable_and_holes_follow_geometry() -> TestRes
     Ok(())
 }
 
+/// One system tray on every edge in dock and bar mode: regular items, always
+/// shown items, applets, then More apps; hovering never expands it, More apps
+/// does, and nothing but a click or a menu closing collapses it.
 fn expander_inline_expansion_on_every_edge() -> TestResult {
-    let app = FakeApp::new();
+    let app = default_apps_setup();
+    set_property(&app.fake_tray.items()[2], "Id", "always-item".to_variant());
+    compact_status(&app);
+    let always_apps: BTreeSet<String> = ALWAYS_VISIBLE_APPS.iter().map(|s| s.to_string()).collect();
     for mode in ["dock", "bar"] {
         for edge in ["top", "bottom", "left", "right"] {
-            let dock = make_dock(&app, 0, "HEADLESS-1", |c| { c.mode = mode.into(); c.edge = edge.into(); });
-            let expander = dock.panel().tray_expander().unwrap();
-            ensure!(expander.widget().orientation() == dock.orientation());
-            assert_closed(&expander, edge, &[])?;
-            let (x, y) = dock.point(&expander.button());
+            let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+                c.mode = mode.into(); c.edge = edge.into(); c.always_show_tray = vec!["id:always-item".into()];
+            });
+            let panel = dock.panel();
+            let (expander, tray, always) = (panel.tray_expander().unwrap(), panel.tray().unwrap(), panel.always_tray().unwrap());
+            ensure!(panel.service_area().orientation() == dock.orientation(), "{mode} {edge}");
+            ensure!(children(&panel.service_area())
+                    == vec![tray.widget().upcast::<gtk::Widget>(), always.widget().upcast(), panel.apps().upcast()]);
+            ensure!(panel.apps().last_child() == Some(panel.apps_toggle().upcast()));
+            assert_tray_closed(&dock, &[]).map_err(|e| format!("{mode} {edge}: {e}"))?;
+            // Collapsed: always-shown items, always-visible applets, More apps.
+            ensure!(always.widget().is_mapped() && keys(&always).len() == 1);
+            ensure!(!tray.widget().is_mapped() && keys(&tray).len() == 2);
+            ensure!(visible_apps(&panel) == always_apps, "{mode} {edge}: {:?}", visible_apps(&panel));
+            ensure!(panel.apps_toggle().is_mapped());
+            ensure!(!dock.panel().group_availability().contains_key("system_tray"));
+            ensure!(dock.panel().group_availability()["service_apps"]);
+            // Hovering any part of the tray never expands it.
+            for widget in [panel.apps_toggle().upcast::<gtk::Widget>(), panel.button("audio").unwrap().upcast()] {
+                let (x, y) = dock.point(&widget);
+                pointer_move(x, y);
+                settle(0.25);
+                ensure!(!expander.expanded(), "{mode} {edge}: hover expanded the tray");
+            }
+            let (x, y) = dock.point(&panel.apps_toggle());
             pointer_click(x, y, "left");
             ensure!(expander.expanded(), "{mode} {edge}");
-            let expected = match edge { "bottom" => "pan-down-symbolic", "top" => "pan-up-symbolic", "left" => "pan-start-symbolic",
-                                        _ => "pan-end-symbolic" };
-            ensure!(expander.arrow().icon_name().as_deref() == Some(expected));
+            settle(0.15);
+            ensure!(tray.widget().is_mapped() && always.widget().is_mapped());
+            let available: BTreeSet<String> = DEFAULT_APPS.iter()
+                .filter(|(name, _)| panel.status_visible(name).unwrap_or(false)).map(|(n, _)| n.to_string()).collect();
+            ensure!(visible_apps(&panel) == available);
+            ensure!(dock.holds.borrow().contains(&"tray-expanded".to_string()));
+            ensure!(expander.backdrops().len() == n_monitors() as usize);
+            // Pointer leaving does not collapse it, however long it stays away.
+            pointer_move(640.0, 300.0);
+            settle(0.6);
+            ensure!(expander.expanded(), "{mode} {edge}: pointer leave collapsed the tray");
             let backdrops = expander.backdrops();
-            let (x, y) = dock.point(&expander.button());
+            let (x, y) = dock.point(&panel.apps_toggle());
+            let area = dock.monitor.geometry();
+            ensure!(x < (area.x() + area.width()) as f64 && y < (area.y() + area.height()) as f64, "{mode} {edge}: More apps off screen");
             pointer_click(x, y, "left");
-            assert_closed(&expander, edge, &backdrops)?;
+            assert_tray_closed(&dock, &backdrops).map_err(|e| format!("{mode} {edge}: {e}"))?;
+            ensure!(visible_apps(&panel) == always_apps);
             dock.destroy(&app);
         }
     }
+    Ok(())
+}
+
+/// More apps shows only while something is hidden: an applet that is not
+/// always visible, or a regular tray item.
+fn more_apps_shows_only_when_something_is_hidden() -> TestResult {
+    let app = default_apps_setup();
+    let every_applet: Vec<String> = DEFAULT_APPS.iter().map(|(n, _)| n.to_string()).collect();
+    let dock = make_dock(&app, 0, "HEADLESS-1", |c| { c.mode = "bar".into(); c.always_visible_apps = every_applet.clone(); });
+    let panel = dock.panel();
+    ensure!(panel.apps_toggle().get_visible(), "regular tray items are hidden behind More apps");
+    for item in app.fake_tray.items() {
+        set_property(&item, "Status", "Passive".to_variant());
+    }
+    app.fake_tray.changed();
+    settle(0.1);
+    ensure!(!panel.apps_toggle().get_visible(), "nothing hidden, no More apps");
+    panel.set_apps_expanded(true);
+    ensure!(!panel.apps_expanded(), "nothing to expand");
+    ensure!(panel.group_availability()["service_apps"], "applets still show");
+    set_property(&app.fake_tray.items()[1], "Status", "Active".to_variant());
+    app.fake_tray.changed();
+    settle(0.1);
+    ensure!(panel.apps_toggle().get_visible(), "a new regular item brings More apps back");
+    panel.set_apps_expanded(true);
+    ensure!(panel.apps_expanded());
+    // The last hidden item leaving collapses the tray and releases the dock.
+    set_property(&app.fake_tray.items()[1], "Status", "Passive".to_variant());
+    app.fake_tray.changed();
+    settle(0.2);
+    assert_tray_closed(&dock, &[])?;
+    ensure!(!panel.apps_toggle().get_visible());
+    // No tray items and no applets: the whole tray is unavailable.
+    for name in INDICATORS {
+        app.status_set(name, "visible", json!(false));
+    }
+    panel.refresh();
+    ensure!(!panel.group_availability()["service_apps"]);
     Ok(())
 }
 
@@ -1040,6 +1133,7 @@ impl TrayMenu for PopoverMenu {
 
 fn expander_native_tray_popover_stays_clickable_and_dismissal_retracts() -> TestResult {
     let app = FakeApp::new();
+    compact_status(&app);
     let item = app.fake_tray.items()[0].clone();
     set_property(&item, "Menu", glib::variant::ObjectPath::try_from("/Menu").unwrap().to_variant());
     let dock = make_dock(&app, 0, "HEADLESS-1", |_| {});
@@ -1065,7 +1159,14 @@ fn expander_native_tray_popover_stays_clickable_and_dismissal_retracts() -> Test
     let (x, y) = dock.point(&expander.button());
     pointer_click(x, y, "left");
     ensure!(expander.expanded());
+    // The centered dock grew with the expanded tray (both ways): the real dock
+    // re-syncs the catchers' holes on every tick while expanded, the fake one
+    // here. The new holes must reach the compositor although the transparent
+    // catchers draw nothing new (the leftmost item is outside the old hole).
+    settle(0.15);
+    dock.sync_expanders();
     let button = tray.button(&item.key()).unwrap();
+    ensure!(button.is_mapped());
     let (x, y) = dock.point(&button);
     pointer_click(x, y, "right");
     let popup = popover_slot.borrow().clone().ok_or("menu not prepared")?;
@@ -1081,16 +1182,18 @@ fn expander_native_tray_popover_stays_clickable_and_dismissal_retracts() -> Test
     pointer_click(area.x() as f64 + ox + px + local.0 + child.width() as f64 / 2.0,
                   area.y() as f64 + oy + py + local.1 + child.height() as f64 / 2.0, "left");
     ensure!(invoked.get() == 1, "Opening the tray must not block native menu actions");
-    assert_closed(&expander, "bottom", &[])?;
+    assert_tray_closed(&dock, &[])?;
     let (x, y) = dock.point(&expander.button());
     pointer_click(x, y, "left");
+    settle(0.15);
+    dock.sync_expanders();
     let (x, y) = dock.point(&button);
     pointer_click(x, y, "right");
     ensure!(popup.is_mapped());
     pointer_click(35.0, 35.0, "left");
     settle(0.1);
     ensure!(!popup.get_visible());
-    assert_closed(&expander, "bottom", &[])?;
+    assert_tray_closed(&dock, &[])?;
     popup.unparent();
     Ok(())
 }
@@ -1114,10 +1217,12 @@ fn expander_hidden_empty_and_destroyed_release_input_surfaces() -> TestResult {
         ensure!(!backdrops.is_empty());
         match reason {
             "hidden" => {
-                dock.set_config(|c| { c.group_visibility.insert("system_tray", false); });
+                dock.set_config(|c| { c.group_visibility.insert("service_apps", false); });
                 dock.refresh_groups();
             }
             "empty" => {
+                // Nothing left to hide: every applet always visible, no regular items.
+                dock.set_config(|c| c.always_visible_apps = DEFAULT_APPS.iter().map(|(n, _)| n.to_string()).collect());
                 for item in app.fake_tray.items() {
                     set_property(&item, "Status", "Passive".to_variant());
                 }
@@ -1126,13 +1231,16 @@ fn expander_hidden_empty_and_destroyed_release_input_surfaces() -> TestResult {
             _ => dock.destroy(&app),
         }
         settle(0.2);
-        assert_closed(&expander, "bottom", &backdrops)?;
+        ensure!(!expander.expanded() && expander.backdrops().is_empty(), "{reason}");
+        ensure!(backdrops.iter().all(|window| !window.is_mapped()), "{reason}");
+        ensure!(!dock.holds.borrow().contains(&"tray-expanded".to_string()), "{reason}: {:?}", dock.holds.borrow());
         match reason {
             "hidden" => {
-                dock.set_config(|c| { c.group_visibility.insert("system_tray", true); });
+                dock.set_config(|c| { c.group_visibility.insert("service_apps", true); });
                 dock.refresh_groups();
             }
             "empty" => {
+                dock.set_config(|c| c.always_visible_apps = ALWAYS_VISIBLE_APPS.iter().map(|n| n.to_string()).collect());
                 for item in app.fake_tray.items() {
                     set_property(&item, "Status", "Active".to_variant());
                 }
@@ -1325,6 +1433,15 @@ fn visible_apps(panel: &DockIndicators) -> BTreeSet<String> {
     DEFAULT_APPS.iter().filter(|(name, _)| panel.button(name).unwrap().get_visible()).map(|(name, _)| name.to_string()).collect()
 }
 
+/// The fake dock has no scrolling: keep an expanded tray shorter than the
+/// output (one hidden applet, no workspaces).
+fn compact_status(app: &FakeApp) {
+    for name in ["notifications", "power", "battery", "bluetooth", "tiling", "keyboard", "network", "discovery"] {
+        app.status_set(name, "visible", json!(false));
+    }
+    app.workspaces.replace(Vec::new());
+}
+
 fn default_apps_setup() -> Rc<FakeApp> {
     let app = FakeApp::new();
     app.status_set("capslock", "text", json!("⇪"));
@@ -1333,7 +1450,7 @@ fn default_apps_setup() -> Rc<FakeApp> {
     app
 }
 
-fn default_apps_hover_expands_and_leaving_collapses() -> TestResult {
+fn default_apps_hover_never_expands_and_more_apps_toggles() -> TestResult {
     let app = default_apps_setup();
     let always: BTreeSet<String> = ALWAYS_VISIBLE_APPS.iter().map(|s| s.to_string()).collect();
     for mode in ["dock", "bar"] {
@@ -1346,6 +1463,8 @@ fn default_apps_hover_expands_and_leaving_collapses() -> TestResult {
                 let (x, y) = dock.point(&panel.apps_toggle());
                 pointer_move(x, y);
                 settle(0.2);
+                ensure!(!panel.apps_expanded(), "{mode} {display} {edge}: hover expanded");
+                panel.apps_toggle().emit_clicked();
                 ensure!(panel.apps_expanded(), "{mode} {display} {edge}");
                 let expected: BTreeSet<String> = DEFAULT_APPS.iter()
                     .filter(|(name, _)| panel.status_visible(name).unwrap_or(false)).map(|(n, _)| n.to_string()).collect();
@@ -1354,9 +1473,11 @@ fn default_apps_hover_expands_and_leaving_collapses() -> TestResult {
                 ensure!(visible_apps(&panel) == expected);
                 pointer_move(500.0, 300.0);
                 settle(0.45);
-                ensure!(panel.apps_expanded(), "{mode} {display} {edge} collapsed before the delay");
-                panel.set_apps_expanded(false);
+                ensure!(panel.apps_expanded(), "{mode} {display} {edge} collapsed on pointer leave");
+                panel.apps_toggle().emit_clicked();
+                ensure!(!panel.apps_expanded());
                 ensure!(visible_apps(&panel) == always);
+                ensure!(!dock.holds.borrow().contains(&"tray-expanded".to_string()));
                 dock.destroy(&app);
             }
         }
@@ -1374,18 +1495,24 @@ fn default_apps_empty_and_all_selections_keep_reveal_and_tray() -> TestResult {
     ensure!(visible_apps(&panel).is_empty());
     ensure!(panel.apps_toggle().is_mapped());
     ensure!(always.widget().is_mapped());
-    ensure!(children(&panel.service_area()) == vec![always.widget().upcast::<gtk::Widget>(), panel.apps().upcast()]);
+    ensure!(children(&panel.service_area())
+            == vec![panel.tray().unwrap().widget().upcast::<gtk::Widget>(), always.widget().upcast(), panel.apps().upcast()]);
     let (_, tray_button) = always.buttons().into_iter().next().ok_or("always tray empty")?;
     let (x, y) = dock.point(&tray_button);
     pointer_move(x, y);
     settle(0.1);
-    ensure!(!panel.apps_expanded(), "Hovering the separate tray must not expand Default apps");
+    ensure!(!panel.apps_expanded(), "Hovering the tray must not expand it");
     panel.apps_toggle().emit_clicked();
     ensure!(panel.apps_expanded());
     panel.set_apps_expanded(false);
     ensure!(always.widget().is_mapped());
     dock.set_config(|c| c.always_visible_apps = DEFAULT_APPS.iter().map(|(n, _)| n.to_string()).collect());
     dock.refresh_groups();
+    ensure!(panel.apps_toggle().get_visible(), "two regular tray items stay behind More apps");
+    for item in app.fake_tray.items().iter().skip(1) {
+        set_property(item, "Status", "Passive".to_variant());
+    }
+    app.fake_tray.changed();
     ensure!(!panel.apps_toggle().get_visible());
     let expected: BTreeSet<String> = DEFAULT_APPS.iter()
         .filter(|(name, _)| panel.status_visible(name).unwrap_or(false)).map(|(n, _)| n.to_string()).collect();
@@ -1396,11 +1523,17 @@ fn default_apps_empty_and_all_selections_keep_reveal_and_tray() -> TestResult {
     Ok(())
 }
 
+/// The recording menu of an applet inside the expanded tray keeps the tray
+/// open (no catcher in front of the menu); the menu closing retracts it.
 fn default_apps_recording_menu_holds_expansion_until_closed() -> TestResult {
     let app = default_apps_setup();
     let dock = make_dock(&app, 0, "HEADLESS-1", |c| c.mode = "bar".into());
     let panel = dock.panel();
+    let expander = panel.tray_expander().unwrap();
     panel.set_apps_expanded(true);
+    settle(0.1);
+    let backdrops = expander.backdrops();
+    ensure!(!backdrops.is_empty());
     panel.button("screen_record").unwrap().emit_clicked();
     let menu = panel.record_menu().ok_or("record menu missing")?;
     ensure!(dock.context_menu() == Some(menu.clone()));
@@ -1409,16 +1542,35 @@ fn default_apps_recording_menu_holds_expansion_until_closed() -> TestResult {
     let heading = rows.first_child().and_downcast::<gtk::Box>().ok_or("heading")?;
     ensure!(children(&heading).len() == 3);
     pointer_move(500.0, 300.0);
-    panel.schedule_apps_collapse();
     settle(0.45);
-    ensure!(panel.apps_expanded());
+    ensure!(panel.apps_expanded(), "the menu holds the tray open");
+    ensure!(expander.backdrops().is_empty() && expander.menu_is_active(), "no catcher over the menu");
     ensure!(menu.is_mapped());
     menu.popdown();
-    settle(0.5);
-    ensure!(panel.apps_expanded());
-    settle(5.0);
-    ensure!(!panel.apps_expanded());
+    settle(0.3);
     ensure!(panel.record_menu().is_none());
+    assert_tray_closed(&dock, &backdrops)?;
+    ensure!(!expander.menu_is_active());
+    // A menu outside the tray closes it.
+    panel.set_apps_expanded(true);
+    dock.popup_menu(dock.home.upcast_ref(), None, Vec::new());
+    ensure!(!panel.apps_expanded());
+    if let Some(menu) = dock.context_menu() {
+        menu.popdown();
+    }
+    settle(0.1);
+    // An applet popup keeps it open; one from outside the tray closes it.
+    panel.set_apps_expanded(true);
+    panel.button("power").unwrap().emit_clicked();
+    ensure!(panel.apps_expanded(), "an applet popup keeps the tray open");
+    panel.clock().emit_clicked();
+    ensure!(!panel.apps_expanded(), "the calendar closes the tray");
+    // close() releases everything.
+    panel.set_apps_expanded(true);
+    ensure!(dock.holds.borrow().contains(&"tray-expanded".to_string()));
+    panel.close();
+    ensure!(!dock.holds.borrow().contains(&"tray-expanded".to_string()), "{:?}", dock.holds.borrow());
+    ensure!(expander.backdrops().is_empty());
     Ok(())
 }
 
@@ -1426,7 +1578,10 @@ fn default_apps_recording_menu_holds_expansion_until_closed() -> TestResult {
 
 fn indicators_clicks_offsets_and_record_presets() -> TestResult {
     let app = FakeApp::new();
-    let dock = make_dock(&app, 0, "HEADLESS-1", |c| { c.mode = "bar".into(); c.edge = "top".into(); });
+    // Screen Record always visible: its menus close the tray between steps.
+    let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+        c.mode = "bar".into(); c.edge = "top".into(); c.always_visible_apps.push("screen_record".into());
+    });
     let panel = dock.panel();
     let thickness = dock.window.height();
     let offset = 40.max(thickness + 8);
@@ -1468,6 +1623,9 @@ fn indicators_clicks_offsets_and_record_presets() -> TestResult {
     wlrctl(&["pointer", "scroll", "-10", "0"]);
     settle(0.1);
     ensure!(app.last().as_deref() == Some("volume 1"), "{:?}", app.last());
+    // The calendar and session popups closed the tray: open it again.
+    panel.set_apps_expanded(true);
+    settle(0.1);
     // Screen record: idle → preset menu; preset row → capture preset.
     panel.button("screen_record").unwrap().emit_clicked();
     let menu = panel.record_menu().ok_or("record menu")?;
@@ -1923,6 +2081,53 @@ fn dbusmenu_popover_from_right_click_and_item_click() -> TestResult {
     Ok(())
 }
 
+// ------------------------------------------------------------------ proof screenshots
+
+/// Not a check: run alone (`run_f2_headless.sh proof_screenshots`) to save
+/// grim shots of the system tray, collapsed and expanded, to `$TMPDIR/proof`.
+fn proof_screenshots() -> TestResult {
+    if std::env::args().nth(1).as_deref() != Some("proof_screenshots") {
+        return Ok(());
+    }
+    let out = PathBuf::from(std::env::var("TMPDIR").unwrap()).join("proof");
+    std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+    let display = gdk::Display::default().unwrap();
+    let css = format!("{}\n.tessel-dock-proof {{ background: #2b2b30; color: #eeeeee; padding: 4px; }}", tessel_dock::appearance::style::CSS);
+    tessel_gtk::utils::add_css(&css, Some(&display), gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    let app = default_apps_setup();
+    for name in ["notifications", "power", "keyboard", "discovery", "tiling"] {
+        app.status_set(name, "visible", json!(false));
+    }
+    app.workspaces.replace(Vec::new());
+    set_property(&app.fake_tray.items()[2], "Id", "always-item".to_variant());
+    for (mode, edge) in [("dock", "bottom"), ("bar", "top"), ("dock", "left"), ("bar", "right")] {
+        let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+            c.mode = mode.into(); c.edge = edge.into(); c.always_show_tray = vec!["id:always-item".into()];
+        });
+        dock.core.add_css_class("tessel-dock-proof");
+        let panel = dock.panel();
+        pointer_move(640.0, 360.0);
+        for state in ["collapsed", "expanded"] {
+            if state == "expanded" {
+                let (x, y) = dock.point(&panel.apps_toggle());
+                pointer_click(x, y, "left");
+                ensure!(panel.apps_expanded(), "{mode} {edge}");
+                pointer_move(640.0, 360.0);
+            }
+            settle(0.4);
+            let (x, y) = dock.origin();
+            let region = format!("{},{} {}x{}", x as i32, y as i32, dock.window.width(), dock.window.height());
+            let file = out.join(format!("{mode}-{edge}-{state}.png"));
+            let status = Command::new("grim").args(["-g", &region]).arg(&file).status().map_err(|e| e.to_string())?;
+            ensure!(status.success(), "grim {region}");
+            println!("proof {}", file.display());
+        }
+        panel.set_apps_expanded(false);
+        dock.destroy(&app);
+    }
+    Ok(())
+}
+
 // ------------------------------------------------------------------ runner
 
 fn main() {
@@ -1958,7 +2163,8 @@ fn main() {
         ("media_idle_bar_hides_nothing_playing_and_disabled_controls", media_idle_bar_hides_nothing_playing_and_disabled_controls),
         ("media_missing_player_icons_fall_back_to_music_button", media_missing_player_icons_fall_back_to_music_button),
         ("media_titles_and_controls_fit_all_edges", media_titles_and_controls_fit_all_edges),
-        ("default_apps_hover_expands_and_leaving_collapses", default_apps_hover_expands_and_leaving_collapses),
+        ("default_apps_hover_never_expands_and_more_apps_toggles", default_apps_hover_never_expands_and_more_apps_toggles),
+        ("more_apps_shows_only_when_something_is_hidden", more_apps_shows_only_when_something_is_hidden),
         ("default_apps_empty_and_all_selections_keep_reveal_and_tray", default_apps_empty_and_all_selections_keep_reveal_and_tray),
         ("default_apps_recording_menu_holds_expansion_until_closed", default_apps_recording_menu_holds_expansion_until_closed),
         ("indicators_clicks_offsets_and_record_presets", indicators_clicks_offsets_and_record_presets),
@@ -1969,6 +2175,7 @@ fn main() {
         ("coordinates_second_monitor_and_menu_releases_catchers", coordinates_second_monitor_and_menu_releases_catchers),
         ("dbusmenu_popover_from_right_click_and_item_click", dbusmenu_popover_from_right_click_and_item_click),
         ("coordinates_scaled_output_and_menu_only_left_click", coordinates_scaled_output_and_menu_only_left_click),
+        ("proof_screenshots", proof_screenshots),
     ];
     let filter = std::env::args().nth(1).unwrap_or_default();
     let (mut passed, mut failed) = (0, Vec::new());

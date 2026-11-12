@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Αλλαγή μεγέθους των πλακιδίων και στις δύο πλευρές του κενού",
   "Split bar into islands": "Διαίρεση της μπάρας σε νησίδες",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Σχεδίαση της αρχής, του κέντρου και του τέλους της μπάρας ως ξεχωριστών τμημάτων, με την ταπετσαρία να φαίνεται ανάμεσά τους. Ισχύει για μπάρες, όχι για docks.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Εμφάνιση του τι αναπαράγεται στον πίνακα, με χειριστήρια αναπαραγωγής. Όταν είναι απενεργοποιημένο, ο πίνακας σταματά να παρακολουθεί τα προγράμματα αναπαραγωγής πολυμέσων."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Εμφάνιση του τι αναπαράγεται στον πίνακα, με χειριστήρια αναπαραγωγής. Όταν είναι απενεργοποιημένο, ο πίνακας σταματά να παρακολουθεί τα προγράμματα αναπαραγωγής πολυμέσων.",
+  "More apps": "Περισσότερες εφαρμογές",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Κάντε κλικ στο «Περισσότερες εφαρμογές» στην περιοχή ειδοποιήσεων για να εμφανιστούν οι υπόλοιπες μικροεφαρμογές. Ενεργοποιήστε το «Πάντα ορατό» για να παραμένει εμφανής μια μικροεφαρμογή.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Οι επιλεγμένες εφαρμογές παραμένουν εμφανείς στην περιοχή ειδοποιήσεων χωρίς κλικ στο «Περισσότερες εφαρμογές»."
 }

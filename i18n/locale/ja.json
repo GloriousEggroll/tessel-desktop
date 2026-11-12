@@ -2118,5 +2118,8 @@
   "Resize the tiles on both sides of the gap": "隙間の両側のタイルのサイズを変更",
   "Split bar into islands": "バーをアイランドに分割",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "バーの先頭・中央・末尾を別々のパーツとして描画し、その間に壁紙が見えるようにします。ドックではなくバーに適用されます。",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "再生中の内容を再生コントロール付きでパネルに表示します。オフにすると、パネルはメディアプレーヤーの監視を停止します。"
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "再生中の内容を再生コントロール付きでパネルに表示します。オフにすると、パネルはメディアプレーヤーの監視を停止します。",
+  "More apps": "その他のアプリ",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "システムトレイの「その他のアプリ」をクリックすると、ほかのアプレットが表示されます。アプレットを表示したままにするには「常に表示」をオンにします。",
+  "Selected applications stay shown in the system tray without clicking More apps.": "選択したアプリケーションは、「その他のアプリ」をクリックしなくてもシステムトレイに表示されたままになります。"
 }

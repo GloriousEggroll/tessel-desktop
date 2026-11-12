@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Změnit velikost dlaždic na obou stranách mezery",
   "Split bar into islands": "Rozdělit lištu na ostrůvky",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Vykreslí začátek, střed a konec lišty jako samostatné části, mezi kterými je vidět tapeta. Platí pro lišty, ne pro doky.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Zobrazovat na panelu, co se přehrává, s ovládáním přehrávání. Když je vypnuto, panel přestane sledovat přehrávače médií."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Zobrazovat na panelu, co se přehrává, s ovládáním přehrávání. Když je vypnuto, panel přestane sledovat přehrávače médií.",
+  "More apps": "Další aplikace",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klepnutím na Další aplikace v oznamovací oblasti zobrazíte ostatní applety. Zapněte Vždy viditelné, aby applet zůstal zobrazen.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Vybrané aplikace zůstanou zobrazeny v oznamovací oblasti, aniž byste klepali na Další aplikace."
 }

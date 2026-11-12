@@ -1,7 +1,8 @@
 //! status_tray.py widgets: `StatusTray` (one view per dock clone over the
 //! shared StatusNotifier backend), the DBusMenu popover (`RemoteMenuPopover`,
 //! dbusmenu.py's GTK half over `dbus::dbusmenu::RemoteMenu`) and
-//! `TrayExpander` (inline expansion with outside-click dismissal surfaces).
+//! `TrayExpander` (inline expansion with outside-click dismissal surfaces):
+//! the system tray's "More apps" expansion and the title-mode applications.
 //!
 //! API:
 //! - `StatusTray::new(Rc<dyn TrayBackend>, TrayOptions)`; `.widget()` (the
@@ -17,15 +18,21 @@
 //!   if the item has one, else `ContextMenu(x, y)` after releasing panel menus
 //!   (`menu_state(true)` then `(false)`); scroll → `Scroll(∓120·steps, axis)`.
 //! - `TrayMenu` trait (popup/popdown/close) and `RemoteMenuPopover::new`.
-//! - `TrayExpander::new(dock, app, content, ExpanderOptions)` /
-//!   `TrayExpander::for_tray(dock, app, &StatusTray)`; `.widget()`, `.button()`,
+//! - `TrayExpander::new(dock, app, content, ExpanderOptions)`; `.widget()`, `.button()`,
 //!   `.arrow()`, `.content()`, `.expanded()`, `.set_expanded(b)`,
 //!   `.menu_active(b)`, `.menu_is_active()`, `.sync()`, `.close()`,
-//!   `.backdrops()`, `.kind()`. Namespaces `tessel-dock-tray-dismiss` /
+//!   `.backdrops()`, `.kind()`. With `ExpanderOptions::toggle` the expander
+//!   uses that button (the system tray's "More apps") instead of its own arrow
+//!   button: it toggles on click, leaves the button's look to its owner and
+//!   reports every change to `on_change`. Namespaces `tessel-dock-tray-dismiss` /
 //!   `tessel-dock-<kind>-dismiss` (TOP, keyboard NONE, exclusive −1, all edges, one
 //!   per monitor), input region = monitor minus every visible clone's panel
 //!   and `extra_holes`; one expander at a time across all clones; never while
 //!   a fullscreen window is active; released when hidden/emptied/destroyed.
+//!   A native menu on the content (`menu_active(true)`) keeps it expanded
+//!   without catchers; the menu closing (`menu_active(false)`) retracts it.
+//!   Expanded, it holds the dock's `tray-expanded` / `<kind>-expanded` hover
+//!   token, released on every retraction and on `close()`.
 
 use gtk::prelude::*;
 use gtk::{gdk, gdk_pixbuf, gio, glib};
@@ -611,12 +618,19 @@ pub type Hole = (gdk::Monitor, i32, i32, i32, i32);
 
 #[derive(Default)]
 pub struct ExpanderOptions {
-    /// "system_tray" (default) or e.g. "applications".
+    /// "system_tray" (default: the `tessel-dock-tray-dismiss` namespace and the
+    /// `tray-expanded` token) or e.g. "applications".
     pub kind: Option<String>,
     pub available: Option<Rc<dyn Fn() -> bool>>,
+    /// Default: the group named `kind` is visible.
     pub enabled: Option<Rc<dyn Fn() -> bool>>,
     pub close_content: Option<Rc<dyn Fn()>>,
     pub extra_holes: Option<Rc<dyn Fn() -> Vec<Hole>>>,
+    /// An existing button that toggles the expansion; the expander then has no
+    /// arrow button of its own and does not change this button's look.
+    pub toggle: Option<gtk::Button>,
+    /// Called after every expansion change with the new state.
+    pub on_change: Option<Rc<dyn Fn(bool)>>,
 }
 
 struct ExpanderInner {
@@ -642,6 +656,9 @@ struct ExpanderInner {
     monitor_signature: RefCell<Vec<gdk::Monitor>>,
     button: gtk::Button,
     arrow: gtk::Image,
+    /// The button belongs to the owner (`ExpanderOptions::toggle`).
+    external: bool,
+    on_change: Option<Rc<dyn Fn(bool)>>,
 }
 
 /// Inline icons with a temporary, non-keyboard outside-click catcher.
@@ -653,17 +670,6 @@ impl PartialEq for TrayExpander {
 }
 
 impl TrayExpander {
-    /// The system tray's expander (`available` = the tray shows buttons,
-    /// `close_content` = close its menu).
-    pub fn for_tray(dock: &Rc<dyn DockView>, app: &Rc<dyn DockApp>, tray: &StatusTray) -> Self {
-        let (available, closing) = (tray.clone(), tray.clone());
-        Self::new(dock, app, tray.widget().upcast_ref(), ExpanderOptions {
-            available: Some(Rc::new(move || !available.is_empty())),
-            close_content: Some(Rc::new(move || closing.close_menu())),
-            ..Default::default()
-        })
-    }
-
     pub fn new(dock: &Rc<dyn DockView>, app: &Rc<dyn DockApp>, content: &gtk::Widget, options: ExpanderOptions) -> Self {
         let kind = options.kind.unwrap_or_else(|| "system_tray".into());
         let tray = kind == "system_tray";
@@ -672,12 +678,15 @@ impl TrayExpander {
             Rc::new(move || weak.upgrade().is_some_and(|dock| dock.config().is_group_visible(&kind)))
         });
         let root = gtk::Box::new(dock.orientation(), 1);
-        let button = gtk::Button::new();
+        let external = options.toggle.is_some();
+        let button = options.toggle.unwrap_or_default();
         let arrow = gtk::Image::new();
         arrow.set_pixel_size(16);
         // The arrow points toward the screen: physical, not text direction.
         arrow.set_direction(gtk::TextDirection::Ltr);
-        button.set_child(Some(&arrow));
+        if !external {
+            button.set_child(Some(&arrow));
+        }
         let show_title = if tray { tessel_core::tr!("Show system tray") } else { tessel_core::tr!("Show applications") };
         let hide_title = if tray { tessel_core::tr!("Hide system tray") } else { tessel_core::tr!("Hide applications") };
         let expander = Self(Rc::new(ExpanderInner {
@@ -689,16 +698,18 @@ impl TrayExpander {
             namespace: if tray { "tessel-dock-tray-dismiss".into() } else { format!("tessel-dock-{kind}-dismiss") },
             show_title: show_title.clone(), hide_title, kind, expanded: Cell::new(false), closed: Cell::new(false),
             backdrops: RefCell::default(), menu_active: Cell::new(false), region_signature: RefCell::new(None),
-            monitor_signature: RefCell::default(), button, arrow,
+            monitor_signature: RefCell::default(), button, arrow, external, on_change: options.on_change,
         }));
         expander.update_icon();
         let inner = &expander.0;
-        inner.button.add_css_class("tessel-dock-tray-expander");
-        if !tray {
-            inner.button.add_css_class("tessel-dock-applications-expander");
+        if !external {
+            inner.button.add_css_class("tessel-dock-tray-expander");
+            if !tray {
+                inner.button.add_css_class("tessel-dock-applications-expander");
+            }
+            inner.button.set_tooltip_text(Some(&show_title));
+            accessible_name(&inner.button, &show_title);
         }
-        inner.button.set_tooltip_text(Some(&show_title));
-        accessible_name(&inner.button, &show_title);
         let weak = Rc::downgrade(&expander.0);
         inner.button.connect_clicked(move |_| {
             if let Some(inner) = weak.upgrade() {
@@ -706,8 +717,10 @@ impl TrayExpander {
                 expander.set_expanded(!expander.expanded());
             }
         });
-        inner.root.append(&inner.button);
-        inner.root.append(content);
+        if !external {
+            inner.root.append(&inner.button);
+            inner.root.append(content);
+        }
         content.set_visible(false);
         expander
     }
@@ -725,6 +738,9 @@ impl TrayExpander {
     fn dock(&self) -> Option<Rc<dyn DockView>> { self.0.dock.upgrade() }
 
     fn update_icon(&self) {
+        if self.0.external {
+            return;
+        }
         let edge = self.dock().map(|dock| dock.config().edge.clone()).unwrap_or_default();
         let (collapsed, expanded) = match edge.as_str() {
             "top" => ("pan-down-symbolic", "pan-up-symbolic"),
@@ -768,9 +784,11 @@ impl TrayExpander {
         }
         self.0.expanded.set(expanded);
         self.update_icon();
-        let tooltip = if expanded { &self.0.hide_title } else { &self.0.show_title };
-        self.0.button.set_tooltip_text(Some(tooltip));
-        accessible_name(&self.0.button, tooltip);
+        if !self.0.external {
+            let tooltip = if expanded { &self.0.hide_title } else { &self.0.show_title };
+            self.0.button.set_tooltip_text(Some(tooltip));
+            accessible_name(&self.0.button, tooltip);
+        }
         self.0.content.set_visible(expanded);
         if expanded {
             dock.enter(&self.0.hover_token);
@@ -779,6 +797,9 @@ impl TrayExpander {
             self.remove_backdrops();
             (self.0.close_content)();
             dock.leave(&self.0.hover_token);
+        }
+        if let Some(on_change) = &self.0.on_change {
+            on_change(expanded);
         }
         if !dock.destroyed() {
             dock.queue_panel_layout();
@@ -851,6 +872,9 @@ impl TrayExpander {
                 }
             }
             native.set_input_region(Some(&region));
+            // GDK sends the region with the next commit: draw one, or a dock
+            // that grew after the catchers appeared stays partly covered.
+            native.queue_render();
         }
     }
 

@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Boşluğun iki yanındaki döşemeleri yeniden boyutlandır",
   "Split bar into islands": "Çubuğu adalara böl",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Çubuğun başını, ortasını ve sonunu, aralarında duvar kâğıdı görünecek şekilde ayrı parçalar olarak çizer. Çubuklar için geçerlidir, rıhtımlar için değil.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Panelde neyin çaldığını oynatma denetimleriyle birlikte gösterir. Kapalıyken panel medya oynatıcılarını izlemeyi bırakır."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Panelde neyin çaldığını oynatma denetimleriyle birlikte gösterir. Kapalıyken panel medya oynatıcılarını izlemeyi bırakır.",
+  "More apps": "Diğer uygulamalar",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Diğer uygulamacıkları göstermek için sistem tepsisinde Diğer uygulamalar'a tıklayın. Bir uygulamacığın gösterilmeye devam etmesi için Her zaman görünür'ü açın.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Seçilen uygulamalar, Diğer uygulamalar'a tıklamadan sistem tepsisinde gösterilmeye devam eder."
 }

@@ -22,16 +22,16 @@ pub fn legacy_group_zones(title_mode: bool, bar_mode: bool) -> Zones {
     if title_mode {
         if bar_mode {
             return zones(&[&["app_menu", "weather", "workspaces", "files", "pinned", "activities", "focused_title"], &["clock"],
-                           &["media", "system_tray", "service_apps", "session"]]);
+                           &["media", "service_apps", "session"]]);
         }
-        return zones(&[&["app_menu", "workspaces", "files", "applications", "focused_title", "media", "system_tray",
+        return zones(&[&["app_menu", "workspaces", "files", "applications", "focused_title", "media",
                          "service_apps", "weather", "clock", "session"], &["pinned", "running"]]);
     }
     if bar_mode {
         return zones(&[&["weather", "workspaces"], &["app_menu", "pinned", "running", "files"],
-                       &["media", "system_tray", "service_apps", "clock", "session"]]);
+                       &["media", "service_apps", "clock", "session"]]);
     }
-    zones(&[&["app_menu", "pinned", "running", "files", "workspaces", "media", "system_tray", "service_apps", "weather", "clock",
+    zones(&[&["app_menu", "pinned", "running", "files", "workspaces", "media", "service_apps", "weather", "clock",
               "session"]])
 }
 
@@ -212,6 +212,7 @@ impl DockSurface {
                 }))),
                 close_content: Some(Rc::new(move || if let Some(d) = w3.upgrade() { d.close_application_content() })),
                 extra_holes: Some(Rc::new(move || w4.upgrade().map(|d| d.application_preview_regions()).unwrap_or_default())),
+                ..Default::default()
             });
             self.application_expander.replace(Some(expander.clone()));
             let parent = self.indicators().map(|i| i.widget()).unwrap_or_else(|| self.core());
@@ -356,7 +357,7 @@ impl DockSurface {
         if !title_mode {
             self.move_group("applications", &end);
         }
-        for name in ["media", "system_tray", "service_apps", "weather", "clock", "session"] {
+        for name in ["media", "service_apps", "weather", "clock", "session"] {
             if name != "weather" || !self.bar_mode {
                 self.move_group(name, if name == "clock" && title_mode && self.bar_mode { &groups.center_strip } else { &end });
             }
@@ -546,9 +547,9 @@ impl DockSurface {
         }));
         if let Some(scroll) = self.utility_scroll() {
             let mut utilities: Vec<&str> = if title_mode && self.bar_mode {
-                vec!["media", "system_tray", "service_apps", "session"]
+                vec!["media", "service_apps", "session"]
             } else {
-                vec!["media", "system_tray", "service_apps", "clock", "session"]
+                vec!["media", "service_apps", "clock", "session"]
             };
             if !self.bar_mode {
                 if title_mode { utilities.push("weather") } else { utilities.extend(["workspaces", "weather"]) }

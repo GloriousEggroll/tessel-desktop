@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Ändra storlek på rutorna på båda sidor om mellanrummet",
   "Split bar into islands": "Dela upp fältet i öar",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Rita fältets början, mitt och slut som separata delar med bakgrundsbilden synlig mellan dem. Gäller fält, inte dockor.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Visa vad som spelas i panelen, med uppspelningskontroller. När det är av slutar panelen följa mediespelare."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Visa vad som spelas i panelen, med uppspelningskontroller. När det är av slutar panelen följa mediespelare.",
+  "More apps": "Fler appar",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klicka på Fler appar i systemfältet för att visa de andra miniprogrammen. Slå på Alltid synlig för att fortsätta visa ett miniprogram.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Valda program fortsätter att visas i systemfältet utan att du klickar på Fler appar."
 }

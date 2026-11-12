@@ -10,17 +10,39 @@
 //!
 //! Widget API: `DockIndicators::new(&Rc<dyn DockView>, Rc<dyn DockApp>)` builds
 //! and registers the groups (`add_group`): bar mode → `weather`/`workspaces`
-//! in `bar_start`; `media`, `system_tray` (TrayExpander), `service_apps`
-//! (always tray + default apps), `weather` (dock mode), `clock`, `session`.
+//! in `bar_start`; `media`, `service_apps` (the system tray), `weather` (dock
+//! mode), `clock`, `session`.
+//!
+//! The system tray (`service_area`, group `service_apps`, labelled "System
+//! tray") holds, in this order on every edge and in dock and bar mode: the
+//! regular StatusNotifier items (`tray`), the always-shown ones (`always_tray`,
+//! `config.always_show_tray`), the built-in applets (`apps`, [`INDICATORS`]
+//! order) and the "More apps" button (`apps_toggle`, last in `apps`).
+//! Collapsed, it shows the always-shown items and the always-visible applets
+//! (`config.always_visible_apps`); expanded, also the regular items and the
+//! other available applets. Passive items are never shown unless always shown.
+//! "More apps" shows only when something is hidden. It is the one way to expand
+//! (click, or Enter/Space from the keyboard; its accessible state says whether
+//! the tray is expanded): nothing expands on hover or focus and nothing
+//! collapses on a timer or when the pointer leaves. The expansion is a
+//! [`TrayExpander`] driven by that button (`tray_expander`): it collapses on a
+//! second click, a click outside every dock (`tessel-dock-tray-dismiss`
+//! catchers), Esc inside the tray, opening a popup from outside the tray, and
+//! when a menu opened inside the tray closes. While a menu from inside the
+//! tray is open (`tray_menu_opening(anchor)` / `tray_menu_closed()` for the
+//! dock's own menus, the trays' `menu_state` for theirs) it stays expanded
+//! without catchers. An applet popup opened from the tray keeps it expanded.
+//!
 //! Methods (Python names): `refresh`, `refresh_trays(queue)`,
 //! `refresh_workspaces`, `group_availability`, `sync_apps_visibility`,
-//! `set_apps_expanded`, `schedule_apps_collapse`, `always_tray_item`,
-//! `regular_tray_item`, `icon_size`, `tray_icon_size`, `clock_tick`, `close`,
-//! and getters for every widget (`widget`, `bar_start`/`set_bar_start`,
-//! `workspaces_box`, `workspace_button(id)`, `media`, `tray`, `always_tray`,
-//! `tray_expander`, `apps`, `apps_toggle`, `service_area`, `clock`, labels,
-//! `logout`, `showdesktop`, `button(name)`, `status_button(name)`,
-//! `record_menu`, `capture_preserved_menu`, `apps_expanded`, `status_visible`).
+//! `set_apps_expanded`, `tray_menu_opening`, `tray_menu_closed`,
+//! `always_tray_item`, `regular_tray_item`, `icon_size`, `tray_icon_size`,
+//! `clock_tick`, `close`, and getters for every widget (`widget`,
+//! `bar_start`/`set_bar_start`, `workspaces_box`, `workspace_button(id)`,
+//! `media`, `tray`, `always_tray`, `tray_expander`, `apps`, `apps_toggle`,
+//! `service_area`, `clock`, labels, `logout`, `showdesktop`, `button(name)`,
+//! `status_button(name)`, `record_menu`, `capture_preserved_menu`,
+//! `apps_expanded`, `status_visible`).
 
 use gtk::prelude::*;
 use gtk::{gdk, glib, pango};
@@ -32,17 +54,15 @@ use std::rc::{Rc, Weak};
 
 use tessel_core::clock::{ClockPreferences, ClockPreferencesStore};
 use tessel_core::pyjson::{casefold, py_str, py_str_or_empty, truthy};
-use tessel_core::timer::{self, Timeout};
 use tessel_core::tr;
 
 use crate::core::config::DockConfig;
 use crate::core::tray_prefs::{tray_identity, TrayItemInfo};
 use crate::dbus::sni::TrayItem;
 
-use super::host::{accessible_description, accessible_name, click, keys, motion, pack, remove, scroll, DockApp, DockView,
-                  MenuEntry};
+use super::host::{accessible_description, accessible_name, click, keys, pack, remove, scroll, DockApp, DockView, MenuEntry};
 use super::media::MediaControls;
-use super::tray::{StatusTray, TrayExpander, TrayOptions};
+use super::tray::{ExpanderOptions, StatusTray, TrayExpander, TrayOptions};
 
 /// `INDICATORS` = DEFAULT_APPS names in order.
 pub const INDICATORS: [&str; 14] = ["idle_inhibitor", "screen_record", "notifications", "power", "battery", "capslock",
@@ -65,8 +85,6 @@ pub const TITLES: [(&str, &str); 16] = [
 
 /// Text indicators keep their label; every other status uses a themed icon.
 pub const TEXT_INDICATORS: [&str; 2] = ["capslock", "weather"];
-/// How long the bar's "More apps" section stays expanded after the pointer leaves.
-const APPS_COLLAPSE_DELAY_MS: u32 = 5000;
 
 /// `DEFAULTS.get(name, "")`.
 pub fn default_glyph(name: &str) -> &'static str {
@@ -356,10 +374,6 @@ struct Inner {
     buttons: RefCell<IndexMap<String, Rc<StatusButton>>>,
     workspace_buttons: RefCell<HashMap<String, gtk::Button>>,
     status_visibility: RefCell<HashMap<String, bool>>,
-    apps_expanded: Cell<bool>,
-    apps_pointer: Cell<bool>,
-    apps_menu: Cell<bool>,
-    apps_hide: RefCell<Option<Timeout>>,
     record_menu: RefCell<Option<gtk::Popover>>,
     capture_preserved_menu: RefCell<Option<gtk::Popover>>,
     tray_selection: RefCell<Option<Vec<String>>>,
@@ -373,7 +387,6 @@ struct Inner {
     apps: gtk::Box,
     app_button_sizes: gtk::SizeGroup,
     apps_toggle: gtk::Button,
-    apps_focus: gtk::EventControllerFocus,
     service_area: gtk::Box,
     clock: gtk::Button,
     clock_store: RefCell<ClockPreferencesStore>,
@@ -422,14 +435,12 @@ impl DockIndicators {
         let inner = Inner {
             dock: Rc::downgrade(dock), app: app.clone(), root: gtk::Box::new(orientation, 3), closed: Cell::new(false),
             buttons: RefCell::default(), workspace_buttons: RefCell::default(), status_visibility: RefCell::default(),
-            apps_expanded: Cell::new(false), apps_pointer: Cell::new(false), apps_menu: Cell::new(false),
-            apps_hide: RefCell::new(None), record_menu: RefCell::new(None), capture_preserved_menu: RefCell::new(None),
+            record_menu: RefCell::new(None), capture_preserved_menu: RefCell::new(None),
             tray_selection: RefCell::new(None), tray_subscription: Cell::new(None), bar_start: RefCell::new(None),
             workspaces: gtk::Box::new(orientation, 1), media: RefCell::new(None), tray, always_tray,
             tray_expander: RefCell::new(None), apps: gtk::Box::new(orientation, 1),
             app_button_sizes: gtk::SizeGroup::new(gtk::SizeGroupMode::Both),
-            apps_toggle: gtk::Button::from_icon_name("view-more-symbolic"),
-            apps_focus: gtk::EventControllerFocus::new(), service_area: gtk::Box::new(orientation, 1),
+            apps_toggle: gtk::Button::from_icon_name("view-more-symbolic"), service_area: gtk::Box::new(orientation, 1),
             clock: gtk::Button::new(), clock_store: RefCell::new(app.clock_store()), clock_settings: RefCell::new(None),
             clock_content: gtk::Box::new(gtk::Orientation::Horizontal, 6),
             clock_box: gtk::Box::new(gtk::Orientation::Vertical, 0), weekday_label: gtk::Label::new(None),
@@ -465,19 +476,14 @@ impl DockIndicators {
         let media = MediaControls::new(dock, &inner.app, &media_button);
         dock.add_group("media", &inner.root, media.widget().upcast_ref(), true);
         inner.media.replace(Some(media));
-        if let (Some(tray), Some(backend)) = (&inner.tray, inner.app.tray_backend()) {
-            let weak = self.weak();
-            let always = inner.always_tray.as_ref().unwrap();
-            always.set_menu_state(Rc::new(move |active| {
-                if let Some(panel) = Self::upgrade(&weak) { panel.always_tray_menu(active) }
-            }));
+        // The system tray: regular items, always-shown items, applets, More apps.
+        for tray in [&inner.tray, &inner.always_tray].into_iter().flatten() {
             let weak = self.weak();
             tray.set_menu_state(Rc::new(move |active| {
                 if let Some(panel) = Self::upgrade(&weak) { panel.tray_menu(active) }
             }));
-            let expander = TrayExpander::for_tray(dock, &inner.app, tray);
-            dock.add_group("system_tray", &inner.root, expander.widget().upcast_ref(), false);
-            inner.tray_expander.replace(Some(expander));
+        }
+        if let Some(backend) = inner.tray.as_ref().and(inner.app.tray_backend()) {
             let weak = self.weak();
             let id = backend.subscribe(Rc::new(move || {
                 if let Some(panel) = Self::upgrade(&weak) { panel.refresh_trays(true) }
@@ -490,45 +496,36 @@ impl DockIndicators {
             pack(&inner.apps, &button.button, false, false, 0);
         }
         inner.apps_toggle.add_css_class("tessel-dock-status");
-        inner.apps_toggle.set_tooltip_text(Some(&tr!("More apps · Hover to expand")));
-        accessible_name(&inner.apps_toggle, &tr!("Expand app icons"));
+        inner.apps_toggle.add_css_class("tessel-dock-more-apps");
+        let more = tr!("More apps");
+        inner.apps_toggle.set_tooltip_text(Some(&more));
+        accessible_name(&inner.apps_toggle, &more);
+        inner.apps_toggle.update_state(&[gtk::accessible::State::Expanded(Some(false))]);
         inner.app_button_sizes.add_widget(&inner.apps_toggle);
-        let weak = self.weak();
-        inner.apps_toggle.connect_clicked(move |_| {
-            if let Some(panel) = Self::upgrade(&weak) { panel.set_apps_expanded(!panel.apps_expanded()) }
-        });
         inner.apps.append(&inner.apps_toggle);
-        let (enter, leave) = (self.weak(), self.weak());
-        motion(&inner.apps, move || {
-            if let Some(panel) = Self::upgrade(&enter) {
-                panel.0.apps_pointer.set(true);
-                panel.set_apps_expanded(true);
-            }
-        }, move || {
-            if let Some(panel) = Self::upgrade(&leave) {
-                panel.0.apps_pointer.set(false);
-                panel.schedule_apps_collapse();
-            }
-        });
         let weak = self.weak();
-        inner.apps_focus.connect_enter(move |_| {
-            if let Some(panel) = Self::upgrade(&weak) {
-                if panel.dock().is_some_and(|dock| dock.window().gets_focus_visible()) {
-                    panel.set_apps_expanded(true);
-                }
-            }
-        });
-        let weak = self.weak();
-        inner.apps_focus.connect_leave(move |_| {
-            if let Some(panel) = Self::upgrade(&weak) { panel.schedule_apps_collapse() }
-        });
-        inner.apps.add_controller(inner.apps_focus.clone());
-        let weak = self.weak();
-        keys(&inner.apps, move |_, key| Self::upgrade(&weak).is_some_and(|panel| panel.apps_key(key)));
+        keys(&inner.service_area, move |_, key| Self::upgrade(&weak).is_some_and(|panel| panel.apps_key(key)));
+        // Without a tray backend the expansion only reveals applets.
+        let hidden_tray: gtk::Widget = match &inner.tray {
+            Some(tray) => tray.widget().upcast(),
+            None => gtk::Box::new(dock.orientation(), 0).upcast(),
+        };
+        inner.service_area.append(&hidden_tray);
         if let Some(always) = &inner.always_tray {
             inner.service_area.append(&always.widget());
         }
         inner.service_area.append(&inner.apps);
+        let (available, enabled, closing, changed) = (self.weak(), Rc::downgrade(dock), self.weak(), self.weak());
+        let expander = TrayExpander::new(dock, &inner.app, &hidden_tray, ExpanderOptions {
+            kind: Some("system_tray".into()),
+            available: Some(Rc::new(move || Self::upgrade(&available).is_some_and(|panel| panel.has_hidden()))),
+            enabled: Some(Rc::new(move || enabled.upgrade().is_some_and(|dock| dock.config().is_group_visible("service_apps")))),
+            close_content: Some(Rc::new(move || if let Some(panel) = Self::upgrade(&closing) { panel.close_tray_content() })),
+            extra_holes: None,
+            toggle: Some(inner.apps_toggle.clone()),
+            on_change: Some(Rc::new(move |_| if let Some(panel) = Self::upgrade(&changed) { panel.sync_apps_visibility() })),
+        });
+        inner.tray_expander.replace(Some(expander));
         dock.add_group("service_apps", &inner.root, inner.service_area.upcast_ref(), false);
         if inner.bar_start.borrow().is_none() {
             dock.add_group("weather", &inner.root, weather.button.upcast_ref(), true);
@@ -653,7 +650,8 @@ impl DockIndicators {
     pub fn record_menu(&self) -> Option<gtk::Popover> { self.0.record_menu.borrow().clone() }
     pub fn capture_preserved_menu(&self) -> Option<gtk::Popover> { self.0.capture_preserved_menu.borrow().clone() }
     pub fn set_capture_preserved_menu(&self, menu: Option<gtk::Popover>) { self.0.capture_preserved_menu.replace(menu); }
-    pub fn apps_expanded(&self) -> bool { self.0.apps_expanded.get() }
+    /// The system tray shows its hidden items ("More apps" is on).
+    pub fn apps_expanded(&self) -> bool { self.tray_expander().is_some_and(|expander| expander.expanded()) }
     /// `_status_visibility[name]` (None until the first refresh saw it).
     pub fn status_visible(&self, name: &str) -> Option<bool> { self.0.status_visibility.borrow().get(name).copied() }
 
@@ -677,46 +675,66 @@ impl DockIndicators {
         false
     }
 
-    pub fn schedule_apps_collapse(&self) {
-        if self.0.closed.get() || self.0.apps_hide.borrow().is_some() {
-            return;
-        }
-        let weak = self.weak();
-        let source = timer::once(APPS_COLLAPSE_DELAY_MS, move || {
-            if let Some(panel) = Self::upgrade(&weak) {
-                panel.0.apps_hide.replace(None);
-                panel.collapse_apps();
-            }
-        });
-        self.0.apps_hide.replace(Some(source));
-    }
-
-    fn collapse_apps(&self) {
-        if self.0.closed.get() {
-            return;
-        }
-        let Some(dock) = self.dock() else { return };
-        let menu = dock.context_menu();
-        let anchor = menu.and_then(|menu| menu.parent());
-        let menu_open = anchor.is_some_and(|anchor| anchor == *self.0.apps.upcast_ref::<gtk::Widget>()
-                                           || anchor.is_ancestor(&self.0.apps));
-        let keyboard = dock.window().gets_focus_visible() && self.0.apps_focus.contains_focus();
-        if !(self.0.apps_pointer.get() || self.0.apps_menu.get() || menu_open || keyboard) {
-            self.set_apps_expanded(false);
-        }
-    }
-
+    /// Expand or collapse the system tray (as "More apps" does).
     pub fn set_apps_expanded(&self, expanded: bool) {
         if self.0.closed.get() {
             return;
         }
-        if let Some(source) = self.0.apps_hide.take() {
-            source.cancel();
+        if let Some(expander) = self.tray_expander() {
+            expander.set_expanded(expanded);
         }
-        self.0.apps_expanded.set(expanded);
-        self.sync_apps_visibility();
-        if let Some(dock) = self.dock() {
-            dock.queue_panel_layout();
+    }
+
+    /// Whether the tray hides anything when collapsed: an available applet
+    /// that is not always visible, or a regular (not passive, not always
+    /// shown) tray item.
+    fn has_hidden(&self) -> bool {
+        let Some(dock) = self.dock() else { return false };
+        let config = dock.config();
+        let visibility = self.0.status_visibility.borrow();
+        let applets = INDICATORS.iter().any(|name| {
+            visibility.get(*name).copied().unwrap_or(false) && !config.always_visible_apps.iter().any(|known| known == name)
+        });
+        applets || self.hidden_tray_items(&config)
+    }
+
+    /// Read backend items directly: tray subscribers can run in either order.
+    fn hidden_tray_items(&self, config: &DockConfig) -> bool {
+        if self.0.tray.is_none() {
+            return false;
+        }
+        let items = self.0.app.tray_backend().map(|backend| backend.items()).unwrap_or_default();
+        items.iter().any(|item| item.ready() && regular_tray_item(config, item))
+    }
+
+    /// What collapsing closes: a menu of a hidden tray item and the screen
+    /// recording menu.
+    fn close_tray_content(&self) {
+        if let Some(tray) = &self.0.tray {
+            tray.close_menu();
+        }
+        if let Some(menu) = self.record_menu() {
+            menu.popdown();
+        }
+    }
+
+    /// A dock menu opens on `anchor`: inside the tray it keeps the tray
+    /// expanded (without catchers in front of the menu); anywhere else the
+    /// tray collapses.
+    pub fn tray_menu_opening(&self, anchor: &gtk::Widget) {
+        let Some(expander) = self.tray_expander() else { return };
+        let inside = *anchor == *self.0.service_area.upcast_ref::<gtk::Widget>() || anchor.is_ancestor(&self.0.service_area);
+        if inside && expander.expanded() {
+            expander.menu_active(true);
+        } else {
+            expander.set_expanded(false);
+        }
+    }
+
+    /// A dock menu closed: one opened inside the expanded tray retracts it.
+    pub fn tray_menu_closed(&self) {
+        if let Some(expander) = self.tray_expander().filter(|expander| expander.menu_is_active()) {
+            expander.menu_active(false);
         }
     }
 
@@ -732,9 +750,9 @@ impl DockIndicators {
                 button.set_visible(available.contains(&name) && (expanded || always.iter().any(|known| known == name)));
             }
         }
-        self.0.apps_toggle.set_visible(available.iter().any(|name| !always.iter().any(|known| known == name)));
-        accessible_name(&self.0.apps_toggle,
-                        &if expanded { tr!("Collapse app icons") } else { tr!("Expand app icons") });
+        let hidden = available.iter().any(|name| !always.iter().any(|known| known == name)) || self.hidden_tray_items(&config);
+        self.0.apps_toggle.set_visible(hidden);
+        self.0.apps_toggle.update_state(&[gtk::accessible::State::Expanded(Some(expanded))]);
     }
 
     // ---------------------------------------------------------- trays
@@ -763,10 +781,11 @@ impl DockIndicators {
                 always.refresh();
             }
             let items = self.0.app.tray_backend().map(|backend| backend.items()).unwrap_or_default();
-            let visible = config.is_group_visible("system_tray")
-                && items.iter().any(|item| item.ready() && always_tray_item(&config, item));
+            let visible = items.iter().any(|item| item.ready() && always_tray_item(&config, item));
             always.widget().set_visible(visible);
         }
+        // Items come and go: "More apps" follows what is hidden.
+        self.sync_apps_visibility();
         if queue {
             dock.queue_panel_layout();
         }
@@ -784,10 +803,11 @@ impl DockIndicators {
         let visibility = self.0.status_visibility.borrow();
         let mut result = IndexMap::new();
         result.insert("workspaces", !self.0.workspace_buttons.borrow().is_empty());
-        result.insert("system_tray", config.as_ref().is_some_and(|config| {
-            items.iter().any(|item| item.ready() && regular_tray_item(config, item))
-        }));
-        result.insert("service_apps", INDICATORS.iter().any(|name| visibility.get(*name).copied().unwrap_or(false)));
+        // The system tray: any shown tray item or available applet.
+        let tray_items = config.as_ref().is_some_and(|config| {
+            items.iter().any(|item| item.ready() && (always_tray_item(config, item) || regular_tray_item(config, item)))
+        });
+        result.insert("service_apps", tray_items || INDICATORS.iter().any(|name| visibility.get(*name).copied().unwrap_or(false)));
         result.insert("weather", visibility.get("weather").copied().unwrap_or(true));
         result.insert("media", true);
         result.insert("clock", true);
@@ -802,27 +822,15 @@ impl DockIndicators {
         }
     }
 
+    /// A tray item's menu opened or closed (either tray; an application-drawn
+    /// menu reports open then closed at once, which retracts the tray so its
+    /// catchers never cover that menu).
     fn tray_menu(&self, active: bool) {
         if let Some(expander) = self.tray_expander() {
             expander.menu_active(active);
         }
         if let Some(dock) = self.dock() {
             if active { dock.enter("tray-menu") } else { dock.leave("tray-menu") }
-        }
-    }
-
-    fn always_tray_menu(&self, active: bool) {
-        self.0.apps_menu.set(active);
-        if !active {
-            self.schedule_apps_collapse();
-        }
-        if active {
-            if let Some(expander) = self.tray_expander() {
-                expander.set_expanded(false);
-            }
-        }
-        if let Some(dock) = self.dock() {
-            if active { dock.enter("always-tray-menu") } else { dock.leave("always-tray-menu") }
         }
     }
 
@@ -835,8 +843,12 @@ impl DockIndicators {
             return true;
         }
         let Some(dock) = self.dock() else { return false };
-        if let Some(expander) = self.tray_expander() {
-            expander.set_expanded(false);
+        // An applet popup opened from the tray keeps it expanded (popups sit
+        // above the catchers and dismiss themselves); anything else closes it.
+        if !INDICATORS.contains(&name) {
+            if let Some(expander) = self.tray_expander() {
+                expander.set_expanded(false);
+            }
         }
         if let Some(expander) = dock.application_expander() {
             expander.set_expanded(false);
@@ -1068,16 +1080,14 @@ impl DockIndicators {
         if let Some(media) = self.0.media.borrow().clone() {
             media.close();
         }
-        if let Some(source) = self.0.apps_hide.take() {
-            source.cancel();
-        }
         if let Some(source) = self.0.timer.take() {
             source.remove();
         }
+        // Releases the catchers and the dock's `tray-expanded` token.
+        if let Some(expander) = self.tray_expander() {
+            expander.close();
+        }
         if let Some(tray) = &self.0.tray {
-            if let Some(expander) = self.tray_expander() {
-                expander.close();
-            }
             if let (Some(backend), Some(id)) = (self.0.app.tray_backend(), self.0.tray_subscription.take()) {
                 backend.unsubscribe(id);
             }

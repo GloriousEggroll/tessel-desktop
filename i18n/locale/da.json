@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "Tilpas størrelsen på fliserne på begge sider af mellemrummet",
   "Split bar into islands": "Opdel bjælken i øer",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Tegn bjælkens start, midte og slutning som separate stykker med baggrundsbilledet synligt imellem. Gælder for bjælker, ikke docks.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Vis, hvad der afspilles, i panelet med afspilningsknapper. Når det er slået fra, holder panelet op med at følge medieafspillere."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Vis, hvad der afspilles, i panelet med afspilningsknapper. Når det er slået fra, holder panelet op med at følge medieafspillere.",
+  "More apps": "Flere apps",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Klik på Flere apps i statusområdet for at vise de andre applets. Slå Altid synlig til for at blive ved med at vise en applet.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Valgte programmer bliver vist i statusområdet uden at klikke på Flere apps."
 }

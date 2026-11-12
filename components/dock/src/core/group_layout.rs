@@ -9,6 +9,7 @@
 
 use serde_json::Value;
 
+use super::config::LEGACY_TRAY_GROUP;
 use super::ordered::OrderedMap;
 
 pub type Layout = OrderedMap<Vec<String>>;
@@ -27,8 +28,7 @@ pub const LAYOUT_GROUPS: &[(&str, &str)] = &[
     ("focused_title", "Focused window title"),
     ("clock", "Time and date"),
     ("media", "Media"),
-    ("system_tray", "System tray"),
-    ("service_apps", "Default apps"),
+    ("service_apps", "System tray"),
     ("session", "Session manager"),
 ];
 
@@ -46,13 +46,13 @@ pub fn default_layout(mode: &str, display: &str) -> Layout {
             zones([
                 &["app_menu", "weather", "workspaces", "files", "pinned", "running", "activities", "focused_title"],
                 &["clock"],
-                &["media", "system_tray", "service_apps", "session"],
+                &["media", "service_apps", "session"],
             ])
         } else {
             zones([
                 &["weather", "workspaces"],
                 &["app_menu", "pinned", "running", "activities", "focused_title", "files"],
-                &["media", "system_tray", "service_apps", "clock", "session"],
+                &["media", "service_apps", "clock", "session"],
             ])
         }
     } else if display == "title" {
@@ -60,7 +60,7 @@ pub fn default_layout(mode: &str, display: &str) -> Layout {
             &[],
             &[
                 "app_menu", "workspaces", "files", "pinned", "running", "activities", "focused_title", "media",
-                "system_tray", "service_apps", "weather", "clock", "session",
+                "service_apps", "weather", "clock", "session",
             ],
             &[],
         ])
@@ -69,7 +69,7 @@ pub fn default_layout(mode: &str, display: &str) -> Layout {
             &[],
             &[
                 "app_menu", "pinned", "running", "activities", "focused_title", "files", "workspaces", "media",
-                "system_tray", "service_apps", "weather", "clock", "session",
+                "service_apps", "weather", "clock", "session",
             ],
             &[],
         ])
@@ -128,8 +128,10 @@ pub fn validate_app_dock_layout(layout: &Value, expanded: bool) -> Result<Layout
 }
 
 /// `validate_layouts(layouts, display)`: normalizes position order, inserts
-/// Media before the tray in older custom layouts and appends groups missing
-/// from a layout at their default position.
+/// Media before the tray in older custom layouts, merges the old
+/// `system_tray` group into `service_apps` (the system tray keeps the
+/// `service_apps` place; a layout naming only `system_tray` puts it there) and
+/// appends groups missing from a layout at their default position.
 pub fn validate_layouts(layouts: &Value, display: &str) -> Result<Layouts, String> {
     let map = match layouts.as_object() {
         Some(map) if map.keys().all(|k| k == "dock" || k == "bar") => map,
@@ -148,7 +150,8 @@ pub fn validate_layouts(layouts: &Value, display: &str) -> Result<Layouts, Strin
             };
             for name in names {
                 match name.as_str() {
-                    Some(name) if LAYOUT_GROUPS.iter().any(|(g, _)| *g == name) && !seen.iter().any(|s| s == name) => {
+                    Some(name) if (name == LEGACY_TRAY_GROUP || LAYOUT_GROUPS.iter().any(|(g, _)| *g == name))
+                        && !seen.iter().any(|s| s == name) => {
                         seen.push(name.into())
                     }
                     _ => return Err("Each supported group may appear only once in a layout.".into()),
@@ -157,12 +160,27 @@ pub fn validate_layouts(layouts: &Value, display: &str) -> Result<Layouts, Strin
         }
         let mut normalized: Layout = POSITIONS.iter().map(|(p, _)| (*p, names_of(&layout[*p]))).collect();
         if !seen.iter().any(|s| s == "media") {
+            let tray = if seen.iter().any(|s| s == LEGACY_TRAY_GROUP) { LEGACY_TRAY_GROUP } else { "service_apps" };
             for (_, names) in normalized.iter_mut() {
-                if let Some(index) = names.iter().position(|n| n == "system_tray") {
+                if let Some(index) = names.iter().position(|n| n == tray) {
                     names.insert(index, "media".into());
                     seen.push("media".into());
                     break;
                 }
+            }
+        }
+        if seen.iter().any(|s| s == LEGACY_TRAY_GROUP) {
+            let merged = seen.iter().any(|s| s == "service_apps");
+            for (_, names) in normalized.iter_mut() {
+                if merged {
+                    names.retain(|n| n != LEGACY_TRAY_GROUP);
+                } else if let Some(name) = names.iter_mut().find(|n| *n == LEGACY_TRAY_GROUP) {
+                    *name = "service_apps".into();
+                }
+            }
+            seen.retain(|s| s != LEGACY_TRAY_GROUP);
+            if !merged {
+                seen.push("service_apps".into());
             }
         }
         for (position, names) in default_layout(mode, display) {
@@ -242,8 +260,31 @@ mod tests {
     fn media_migrates_out_of_default_apps_and_before_the_custom_tray() {
         let config = DockConfig::from_value(&json!({"always_visible_apps": ["media", "audio"], "group_layouts": {"bar": {"start": ["system_tray", "clock"], "center": [], "end": ["session"]}}})).unwrap();
         assert_eq!(config.always_visible_apps, ["audio"]);
-        assert_eq!(config.group_layouts["bar"]["start"][..3], ["media".to_string(), "system_tray".to_string(), "clock".to_string()]);
+        // The old tray's place becomes the system tray's.
+        assert_eq!(config.group_layouts["bar"]["start"][..3], ["media".to_string(), "service_apps".to_string(), "clock".to_string()]);
         assert!(config.is_group_visible("media"));
+        let config = DockConfig::from_value(&json!({"group_layouts": {"bar": {"start": ["service_apps", "clock"], "center": [], "end": []}}})).unwrap();
+        assert_eq!(config.group_layouts["bar"]["start"][..3], ["media".to_string(), "service_apps".to_string(), "clock".to_string()]);
+    }
+
+    #[test]
+    fn the_old_tray_group_merges_into_the_system_tray() {
+        // Both named: the system tray stays where the applets were.
+        let config = DockConfig::from_value(&json!({"group_layouts": {
+            "bar": {"start": ["system_tray"], "center": ["clock"], "end": ["media", "service_apps", "session"]},
+            "dock": {"start": [], "center": ["pinned", "media", "system_tray", "service_apps", "clock"], "end": []}}})).unwrap();
+        assert!(!config.group_layouts["bar"]["start"].iter().any(|n| n == "service_apps" || n == "system_tray"));
+        assert_eq!(config.group_layouts["bar"]["end"][..3], ["media".to_string(), "service_apps".to_string(), "session".to_string()]);
+        assert_eq!(config.group_layouts["dock"]["center"][..4],
+                   ["pinned".to_string(), "media".to_string(), "service_apps".to_string(), "clock".to_string()]);
+        for layout in config.group_layouts.values() {
+            assert_eq!(all_names(layout), layout_names());
+        }
+        // Saving never writes the old id.
+        let saved = crate::core::config::save_bytes(&config);
+        assert!(!saved.contains("system_tray"), "{saved}");
+        // The old id twice is still rejected.
+        assert!(validate_layouts(&json!({"bar": {"start": ["system_tray"], "center": ["system_tray"], "end": []}}), "icons").is_err());
     }
 
     #[test]

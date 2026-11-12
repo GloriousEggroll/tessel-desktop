@@ -1936,5 +1936,8 @@
   "Resize the tiles on both sides of the gap": "A rés két oldalán lévő csempék átméretezése",
   "Split bar into islands": "Sáv felosztása szigetekre",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "A sáv elejét, közepét és végét külön darabokként rajzolja ki, köztük látszik a háttérkép. Sávokra vonatkozik, dokkokra nem.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Megjeleníti a panelen, mi szól éppen, lejátszásvezérlőkkel. Kikapcsolva a panel nem követi tovább a médialejátszókat."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Megjeleníti a panelen, mi szól éppen, lejátszásvezérlőkkel. Kikapcsolva a panel nem követi tovább a médialejátszókat.",
+  "More apps": "További alkalmazások",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Kattintson a rendszertálcán a További alkalmazások gombra a többi kisalkalmazás megjelenítéséhez. Kapcsolja be a Mindig látható beállítást, hogy egy kisalkalmazás látható maradjon.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "A kijelölt alkalmazások a További alkalmazások gombra kattintás nélkül is láthatók maradnak a rendszertálcán."
 }

@@ -17,9 +17,10 @@
 //! the surface is in an `Rc`; `refresh_groups` calls
 //! `indicators.sync_apps_visibility()`, merges `group_availability()` and calls
 //! `refresh_trays(false)`; every layout pass calls `tray_expander().sync()` and
-//! `application_expander.sync()`; `popup_menu` first collapses the tray
-//! expander and calls `application_expander.menu_active(true)`, and its
-//! `closed` handler calls `indicators.schedule_apps_collapse()` and
+//! `application_expander.sync()`; `popup_menu` first calls
+//! `indicators.tray_menu_opening(anchor)` (keeps the system tray open for a
+//! menu inside it, else collapses it) and `application_expander.menu_active(true)`,
+//! and its `closed` handler calls `indicators.tray_menu_closed()` and
 //! `application_expander.menu_active(false)`; `destroy` calls `indicators.close()`.
 //!
 //! # What the application must provide — [`DockApp`]

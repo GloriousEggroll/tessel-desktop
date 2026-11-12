@@ -2271,5 +2271,8 @@
   "Resize the tiles on both sides of the gap": "Cambiar el tamaño de los mosaicos a ambos lados del espacio",
   "Split bar into islands": "Dividir la barra en islas",
   "Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.": "Dibuja el inicio, el centro y el final de la barra como piezas separadas, con el fondo de pantalla visible entre ellas. Se aplica a las barras, no a los docks.",
-  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Muestra en el panel lo que se está reproduciendo, con controles de reproducción. Si está desactivado, el panel deja de seguir los reproductores multimedia."
+  "Show what is playing in the panel, with playback controls. When off, the panel stops following media players.": "Muestra en el panel lo que se está reproduciendo, con controles de reproducción. Si está desactivado, el panel deja de seguir los reproductores multimedia.",
+  "More apps": "Más aplicaciones",
+  "Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown.": "Pulse Más aplicaciones en la bandeja del sistema para mostrar las demás miniaplicaciones. Active Siempre visible para mantener una miniaplicación a la vista.",
+  "Selected applications stay shown in the system tray without clicking More apps.": "Las aplicaciones seleccionadas siguen a la vista en la bandeja del sistema sin pulsar Más aplicaciones."
 }

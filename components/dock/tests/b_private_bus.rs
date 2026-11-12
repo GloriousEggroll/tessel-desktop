@@ -622,6 +622,9 @@ fn settings_read_apply_preview_and_disconnect_restore(address: &str) {
     let text = reply.child_value(0).get::<String>().unwrap();
     let edge = host.config().edge;
     check!(text == format!("{{\"edge\": \"{edge}\", \"offset\": 12, \"align\": \"end\"}}"));
+    // The old tray group answers as the system tray it was merged into.
+    let reply = call(&other, BUS_NAME, OBJECT_PATH, INTERFACE, "GetPopupPlacement", Some(("DP-1", "service_apps").to_variant())).unwrap();
+    check!(reply.child_value(0).get::<String>().unwrap() == text);
     host.docks.borrow_mut().push(("DP-1".into(), false, true, (1920, 40), true, 6, 0, 46));
     let reply = call(&other, BUS_NAME, OBJECT_PATH, INTERFACE, "GetPopupPlacement", Some(("DP-1", "system_tray").to_variant())).unwrap();
     let placement: Value = serde_json::from_str(&reply.child_value(0).get::<String>().unwrap()).unwrap();

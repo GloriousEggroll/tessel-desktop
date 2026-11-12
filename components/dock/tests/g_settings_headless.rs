@@ -491,6 +491,8 @@ fn cancel_keeps_visibility_and_hotkey_unchanged(app: &Rc<FakeApp>) -> R {
     let saved = app.bytes();
     let c = window.controls();
     ensure_eq!(c.group_switches.keys().cloned().collect::<Vec<_>>(), GROUPS.iter().map(|(n, _)| n.to_string()).collect::<Vec<_>>());
+    ensure!(!c.group_switches.contains_key("system_tray") && c.group_switches.contains_key("service_apps"), "one System tray switch");
+    ensure!(GROUPS.iter().any(|(n, title)| *n == "service_apps" && *title == "System tray") && !GROUPS.iter().any(|(_, t)| *t == "Applets"), "group titles");
     ensure!(!c.menu_hotkey_fullscreen.is_active(), "hotkey");
     for (name, toggle) in c.group_switches.iter() {
         // Media is the only group that starts off.
@@ -620,6 +622,20 @@ fn settings_buttons_modes_apply_and_cancel(app: &Rc<FakeApp>) -> R {
     let mut expected: Vec<String> = LAYOUT_GROUPS.iter().map(|(n, _)| n.to_string()).collect();
     expected.sort();
     ensure_eq!(names, expected);
+    // One "System tray" row for tray applications and applets; no "Applets" row.
+    ensure!(!names.iter().any(|n| n == "system_tray"), "old tray row");
+    let tray_row = controls.row("service_apps").ok_or("system tray row")?;
+    fn labels_of(widget: &gtk::Widget, out: &mut Vec<String>) {
+        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+            out.push(label.text().to_string());
+        }
+        for child in tessel_gtk::utils::children(widget) {
+            labels_of(&child, out);
+        }
+    }
+    let mut labels = Vec::new();
+    labels_of(tray_row.upcast_ref(), &mut labels);
+    ensure!(labels.iter().any(|l| l == "System tray"), "row labels {labels:?}");
     controls.controls("weather").unwrap().0.set_selected(0);
     controls.controls("session").unwrap().0.set_selected(0);
     controls.controls("session").unwrap().1.emit_clicked();

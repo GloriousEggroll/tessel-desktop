@@ -775,7 +775,7 @@ impl SettingsWindow {
         // Always-visible applets
         b.section(&content, &tr!("Always-visible applets"), "applications-system-symbolic", "default_apps");
         let description = label(
-            &tr!("Hover over the app icons to expand them. Enable Always visible to keep an app visible when collapsed."),
+            &tr!("Click More apps in the system tray to show the other applets. Enable Always visible to keep an applet shown."),
             Some("settings-muted"),
         );
         description.set_wrap(true);
@@ -800,7 +800,7 @@ impl SettingsWindow {
         b.row(
             &tr!("Always show"),
             &tray_refresh,
-            Some(&tr!("Selected applications stay to the left of Default apps in every layout, outside the collapsible tray.")),
+            Some(&tr!("Selected applications stay shown in the system tray without clicking More apps.")),
         );
 
         // Behavior
