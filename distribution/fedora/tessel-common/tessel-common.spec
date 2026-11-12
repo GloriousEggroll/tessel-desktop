@@ -5,12 +5,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit ecbdb9dec120d6dc9af554b2133ac9730142d6b6}
+%{!?commit:%global commit acb2ca10dd57ab3b277e4672151d02a739dc0afa}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-common
 Version:        0.1.0
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Tessel desktop: translations, logo and system defaults
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -62,6 +62,9 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %config(noreplace) %{_sysconfdir}/security/tessel-login-faillock.conf
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-9
+- Translations for the system tray icon size
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
 - Translations for the Adaptive Sync modes
 

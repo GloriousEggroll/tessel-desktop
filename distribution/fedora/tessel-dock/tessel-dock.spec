@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 3cab8928eac55fcccf6411d12cfbe039068b0b49}
+%{!?commit:%global commit acb2ca10dd57ab3b277e4672151d02a739dc0afa}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -98,6 +98,10 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-9
+- Bigger system tray icons, and a System tray icon size setting (Small, Medium, Large)
+- A left click on Keep Awake switches it on or off; a right click opens its controls
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
 - One system tray: the applets and the tray icons share a section. It opens
   with the More apps button and no longer expands on hover
