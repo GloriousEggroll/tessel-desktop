@@ -33,6 +33,12 @@ pub fn cfg() -> Value {
     config_data().get("CFG").cloned().unwrap_or_else(|| json!({}))
 }
 
+/// `cfg()` as the window shows it (`model::resolved_cfg`): a monitor on another
+/// connector than its entries were saved under gets them, as the daemon does.
+pub fn resolved_cfg() -> Value {
+    crate::model::resolved_cfg(&cfg(), &crate::model::state_heads(&config_data()))
+}
+
 /// First existing of `tessel-displays.sock` and `tessel-displays.$XDG_VTNR.sock`.
 pub fn socket_path() -> PathBuf {
     let runtime = std::env::var("XDG_RUNTIME_DIR").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "/tmp".into());

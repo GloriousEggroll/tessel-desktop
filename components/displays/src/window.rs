@@ -370,7 +370,7 @@ impl TesselDisplaysApp {
 
     pub fn load_monitor_data(self: &Rc<Self>) {
         let data = ipc::config_data();
-        let cfg = data.get("CFG").cloned().unwrap_or_else(|| json!({}));
+        let cfg = model::resolved_cfg(&data.get("CFG").cloned().unwrap_or_else(|| json!({})), &model::state_heads(&data));
         let global_auto_scale = cfg.get("AUTO_SCALE").is_some_and(truthy);
         self.auto_scale_switch.set_active(global_auto_scale);
         self.auto_scale_enabled.set(global_auto_scale);
@@ -623,7 +623,7 @@ impl TesselDisplaysApp {
         let layout = self.layout_area.borrow().clone();
         let layout_model = layout.as_ref().map(|l| l.model.borrow().clone());
         let plan = model::save_plan(data.get("CFG"), &states, &callback, layout_model.as_ref(),
-                                    &self.labwc_managed_hdr_overrides.borrow());
+                                    &self.labwc_managed_hdr_overrides.borrow(), &model::state_heads(&data));
         for index in &plan.enabled_changed {
             if let Some(state) = &states[*index] {
                 widgets[*index].initial_enabled.set(state.enabled);
@@ -752,7 +752,7 @@ impl TesselDisplaysApp {
                 let name = widget.monitor.borrow().get("NAME").cloned().unwrap_or(Value::Null);
                 let head = heads.iter().rev().find(|h| h.get("NAME").cloned().unwrap_or(Value::Null) == name);
                 if let Some(head) = head {
-                    let mode = model::vrr_mode_of(head, &cfg);
+                    let mode = model::vrr_mode_of(head, &cfg, &heads);
                     widget.initial_vrr.set(mode);
                     widget.set_vrr_mode(mode);
                     widget.set_vrr_capable(model::vrr_capable_of(head));
@@ -923,7 +923,7 @@ impl TesselDisplaysApp {
     }
 
     pub fn reload_layout(self: &Rc<Self>) {
-        let cfg = ipc::cfg();
+        let cfg = ipc::resolved_cfg();
         let arrange = cfg.get("ARRANGE").map(py_str).unwrap_or_else(|| "ROW".into());
         let align = cfg.get("ALIGN").map(py_str).unwrap_or_else(|| "TOP".into());
         let order: Vec<String> = obj(&cfg, "ORDER").and_then(Value::as_array).map(|o| o.iter().map(py_str).collect()).unwrap_or_default();

@@ -81,9 +81,63 @@ pub fn matches(head: &Head, name_desc: &str) -> bool {
     matches_exact(head, name_desc) || matches_regex(head, name_desc) || matches_fuzzy(head, name_desc)
 }
 
+/// Whether `text` looks like a connector name: one to three groups that start
+/// with a letter and hold only letters and digits, joined by dashes, then a
+/// dash and a number of up to five digits (`DP-2`, `HDMI-A-1`, `eDP-1`,
+/// `DVI-D-1`, `USB-C-1`, `Virtual-1`, `HEADLESS-1`, `X11-1`).
+pub fn is_connector_name(text: &str) -> bool {
+    let Some((kind, number)) = text.rsplit_once('-') else { return false };
+    let groups: Vec<&str> = kind.split('-').collect();
+    (1..=5).contains(&number.len()) && number.bytes().all(|b| b.is_ascii_digit()) && groups.len() <= 3
+        && groups.iter().all(|group| group.bytes().next().is_some_and(|b| b.is_ascii_alphabetic()) && group.bytes().all(|b| b.is_ascii_alphanumeric()))
+}
+
+/// `"<identity> (<connector>)"` split in two, the form of a wlroots output
+/// description. `None` for anything else.
+pub fn split_description(text: &str) -> Option<(&str, &str)> {
+    let (identity, connector) = text.strip_suffix(')')?.rsplit_once(" (")?;
+    (!identity.trim().is_empty() && is_connector_name(connector)).then_some((identity, connector))
+}
+
+/// What wlroots prints for an output without a make or model (no EDID).
+const NO_IDENTITY: [&str; 3] = ["", "Unknown", "(null)"];
+
+/// The monitor part of a head's description: what is left without
+/// `" (<connector>)"`. `None` when the description has another form or the
+/// monitor has neither a make nor a model, so the text names no monitor.
+pub fn head_identity(head: &Head) -> Option<&str> {
+    let (identity, connector) = split_description(&head.description)?;
+    let known = |field: &str| !NO_IDENTITY.contains(&field.trim());
+    (connector == head.name && (known(&head.make) || known(&head.model))).then_some(identity)
+}
+
+/// The same monitor on another connector: `name_desc` is a description that
+/// differs from the head's only in the connector. Never when another connected
+/// head has the same identity (identical monitors), nor when the entry's own
+/// description is connected.
+pub fn matches_moved(head: &Head, heads: &[Head], name_desc: &str) -> bool {
+    let (Some(identity), Some((entry_identity, connector))) = (head_identity(head), split_description(name_desc)) else { return false };
+    !name_desc.starts_with('!') && identity == entry_identity && connector != head.name
+        && !heads.iter().any(|other| other.description == name_desc
+            || (other.name != head.name && split_description(&other.description).is_some_and(|(other_identity, _)| other_identity == identity)))
+}
+
+/// The entry that applies to a head: the first one matching by name,
+/// description, regex or partial name, else the last one saved for this
+/// monitor under another connector.
+pub fn entry_for<'a, T>(head: &Head, heads: &[Head], entries: &'a [(String, T)]) -> Option<&'a (String, T)> {
+    entries.iter().find(|(name, _)| matches(head, name))
+        .or_else(|| entries.iter().rev().find(|(name, _)| matches_moved(head, heads, name)))
+}
+
+/// Whether a head is present: matched by any rule, the same monitor on another connector included.
+fn plugged(heads: &[Head], name: &str) -> bool {
+    heads.iter().any(|head| matches(head, name) || matches_moved(head, heads, name))
+}
+
 fn condition_met(condition: &Condition, heads: &[Head], lid: Lid, ignore_closed: bool) -> bool {
-    condition.plugged.iter().all(|name| heads.iter().any(|head| matches(head, name)))
-        && !condition.unplugged.iter().any(|name| heads.iter().any(|head| matches(head, name)))
+    condition.plugged.iter().all(|name| plugged(heads, name))
+        && !condition.unplugged.iter().any(|name| plugged(heads, name))
         && match condition.lid {
             Some(LidCondition::Closed) => lid == Some(true) && !ignore_closed,
             Some(LidCondition::Open) => lid == Some(false),
@@ -93,20 +147,25 @@ fn condition_met(condition: &Condition, heads: &[Head], lid: Lid, ignore_closed:
 }
 
 /// The head's adaptive sync choice: in VRR_OFF is Off (also when it is in
-/// VRR_ALWAYS too), in VRR_ALWAYS is Always, in neither is Automatic.
-pub fn vrr_mode(cfg: &Cfg, head: &Head) -> VrrMode {
-    if cfg.vrr_off.iter().any(|name| matches(head, name)) {
-        VrrMode::Off
-    } else if cfg.vrr_always.iter().any(|name| matches(head, name)) {
-        VrrMode::Always
-    } else {
-        VrrMode::Auto
-    }
+/// VRR_ALWAYS too), in VRR_ALWAYS is Always, in neither is Automatic. Entries
+/// saved for this monitor under another connector count only when no entry
+/// in either list matches it otherwise.
+pub fn vrr_mode(cfg: &Cfg, head: &Head, heads: &[Head]) -> VrrMode {
+    let pick = |test: &dyn Fn(&str) -> bool| {
+        if cfg.vrr_off.iter().any(|name| test(name)) {
+            Some(VrrMode::Off)
+        } else if cfg.vrr_always.iter().any(|name| test(name)) {
+            Some(VrrMode::Always)
+        } else {
+            None
+        }
+    };
+    pick(&|name| matches(head, name)).or_else(|| pick(&|name| matches_moved(head, heads, name))).unwrap_or(VrrMode::Auto)
 }
 
 /// Connector name and adaptive sync choice of every connected head, for labwc.
 pub fn vrr_modes(cfg: &Cfg, heads: &[Head]) -> std::collections::BTreeMap<String, VrrMode> {
-    heads.iter().filter(|head| !head.name.is_empty()).map(|head| (head.name.clone(), vrr_mode(cfg, head))).collect()
+    heads.iter().filter(|head| !head.name.is_empty()).map(|head| (head.name.clone(), vrr_mode(cfg, head, heads))).collect()
 }
 
 /// The next head to test adaptive sync on: enabled, with a current mode that
@@ -118,10 +177,20 @@ pub fn vrr_probe_candidate(heads: &[Head]) -> Option<usize> {
 /// Whether DISABLED turns this head off. A closed lid is ignored when the
 /// laptop panel is the only display, so it can still sleep and wake smoothly.
 pub fn disabled_applies(cfg: &Cfg, head: &Head, heads: &[Head], lid: Lid) -> bool {
-    cfg.disabled.iter().any(|(name, conditions)| {
-        matches(head, name)
-            && (conditions.is_empty() || conditions.iter().any(|condition| condition_met(condition, heads, lid, heads.len() == 1)))
+    disabled_entries(cfg, head, heads).iter().any(|(_, conditions)| {
+        conditions.is_empty() || conditions.iter().any(|condition| condition_met(condition, heads, lid, heads.len() == 1))
     })
+}
+
+/// The DISABLED entries for a head: all that match it by name, description,
+/// regex or partial name, else the last one saved for this monitor under
+/// another connector.
+fn disabled_entries<'a>(cfg: &'a Cfg, head: &Head, heads: &[Head]) -> Vec<&'a (String, Vec<Condition>)> {
+    let direct: Vec<_> = cfg.disabled.iter().filter(|(name, _)| matches(head, name)).collect();
+    if !direct.is_empty() {
+        return direct;
+    }
+    cfg.disabled.iter().rev().find(|(name, _)| matches_moved(head, heads, name)).into_iter().collect()
 }
 
 fn fixed_scale(cfg: &Cfg, scale: f64) -> i32 {
@@ -181,10 +250,10 @@ fn greatest_first(modes: &[Mode]) -> Vec<Mode> {
 
 /// The mode a head should use: its MODE setting if a mode satisfies it, else
 /// the preferred mode, else the largest. `None` when it has no modes at all.
-pub fn find_mode(cfg: &Cfg, head: &Head) -> Option<u32> {
+pub fn find_mode(cfg: &Cfg, head: &Head, heads: &[Head]) -> Option<u32> {
     let preferred = head.preferred.and_then(|id| head.modes.iter().find(|mode| mode.id == id));
     let sorted = greatest_first(&head.modes);
-    let chosen = cfg.modes.iter().find(|(name, _)| matches(head, name)).and_then(|(_, choice)| match choice {
+    let chosen = entry_for(head, heads, &cfg.modes).and_then(|(_, choice)| match choice {
         ModeChoice::Max => sorted.first().copied(),
         ModeChoice::MaxPreferredRefresh => preferred.and_then(|p| sorted.iter().find(|m| m.width == p.width && m.height == p.height).copied()),
         ModeChoice::Size { width, height, mhz } => {
@@ -215,12 +284,14 @@ fn scaled_length(cfg: &Cfg, scale: i32, length: i32) -> i32 {
 pub fn apply_disabled_overrides(cfg: &Cfg, heads: &mut [Head], command: &str, requested: &mut Vec<(String, Vec<Condition>)>) {
     let is_rule = |name: &str| cfg.disabled.iter().any(|(rule, _)| rule == name);
     let mut handled = Vec::new();
+    let snapshot: Vec<Head> = heads.to_vec();
     for head in heads {
-        let conditional = cfg.disabled.iter().any(|(name, conditions)| !conditions.is_empty() && matches(head, name));
+        let conditional = disabled_entries(cfg, head, &snapshot).iter().any(|(_, conditions)| !conditions.is_empty());
         if !conditional {
             continue;
         }
-        let named: Vec<String> = requested.iter().filter(|(name, _)| !is_rule(name) && matches(head, name)).map(|(name, _)| name.clone()).collect();
+        let named: Vec<String> = requested.iter().filter(|(name, _)| !is_rule(name) && (matches(head, name) || matches_moved(head, &snapshot, name)))
+            .map(|(name, _)| name.clone()).collect();
         for name in named {
             handled.push(name);
             let toggle = match command {
@@ -251,7 +322,7 @@ pub fn desire(cfg: &Cfg, heads: &mut [Head], lid: Lid) {
         }
         head.des.enabled = head.override_enabled.unwrap_or(enabled);
         if head.des.enabled {
-            match find_mode(cfg, head) {
+            match find_mode(cfg, head, &snapshot) {
                 Some(mode) => head.des.mode = Some(mode),
                 None => head.des.enabled = false,
             }
@@ -260,14 +331,14 @@ pub fn desire(cfg: &Cfg, heads: &mut [Head], lid: Lid) {
             let mode = head.des.mode.and_then(|id| head.modes.iter().find(|mode| mode.id == id)).copied();
             head.des.scale = if !cfg.scaling {
                 fixed_scale(cfg, 1.0)
-            } else if let Some((_, scale)) = cfg.scales.iter().find(|(name, _)| matches(head, name)) {
+            } else if let Some((_, scale)) = entry_for(head, &snapshot, &cfg.scales) {
                 fixed_scale(cfg, *scale)
             } else if let (true, Some(mode)) = (cfg.auto_scale, mode) {
                 auto_scale(cfg, head, &mode)
             } else {
                 fixed_scale(cfg, 1.0)
             };
-            head.des.transform = cfg.transforms.iter().find(|(name, _)| matches(head, name)).map_or(0, |(_, transform)| *transform);
+            head.des.transform = entry_for(head, &snapshot, &cfg.transforms).map_or(0, |(_, transform)| *transform);
             if let (Some(mode), true) = (mode, head.des.scale != 0) {
                 let (width, height) = if head.des.transform % 2 == 0 { (mode.width, mode.height) } else { (mode.height, mode.width) };
                 head.scaled = (scaled_length(cfg, head.des.scale, width), scaled_length(cfg, head.des.scale, height));
@@ -282,11 +353,14 @@ pub fn desire(cfg: &Cfg, heads: &mut [Head], lid: Lid) {
 }
 
 /// Head indices in layout order: ORDER entries take exact matches first, then
-/// regular expressions, then partial names; anything unmatched comes last.
+/// regular expressions, then partial names, then the same monitor on another
+/// connector; anything unmatched comes last.
 pub fn ordered(cfg: &Cfg, heads: &[Head]) -> Vec<usize> {
     let mut buckets: Vec<Vec<usize>> = vec![Vec::new(); cfg.order.len()];
     let mut left: Vec<usize> = (0..heads.len()).collect();
-    for test in [matches_exact as fn(&Head, &str) -> bool, matches_regex, matches_fuzzy] {
+    let moved = |head: &Head, name: &str| matches_moved(head, heads, name);
+    let tests: [&dyn Fn(&Head, &str) -> bool; 4] = [&matches_exact, &matches_regex, &matches_fuzzy, &moved];
+    for test in tests {
         for (bucket, name) in buckets.iter_mut().zip(&cfg.order) {
             left.retain(|&index| {
                 let found = test(&heads[index], name);
@@ -487,22 +561,22 @@ mod tests {
     fn a_saved_mode_wins_then_the_preferred_one() {
         let heads = pair();
         let mut cfg = Cfg::default();
-        assert_eq!(find_mode(&cfg, &heads[1]), Some(20), "preferred");
+        assert_eq!(find_mode(&cfg, &heads[1], &[]), Some(20), "preferred");
         cfg.modes = vec![("DP-2".into(), ModeChoice::Size { width: 3840, height: 2160, mhz: Some(60000) })];
-        assert_eq!(find_mode(&cfg, &heads[1]), Some(21), "exact refresh");
+        assert_eq!(find_mode(&cfg, &heads[1], &[]), Some(21), "exact refresh");
         cfg.modes = vec![("DP-2".into(), ModeChoice::Size { width: 3840, height: 2160, mhz: Some(239_900) })];
-        assert_eq!(find_mode(&cfg, &heads[1]), Some(20), "same rounded refresh");
+        assert_eq!(find_mode(&cfg, &heads[1], &[]), Some(20), "same rounded refresh");
         cfg.modes = vec![("DP-2".into(), ModeChoice::Size { width: 3840, height: 2160, mhz: None })];
-        assert_eq!(find_mode(&cfg, &heads[1]), Some(20), "highest refresh at that size");
+        assert_eq!(find_mode(&cfg, &heads[1], &[]), Some(20), "highest refresh at that size");
         cfg.modes = vec![("DP-2".into(), ModeChoice::Size { width: 1, height: 1, mhz: None })];
-        assert_eq!(find_mode(&cfg, &heads[1]), Some(20), "a missing mode falls back to preferred");
+        assert_eq!(find_mode(&cfg, &heads[1], &[]), Some(20), "a missing mode falls back to preferred");
         cfg.modes = vec![("HDMI".into(), ModeChoice::Max)];
-        assert_eq!(find_mode(&cfg, &heads[0]), Some(11));
+        assert_eq!(find_mode(&cfg, &heads[0], &[]), Some(11));
         let mut none = heads[0].clone();
         none.preferred = None;
-        assert_eq!(find_mode(&Cfg::default(), &none), Some(11), "largest without a preferred mode");
+        assert_eq!(find_mode(&Cfg::default(), &none, &[]), Some(11), "largest without a preferred mode");
         none.modes.clear();
-        assert_eq!(find_mode(&Cfg::default(), &none), None);
+        assert_eq!(find_mode(&Cfg::default(), &none, &[]), None);
     }
 
     #[test]
@@ -560,12 +634,12 @@ mod tests {
     fn vrr_mode_comes_from_the_two_lists_and_off_wins() {
         let heads = pair();
         let mut cfg = Cfg::default();
-        assert_eq!((vrr_mode(&cfg, &heads[0]), vrr_mode(&cfg, &heads[1])), (VrrMode::Auto, VrrMode::Auto), "in neither list");
+        assert_eq!((vrr_mode(&cfg, &heads[0], &heads), vrr_mode(&cfg, &heads[1], &heads)), (VrrMode::Auto, VrrMode::Auto), "in neither list");
         cfg.vrr_off = vec!["UGU UGREEN-UHD 0x01000E00 (HDMI-A-1)".into()];
         cfg.vrr_always = vec!["!^DP-".into()];
-        assert_eq!((vrr_mode(&cfg, &heads[0]), vrr_mode(&cfg, &heads[1])), (VrrMode::Off, VrrMode::Always), "by description and regex");
+        assert_eq!((vrr_mode(&cfg, &heads[0], &heads), vrr_mode(&cfg, &heads[1], &heads)), (VrrMode::Off, VrrMode::Always), "by description and regex");
         cfg.vrr_always.push("HDMI-A-1".into());
-        assert_eq!(vrr_mode(&cfg, &heads[0]), VrrMode::Off, "in both lists is Off");
+        assert_eq!(vrr_mode(&cfg, &heads[0], &heads), VrrMode::Off, "in both lists is Off");
         let modes = vrr_modes(&cfg, &heads);
         assert_eq!(modes.into_iter().collect::<Vec<_>>(), [("DP-2".to_owned(), VrrMode::Always), ("HDMI-A-1".to_owned(), VrrMode::Off)]);
         let mut unnamed = heads.clone();
@@ -620,5 +694,236 @@ mod tests {
         assert_eq!(plan(&heads), Plan::Nothing);
         heads[0].reapply = true;
         assert_eq!(plan(&heads), Plan::Reapply(0));
+    }
+
+    // ------------------------------------------- the same monitor on another connector
+
+    /// The configuration of GitHub issue #9: one monitor pair seen on two sets of connectors.
+    const MOVED_FILE: &str = "ORDER:
+- UGD Artist 12     0x20210910 (HDMI-A-2)
+- Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-2)
+MODE:
+  UGD Artist 12     0x20210910 (HDMI-A-3): {WIDTH: 1920, HEIGHT: 1080, HZ: 60.003}
+  Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-4): {WIDTH: 2560, HEIGHT: 1440, HZ: 239.97}
+  UGD Artist 12     0x20210910 (HDMI-A-2): {WIDTH: 1920, HEIGHT: 1080, HZ: 60.003}
+  Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-2): {WIDTH: 2560, HEIGHT: 1440, HZ: 239.97}
+VRR_OFF:
+- Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-2)
+";
+    const MSI: &str = "Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101";
+    const UGD: &str = "UGD Artist 12     0x20210910";
+
+    fn monitor(id: u32, make: &str, model: &str, serial: &str, connector: &str) -> Head {
+        let identity = [make, model, serial].join(" ");
+        let modes = vec![mode(id * 10, 2560, 1440, 143_999), mode(id * 10 + 1, 2560, 1440, 239_970), mode(id * 10 + 2, 1920, 1080, 60_003)];
+        Head { make: make.into(), model: model.into(), serial: serial.into(), ..head(id, connector, &format!("{identity} ({connector})"), modes, id * 10) }
+    }
+
+    fn msi(connector: &str) -> Head { monitor(1, "Micro-Star Int'l Co., Ltd.", "MAG 274Q X24", "0x01010101", connector) }
+    fn ugd(connector: &str) -> Head { monitor(2, "UGD", "Artist 12    ", "0x20210910", connector) }
+    fn moved_cfg() -> Cfg { Cfg::load(MOVED_FILE).unwrap() }
+    fn at(msi_connector: &str, ugd_connector: &str) -> Vec<Head> { vec![msi(msi_connector), ugd(ugd_connector)] }
+    /// The issue's two sets of connectors and one neither was saved under.
+    const BOOTS: [(&str, &str); 3] = [("DP-2", "HDMI-A-2"), ("DP-4", "HDMI-A-3"), ("DP-7", "HDMI-A-7")];
+
+    #[test]
+    fn connector_names_are_recognised() {
+        for name in ["DP-2", "HDMI-A-1", "eDP-1", "DVI-D-1", "USB-C-1", "Virtual-1", "HEADLESS-1", "DP-12", "X11-1", "WL-1", "Unknown-3"] {
+            assert!(is_connector_name(name), "{name}");
+        }
+        for name in ["", "DP", "DP-", "-1", "DP-2a", "DP 2", "2DP-1", "DP--2", "A-B-C-D-1", "DP-123456", "(null)", "0x01010101", "DP-2 via HDMI"] {
+            assert!(!is_connector_name(name), "{name}");
+        }
+        assert_eq!(split_description(&format!("{MSI} (DP-2)")), Some((MSI, "DP-2")));
+        assert_eq!(split_description("Foo (rev 2) (HDMI-A-1)"), Some(("Foo (rev 2)", "HDMI-A-1")), "the last parentheses");
+        assert_eq!(split_description("(null) (null) (DP-2)"), Some(("(null) (null)", "DP-2")));
+        for text in ["Headless output 1", "Foo (DP-2 via HDMI)", " (DP-2)", "(DP-2)", "Foo (DP-2) ", "Foo DP-2", "DP-2"] {
+            assert_eq!(split_description(text), None, "{text}");
+        }
+    }
+
+    #[test]
+    fn only_a_monitor_with_a_make_or_model_has_an_identity() {
+        assert_eq!(head_identity(&msi("DP-2")), Some(MSI));
+        assert_eq!(head_identity(&ugd("HDMI-A-2")), Some(UGD), "spaces kept as they are");
+        let mut no_edid = head(3, "DP-2", "(null) (null) (DP-2)", vec![], 0);
+        assert_eq!(head_identity(&no_edid), None, "no EDID: wlroots prints (null) and sends no make or model");
+        (no_edid.make, no_edid.model, no_edid.description) = ("Unknown".into(), "Unknown".into(), "Unknown Unknown (DP-2)".into());
+        assert_eq!(head_identity(&no_edid), None);
+        no_edid.model = "Panel".into();
+        assert_eq!(head_identity(&no_edid), Some("Unknown Unknown"), "a model alone is enough");
+        let mut other_name = msi("DP-2");
+        other_name.name = "DP-3".into();
+        assert_eq!(head_identity(&other_name), None, "the description must end with the head's own connector");
+        let mut headless = msi("HEADLESS-1");
+        headless.description = "Headless output 1".into();
+        assert_eq!(head_identity(&headless), None);
+        let no_identity = head(4, "DP-7", "(null) (null) (DP-7)", vec![], 0);
+        assert!(!matches_moved(&no_identity, &[no_identity.clone()], "(null) (null) (DP-2)"), "monitors without EDID never follow");
+    }
+
+    #[test]
+    fn the_same_monitor_on_another_connector_matches() {
+        let heads = at("DP-7", "HDMI-A-7");
+        assert!(matches_moved(&heads[0], &heads, &format!("{MSI} (DP-2)")));
+        assert!(matches_moved(&heads[1], &heads, &format!("{UGD} (HDMI-A-3)")), "double spaces included");
+        assert!(!matches_moved(&heads[1], &heads, "UGD Artist 12 0x20210910 (HDMI-A-3)"), "the identity is compared byte for byte");
+        assert!(!matches_moved(&heads[0], &heads, &format!("{} (DP-2)", MSI.to_lowercase())), "and with case");
+        assert!(!matches_moved(&heads[0], &heads, &format!("{MSI} (DP-7)")), "its own connector is an exact match, not a move");
+        assert!(!matches_moved(&heads[0], &heads, &format!("{MSI} 2 (DP-2)")), "another serial is another monitor");
+        assert!(!matches_moved(&heads[0], &heads, &format!("{MSI} (not a connector)")));
+        assert!(!matches_moved(&heads[0], &heads, &format!("!{MSI} (DP-2)")), "a regular expression is not a description");
+        for name in ["DP-2", "!^DP-2$", "MAG 274Q X24 0x01010101 (DP-2)", "(DP-2)"] {
+            assert!(!matches_moved(&heads[0], &heads, name) && !matches(&heads[0], name), "{name}: short names, regexes and parts stay as they were");
+        }
+        assert!(matches(&heads[0], "mag 274q") && matches(&heads[0], "!^DP-7$") && matches(&heads[0], "DP-7"));
+    }
+
+    #[test]
+    fn identical_monitors_never_follow_a_connector() {
+        let twin = |id, connector: &str| monitor(id, "Dell Inc.", "U2720Q", "", connector);
+        let saved = "Dell Inc. U2720Q  (DP-2)";
+        let heads = vec![twin(1, "DP-1"), twin(2, "DP-3")];
+        assert_eq!(heads[0].description, "Dell Inc. U2720Q  (DP-1)");
+        assert!(!matches_moved(&heads[0], &heads, saved) && !matches_moved(&heads[1], &heads, saved), "two connected: neither");
+        assert!(matches_moved(&heads[0], &heads[..1], saved), "one connected: it follows");
+        let heads = vec![twin(1, "DP-1"), twin(2, "DP-2")];
+        assert!(!matches_moved(&heads[0], &heads, saved), "the entry's own connector is connected with that description");
+        assert!(matches(&heads[1], saved));
+        let cfg = Cfg { scales: vec![(saved.into(), 2.0)], ..Default::default() };
+        let mut heads = heads;
+        desire(&cfg, &mut heads, None);
+        assert_eq!((heads[0].des.scale, heads[1].des.scale), (256, 512), "today's behaviour for twins");
+        // Another monitor on the entry's connector does not stop the move.
+        let heads = vec![msi("DP-7"), monitor(3, "Other", "Screen", "", "DP-2")];
+        assert!(matches_moved(&heads[0], &heads, &format!("{MSI} (DP-2)")));
+    }
+
+    #[test]
+    fn an_entry_matching_otherwise_wins_over_a_moved_one() {
+        let heads = at("DP-2", "HDMI-A-2");
+        let (moved, exact) = (format!("{MSI} (DP-4)"), format!("{MSI} (DP-2)"));
+        for scales in [vec![(moved.clone(), 2.0), (exact.clone(), 1.5)], vec![(exact.clone(), 1.5), (moved.clone(), 2.0)]] {
+            assert_eq!(entry_for(&heads[0], &heads, &scales).map(|e| e.1), Some(1.5), "{scales:?}");
+        }
+        for name in ["DP-2", "274Q", "!^DP"] {
+            let scales = vec![(moved.clone(), 2.0), (name.to_owned(), 1.25)];
+            assert_eq!(entry_for(&heads[0], &heads, &scales).map(|e| e.1), Some(1.25), "{name}");
+        }
+        // Several moved entries: the last one in the file.
+        let heads = at("DP-7", "HDMI-A-7");
+        let scales = vec![(moved.clone(), 2.0), (exact.clone(), 1.5)];
+        assert_eq!(entry_for(&heads[0], &heads, &scales).map(|e| e.1), Some(1.5));
+        let scales = vec![(exact, 1.5), (moved, 2.0)];
+        assert_eq!(entry_for(&heads[0], &heads, &scales).map(|e| e.1), Some(2.0));
+        assert_eq!(entry_for(&heads[1], &heads, &scales), None, "another monitor's entries");
+    }
+
+    #[test]
+    fn the_issue_file_keeps_the_mode_on_every_connector() {
+        let cfg = moved_cfg();
+        for (dp, hdmi) in BOOTS {
+            let heads = at(dp, hdmi);
+            assert_eq!(find_mode(&cfg, &heads[0], &heads), Some(11), "{dp}: 239.97 Hz, not the preferred 144 Hz");
+            assert_eq!(find_mode(&cfg, &heads[1], &heads), Some(22), "{hdmi}: 1080p");
+            assert_eq!(find_mode(&Cfg::default(), &heads[0], &heads), Some(10));
+        }
+        let mut cfg = cfg;
+        cfg.modes[3].1 = ModeChoice::Size { width: 2560, height: 1440, mhz: Some(143_999) };
+        let heads = at("DP-2", "HDMI-A-2");
+        assert_eq!(find_mode(&cfg, &heads[0], &heads), Some(10), "on DP-2 the DP-2 entry is used");
+        let heads = at("DP-4", "HDMI-A-3");
+        assert_eq!(find_mode(&cfg, &heads[0], &heads), Some(11), "on DP-4 the DP-4 entry");
+        let heads = at("DP-7", "HDMI-A-7");
+        assert_eq!(find_mode(&cfg, &heads[0], &heads), Some(10), "elsewhere the last of the monitor's entries");
+    }
+
+    #[test]
+    fn the_issue_file_keeps_adaptive_sync_off_and_labwc_gets_the_new_connector() {
+        let cfg = moved_cfg();
+        for (dp, hdmi) in BOOTS {
+            let heads = at(dp, hdmi);
+            assert_eq!((vrr_mode(&cfg, &heads[0], &heads), vrr_mode(&cfg, &heads[1], &heads)), (VrrMode::Off, VrrMode::Auto), "{dp}");
+            let modes: Vec<_> = vrr_modes(&cfg, &heads).into_iter().collect();
+            assert_eq!(modes, [(dp.to_owned(), VrrMode::Off), (hdmi.to_owned(), VrrMode::Auto)], "the adaptive sync block names {dp}");
+        }
+        let mut cfg = cfg;
+        cfg.vrr_always = vec![format!("{MSI} (DP-4)")];
+        let mode = |cfg: &Cfg, dp| { let heads = at(dp, "HDMI-A-2"); vrr_mode(cfg, &heads[0], &heads) };
+        assert_eq!((mode(&cfg, "DP-2"), mode(&cfg, "DP-4"), mode(&cfg, "DP-7")), (VrrMode::Off, VrrMode::Always, VrrMode::Off),
+                   "an entry for the connector wins over a moved one in the other list; between moved ones Off wins");
+        cfg.vrr_off.clear();
+        assert_eq!((mode(&cfg, "DP-2"), mode(&cfg, "DP-7")), (VrrMode::Always, VrrMode::Always));
+        cfg.vrr_off = vec!["HDMI".into()];
+        assert_eq!(mode(&cfg, "DP-7"), VrrMode::Always, "an entry for another monitor changes nothing");
+    }
+
+    #[test]
+    fn the_issue_file_keeps_the_order_on_every_connector() {
+        let cfg = moved_cfg();
+        for (dp, hdmi) in BOOTS {
+            let heads = at(dp, hdmi);
+            assert_eq!(ordered(&cfg, &heads), [1, 0], "{dp}: the tablet first");
+            assert_eq!(ordered(&Cfg::default(), &heads), [0, 1]);
+        }
+        let heads = at("DP-7", "HDMI-A-7");
+        let cfg = Cfg { order: vec![format!("{UGD} (HDMI-A-2)"), "DP-7".into()], ..Default::default() };
+        assert_eq!(ordered(&cfg, &heads), [1, 0]);
+        let cfg = Cfg { order: vec![format!("{MSI} (DP-2)"), "HDMI-A-7".into(), format!("{MSI} (DP-4)")], ..Default::default() };
+        assert_eq!(ordered(&cfg, &heads), [0, 1]);
+        let cfg = Cfg { order: vec![format!("{UGD} (HDMI-A-2)"), "MAG 274Q".into()], ..Default::default() };
+        let heads = at("DP-7", "HDMI-A-7");
+        assert_eq!(ordered(&cfg, &heads), [1, 0]);
+        let cfg = Cfg { order: vec![format!("{MSI} (DP-2)"), "Artist".into()], ..Default::default() };
+        assert_eq!(ordered(&cfg, &heads), [0, 1], "a partial name and a moved entry each place their own monitor");
+    }
+
+    #[test]
+    fn scale_rotation_and_position_follow_the_monitor() {
+        let mut cfg = moved_cfg();
+        cfg.scales = vec![(format!("{MSI} (DP-4)"), 1.25), (format!("{MSI} (DP-2)"), 1.5)];
+        cfg.transforms = vec![(format!("{UGD} (HDMI-A-3)"), 1), (format!("{UGD} (HDMI-A-2)"), 3)];
+        let expect = [("DP-2", "HDMI-A-2", 384, 3), ("DP-4", "HDMI-A-3", 320, 1), ("DP-7", "HDMI-A-7", 384, 3)];
+        for (dp, hdmi, scale, transform) in expect {
+            let mut heads = at(dp, hdmi);
+            desire(&cfg, &mut heads, None);
+            assert_eq!((heads[0].des.scale, heads[1].des.transform), (scale, transform), "{dp}");
+            assert_eq!((heads[1].des.x, heads[0].des.x), (0, 1080), "{dp}: the turned tablet sits left of the monitor");
+            assert_eq!(heads[0].des.mode, Some(11));
+        }
+    }
+
+    #[test]
+    fn disabled_and_its_conditions_follow_the_monitor() {
+        let off = |name: String| Cfg { disabled: vec![(name, vec![])], ..Default::default() };
+        let cfg = off(format!("{UGD} (HDMI-A-3)"));
+        for (dp, hdmi) in BOOTS {
+            let heads = at(dp, hdmi);
+            assert!(disabled_applies(&cfg, &heads[1], &heads, None) && !disabled_applies(&cfg, &heads[0], &heads, None), "{hdmi}");
+        }
+        // The connector's own conditional entry wins; its condition does not hold.
+        let mut cfg = cfg;
+        cfg.disabled.push((format!("{UGD} (HDMI-A-2)"), vec![Condition { unplugged: vec![format!("{MSI} (DP-2)")], ..Default::default() }]));
+        let heads = at("DP-2", "HDMI-A-2");
+        assert!(!disabled_applies(&cfg, &heads[1], &heads, None), "the HDMI-A-2 entry, MSI plugged");
+        let heads = at("DP-4", "HDMI-A-3");
+        assert!(disabled_applies(&cfg, &heads[1], &heads, None), "the HDMI-A-3 entry");
+        let heads = at("DP-7", "HDMI-A-7");
+        assert!(!disabled_applies(&cfg, &heads[1], &heads, None), "the last entry; the MSI on DP-7 counts as plugged");
+        assert!(disabled_applies(&cfg, &heads[1], &heads[1..], None), "and unplugged when it is not connected");
+        let cfg = Cfg { disabled: vec![("HDMI-A-7".into(), vec![Condition { plugged: vec![format!("{MSI} (DP-2)")], ..Default::default() }])], ..Default::default() };
+        assert!(disabled_applies(&cfg, &heads[1], &heads, None), "PLUGGED names the monitor under its old connector");
+        // A manual choice against the moved conditional rule is a manual choice.
+        let cfg = Cfg { disabled: vec![(format!("{UGD} (HDMI-A-2)"), vec![Condition { plugged: vec!["DP-7".into()], ..Default::default() }])], ..Default::default() };
+        let mut heads = at("DP-7", "HDMI-A-7");
+        desire(&cfg, &mut heads, None);
+        assert!(!heads[1].des.enabled);
+        heads[1].cur = heads[1].des;
+        let mut requested = vec![(heads[1].description.clone(), Vec::new())];
+        apply_disabled_overrides(&cfg, &mut heads, "CFG_DEL", &mut requested);
+        assert_eq!((heads[1].override_enabled, requested.len()), (Some(true), 0));
+        let mut requested = cfg.disabled.clone();
+        apply_disabled_overrides(&cfg, &mut heads, "CFG_DEL", &mut requested);
+        assert_eq!(requested, cfg.disabled, "naming the rule itself is about the rule");
     }
 }

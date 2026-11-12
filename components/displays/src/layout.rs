@@ -83,7 +83,7 @@ impl MonitorLayout {
             gtk::style_context_add_provider_for_display(&display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
         let transform_overrides = transform_overrides.unwrap_or_default();
-        let model = LayoutModel::new(monitors, &ipc::cfg(), align, arrange, order, &transform_overrides);
+        let model = LayoutModel::new(monitors, &ipc::resolved_cfg(), align, arrange, order, &transform_overrides);
         let this = Rc::new(Self {
             fixed, model: RefCell::new(LayoutModel::default()), shapes: RefCell::new(Vec::new()), notebook: notebook.clone(),
             desc_to_tab_index, transform_overrides, app, drag: RefCell::new(None),
@@ -367,7 +367,7 @@ impl MonitorLayout {
 
     /// `show_overlay(desc, …, name)`: identify label on the matching output.
     pub fn show_overlay(&self, desc: &str, orig_width: i64, orig_height: i64, name: &str) -> Option<MonitorOverlay> {
-        let cfg = ipc::cfg();
+        let cfg = ipc::resolved_cfg();
         let transform = cfg.get("TRANSFORM").filter(|v| tessel_core::pyjson::truthy(v)).and_then(|t| t.get(desc))
             .cloned().unwrap_or(Value::from(0));
         let (angle, _) = parse_transform(&crate::model::transform_text(Some(&transform)));

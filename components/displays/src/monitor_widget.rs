@@ -182,7 +182,7 @@ impl MonitorWidget {
             rotation_buttons.push((rotation, button));
         }
         let flip_switch = gtk::Switch::new();
-        let vrr_mode = crate::model::vrr_mode_of(&monitor, &crate::ipc::cfg());
+        let vrr_mode = crate::model::vrr_mode_of(&monitor, &crate::ipc::cfg(), &crate::model::state_heads(&crate::ipc::config_data()));
         let vrr_capable = crate::model::vrr_capable_of(&monitor);
         let vrr_combo = gtk::DropDown::from_strings(&[&tr!("Automatic"), &tr!("Always"), &tr!("Off")]);
         vrr_combo.set_selected(VRR_MODES.iter().position(|mode| *mode == vrr_mode).unwrap_or(0) as u32);

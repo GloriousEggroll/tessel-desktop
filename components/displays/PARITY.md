@@ -1,7 +1,7 @@
 # tessel-displays — parity with contracts/tessel-displays.md
 
 Crate `components/displays`, binary `tessel-displays` (= `~/.local/share/tessel-displays/tessel-displays`,
-GApplication `org.tessel.Displays`). Tests: `cargo test -p tessel-displays` (29 unit tests),
+GApplication `org.tessel.Displays`). Tests: `cargo test -p tessel-displays` (87 unit tests),
 `tests/run_headless.sh` (22 GTK checks in a private nested 2-output headless labwc),
 `tests/measure_headless.sh` (Rust vs Python, private labwc + `tests/fake_daemon.py` socket).
 
@@ -53,5 +53,7 @@ Window (title, ≤980×780 default, headerbar, `.page-title/.subtitle`, Apply `.
 - Brightness, contrast and dimming apply as the slider moves and are not part of the trial.
 - `CFG_DEL` with `ORDER` clears the saved order, so a revert can return to having none.
 - The layout preview arranges a turned display (90 or 270 degrees) by its turned size when it is turned, when its mode changes, and when Apply saves the arrangement. The Python tool used the unturned size there, so the saved `ALIGN` was wrong and the shapes overlapped or snapped to the middle. After Apply the preview is rebuilt from the daemon's new state, not from each tab's copy from when the window opened. Tests: `a_turned_display_keeps_its_turned_size_and_alignment`, `a_turned_display_stays_turned_in_the_preview_after_apply`.
+
+Intentional difference from way-displays: saved settings follow a monitor to another connector (issue #9). An entry saved as `"<make> <model> <serial> (<connector>)"` also matches the same monitor on another connector, unless an entry matches it the way-displays way, the monitor has no make or model, or an identical monitor is connected too (rules in contracts/tessel-displays.md §2). The Displays window shows these settings and, on Apply, moves them to the current connector. way-displays ignores such entries until everything is set again. Tests: `daemon::layout::tests` (`the_issue_file_*`, `identical_monitors_never_follow_a_connector`, …), `saved_settings_follow_a_monitor_that_comes_back_on_another_connector`, `saving_moves_only_that_monitors_entries_to_its_connector`, `adaptive_sync_set_back_to_automatic_leaves_no_entry_for_the_monitor`.
 
 Intentional difference from way-displays: automatic scale aims for 135 dpi under 20 inches and 110 dpi above when `AUTO_SCALE_DPI` is 96, and stops at 2.5 without `AUTO_SCALE_MAX`. way-displays divided by 96, which made laptop panels far too large (2.75 on a 13 inch 2880×1920).

@@ -574,7 +574,7 @@ fn every_adaptive_sync_change_saves_both_lists() {
             let mut screen = state(a, name);
             screen.vrr = to;
             screen.vrr_changed = from != to;
-            let plan = model::save_plan(Some(&lists.cfg()), &[Some(screen)], "", None, &none);
+            let plan = model::save_plan(Some(&lists.cfg()), &[Some(screen)], "", None, &none, &[]);
             lists.apply(&plan);
             assert_eq!(lists.mode(a), to, "{from:?} -> {to:?}: {plan:?}");
             assert!(!lists.off.iter().chain(&lists.always).any(|d| d == name) || from == to,
@@ -589,7 +589,7 @@ fn every_adaptive_sync_change_saves_both_lists() {
     }
     let mut screen = state(a, name);
     (screen.vrr, screen.vrr_changed) = (VrrMode::Auto, true);
-    let plan = model::save_plan(None, &[Some(screen)], "", None, &none);
+    let plan = model::save_plan(None, &[Some(screen)], "", None, &none, &[]);
     assert_eq!(plan.del_cfg["VRR_OFF"], json!([a, name]));
     assert_eq!(plan.del_cfg["VRR_ALWAYS"], json!([a, name]));
 }
@@ -605,7 +605,7 @@ fn vrr_changes_in_two_stale_editors_preserve_the_other_monitor() {
     first[0].vrr = VrrMode::Always;
     first[0].vrr_changed = true;
     first[1].vrr = VrrMode::Off;
-    let plan = model::save_plan(Some(&cfg), &first.clone().map(Some), "", None, &none);
+    let plan = model::save_plan(Some(&cfg), &first.clone().map(Some), "", None, &none, &[]);
     assert_eq!(plan.del_cfg["VRR_OFF"], json!([a, "DP-1"]));
     assert!(plan.cfg.get("VRR_OFF").is_none());
     assert_eq!(plan.cfg["VRR_ALWAYS"], json!([a]));
@@ -617,28 +617,28 @@ fn vrr_changes_in_two_stale_editors_preserve_the_other_monitor() {
     second[0].vrr = VrrMode::Off;
     second[1].vrr = VrrMode::Auto;
     second[1].vrr_changed = true;
-    lists.apply(&model::save_plan(Some(&cfg), &second.clone().map(Some), "", None, &none));
+    lists.apply(&model::save_plan(Some(&cfg), &second.clone().map(Some), "", None, &none, &[]));
     assert_eq!((lists.mode(a), lists.mode(b)), (VrrMode::Always, VrrMode::Auto), "the first editor's choice stays");
     // An unrelated Apply re-sends neither setting.
     first[0].vrr_changed = false;
-    let plan = model::save_plan(Some(&cfg), &first.clone().map(Some), "", None, &none);
+    let plan = model::save_plan(Some(&cfg), &first.clone().map(Some), "", None, &none, &[]);
     for key in ["VRR_OFF", "VRR_ALWAYS"] {
         assert!(plan.cfg.get(key).is_none() && plan.del_cfg.get(key).is_none(), "{key}");
     }
     second[1].vrr = VrrMode::Off;
-    lists.apply(&model::save_plan(Some(&cfg), &second.map(Some), "", None, &none));
+    lists.apply(&model::save_plan(Some(&cfg), &second.map(Some), "", None, &none, &[]));
     assert_eq!((lists.mode(a), lists.mode(b)), (VrrMode::Always, VrrMode::Off));
 }
 
 #[test]
 fn the_window_reads_the_daemons_vrr_mode_then_the_lists() {
     let head = json!({"NAME": "DP-1", "DESCRIPTION": "Dell Inc. AW3225QF (DP-1)"});
-    assert_eq!(model::vrr_mode_of(&head, &json!({})), VrrMode::Auto);
-    assert_eq!(model::vrr_mode_of(&head, &json!({"VRR_ALWAYS": ["!^DP-"]})), VrrMode::Always);
-    assert_eq!(model::vrr_mode_of(&head, &json!({"VRR_ALWAYS": ["DP-1"], "VRR_OFF": ["aw3225qf"]})), VrrMode::Off, "both lists is Off");
+    assert_eq!(model::vrr_mode_of(&head, &json!({}), &[]), VrrMode::Auto);
+    assert_eq!(model::vrr_mode_of(&head, &json!({"VRR_ALWAYS": ["!^DP-"]}), &[]), VrrMode::Always);
+    assert_eq!(model::vrr_mode_of(&head, &json!({"VRR_ALWAYS": ["DP-1"], "VRR_OFF": ["aw3225qf"]}), &[]), VrrMode::Off, "both lists is Off");
     let mut reported = head.clone();
     reported["VRR_MODE"] = json!("always");
-    assert_eq!(model::vrr_mode_of(&reported, &json!({"VRR_OFF": ["DP-1"]})), VrrMode::Always, "the daemon's answer wins");
+    assert_eq!(model::vrr_mode_of(&reported, &json!({"VRR_OFF": ["DP-1"]}), &[]), VrrMode::Always, "the daemon's answer wins");
     assert!(model::vrr_capable_of(&head), "unknown is capable");
     reported["VRR_CAPABLE"] = json!(false);
     assert!(!model::vrr_capable_of(&reported));
@@ -651,7 +651,7 @@ fn automatic_scaling_removes_only_that_displays_scale() {
     let mut states = [state(a, "DP-1"), state(b, "HDMI-A-1")];
     states[0].scale_auto = true;
     states[1].scale = 1.25;
-    let plan = model::save_plan(Some(&cfg), &states.map(Some), "", None, &BTreeMap::new());
+    let plan = model::save_plan(Some(&cfg), &states.map(Some), "", None, &BTreeMap::new(), &[]);
     assert_eq!(plan.del_cfg["SCALE"], json!({a: 1.5}));
     assert_eq!(plan.cfg["AUTO_SCALE"], json!(true));
     assert_eq!(plan.cfg["SCALE"], json!({b: 1.25}));
@@ -667,7 +667,7 @@ fn transforms_disabled_callback_and_mode_plan() {
     states[0].hdr = true;
     states[0].hdr_changed = true;
     states[0].refresh = json!(59997);
-    let plan = model::save_plan(Some(&cfg), &[Some(states[0].clone()), Some(states[1].clone()), None], "", None, &BTreeMap::new());
+    let plan = model::save_plan(Some(&cfg), &[Some(states[0].clone()), Some(states[1].clone()), None], "", None, &BTreeMap::new(), &[]);
     assert_eq!(plan.del_cfg, json!({"TRANSFORM": {a: "90"}, "DISABLED": {b: null}, "CALLBACK_CMD": ""}));
     assert_eq!(plan.cfg["TRANSFORM"], json!({b: "FLIPPED"}));
     assert!(plan.cfg.get("DISABLED").is_none());
@@ -681,7 +681,7 @@ fn transforms_disabled_callback_and_mode_plan() {
     let mut disable = state(a, "DP-1");
     disable.enabled = false;
     disable.enabled_changed = true;
-    let plan = model::save_plan(None, &[Some(disable)], "cb", None, &BTreeMap::new());
+    let plan = model::save_plan(None, &[Some(disable)], "cb", None, &BTreeMap::new(), &[]);
     assert_eq!(plan.cfg["DISABLED"], json!({a: null}));
     assert_eq!(plan.cfg["CALLBACK_CMD"], json!("cb"));
 }
@@ -847,4 +847,176 @@ fn adaptive_sync_strings_are_translated_into_every_language() {
         }
     }
     assert_eq!(languages, 30);
+}
+
+// ------------------------------------------- a monitor on another connector (issue #9)
+
+const MOVED_FILE: &str = "ORDER:
+- UGD Artist 12     0x20210910 (HDMI-A-2)
+- Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-2)
+MODE:
+  UGD Artist 12     0x20210910 (HDMI-A-3): {WIDTH: 1920, HEIGHT: 1080, HZ: 60.003}
+  Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-4): {WIDTH: 2560, HEIGHT: 1440, HZ: 239.97}
+  UGD Artist 12     0x20210910 (HDMI-A-2): {WIDTH: 1920, HEIGHT: 1080, HZ: 60.003}
+  Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-2): {WIDTH: 2560, HEIGHT: 1440, HZ: 239.97}
+VRR_OFF:
+- Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101 (DP-2)
+";
+const MSI: &str = "Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101";
+const UGD: &str = "UGD Artist 12     0x20210910";
+
+fn on(identity: &str, connector: &str) -> String {
+    format!("{identity} ({connector})")
+}
+
+/// The daemon's state for the two monitors of the issue on these connectors.
+fn moved_heads(dp: &str, hdmi: &str) -> Vec<Value> {
+    let head = |make: &str, model: &str, serial: &str, connector: &str, width: i64, height: i64| json!({
+        "NAME": connector, "DESCRIPTION": format!("{make} {model} {serial} ({connector})"), "MAKE": make, "MODEL": model, "SERIAL_NUMBER": serial,
+        "CURRENT": {"ENABLED": true, "MODE": {"WIDTH": width, "HEIGHT": height, "REFRESH_MHZ": 60000}},
+        "DESIRED": {"ENABLED": true, "MODE": {"WIDTH": width, "HEIGHT": height, "REFRESH_MHZ": 60000}}});
+    vec![head("Micro-Star Int'l Co., Ltd.", "MAG 274Q X24", "0x01010101", dp, 2560, 1440), head("UGD", "Artist 12    ", "0x20210910", hdmi, 1920, 1080)]
+}
+
+/// The issue's file with more per-screen settings, an unplugged monitor, a short name, a regex and a partial name.
+fn moved_cfg() -> Value {
+    let mut cfg = crate::compat::yaml::load(MOVED_FILE).unwrap();
+    cfg["SCALE"] = json!({on(MSI, "DP-4"): 1.25, on(MSI, "DP-2"): 1.5, "DP-9": 2.0, "!^HDMI-A-9$": 1.75, "Artist 12     0x20210910 (HDMI-A-9)": 1.125,
+                          "Other Screen 1 (DP-9)": 1.25});
+    cfg["TRANSFORM"] = json!({on(UGD, "HDMI-A-3"): "90"});
+    cfg["DISABLED"] = json!({"Other Screen 1 (DP-9)": null});
+    cfg
+}
+
+#[test]
+fn the_window_shows_the_settings_a_moved_monitor_gets() {
+    let cfg = moved_cfg();
+    let heads = moved_heads("DP-7", "HDMI-A-7");
+    let shown = model::resolved_cfg(&cfg, &heads);
+    assert_eq!(shown["SCALE"][on(MSI, "DP-7")], json!(1.5), "the last of the monitor's entries");
+    assert_eq!(shown["TRANSFORM"][on(UGD, "HDMI-A-7")], json!("90"));
+    assert_eq!(shown["MODE"][on(MSI, "DP-7")], json!({"WIDTH": 2560, "HEIGHT": 1440, "HZ": 239.97}));
+    assert_eq!(shown["ORDER"], json!([on(UGD, "HDMI-A-7"), on(MSI, "DP-7")]));
+    assert!(shown["SCALE"].get(on(UGD, "HDMI-A-7")).is_none() && shown["DISABLED"].as_object().unwrap().len() == 1);
+    for key in ["SCALE", "MODE", "TRANSFORM", "DISABLED"] {
+        for (name, value) in cfg[key].as_object().unwrap() {
+            assert_eq!(&shown[key][name], value, "{key} {name} is kept");
+        }
+    }
+    let monitors: Vec<Value> = heads.iter().map(|head| { let mut head = head.clone(); head.as_object_mut().unwrap().remove("DESIRED"); head }).collect();
+    let layout = LayoutModel::new(&monitors, &shown, None, None, None, shown["TRANSFORM"].as_object().unwrap());
+    let entries: Vec<(&str, &str)> = layout.entries.iter().map(|e| (e.name.as_str(), e.transform.as_str())).collect();
+    assert_eq!(entries, [("HDMI-A-7", "90"), ("DP-7", "0")], "the saved order and rotation");
+    assert_eq!(model::vrr_mode_of(&heads[0], &cfg, &heads), VrrMode::Off, "an older daemon's state: the lists");
+    assert_eq!(model::vrr_mode_of(&heads[1], &cfg, &heads), VrrMode::Auto);
+    // On a connector of its own the monitor's own entries are shown; a regex or name that matches wins too.
+    let heads = moved_heads("DP-2", "HDMI-A-2");
+    let shown = model::resolved_cfg(&cfg, &heads);
+    assert_eq!((shown["SCALE"].clone(), shown["ORDER"].clone(), shown["MODE"].clone()), (cfg["SCALE"].clone(), cfg["ORDER"].clone(), cfg["MODE"].clone()));
+    assert_eq!(shown["TRANSFORM"][on(UGD, "HDMI-A-2")], json!("90"));
+    let heads = moved_heads("DP-9", "HDMI-A-9");
+    let shown = model::resolved_cfg(&cfg, &heads);
+    assert!(shown["SCALE"].get(on(MSI, "DP-9")).is_none() && shown["SCALE"].get(on(UGD, "HDMI-A-9")).is_none(), "{}", shown["SCALE"]);
+    assert_eq!(model::resolved_cfg(&cfg, &[]), cfg);
+}
+
+/// The daemon's CFG_DEL then CFG_SET of a plan, as `save_config` sends them.
+fn daemon_after(cfg: &Value, plan: &model::SavePlan) -> crate::daemon::config::Cfg {
+    use crate::daemon::config::{Cfg, Partial};
+    Cfg::from_value(cfg).merged_del(&Partial::from_value(&plan.del_cfg)).merged_set(&Partial::from_value(&plan.cfg))
+}
+
+#[test]
+fn saving_moves_only_that_monitors_entries_to_its_connector() {
+    let cfg = moved_cfg();
+    let heads = moved_heads("DP-7", "HDMI-A-7");
+    let (mut first, mut second) = (state(&on(MSI, "DP-7"), "DP-7"), state(&on(UGD, "HDMI-A-7"), "HDMI-A-7"));
+    (first.width, first.height, first.refresh, first.scale) = (json!(2560), json!(1440), json!(239_970), 1.5);
+    second.transform = Some("90".into());
+    let shown = model::resolved_cfg(&cfg, &heads);
+    let layout = LayoutModel::new(&heads, &shown, None, None, None, shown["TRANSFORM"].as_object().unwrap());
+    let plan = model::save_plan(Some(&cfg), &[Some(first.clone()), Some(second.clone())], "", Some(&layout), &BTreeMap::new(), &heads);
+    assert_eq!(plan.cfg["ORDER"], json!([on(UGD, "HDMI-A-7"), on(MSI, "DP-7")]), "the arrangement as it was");
+    let keys = |value: &Value| -> Vec<String> { value.as_object().map(|m| m.keys().cloned().collect()).unwrap_or_default() };
+    assert_eq!(keys(&plan.cfg["MODE"]), [on(MSI, "DP-7"), on(UGD, "HDMI-A-7")]);
+    assert_eq!(keys(&plan.del_cfg["MODE"]), [on(MSI, "DP-4"), on(MSI, "DP-2"), on(UGD, "HDMI-A-3"), on(UGD, "HDMI-A-2")]);
+    assert_eq!(plan.cfg["SCALE"], json!({"DP-9": 2.0, "!^HDMI-A-9$": 1.75, "Artist 12     0x20210910 (HDMI-A-9)": 1.125,
+                                         "Other Screen 1 (DP-9)": 1.25, on(MSI, "DP-7"): 1.5, on(UGD, "HDMI-A-7"): 1.0}));
+    assert_eq!(plan.del_cfg["SCALE"], json!({on(MSI, "DP-4"): 1.25, on(MSI, "DP-2"): 1.5}));
+    assert_eq!((plan.cfg["TRANSFORM"].clone(), plan.del_cfg["TRANSFORM"].clone()), (json!({on(UGD, "HDMI-A-7"): "90"}), json!({on(UGD, "HDMI-A-3"): "90"})));
+    assert_eq!(plan.cfg["DISABLED"], json!({"Other Screen 1 (DP-9)": null}));
+    assert!(plan.del_cfg.get("DISABLED").is_none() && plan.cfg.get("VRR_OFF").is_none() && plan.del_cfg.get("VRR_OFF").is_none(),
+            "adaptive sync is saved only when it changes");
+    let saved = daemon_after(&cfg, &plan);
+    let text = saved.file_text();
+    for old in ["(DP-4)", "(DP-2): ", "(HDMI-A-2)", "(HDMI-A-3)"] {
+        assert!(!text.contains(old), "{old} is gone:\n{text}");
+    }
+    assert!(text.contains("Other Screen 1 (DP-9)") && text.contains("'!^HDMI-A-9$'") && text.contains("DP-9: 2") && text.contains("(HDMI-A-9)"), "{text}");
+    assert_eq!(saved.vrr_off, [on(MSI, "DP-2")], "unchanged, still used by the moved rule");
+    // The daemon reads the saved file the same way on DP-7, and on DP-2 next boot.
+    for (dp, hdmi) in [("DP-7", "HDMI-A-7"), ("DP-2", "HDMI-A-2")] {
+        let screens = model::screens(&moved_heads(dp, hdmi));
+        let scale = crate::daemon::layout::entry_for(&screens[0], &screens, &saved.scales).map(|e| e.1);
+        let transform = crate::daemon::layout::entry_for(&screens[1], &screens, &saved.transforms).map(|e| e.1);
+        assert_eq!((scale, transform), (Some(1.5), Some(1)), "{dp}");
+        assert_eq!(crate::daemon::layout::vrr_mode(&saved, &screens[0], &screens), VrrMode::Off, "{dp}");
+    }
+    // Monitors without entries elsewhere save exactly as before.
+    let plain = json!({"TRANSFORM": {"A": "90"}, "SCALE": {on(MSI, "DP-7"): 1.25}, "VRR_OFF": ["DP-7"]});
+    let states = [Some(first), Some(second)];
+    assert_eq!(model::save_plan(Some(&plain), &states, "", None, &BTreeMap::new(), &heads),
+               model::save_plan(Some(&plain), &states, "", None, &BTreeMap::new(), &[]));
+}
+
+#[test]
+fn identical_monitors_keep_every_entry_when_saved() {
+    let twin = |connector: &str| json!({"NAME": connector, "DESCRIPTION": format!("Dell Inc. U2720Q  ({connector})"), "MAKE": "Dell Inc.", "MODEL": "U2720Q", "SERIAL_NUMBER": ""});
+    let heads = [twin("DP-1"), twin("DP-3")];
+    let cfg = json!({"SCALE": {"Dell Inc. U2720Q  (DP-2)": 2.0}, "VRR_OFF": ["Dell Inc. U2720Q  (DP-2)"]});
+    let mut states = [state("Dell Inc. U2720Q  (DP-1)", "DP-1"), state("Dell Inc. U2720Q  (DP-3)", "DP-3")];
+    states[0].vrr_changed = true;
+    let plan = model::save_plan(Some(&cfg), &states.map(Some), "", None, &BTreeMap::new(), &heads);
+    assert_eq!(plan.cfg["SCALE"]["Dell Inc. U2720Q  (DP-2)"], json!(2.0));
+    assert!(plan.del_cfg.get("SCALE").is_none() && plan.del_cfg.get("MODE").is_none());
+    assert_eq!(plan.del_cfg["VRR_OFF"], json!(["Dell Inc. U2720Q  (DP-1)", "DP-1"]));
+    assert_eq!(model::resolved_cfg(&cfg, &heads), cfg);
+}
+
+#[test]
+fn adaptive_sync_set_back_to_automatic_leaves_no_entry_for_the_monitor() {
+    let heads = moved_heads("DP-4", "HDMI-A-3");
+    let desc = on(MSI, "DP-4");
+    for to in [VrrMode::Auto, VrrMode::Always, VrrMode::Off] {
+        let mut lists = VrrLists { off: vec![on(MSI, "DP-2"), "Other Screen 1 (DP-9)".into()], always: vec![on(MSI, "DP-1")] };
+        let shown = model::vrr_mode_of(&heads[0], &lists.cfg(), &heads);
+        assert_eq!(shown, VrrMode::Off, "the stale DP-2 entry applies, as the daemon reports");
+        let mut screen = state(&desc, "DP-4");
+        (screen.vrr, screen.vrr_changed) = (to, to != shown);
+        let plan = model::save_plan(Some(&lists.cfg()), &[Some(screen)], "", None, &BTreeMap::new(), &heads);
+        lists.apply(&plan);
+        let expected = |mode: VrrMode| if mode == to && to != VrrMode::Auto { vec![desc.clone()] } else { Vec::new() };
+        let others = |list: &[String]| list.iter().filter(|d| d.starts_with(MSI)).cloned().collect::<Vec<_>>();
+        if to != VrrMode::Off {
+            assert_eq!((others(&lists.off), others(&lists.always)), (expected(VrrMode::Off), expected(VrrMode::Always)), "{to:?}: {plan:?}");
+        }
+        assert_eq!(model::vrr_mode_of(&heads[0], &lists.cfg(), &heads), to, "{to:?}");
+        assert!(lists.off.contains(&"Other Screen 1 (DP-9)".to_owned()), "another monitor's entry stays");
+    }
+}
+
+#[test]
+fn the_adaptive_sync_block_names_the_new_connector() {
+    use crate::daemon::{config::Cfg, layout};
+    let dir = scratch("vrr-moved");
+    let path = dir.join("rc.xml");
+    std::fs::write(&path, "<labwc_config>\n</labwc_config>\n").unwrap();
+    let cfg = Cfg::load(MOVED_FILE).unwrap();
+    for (dp, hdmi) in [("DP-2", "HDMI-A-2"), ("DP-7", "HDMI-A-7")] {
+        let screens = model::screens(&moved_heads(dp, hdmi));
+        let modes = layout::vrr_modes(&cfg, &screens);
+        labwc::sync_adaptive_sync_with(&path, &modes, &fsx::os_replace, &|| (true, None)).unwrap();
+        let block = labwc::parse_adaptive_sync_block(&std::fs::read_to_string(&path).unwrap());
+        assert_eq!(block.into_iter().collect::<Vec<_>>(), [(dp.to_owned(), "no".to_owned()), (hdmi.to_owned(), "fullscreen".to_owned())]);
+    }
 }

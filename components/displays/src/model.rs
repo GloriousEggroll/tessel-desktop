@@ -3,31 +3,83 @@
 //! CFG_SET / CFG_DEL computation (tessel-displays:1379-1431, 1432-2171,
 //! 2669-2897).
 
-use crate::daemon::config::VrrMode;
+use crate::daemon::config::{Cfg, VrrMode};
+use crate::daemon::layout::{self, Head};
 use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use tessel_core::pyjson::{py_str, truthy};
 
+fn field(head: &Value, key: &str) -> String {
+    match head.get(key) {
+        None | Some(Value::Null) => String::new(),
+        Some(value) => py_str(value),
+    }
+}
+
+/// A head of the daemon's state as the matching rules see it.
+pub fn screen(head: &Value) -> Head {
+    Head { name: field(head, "NAME"), description: field(head, "DESCRIPTION"), make: field(head, "MAKE"),
+           model: field(head, "MODEL"), serial: field(head, "SERIAL_NUMBER"), ..Default::default() }
+}
+
+pub fn screens(heads: &[Value]) -> Vec<Head> {
+    heads.iter().map(screen).collect()
+}
+
+/// `STATE.HEADS` of the daemon's answer.
+pub fn state_heads(data: &Value) -> Vec<Value> {
+    data.get("STATE").and_then(|s| s.get("HEADS")).and_then(Value::as_array).cloned().unwrap_or_default()
+}
+
 /// The adaptive sync choice of a head in the daemon's state: its `VRR_MODE`,
 /// or, from an older daemon, what `VRR_OFF` and `VRR_ALWAYS` in `cfg` say.
-pub fn vrr_mode_of(head: &Value, cfg: &Value) -> VrrMode {
+pub fn vrr_mode_of(head: &Value, cfg: &Value, heads: &[Value]) -> VrrMode {
     if let Some(mode) = head.get("VRR_MODE").and_then(Value::as_str).and_then(VrrMode::from_name) {
         return mode;
     }
-    let screen = crate::daemon::layout::Head {
-        name: head.get("NAME").map(py_str).unwrap_or_default(),
-        description: head.get("DESCRIPTION").map(py_str).unwrap_or_default(),
-        ..Default::default()
-    };
-    let listed = |key: &str| cfg.get(key).and_then(Value::as_array)
-        .is_some_and(|items| items.iter().any(|item| crate::daemon::layout::matches(&screen, &py_str(item))));
-    if listed("VRR_OFF") {
-        VrrMode::Off
-    } else if listed("VRR_ALWAYS") {
-        VrrMode::Always
-    } else {
-        VrrMode::Auto
+    let names = |key: &str| cfg.get(key).and_then(Value::as_array).map(|items| items.iter().map(py_str).collect()).unwrap_or_default();
+    let lists = Cfg { vrr_off: names("VRR_OFF"), vrr_always: names("VRR_ALWAYS"), ..Default::default() };
+    layout::vrr_mode(&lists, &screen(head), &screens(heads))
+}
+
+/// The entry of a section saved for this monitor under another connector
+/// that the daemon uses for it: none when another entry matches it, else the
+/// last one.
+fn moved_entry(section: &Map<String, Value>, screen: &Head, screens: &[Head]) -> Option<(String, Value)> {
+    if section.keys().any(|name| layout::matches(screen, name)) {
+        return None;
     }
+    section.iter().rev().find(|(name, _)| layout::matches_moved(screen, screens, name)).map(|(name, value)| (name.clone(), value.clone()))
+}
+
+/// This monitor's entries under other connectors.
+fn moved_names<'a>(names: impl IntoIterator<Item = &'a String>, screen: &Head, screens: &[Head]) -> Vec<String> {
+    names.into_iter().filter(|name| layout::matches_moved(screen, screens, name)).cloned().collect()
+}
+
+/// The configuration as the window shows it. A monitor that no entry of
+/// MODE, SCALE, TRANSFORM, DISABLED or ORDER matches gets the one saved for
+/// it under another connector under its own description, as the daemon uses it.
+pub fn resolved_cfg(cfg: &Value, heads: &[Value]) -> Value {
+    let screens = screens(heads);
+    let mut out = cfg.clone();
+    let Some(map) = out.as_object_mut() else { return out };
+    for screen in screens.iter().filter(|screen| !screen.description.is_empty()) {
+        for key in ["MODE", "SCALE", "TRANSFORM", "DISABLED"] {
+            let Some(section) = map.get_mut(key).and_then(Value::as_object_mut) else { continue };
+            if let Some((_, value)) = moved_entry(section, screen, &screens) {
+                section.insert(screen.description.clone(), value);
+            }
+        }
+        if let Some(order) = map.get_mut("ORDER").and_then(Value::as_array_mut) {
+            if !order.iter().any(|item| layout::matches(screen, &py_str(item))) {
+                if let Some(item) = order.iter_mut().find(|item| layout::matches_moved(screen, &screens, &py_str(item))) {
+                    *item = Value::String(screen.description.clone());
+                }
+            }
+        }
+    }
+    out
 }
 
 /// Whether the daemon found adaptive sync refused on this head. Unknown is capable.
@@ -492,8 +544,10 @@ fn take_object(value: Option<&Value>) -> Map<String, Value> {
 
 /// `save_config` from the CFG of `CONFIG_DATA`, each tab's desired state
 /// (`None` = invalid mode selection), the callback command and the layout.
+/// `heads` is the daemon's `STATE.HEADS`: a monitor's entries under other
+/// connectors are moved to its description.
 pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], callback: &str,
-                 layout: Option<&LayoutModel>, managed_hdr: &BTreeMap<String, bool>) -> SavePlan {
+                 layout: Option<&LayoutModel>, managed_hdr: &BTreeMap<String, bool>, heads: &[Value]) -> SavePlan {
     let original_cfg = data_cfg.filter(|v| truthy(v)).cloned().unwrap_or_else(|| json!({}));
     let mut cfg = match &original_cfg { Value::Object(map) => map.clone(), _ => Map::new() };
     let original_transforms = take_object(cfg.get("TRANSFORM").filter(|v| truthy(v)));
@@ -515,10 +569,42 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
     let mut any_auto_scale = false;
     let mut vrr_off_to_delete: Vec<String> = Vec::new();
     let mut vrr_always_to_delete: Vec<String> = Vec::new();
+    let mut modes_to_delete = Map::new();
+    let screens = screens(heads);
+    let list_names = |key: &str| -> Vec<String> {
+        original_cfg.get(key).and_then(Value::as_array).map(|items| items.iter().map(py_str).collect()).unwrap_or_default()
+    };
+    let (saved_vrr_off, saved_vrr_always) = (list_names("VRR_OFF"), list_names("VRR_ALWAYS"));
 
     for (index, state) in states.iter().enumerate() {
         let Some(state) = state else { continue };
         let desc = state.desc.clone();
+        let screen = screens.iter().find(|screen| screen.description == desc).cloned()
+            .unwrap_or_else(|| Head { name: state.name.clone().unwrap_or_default(), description: desc.clone(), ..Default::default() });
+        // This monitor's entries under other connectors give way to its description.
+        let moved_scale = moved_entry(&scale_overrides, &screen, &screens);
+        let moved_transform = moved_entry(&transform_overrides, &screen, &screens);
+        let moved_disabled = moved_entry(&disabled_overrides, &screen, &screens);
+        for name in moved_names(mode_overrides.clone().keys(), &screen, &screens) {
+            if let Some(value) = mode_overrides.shift_remove(&name) {
+                modes_to_delete.insert(name, value);
+            }
+        }
+        for name in moved_names(scale_overrides.clone().keys(), &screen, &screens) {
+            if let Some(value) = scale_overrides.shift_remove(&name) {
+                scales_to_delete.insert(name, value);
+            }
+        }
+        for name in moved_names(transform_overrides.clone().keys(), &screen, &screens) {
+            transform_overrides.shift_remove(&name);
+            if let Some(original) = original_transforms.get(&name) {
+                transforms_to_delete.insert(name, original.clone());
+            }
+        }
+        for name in moved_names(disabled_overrides.clone().keys(), &screen, &screens) {
+            disabled_overrides.shift_remove(&name);
+            disabled_to_delete.insert(name.clone(), original_disabled.get(&name).cloned().unwrap_or(Value::Null));
+        }
         let hz = float_of(Some(&state.refresh), 0.0) / 1000.0;
         if state.hdr_changed {
             if let Some(name) = state.name.as_ref().filter(|n| !n.is_empty()) {
@@ -535,6 +621,8 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
             // Saved by description; an entry by connector name is removed too.
             let mut keys = vec![desc.clone()];
             keys.extend(state.name.clone().filter(|n| !n.is_empty()));
+            vrr_off_to_delete.extend(moved_names(&saved_vrr_off, &screen, &screens));
+            vrr_always_to_delete.extend(moved_names(&saved_vrr_always, &screen, &screens));
             match state.vrr {
                 VrrMode::Auto => {
                     vrr_off_to_delete.extend(keys.clone());
@@ -557,6 +645,8 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
             }
         } else if state.scale > 0.0 {
             scale_overrides.insert(desc.clone(), json!(state.scale));
+        } else if let Some((_, value)) = moved_scale {
+            scale_overrides.insert(desc.clone(), value);
         }
         if let Some(transform) = state.transform.as_ref().filter(|t| !t.is_empty()) {
             if transform.contains("STANDARD") && !transform.contains("FLIPPED") {
@@ -568,6 +658,8 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
                 let transform = if transform.contains("FLIPPED-STANDARD") { "FLIPPED".to_owned() } else { transform.clone() };
                 transform_overrides.insert(desc.clone(), Value::String(transform));
             }
+        } else if let Some((_, value)) = moved_transform {
+            transform_overrides.insert(desc.clone(), value);
         }
         if state.enabled_changed {
             if state.enabled {
@@ -577,6 +669,8 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
                 disabled_overrides.insert(desc.clone(), Value::Null);
             }
             enabled_changed_list.push(index);
+        } else if let Some((_, value)) = moved_disabled {
+            disabled_overrides.insert(desc.clone(), value);
         }
     }
 
@@ -604,6 +698,9 @@ pub fn save_plan(data_cfg: Option<&Value>, states: &[Option<DesiredState>], call
     set_or_remove(&mut cfg, "CALLBACK_CMD", Value::String(callback.to_owned()), !callback.is_empty());
 
     let mut del_cfg = Map::new();
+    if !modes_to_delete.is_empty() {
+        del_cfg.insert("MODE".into(), Value::Object(modes_to_delete));
+    }
     if !transforms_to_delete.is_empty() {
         del_cfg.insert("TRANSFORM".into(), Value::Object(transforms_to_delete));
     }

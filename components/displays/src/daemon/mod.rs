@@ -427,7 +427,7 @@ impl Daemon {
         }
         out.insert("MODES".into(), head.modes.iter().map(mode_value).collect());
         out.insert("MODES_FAILED".into(), head.modes_failed.iter().map(mode_value).collect());
-        out.insert("VRR_MODE".into(), layout::vrr_mode(&self.cfg, head).name().into());
+        out.insert("VRR_MODE".into(), layout::vrr_mode(&self.cfg, head, &self.heads).name().into());
         if let Some(capable) = head.vrr_capable {
             out.insert("VRR_CAPABLE".into(), capable.into());
         }
@@ -1005,6 +1005,41 @@ mod tests {
         daemon.delta = Delta::Mode(1, 10);
         assert!(!daemon.finish_probe(Some(true)), "the outcome of a real change is not a test's");
         assert_eq!(daemon.delta, Delta::Mode(1, 10));
+    }
+
+    #[test]
+    fn saved_settings_follow_a_monitor_that_comes_back_on_another_connector() {
+        let msi = "Micro-Star Int'l Co., Ltd. MAG 274Q X24 0x01010101";
+        let file = format!("MODE:\n  {msi} (DP-2): {{WIDTH: 2560, HEIGHT: 1440, HZ: 239.97}}\nSCALE:\n  {msi} (DP-2): 1.5\nVRR_OFF:\n- {msi} (DP-2)\n");
+        let mut daemon = Daemon::new(Cfg::load(&file).unwrap(), file.clone());
+        let connect = |daemon: &mut Daemon, id: u32, connector: &str| {
+            daemon.heads.push(Head {
+                id, name: connector.into(), description: format!("{msi} ({connector})"), make: "Micro-Star Int'l Co., Ltd.".into(),
+                model: "MAG 274Q X24".into(), serial: "0x01010101".into(), width_mm: 600, height_mm: 340,
+                modes: vec![Mode { id: id * 10, width: 2560, height: 1440, mhz: 143_999 }, Mode { id: id * 10 + 1, width: 2560, height: 1440, mhz: 239_970 }],
+                preferred: Some(id * 10), cur: layout::State { enabled: true, mode: Some(id * 10), scale: 256, ..Default::default() }, ..Default::default()
+            });
+        };
+        connect(&mut daemon, 1, "DP-2");
+        layout::desire(&daemon.cfg, &mut daemon.heads, None);
+        assert_eq!((daemon.heads[0].des.mode, daemon.heads[0].des.scale), (Some(11), 384));
+        // Unplugged (the head's finished event), then back on DP-7 after a reboot.
+        daemon.heads.retain(|head| head.id != 1);
+        connect(&mut daemon, 2, "DP-7");
+        layout::desire(&daemon.cfg, &mut daemon.heads, None);
+        assert_eq!((daemon.heads[0].des.mode, daemon.heads[0].des.scale), (Some(21), 384), "the DP-2 settings on DP-7");
+        assert_eq!(layout::plan(&daemon.heads), Plan::Mode(0));
+        let value = daemon.head_value(&daemon.heads[0]);
+        assert_eq!((value["NAME"].clone(), value["VRR_MODE"].clone()), (json!("DP-7"), json!("off")));
+        assert_eq!(value["DESIRED"]["MODE"]["REFRESH_MHZ"], json!(239_970));
+        let modes = layout::vrr_modes(&daemon.cfg, &daemon.heads);
+        assert_eq!(modes.into_iter().collect::<Vec<_>>(), [("DP-7".to_owned(), config::VrrMode::Off)], "rc.xml gets DP-7");
+        // An identical second monitor on DP-2 takes the entries back: no guessing for twins.
+        connect(&mut daemon, 3, "DP-2");
+        layout::desire(&daemon.cfg, &mut daemon.heads, None);
+        assert_eq!((daemon.heads[0].des.mode, daemon.heads[0].des.scale, daemon.heads[1].des.scale), (Some(20), 256, 384));
+        assert_eq!(daemon.head_value(&daemon.heads[0])["VRR_MODE"], json!("auto"));
+        assert_eq!(daemon.file_text, file, "nothing is written by itself");
     }
 
     /// Every message the daemon can show, in every language, with its placeholders intact.
