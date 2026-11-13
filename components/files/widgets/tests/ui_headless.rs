@@ -712,6 +712,51 @@ fn media_preview_uses_a_player_and_releases_it(env: &Env) -> Check {
     Ok(())
 }
 
+/// What `widget` draws, as `(plain textures, scaled textures)`.
+fn drawn_textures(widget: &impl IsA<gtk::Widget>) -> (usize, usize) {
+    let paintable = gtk::WidgetPaintable::new(Some(widget));
+    let snapshot = gtk::Snapshot::new();
+    paintable.snapshot(&snapshot, widget.width() as f64, widget.height() as f64);
+    snapshot.to_node().map_or((0, 0), |node| tessel_gtk::plain_scale::count_textures(&node))
+}
+
+/// Issue 17: a video frame shown far below its size must not go to GTK as a plain texture,
+/// which GTK's GPU renderers copy into a new full-size image (and Vulkan dies when that fails).
+fn video_preview_is_drawn_without_a_full_size_copy(env: &Env) -> Check {
+    let f = PaneFixture::new(env, "browse-video");
+    let preview = &f.pane.preview;
+    let page = preview.stack.child_by_name("media").ok_or("no media page")?;
+    check!(page.is::<tessel_gtk::plain_scale::PlainScaleBin>());
+    check!(preview.video.parent().as_ref() == Some(&page));
+    if tessel_core::shell::which("ffmpeg").is_none() {
+        println!("  (frame check skipped: ffmpeg creates the video fixture)");
+        return Ok(());
+    }
+    let clip = f.root.join("bars.webm");
+    let made = std::process::Command::new("ffmpeg").args(["-v", "error", "-f", "lavfi", "-i", "testsrc2=size=2560x1440:rate=5:duration=1",
+        "-c:v", "libvpx", "-deadline", "realtime", "-cpu-used", "8"]).arg(&clip).status().map(|s| s.success()).unwrap_or(false);
+    if !made {
+        println!("  (frame check skipped: ffmpeg has no VP8 encoder)");
+        return Ok(());
+    }
+    f.select(&["bars.webm"]);
+    eq!(preview.stack.visible_child_name().map(|s| s.to_string()), Some("media".to_string()));
+    let stream = preview.video.media_stream().ok_or("no media stream")?;
+    let shown = wait(20.0, || stream.error().is_some() || (stream.is_prepared() && stream.intrinsic_width() > 0));
+    if !shown || stream.error().is_some() {
+        println!("  (frame check skipped: this GStreamer cannot decode the fixture: {:?})", stream.error().map(|e| e.to_string()));
+        return Ok(());
+    }
+    pump(0.3);
+    eq!(stream.intrinsic_width(), 2560);
+    check!(preview.video.width() > 0 && preview.video.width() * 2 < 2560, "video is {} wide", preview.video.width());
+    let alone = drawn_textures(&preview.video);
+    let through = drawn_textures(&page);
+    check!(alone.0 >= 1 && alone.1 == 0, "the video alone draws {alone:?}");
+    eq!(through, (alone.0 - 1, 1));
+    Ok(())
+}
+
 struct FakePane {
     items: Vec<Item>,
     index: Cell<usize>,
@@ -1014,6 +1059,7 @@ fn main() {
         ("text_pdf_and_binary_previews", text_pdf_and_binary_previews),
         ("text_preview_is_capped_on_a_line_boundary", text_preview_is_capped_on_a_line_boundary),
         ("media_preview_uses_a_player_and_releases_it", media_preview_uses_a_player_and_releases_it),
+        ("video_preview_is_drawn_without_a_full_size_copy", video_preview_is_drawn_without_a_full_size_copy),
         ("space_quick_preview_steps_opens_and_closes", space_quick_preview_steps_opens_and_closes),
         ("printing_renders_pdf_text_and_images", printing_renders_pdf_text_and_images),
         ("disk_usage_bar_shows_free_and_total", disk_usage_bar_shows_free_and_total),

@@ -592,7 +592,8 @@ impl FilePreview {
         stack.add_named(&picture, Some("image"));
         stack.add_named(&placeholder, Some("placeholder"));
         stack.add_named(&text_scroll, Some("text"));
-        stack.add_named(&video, Some("media"));
+        // Frames are drawn far below their size here; see plain_scale for why that needs care.
+        stack.add_named(&tessel_gtk::plain_scale::PlainScaleBin::new(&video), Some("media"));
         stack.set_visible_child_name("placeholder");
         Self(Rc::new(PreviewInner {
             widgets: PreviewWidgets { stack, picture, placeholder, icon, hint, buffer, text_view, video },

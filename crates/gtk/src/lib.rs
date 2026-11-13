@@ -10,6 +10,7 @@ pub mod button_gap;
 pub mod osd;
 pub mod palette;
 pub mod placement;
+pub mod plain_scale;
 pub mod popup;
 pub mod theme;
 pub mod utils;

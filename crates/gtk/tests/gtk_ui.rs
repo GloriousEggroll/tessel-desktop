@@ -8,7 +8,7 @@ use gtk4_layer_shell::{Edge, LayerShell};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use tessel_gtk::{app_menu, button_gap, gtk, osd, palette, placement, popup, theme, utils};
+use tessel_gtk::{app_menu, button_gap, gtk, osd, palette, placement, plain_scale, popup, theme, utils};
 
 fn settle(seconds: f64) {
     let end = Instant::now() + Duration::from_secs_f64(seconds);
@@ -404,6 +404,45 @@ fn osd_checks() {
     println!("ok osd");
 }
 
+/// What `widget` draws, as `(plain textures, scaled textures)`.
+fn drawn_textures(widget: &impl IsA<gtk::Widget>) -> (usize, usize) {
+    let paintable = gtk::WidgetPaintable::new(Some(widget));
+    let snapshot = gtk::Snapshot::new();
+    paintable.snapshot(&snapshot, widget.width() as f64, widget.height() as f64);
+    snapshot.to_node().map_or((0, 0), |node| plain_scale::count_textures(&node))
+}
+
+fn plain_scale_checks() {
+    let frame = |width: i32, height: i32| {
+        let bytes = glib::Bytes::from_owned(vec![200u8; (width * height * 4) as usize]);
+        gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::R8g8b8a8, &bytes, (width * 4) as usize)
+    };
+    let show = |texture: &gdk::MemoryTexture, width: i32, height: i32| {
+        let picture = gtk::Picture::builder().paintable(texture).can_shrink(true).hexpand(true).vexpand(true).build();
+        let bin = plain_scale::PlainScaleBin::new(&picture);
+        let window = gtk::Window::builder().default_width(width).default_height(height).child(&bin).build();
+        window.present();
+        settle(0.3);
+        (window, bin, picture)
+    };
+    // An 800 px frame in a 200 px window is reduced four times: GTK would copy it for mipmaps.
+    let (window, bin, picture) = show(&frame(800, 600), 200, 220);
+    assert!(picture.width() > 0 && picture.width() <= 220, "picture is {} wide", picture.width());
+    assert_eq!(bin.child().as_ref(), Some(picture.upcast_ref::<gtk::Widget>()));
+    assert_eq!((bin.width(), bin.height()), (picture.width(), picture.height()), "the bin is exactly its child");
+    assert!(bin.compute_expand(gtk::Orientation::Horizontal) && bin.compute_expand(gtk::Orientation::Vertical));
+    assert_eq!(drawn_textures(&picture), (1, 0), "the child alone draws a plain texture");
+    assert_eq!(drawn_textures(&bin), (0, 1), "through the bin it is a scaled texture");
+    window.destroy();
+    // The same frame at more than half its size is left to GTK.
+    let (window, bin, picture) = show(&frame(800, 600), 600, 520);
+    assert!(picture.width() > 420, "picture is {} wide", picture.width());
+    assert_eq!(drawn_textures(&bin), (1, 0));
+    window.destroy();
+    settle(0.1);
+    println!("ok plain scale");
+}
+
 fn main() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
     if runtime == "/run/user/1000" || std::env::var_os("WAYLAND_DISPLAY").is_none() || std::env::var_os("SUITE_GTK_UI").is_none() {
@@ -423,5 +462,6 @@ fn main() {
     window_buttons_follow_the_layout_while_open(&cache);
     window_buttons_are_as_far_from_the_side_as_from_the_top(&cache);
     osd_checks();
+    plain_scale_checks();
     println!("gtk_ui: all checks passed");
 }

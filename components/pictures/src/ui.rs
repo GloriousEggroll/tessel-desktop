@@ -390,7 +390,8 @@ impl PicturesWindow {
         image_scroll.set_child(Some(&canvas.area));
         view_stack.add_named(&image_scroll, Some("image"));
         let video = gtk::Video::builder().autoplay(false).loop_(false).hexpand(true).vexpand(true).build();
-        view_stack.add_named(&video, Some("video"));
+        // A large video in a small window is drawn far below its size; see plain_scale.
+        view_stack.add_named(&tessel_gtk::plain_scale::PlainScaleBin::new(&video), Some("video"));
         let zoom_bar = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         zoom_bar.add_css_class("toolbar");
         viewer.append(&zoom_bar);

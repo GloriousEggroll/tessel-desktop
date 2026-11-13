@@ -154,6 +154,7 @@ private desktop entries; mimeapps.list only under the private XDG_CONFIG_HOME). 
 | Text cap on line boundary, binary refusal, Lines, GtkSourceView language | yes | unit `text_is_capped…`, ui `text_pdf_and_binary_previews`, `text_preview_is_capped_on_a_line_boundary` |
 | PDF first page 1200 px, Pages / Page size (poppler via dlopen) | yes | ui `text_pdf_and_binary_previews` |
 | Media never autoplays, released on change | yes | ui `media_preview_uses_a_player_and_releases_it` (ffmpeg fixture; PipeWire/Pulse pointed at nonexistent paths) |
+| Video frames shown far below their size are drawn without GTK's full-size copy (issue #17; not in the Python original) | yes | ui `video_preview_is_drawn_without_a_full_size_copy` (ffmpeg VP8 fixture); `tessel-gtk` unit `plain_scale::*` and ui `plain scale` |
 | PreviewLoader: one running + latest pending only; stale result ignored | yes | ui `worker_keeps_only_latest_pending_request`, `pending_image_does_not_replace_new_selection` |
 | Print PDF/text/image, export_to, unprintable error | yes | ui `printing_renders_pdf_text_and_images` |
 | Quick Look keys, step, open, print, release on close | yes | ui `space_quick_preview_steps_opens_and_closes` (fake pane) |

@@ -122,6 +122,10 @@ fn browse_view_edit_save_and_theme(app: &PicturesApp) {
     assert_eq!(case.size(), (800, 500));
     assert_eq!(w.stack.visible_child_name().as_deref(), Some("view"));
     assert_eq!(w.thumb_store.n_items(), 2);
+    // Issue 17: the video page draws through the bin that spares GTK a full-size copy of each frame.
+    let video_page = w.view_stack.child_by_name("video").expect("video page");
+    assert!(video_page.is::<tessel_gtk::plain_scale::PlainScaleBin>());
+    assert_eq!(w.video.parent().as_ref(), Some(&video_page));
     assert!(w.theme.borrow().is_some());
     let original = std::fs::read(&case.first).unwrap();
     w.edit(Operation::Right);
