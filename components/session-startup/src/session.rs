@@ -15,12 +15,9 @@ use crate::pystr::{casefold, html_escape, html_unescape, py_strip, split_whitesp
 use crate::xdg::{ENV_BEGIN, ENV_BLOCK, ENV_END, START_BEGIN, START_BLOCK, START_END};
 use crate::xml;
 
-pub const ACTION: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-action" } else { "~/.local/bin/tessel-action" };
-pub const LOCK: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-shell-lock" } else { "~/.local/bin/tessel-shell-lock" };
+pub use tessel_core::session_keys::{ACTION, BLOCK_BEGIN, BLOCK_END, LOCK};
 /// The autostart's tiling command (the shell expands `$HOME`).
 const TILING: &str = if tessel_core::paths::PACKAGED { "/usr/bin/tessel-tiling" } else { "\"$HOME/.local/bin/tessel-tiling\"" };
-pub const BLOCK_BEGIN: &str = "<!-- Tessel keybindings begin";
-pub const BLOCK_END: &str = "<!-- Tessel keybindings end -->";
 pub const TESSEL_TILING_BEGIN: &str = "<!-- Tessel Tiling keyboard begin -->";
 pub const TESSEL_TILING_END: &str = "<!-- Tessel Tiling keyboard end -->";
 pub const LOCAL_AUTOSTART: &str = "autostart.local";
@@ -64,41 +61,16 @@ fn execute(command: &str) -> String {
     format!("<action name=\"Execute\" command=\"{}\"/>", html_escape(command, true))
 }
 
-/// (key, action XML) pairs in block order; later tiling bindings override them.
+/// (key, action XML) pairs of `tessel_core::session_keys::keybindings()`, in block order.
 pub fn keybindings() -> Vec<(String, String)> {
-    let action = |name: &str| execute(&format!("{ACTION} {name}"));
-    let mut rows: Vec<(String, String)> = vec![
-        ("W-l".into(), execute(LOCK)),
-        ("C-A-Delete".into(), action("session-menu")),
-        ("W-Return".into(), action("terminal")),
-        ("W-slash".into(), action("shortcuts")),
-        ("XF86PowerOff".into(), action("power-button")),
-        ("XF86AudioPlay".into(), action("play-pause")),
-        ("XF86AudioPause".into(), action("pause")),
-        ("XF86AudioNext".into(), action("next")),
-        ("XF86AudioPrev".into(), action("previous")),
-        ("XF86AudioStop".into(), action("stop")),
-        ("XF86AudioLowerVolume".into(), action("volume-down")),
-        ("XF86AudioRaiseVolume".into(), action("volume-up")),
-        ("XF86AudioMute".into(), action("toggle-mute")),
-        ("XF86MonBrightnessUp".into(), action("brightness-up")),
-        ("XF86MonBrightnessDown".into(), action("brightness-down")),
-        // Window tiling uses Super+Ctrl+Left/Right for window groups while it
-        // is enabled; Ctrl+Alt+Left/Right always changes workspace.
-        ("W-C-Left".into(), r#"<action name="GoToDesktop" to="left"/>"#.into()),
-        ("W-C-Right".into(), r#"<action name="GoToDesktop" to="right"/>"#.into()),
-        ("C-A-Left".into(), r#"<action name="GoToDesktop" to="left"/>"#.into()),
-        ("C-A-Right".into(), r#"<action name="GoToDesktop" to="right"/>"#.into()),
-    ];
-    // labwc resolves numeric names by position, so these follow renamed and
-    // added workspaces; numbers beyond the configured count do nothing.
-    for number in 1..=10 {
-        rows.push((format!("W-{}", number % 10), format!(r#"<action name="GoToDesktop" to="{number}"/>"#)));
-    }
-    for number in 1..=10 {
-        rows.push((format!("W-S-{}", number % 10), format!(r#"<action name="SendToDesktop" to="{number}"/>"#)));
-    }
-    rows
+    tessel_core::session_keys::keybindings().into_iter().map(|(key, name, attribute, value)| {
+        let action = if name == "Execute" && attribute == "command" {
+            execute(&value)
+        } else {
+            format!("<action name=\"{name}\" {attribute}=\"{}\"/>", html_escape(&value, true))
+        };
+        (key, action)
+    }).collect()
 }
 
 /// Existing bindings for these commands are earlier suite versions which the
@@ -1408,5 +1380,33 @@ mod title_font_tests {
                    <weight>bold</weight>\n    </font>\n  </theme>\n</labwc_config>\n";
         let result = edit_theme(old).unwrap();
         assert_eq!(fonts(&result), vec![vec!["Noto Sans", "11", "", "SemiBold"]; 2]);
+    }
+}
+
+#[cfg(test)]
+mod keybinding_table_tests {
+    use super::*;
+
+    /// The rows as they were rendered before the table moved to tessel-core.
+    #[test]
+    fn keybinding_rows_are_rendered_unchanged() {
+        let rows = keybindings();
+        assert_eq!(rows.len(), 39);
+        let row = |i: usize| (rows[i].0.as_str(), rows[i].1.as_str());
+        assert_eq!(row(0), ("W-l", format!(r#"<action name="Execute" command="{LOCK}"/>"#).as_str()));
+        assert_eq!(row(1), ("C-A-Delete", format!(r#"<action name="Execute" command="{ACTION} session-menu"/>"#).as_str()));
+        assert_eq!(row(2), ("W-Return", format!(r#"<action name="Execute" command="{ACTION} terminal"/>"#).as_str()));
+        assert_eq!(row(14), ("XF86MonBrightnessDown", format!(r#"<action name="Execute" command="{ACTION} brightness-down"/>"#).as_str()));
+        assert_eq!(row(15), ("W-C-Left", r#"<action name="GoToDesktop" to="left"/>"#));
+        assert_eq!(row(18), ("C-A-Right", r#"<action name="GoToDesktop" to="right"/>"#));
+        assert_eq!(row(19), ("W-1", r#"<action name="GoToDesktop" to="1"/>"#));
+        assert_eq!(row(28), ("W-0", r#"<action name="GoToDesktop" to="10"/>"#));
+        assert_eq!(row(29), ("W-S-1", r#"<action name="SendToDesktop" to="1"/>"#));
+        assert_eq!(row(38), ("W-S-0", r#"<action name="SendToDesktop" to="10"/>"#));
+        let keys: Vec<&str> = rows.iter().map(|(k, _)| k.as_str()).collect();
+        assert_eq!(keys[..15], ["W-l", "C-A-Delete", "W-Return", "W-slash", "XF86PowerOff", "XF86AudioPlay", "XF86AudioPause",
+                                "XF86AudioNext", "XF86AudioPrev", "XF86AudioStop", "XF86AudioLowerVolume", "XF86AudioRaiseVolume",
+                                "XF86AudioMute", "XF86MonBrightnessUp", "XF86MonBrightnessDown"]);
+        assert_eq!((BLOCK_BEGIN, BLOCK_END), ("<!-- Tessel keybindings begin", "<!-- Tessel keybindings end -->"));
     }
 }

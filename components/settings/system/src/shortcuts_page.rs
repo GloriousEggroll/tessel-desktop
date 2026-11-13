@@ -9,7 +9,8 @@ use gtk::{gdk, glib, pango};
 use tessel_core::tr;
 use tessel_gtk::utils::{add_css, headerbar, key_controller, PRIORITY_APPLICATION};
 
-use crate::shortcuts_model::{conflicts, display_key, display_key_with, key_from_event, normalize, Shortcut, ShortcutStore, Shortcuts, GROUPS};
+use crate::shortcuts_model::{conflicts, display_key, display_key_with, key_from_event, normalize, reset_blocker, ResetSummary, Shortcut,
+                             ShortcutStore, Shortcuts, GROUPS};
 
 pub const SOURCE_NOTES: &[(&str, &str)] = &[("default", "Default"), ("tiling", "Tiling")];
 
@@ -43,6 +44,8 @@ pub struct RebindDialog {
     pub entry: gtk::Entry,
     pub message: gtk::Label,
     pub save: gtk::Button,
+    /// "Default: …" for suite shortcuts.
+    pub default: Option<gtk::Label>,
 }
 
 impl RebindDialog {
@@ -56,6 +59,11 @@ impl RebindDialog {
         window.set_child(Some(&content));
         content.append(&label(&tr!("Press the new shortcut for “{value1}”.", value1 = describe(shortcut)), Some("group-title")));
         content.append(&label(&tr!("Press Escape to cancel or Backspace to clear."), Some("detail")));
+        let default = (!shortcut.default_key.is_empty()).then(|| {
+            let line = label(&tr!("Default: {value1}", value1 = display_key_with(&shortcut.default_key, &translate)), Some("detail"));
+            content.append(&line);
+            line
+        });
         let preview = gtk::Box::builder().halign(gtk::Align::Center).margin_top(6).margin_bottom(6).build();
         content.append(&preview);
         let entry = gtk::Entry::builder().placeholder_text(tr!("Or type it, for example W-S-e")).build();
@@ -71,7 +79,7 @@ impl RebindDialog {
         buttons.append(&save);
         content.append(&buttons);
         let this = Rc::new(RebindDialog { window, shortcut: shortcut.clone(), shortcuts: shortcuts.to_vec(), apply, key: RefCell::new(String::new()),
-                                          preview, entry, message, save });
+                                          preview, entry, message, save, default });
         let weak = Rc::downgrade(&this);
         this.entry.connect_changed(move |entry| if let Some(t) = weak.upgrade() { t.set(crate::compat::strip(&entry.text()), true) });
         let w = this.window.clone();
@@ -193,21 +201,32 @@ fn inhibit(window: &gtk::Window, active: bool) {
 pub struct ShortcutList {
     pub parent: gtk::Box,
     edit: Option<Rc<dyn Fn(&Shortcut)>>,
+    reset: Option<Rc<dyn Fn(&Shortcut)>>,
     include_inactive: bool,
     /// `(row, shortcut, terms)`.
     pub rows: RefCell<Vec<(gtk::ListBoxRow, Shortcut, String)>>,
     pub groups: RefCell<Vec<(&'static str, gtk::Label, gtk::ListBox)>>,
+    /// The reset buttons of changed suite shortcuts.
+    pub resets: RefCell<Vec<(gtk::Button, Shortcut)>>,
 }
 
 impl ShortcutList {
     pub fn new(parent: &gtk::Box, edit: Option<Rc<dyn Fn(&Shortcut)>>, include_inactive: bool) -> ShortcutList {
-        ShortcutList { parent: parent.clone(), edit, include_inactive, rows: Default::default(), groups: Default::default() }
+        ShortcutList { parent: parent.clone(), edit, reset: None, include_inactive, rows: Default::default(), groups: Default::default(),
+                       resets: Default::default() }
+    }
+
+    /// Show a reset button on shortcuts whose key differs from the shipped one.
+    pub fn with_reset(mut self, reset: Rc<dyn Fn(&Shortcut)>) -> ShortcutList {
+        self.reset = Some(reset);
+        self
     }
 
     pub fn render(&self, shortcuts: &[Shortcut]) {
         tessel_gtk::utils::remove_children(&self.parent);
         self.rows.borrow_mut().clear();
         self.groups.borrow_mut().clear();
+        self.resets.borrow_mut().clear();
         for group in GROUPS {
             let items: Vec<&Shortcut> = shortcuts.iter().filter(|i| i.group == *group && (self.include_inactive || i.active)).collect();
             if items.is_empty() {
@@ -251,6 +270,16 @@ impl ShortcutList {
             line.append(&label_with(&note, Some("detail"), false));
         }
         line.append(&keycaps(&item.key));
+        if let Some(reset) = self.reset.as_ref().filter(|_| item.changed()) {
+            let tip = tr!("Reset to {value1}", value1 = display_key_with(&item.default_key, &translate));
+            let button = gtk::Button::builder().icon_name("edit-undo-symbolic").tooltip_text(&tip).build();
+            button.add_css_class("flat");
+            button.update_property(&[gtk::accessible::Property::Label(&format!("{tip} · {text}"))]);
+            let (reset, shortcut) = (reset.clone(), item.clone());
+            button.connect_clicked(move |_| reset(&shortcut));
+            line.append(&button);
+            self.resets.borrow_mut().push((button, item.clone()));
+        }
         if let Some(edit) = &self.edit {
             let button = gtk::Button::builder().icon_name("document-edit-symbolic").tooltip_text(tr!("Change Shortcut"))
                 .sensitive(item.editable()).build();
@@ -296,6 +325,7 @@ pub struct ShortcutsPage {
     pub store: Rc<dyn Shortcuts>,
     pub shortcuts: RefCell<Vec<Shortcut>>,
     pub search: gtk::SearchEntry,
+    pub reset_all: gtk::Button,
     pub status: gtk::Label,
     pub empty: gtk::Label,
     pub container: gtk::Box,
@@ -309,7 +339,12 @@ impl ShortcutsPage {
                              Some("preferences-desktop-keyboard-shortcuts-symbolic"));
         let search = gtk::SearchEntry::builder().placeholder_text(tr!("Search shortcuts")).build();
         search.update_property(&[gtk::accessible::Property::Label(&tr!("Search shortcuts"))]);
-        page.content.append(&search);
+        search.set_hexpand(true);
+        let bar = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        bar.append(&search);
+        let reset_all = gtk::Button::builder().label(tr!("Reset All Shortcuts…")).sensitive(false).build();
+        bar.append(&reset_all);
+        page.content.append(&bar);
         let status = label("", Some("detail"));
         page.content.append(&status);
         let empty = label(&tr!("No shortcuts found"), Some("detail"));
@@ -318,10 +353,14 @@ impl ShortcutsPage {
         let container = gtk::Box::new(gtk::Orientation::Vertical, 10);
         page.content.append(&container);
         let this = Rc::new(ShortcutsPage { page, store: store.unwrap_or_else(|| Rc::new(ShortcutStore::new(None, None))),
-                                           shortcuts: Default::default(), search, status, empty, container, list: RefCell::new(None) });
+                                           shortcuts: Default::default(), search, reset_all, status, empty, container, list: RefCell::new(None) });
         let weak = Rc::downgrade(&this);
         let edit: Rc<dyn Fn(&Shortcut)> = Rc::new(move |shortcut| if let Some(t) = weak.upgrade() { t.edit(shortcut) });
-        *this.list.borrow_mut() = Some(ShortcutList::new(&this.container, Some(edit), true));
+        let weak = Rc::downgrade(&this);
+        let reset: Rc<dyn Fn(&Shortcut)> = Rc::new(move |shortcut| if let Some(t) = weak.upgrade() { t.reset(shortcut) });
+        *this.list.borrow_mut() = Some(ShortcutList::new(&this.container, Some(edit), true).with_reset(reset));
+        let weak = Rc::downgrade(&this);
+        this.reset_all.connect_clicked(move |_| if let Some(t) = weak.upgrade() { t.confirm_reset_all() });
         let weak = Rc::downgrade(&this);
         this.search.connect_search_changed(move |_| if let Some(t) = weak.upgrade() { t.filter() });
         this.reload();
@@ -339,6 +378,7 @@ impl ShortcutsPage {
         if let Some(list) = self.list.borrow().as_ref() {
             list.render(&shortcuts);
         }
+        self.reset_all.set_sensitive(shortcuts.iter().any(Shortcut::changed));
         *self.shortcuts.borrow_mut() = shortcuts;
         self.filter();
     }
@@ -378,6 +418,89 @@ impl ShortcutsPage {
         }
         self.reload();
     }
+
+    /// Put the shipped key of one suite shortcut back.
+    pub fn reset(&self, shortcut: &Shortcut) {
+        if let Some(blocker) = reset_blocker(&self.shortcuts.borrow(), shortcut) {
+            self.blocked(&blocker.clone());
+            return;
+        }
+        let (closed, status, shown) = (self.page.closed_flag(), self.status.clone(), display_key_with(&shortcut.default_key, &translate));
+        let done: crate::labwc_settings::Done = Box::new(move |okay, _| {
+            if closed.get() {
+                return;
+            }
+            if okay {
+                status_text(&status, &tr!("Shortcut changed to {value1}.", value1 = shown), None);
+            } else {
+                status_text(&status, &tr!("Saved, but the desktop could not reload its configuration."), Some("warning"));
+            }
+        });
+        match self.store.reset(shortcut, Some(done)) {
+            Ok(Some(blocker)) => self.blocked(&blocker),
+            Ok(None) => {}
+            Err(error) => {
+                status_text(&self.status, &tr!("The shortcut could not be changed: {value1}", value1 = error.to_string()), Some("error"))
+            }
+        }
+        self.reload();
+    }
+
+    fn blocked(&self, blocker: &Shortcut) {
+        status_text(&self.status, &tr!("The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.",
+                                       value1 = describe(blocker)), Some("error"));
+    }
+
+    /// Ask before putting every changed suite shortcut back.
+    pub fn confirm_reset_all(self: &Rc<Self>) {
+        let weak = Rc::downgrade(self);
+        gs_base::style::choose(&self.page.widget, &tr!("Reset all shortcuts?"),
+                               &tr!("Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept."),
+                               &[tr!("Cancel"), tr!("Reset")], move |answer| {
+                                   if answer == Some(1) {
+                                       if let Some(t) = weak.upgrade() { t.reset_all() }
+                                   }
+                               }, 0, Some(0));
+    }
+
+    pub fn reset_all(&self) {
+        let (closed, status) = (self.page.closed_flag(), self.status.clone());
+        let done: crate::shortcuts_model::ResetDone = Box::new(move |okay, summary| {
+            if !closed.get() {
+                let (text, css) = reset_summary(okay, summary);
+                if !text.is_empty() {
+                    status_text(&status, &text, css);
+                }
+            }
+        });
+        if let Err(error) = self.store.reset_all(Some(done)) {
+            status_text(&self.status, &tr!("The shortcuts could not be reset: {value1}", value1 = error.to_string()), Some("error"));
+        }
+        self.reload();
+    }
+}
+
+/// Status text after Reset All.
+pub fn reset_summary(okay: bool, summary: ResetSummary) -> (String, Option<&'static str>) {
+    if !okay {
+        return (tr!("Saved, but the desktop could not reload its configuration."), Some("warning"));
+    }
+    let mut parts = Vec::new();
+    if summary.reset > 0 || summary.kept == 0 {
+        parts.push(if summary.reset == 1 {
+            tr!("{value1} shortcut was reset.", value1 = summary.reset)
+        } else {
+            tr!("{value1} shortcuts were reset.", value1 = summary.reset)
+        });
+    }
+    if summary.kept > 0 {
+        parts.push(if summary.kept == 1 {
+            tr!("{value1} shortcut was kept because one of your own shortcuts uses its key.", value1 = summary.kept)
+        } else {
+            tr!("{value1} shortcuts were kept because your own shortcuts use their keys.", value1 = summary.kept)
+        });
+    }
+    (parts.join(" "), (summary.kept > 0).then_some("warning"))
 }
 
 struct SheetInner {
@@ -510,6 +633,7 @@ pub fn build_page_with(store: Option<Rc<dyn Shortcuts>>) -> SettingsPage {
         .with_activate(move || if let Some(c) = activate.upgrade() { c.reload() });
     page.add_target("shortcuts-search", &controller.search);
     page.add_target("shortcuts-list", &controller.container);
+    page.add_target("shortcuts-reset", &controller.reset_all);
     // Python: getattr(controller, 'search') for "shortcuts-overview".
     page.add_target("search", &controller.search);
     page.set_controller(controller);

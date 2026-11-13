@@ -1998,5 +1998,19 @@
   "Archive manager": "Archívumkezelő",
   "Choose the application that opens PDF files and other documents.": "Válassza ki az alkalmazást, amely a PDF-fájlokat és más dokumentumokat megnyitja.",
   "Choose the application that opens archives.": "Válassza ki az alkalmazást, amely az archívumokat megnyitja.",
-  "Turn Num Lock on automatically when you sign in.": "A Num Lock automatikus bekapcsolása bejelentkezéskor."
+  "Turn Num Lock on automatically when you sign in.": "A Num Lock automatikus bekapcsolása bejelentkezéskor.",
+  "Default: {value1}": "Alapértelmezett: {value1}",
+  "Reset to {value1}": "Visszaállítás erre: {value1}",
+  "Reset All Shortcuts…": "Összes gyorsbillentyű visszaállítása…",
+  "Reset all shortcuts?": "Visszaállítja az összes gyorsbillentyűt?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "A módosított asztali gyorsbillentyűk visszakapják eredeti billentyűiket. Az Ön által hozzáadott gyorsbillentyűk megmaradnak.",
+  "Reset": "Visszaállítás",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Az alapértelmezett billentyűt a(z) „{value1}” használja. Előbb módosítsa azt a gyorsbillentyűt, vagy állítsa vissza az összeset.",
+  "The shortcuts could not be reset: {value1}": "A gyorsbillentyűket nem sikerült visszaállítani: {value1}",
+  "{value1} shortcut was reset.": "{value1} gyorsbillentyű visszaállítva.",
+  "{value1} shortcuts were reset.": "{value1} gyorsbillentyű visszaállítva.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} gyorsbillentyű változatlan maradt, mert az egyik saját gyorsbillentyűje használja a billentyűjét.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} gyorsbillentyű változatlan maradt, mert a saját gyorsbillentyűi használják a billentyűiket.",
+  "Reset shortcuts": "Gyorsbillentyűk visszaállítása",
+  "Put one shortcut, or all of them, back to the original keys.": "Egy vagy az összes gyorsbillentyű visszaállítása az eredeti billentyűkre."
 }

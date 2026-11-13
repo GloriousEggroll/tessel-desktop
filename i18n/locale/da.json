@@ -1998,5 +1998,19 @@
   "Archive manager": "Arkivhåndtering",
   "Choose the application that opens PDF files and other documents.": "Vælg det program, der åbner PDF-filer og andre dokumenter.",
   "Choose the application that opens archives.": "Vælg det program, der åbner arkiver.",
-  "Turn Num Lock on automatically when you sign in.": "Slå Num Lock til automatisk, når du logger ind."
+  "Turn Num Lock on automatically when you sign in.": "Slå Num Lock til automatisk, når du logger ind.",
+  "Default: {value1}": "Standard: {value1}",
+  "Reset to {value1}": "Nulstil til {value1}",
+  "Reset All Shortcuts…": "Nulstil alle genveje…",
+  "Reset all shortcuts?": "Nulstil alle genveje?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Skrivebordsgenveje, du har ændret, får deres oprindelige taster tilbage. Genveje, du selv har tilføjet, bevares.",
+  "Reset": "Nulstil",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Standardtasten bruges af “{value1}”. Skift den genvej først, eller nulstil alle genveje.",
+  "The shortcuts could not be reset: {value1}": "Genvejene kunne ikke nulstilles: {value1}",
+  "{value1} shortcut was reset.": "{value1} genvej blev nulstillet.",
+  "{value1} shortcuts were reset.": "{value1} genveje blev nulstillet.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} genvej blev bevaret, fordi en af dine egne genveje bruger dens tast.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} genveje blev bevaret, fordi dine egne genveje bruger deres taster.",
+  "Reset shortcuts": "Nulstil genveje",
+  "Put one shortcut, or all of them, back to the original keys.": "Sæt én genvej eller dem alle tilbage til de oprindelige taster."
 }

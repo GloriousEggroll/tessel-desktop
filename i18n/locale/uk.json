@@ -1998,5 +1998,19 @@
   "Archive manager": "Менеджер архівів",
   "Choose the application that opens PDF files and other documents.": "Виберіть програму, яка відкриває файли PDF та інші документи.",
   "Choose the application that opens archives.": "Виберіть програму, яка відкриває архіви.",
-  "Turn Num Lock on automatically when you sign in.": "Автоматично вмикати Num Lock під час входу."
+  "Turn Num Lock on automatically when you sign in.": "Автоматично вмикати Num Lock під час входу.",
+  "Default: {value1}": "Типово: {value1}",
+  "Reset to {value1}": "Скинути до {value1}",
+  "Reset All Shortcuts…": "Скинути всі скорочення…",
+  "Reset all shortcuts?": "Скинути всі скорочення?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Змінені скорочення стільниці повернуть свої початкові клавіші. Скорочення, які ви додали самі, буде збережено.",
+  "Reset": "Скинути",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Типову клавішу використовує «{value1}». Спершу змініть це скорочення або скиньте всі скорочення.",
+  "The shortcuts could not be reset: {value1}": "Не вдалося скинути скорочення: {value1}",
+  "{value1} shortcut was reset.": "Скинуто скорочень: {value1}.",
+  "{value1} shortcuts were reset.": "Скинуто скорочень: {value1}.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Залишено без змін скорочень: {value1} — їхні клавіші використовують ваші власні скорочення.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Залишено без змін скорочень: {value1} — їхні клавіші використовують ваші власні скорочення.",
+  "Reset shortcuts": "Скинути скорочення",
+  "Put one shortcut, or all of them, back to the original keys.": "Поверніть одне скорочення або всі до початкових клавіш."
 }

@@ -1998,5 +1998,19 @@
   "Archive manager": "Menedżer archiwów",
   "Choose the application that opens PDF files and other documents.": "Wybierz aplikację, która otwiera pliki PDF i inne dokumenty.",
   "Choose the application that opens archives.": "Wybierz aplikację, która otwiera archiwa.",
-  "Turn Num Lock on automatically when you sign in.": "Automatycznie włączaj Num Lock po zalogowaniu."
+  "Turn Num Lock on automatically when you sign in.": "Automatycznie włączaj Num Lock po zalogowaniu.",
+  "Default: {value1}": "Domyślny: {value1}",
+  "Reset to {value1}": "Przywróć {value1}",
+  "Reset All Shortcuts…": "Przywróć wszystkie skróty…",
+  "Reset all shortcuts?": "Przywrócić wszystkie skróty?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Zmienione skróty pulpitu odzyskają pierwotne klawisze. Skróty dodane przez Ciebie zostaną zachowane.",
+  "Reset": "Przywróć",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Domyślny klawisz jest używany przez „{value1}”. Najpierw zmień ten skrót lub przywróć wszystkie skróty.",
+  "The shortcuts could not be reset: {value1}": "Nie udało się przywrócić skrótów: {value1}",
+  "{value1} shortcut was reset.": "Przywrócono {value1} skrót.",
+  "{value1} shortcuts were reset.": "Przywrócone skróty: {value1}.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Pozostawione skróty, bo ich klawisza używa Twój własny skrót: {value1}.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Pozostawione skróty, bo ich klawiszy używają Twoje własne skróty: {value1}.",
+  "Reset shortcuts": "Przywróć skróty",
+  "Put one shortcut, or all of them, back to the original keys.": "Przywróć jeden skrót lub wszystkie do pierwotnych klawiszy."
 }

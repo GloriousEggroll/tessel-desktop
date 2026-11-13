@@ -1998,5 +1998,19 @@
   "Archive manager": "Arkistonhallinta",
   "Choose the application that opens PDF files and other documents.": "Valitse sovellus, joka avaa PDF-tiedostot ja muut asiakirjat.",
   "Choose the application that opens archives.": "Valitse sovellus, joka avaa arkistot.",
-  "Turn Num Lock on automatically when you sign in.": "Ota Num Lock käyttöön automaattisesti sisäänkirjautuessa."
+  "Turn Num Lock on automatically when you sign in.": "Ota Num Lock käyttöön automaattisesti sisäänkirjautuessa.",
+  "Default: {value1}": "Oletus: {value1}",
+  "Reset to {value1}": "Palauta {value1}",
+  "Reset All Shortcuts…": "Palauta kaikki pikanäppäimet…",
+  "Reset all shortcuts?": "Palautetaanko kaikki pikanäppäimet?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Muuttamasi työpöydän pikanäppäimet palautetaan alkuperäisiin näppäimiin. Itse lisäämäsi pikanäppäimet säilyvät.",
+  "Reset": "Palauta",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Oletusnäppäintä käyttää ”{value1}”. Vaihda ensin se pikanäppäin tai palauta kaikki pikanäppäimet.",
+  "The shortcuts could not be reset: {value1}": "Pikanäppäimiä ei voitu palauttaa: {value1}",
+  "{value1} shortcut was reset.": "{value1} pikanäppäin palautettiin.",
+  "{value1} shortcuts were reset.": "{value1} pikanäppäintä palautettiin.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} pikanäppäin säilytettiin, koska jokin omista pikanäppäimistäsi käyttää sen näppäintä.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} pikanäppäintä säilytettiin, koska omat pikanäppäimesi käyttävät niiden näppäimiä.",
+  "Reset shortcuts": "Palauta pikanäppäimet",
+  "Put one shortcut, or all of them, back to the original keys.": "Palauta yksi pikanäppäin tai kaikki alkuperäisiin näppäimiin."
 }

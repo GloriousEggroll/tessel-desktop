@@ -1998,5 +1998,19 @@
   "Archive manager": "Gestor de arquivos",
   "Choose the application that opens PDF files and other documents.": "Escolha a aplicação que abre ficheiros PDF e outros documentos.",
   "Choose the application that opens archives.": "Escolha a aplicação que abre arquivos comprimidos.",
-  "Turn Num Lock on automatically when you sign in.": "Ativar automaticamente o Num Lock ao iniciar sessão."
+  "Turn Num Lock on automatically when you sign in.": "Ativar automaticamente o Num Lock ao iniciar sessão.",
+  "Default: {value1}": "Predefinição: {value1}",
+  "Reset to {value1}": "Repor para {value1}",
+  "Reset All Shortcuts…": "Repor todos os atalhos…",
+  "Reset all shortcuts?": "Repor todos os atalhos?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Os atalhos do ambiente de trabalho que alterou voltam às teclas originais. Os atalhos que adicionou são mantidos.",
+  "Reset": "Repor",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "A tecla predefinida é usada por “{value1}”. Altere primeiro esse atalho ou reponha todos os atalhos.",
+  "The shortcuts could not be reset: {value1}": "Não foi possível repor os atalhos: {value1}",
+  "{value1} shortcut was reset.": "{value1} atalho foi reposto.",
+  "{value1} shortcuts were reset.": "{value1} atalhos foram repostos.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} atalho foi mantido porque um dos seus atalhos usa a tecla dele.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} atalhos foram mantidos porque os seus atalhos usam as teclas deles.",
+  "Reset shortcuts": "Repor atalhos",
+  "Put one shortcut, or all of them, back to the original keys.": "Reponha um atalho, ou todos, nas teclas originais."
 }

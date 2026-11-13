@@ -1998,5 +1998,19 @@
   "Archive manager": "Διαχείριση αρχειοθηκών",
   "Choose the application that opens PDF files and other documents.": "Επιλέξτε την εφαρμογή που ανοίγει αρχεία PDF και άλλα έγγραφα.",
   "Choose the application that opens archives.": "Επιλέξτε την εφαρμογή που ανοίγει αρχειοθήκες.",
-  "Turn Num Lock on automatically when you sign in.": "Αυτόματη ενεργοποίηση του Num Lock κατά τη σύνδεση."
+  "Turn Num Lock on automatically when you sign in.": "Αυτόματη ενεργοποίηση του Num Lock κατά τη σύνδεση.",
+  "Default: {value1}": "Προεπιλογή: {value1}",
+  "Reset to {value1}": "Επαναφορά σε {value1}",
+  "Reset All Shortcuts…": "Επαναφορά όλων των συντομεύσεων…",
+  "Reset all shortcuts?": "Επαναφορά όλων των συντομεύσεων;",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Οι συντομεύσεις της επιφάνειας εργασίας που αλλάξατε επιστρέφουν στα αρχικά τους πλήκτρα. Οι συντομεύσεις που προσθέσατε εσείς διατηρούνται.",
+  "Reset": "Επαναφορά",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Το προεπιλεγμένο πλήκτρο χρησιμοποιείται από «{value1}». Αλλάξτε πρώτα αυτή τη συντόμευση ή επαναφέρετε όλες τις συντομεύσεις.",
+  "The shortcuts could not be reset: {value1}": "Δεν ήταν δυνατή η επαναφορά των συντομεύσεων: {value1}",
+  "{value1} shortcut was reset.": "Έγινε επαναφορά {value1} συντόμευσης.",
+  "{value1} shortcuts were reset.": "Έγινε επαναφορά {value1} συντομεύσεων.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Διατηρήθηκε {value1} συντόμευση, επειδή μια δική σας συντόμευση χρησιμοποιεί το πλήκτρο της.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Διατηρήθηκαν {value1} συντομεύσεις, επειδή δικές σας συντομεύσεις χρησιμοποιούν τα πλήκτρα τους.",
+  "Reset shortcuts": "Επαναφορά συντομεύσεων",
+  "Put one shortcut, or all of them, back to the original keys.": "Επαναφέρετε μία συντόμευση ή όλες στα αρχικά πλήκτρα."
 }

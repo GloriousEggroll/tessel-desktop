@@ -2178,5 +2178,19 @@
   "Archive manager": "압축 파일 관리자",
   "Choose the application that opens PDF files and other documents.": "PDF 파일과 기타 문서를 여는 앱을 선택합니다.",
   "Choose the application that opens archives.": "압축 파일을 여는 앱을 선택합니다.",
-  "Turn Num Lock on automatically when you sign in.": "로그인할 때 Num Lock을 자동으로 켭니다."
+  "Turn Num Lock on automatically when you sign in.": "로그인할 때 Num Lock을 자동으로 켭니다.",
+  "Default: {value1}": "기본값: {value1}",
+  "Reset to {value1}": "{value1}(으)로 재설정",
+  "Reset All Shortcuts…": "모든 바로 가기 재설정…",
+  "Reset all shortcuts?": "모든 바로 가기를 재설정할까요?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "변경한 데스크톱 바로 가기가 원래 키로 돌아갑니다. 직접 추가한 바로 가기는 유지됩니다.",
+  "Reset": "재설정",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "기본 키를 “{value1}”에서 사용 중입니다. 먼저 해당 바로 가기를 변경하거나 모든 바로 가기를 재설정하세요.",
+  "The shortcuts could not be reset: {value1}": "바로 가기를 재설정할 수 없습니다: {value1}",
+  "{value1} shortcut was reset.": "바로 가기 {value1}개를 재설정했습니다.",
+  "{value1} shortcuts were reset.": "바로 가기 {value1}개를 재설정했습니다.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "직접 추가한 바로 가기가 해당 키를 사용 중이므로 바로 가기 {value1}개는 그대로 두었습니다.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "직접 추가한 바로 가기가 해당 키를 사용 중이므로 바로 가기 {value1}개는 그대로 두었습니다.",
+  "Reset shortcuts": "단축키 초기화",
+  "Put one shortcut, or all of them, back to the original keys.": "단축키 하나 또는 전체를 원래 키로 되돌립니다."
 }

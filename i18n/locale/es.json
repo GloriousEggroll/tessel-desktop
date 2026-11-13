@@ -2331,5 +2331,19 @@
   "Archive manager": "Gestor de archivos comprimidos",
   "Choose the application that opens PDF files and other documents.": "Elija la aplicación que abre los archivos PDF y otros documentos.",
   "Choose the application that opens archives.": "Elija la aplicación que abre los archivos comprimidos.",
-  "Turn Num Lock on automatically when you sign in.": "Activar Bloq Num automáticamente al iniciar sesión."
+  "Turn Num Lock on automatically when you sign in.": "Activar Bloq Num automáticamente al iniciar sesión.",
+  "Default: {value1}": "Predeterminado: {value1}",
+  "Reset to {value1}": "Restablecer a {value1}",
+  "Reset All Shortcuts…": "Restablecer todos los atajos…",
+  "Reset all shortcuts?": "¿Restablecer todos los atajos?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Los atajos del escritorio que cambiaste recuperan sus teclas originales. Los atajos que añadiste tú se conservan.",
+  "Reset": "Restablecer",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "La tecla predeterminada la usa «{value1}». Cambia primero ese atajo o restablece todos los atajos.",
+  "The shortcuts could not be reset: {value1}": "No se pudieron restablecer los atajos: {value1}",
+  "{value1} shortcut was reset.": "Se restableció {value1} atajo.",
+  "{value1} shortcuts were reset.": "Se restablecieron {value1} atajos.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Se mantuvo {value1} atajo porque uno de tus propios atajos usa su tecla.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Se mantuvieron {value1} atajos porque tus propios atajos usan sus teclas.",
+  "Reset shortcuts": "Restablecer atajos",
+  "Put one shortcut, or all of them, back to the original keys.": "Devuelva un atajo, o todos, a las teclas originales."
 }

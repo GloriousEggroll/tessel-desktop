@@ -1998,5 +1998,19 @@
   "Archive manager": "Arşiv yöneticisi",
   "Choose the application that opens PDF files and other documents.": "PDF dosyalarını ve diğer belgeleri açan uygulamayı seçin.",
   "Choose the application that opens archives.": "Arşivleri açan uygulamayı seçin.",
-  "Turn Num Lock on automatically when you sign in.": "Oturum açtığınızda Num Lock’u otomatik olarak aç."
+  "Turn Num Lock on automatically when you sign in.": "Oturum açtığınızda Num Lock’u otomatik olarak aç.",
+  "Default: {value1}": "Varsayılan: {value1}",
+  "Reset to {value1}": "{value1} olarak sıfırla",
+  "Reset All Shortcuts…": "Tüm Kısayolları Sıfırla…",
+  "Reset all shortcuts?": "Tüm kısayollar sıfırlansın mı?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Değiştirdiğiniz masaüstü kısayolları özgün tuşlarına geri döner. Kendi eklediğiniz kısayollar korunur.",
+  "Reset": "Sıfırla",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Varsayılan tuş “{value1}” tarafından kullanılıyor. Önce o kısayolu değiştirin veya tüm kısayolları sıfırlayın.",
+  "The shortcuts could not be reset: {value1}": "Kısayollar sıfırlanamadı: {value1}",
+  "{value1} shortcut was reset.": "{value1} kısayol sıfırlandı.",
+  "{value1} shortcuts were reset.": "{value1} kısayol sıfırlandı.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Kendi kısayollarınızdan biri tuşunu kullandığı için {value1} kısayol olduğu gibi bırakıldı.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Kendi kısayollarınız tuşlarını kullandığı için {value1} kısayol olduğu gibi bırakıldı.",
+  "Reset shortcuts": "Kısayolları sıfırla",
+  "Put one shortcut, or all of them, back to the original keys.": "Bir kısayolu veya tümünü özgün tuşlarına geri döndürün."
 }

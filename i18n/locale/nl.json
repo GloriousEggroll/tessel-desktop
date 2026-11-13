@@ -1998,5 +1998,19 @@
   "Archive manager": "Archiefbeheer",
   "Choose the application that opens PDF files and other documents.": "Kies de toepassing die pdf-bestanden en andere documenten opent.",
   "Choose the application that opens archives.": "Kies de toepassing die archieven opent.",
-  "Turn Num Lock on automatically when you sign in.": "Num Lock automatisch inschakelen bij het aanmelden."
+  "Turn Num Lock on automatically when you sign in.": "Num Lock automatisch inschakelen bij het aanmelden.",
+  "Default: {value1}": "Standaard: {value1}",
+  "Reset to {value1}": "Herstellen naar {value1}",
+  "Reset All Shortcuts…": "Alle sneltoetsen herstellen…",
+  "Reset all shortcuts?": "Alle sneltoetsen herstellen?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Bureaubladsneltoetsen die u hebt gewijzigd, krijgen hun oorspronkelijke toetsen terug. Sneltoetsen die u zelf hebt toegevoegd, blijven behouden.",
+  "Reset": "Herstellen",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "De standaardtoets wordt gebruikt door ‘{value1}’. Wijzig eerst die sneltoets of herstel alle sneltoetsen.",
+  "The shortcuts could not be reset: {value1}": "De sneltoetsen konden niet worden hersteld: {value1}",
+  "{value1} shortcut was reset.": "{value1} sneltoets is hersteld.",
+  "{value1} shortcuts were reset.": "{value1} sneltoetsen zijn hersteld.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} sneltoets is behouden omdat een van uw eigen sneltoetsen de toets gebruikt.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} sneltoetsen zijn behouden omdat uw eigen sneltoetsen hun toetsen gebruiken.",
+  "Reset shortcuts": "Sneltoetsen herstellen",
+  "Put one shortcut, or all of them, back to the original keys.": "Zet één sneltoets, of allemaal, terug naar de oorspronkelijke toetsen."
 }

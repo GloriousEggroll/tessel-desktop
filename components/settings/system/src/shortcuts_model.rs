@@ -1,13 +1,15 @@
 //! shortcuts_model.py: every keyboard shortcut the session knows — labwc
 //! defaults, rc.xml and tiling.
-use std::collections::HashMap;
+use std::cell::Cell;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use gtk::gdk;
 use gtk::gdk::prelude::DisplayExtManual;
 
 use crate::compat::{casefold, Result};
-use crate::labwc_settings::{self, Action, Done, Reconfigure};
+use crate::labwc_settings::{self, Action, Done, KeyboardSection, Reconfigure};
 
 pub const DEFAULTS_FILE: &str = "/usr/share/doc/labwc/rc.xml.all";
 pub const GROUPS: &[&str] = &["Windows", "Workspaces", "Tiling", "Launchers", "Media", "System"];
@@ -97,10 +99,17 @@ pub struct Shortcut {
     pub start: i64,
     /// Description of a default this user binding replaces.
     pub overrides: String,
+    /// The key tessel-configure-session ships for this binding ("" for none).
+    pub default_key: String,
 }
 
 impl Shortcut {
     pub fn editable(&self) -> bool { self.source == "user" && self.start >= 0 }
+
+    /// A suite binding whose key is no longer the shipped one.
+    pub fn changed(&self) -> bool {
+        self.editable() && !self.default_key.is_empty() && normalize(&self.key) != normalize(&self.default_key)
+    }
 
     /// `description.format(**values)` (English).
     pub fn formatted(&self) -> String {
@@ -272,6 +281,63 @@ pub fn default_keybinds_from(path: &Path) -> Keybinds {
 
 pub fn default_keybinds() -> Keybinds { default_keybinds_from(Path::new(DEFAULTS_FILE)) }
 
+/// tessel-configure-session's keybinding block (`tessel_core::session_keys`).
+pub fn suite_keybinds() -> &'static Keybinds {
+    static TABLE: LazyLock<Keybinds> = LazyLock::new(|| {
+        tessel_core::session_keys::keybindings().into_iter()
+            .map(|(key, name, attribute, value)| (key, vec![Action::new(name, &[(attribute, &value)])])).collect()
+    });
+    &TABLE
+}
+
+/// Actions compared by name and attributes, ignoring case of names and attribute order.
+fn action_key(actions: &[Action]) -> Vec<(String, Vec<(String, String)>)> {
+    actions.iter().map(|action| {
+        let mut attributes: Vec<(String, String)> = action.attributes.iter().map(|(n, v)| (casefold(n), v.clone())).collect();
+        attributes.sort();
+        (casefold(&action.name), attributes)
+    }).collect()
+}
+
+/// Shipped key of each keybind in the suite block, by start offset. As
+/// tessel-configure-session keeps rebound keys, the nth block keybind with an
+/// action pairs with the nth table row with that action.
+pub fn suite_defaults(section: &KeyboardSection, table: &Keybinds) -> HashMap<usize, String> {
+    let mut rows: HashMap<_, VecDeque<&str>> = HashMap::new();
+    for (key, actions) in table {
+        rows.entry(action_key(actions)).or_default().push_back(key);
+    }
+    let mut result = HashMap::new();
+    for bind in section.keybinds.iter().filter(|b| b.suite && !b.tiling) {
+        if let Some(key) = rows.get_mut(&action_key(&bind.actions)).and_then(VecDeque::pop_front) {
+            result.insert(bind.start, key.to_owned());
+        }
+    }
+    result
+}
+
+/// `(start, key, default)` of every changed suite keybind, and how many are
+/// kept because a keybind of the user's own outside the block uses the default.
+pub fn reset_plan(section: &KeyboardSection, table: &Keybinds) -> (Vec<(usize, String, String)>, usize) {
+    let defaults = suite_defaults(section, table);
+    let own: HashSet<String> = section.keybinds.iter()
+        .filter(|b| !b.suite && !b.tiling && b.actions.first().is_some_and(|a| a.name != "None"))
+        .map(|b| normalize(&b.key)).collect();
+    let (mut changes, mut kept) = (Vec::new(), 0);
+    for bind in &section.keybinds {
+        let Some(default) = defaults.get(&bind.start) else { continue };
+        if normalize(&bind.key) == normalize(default) {
+            continue;
+        }
+        if own.contains(&normalize(default)) {
+            kept += 1;
+        } else {
+            changes.push((bind.start, bind.key.clone(), default.clone()));
+        }
+    }
+    (changes, kept)
+}
+
 fn natural(text: &str) -> Vec<(u8, u128, String)> {
     // re.split(r'(\d+)'): digits compare as ints (Python would compare int with
     // str only if the shapes differ, which the split keeps aligned).
@@ -311,27 +377,31 @@ pub fn collect(rc_data: &[u8], tiling: &[TilingBinding], defaults: Option<&Keybi
         }
     };
     let load_defaults = section.has_default || section.keybinds.is_empty();
+    let suite = suite_defaults(&section, suite_keybinds());
     let mut result: Vec<(String, Shortcut)> = Vec::new();
-    let add = |result: &mut Vec<(String, Shortcut)>, key: &str, actions: &[Action], source: &str, start: i64, overrides: String| {
+    let add = |result: &mut Vec<(String, Shortcut)>, key: &str, actions: &[Action], source: &str, start: i64, overrides: String,
+               default_key: String| {
         let normal = normalize(key);
         let Some(first) = actions.first() else {
             result.retain(|(k, _)| *k != normal); // an empty keybind removes an earlier one
             return;
         };
         let (group, description, values) = describe(&first.name, &first.attributes, tiling);
-        let item = Shortcut { key: key.into(), description, values, group, source: source.into(), active: first.name != "None", start, overrides };
+        let item = Shortcut { key: key.into(), description, values, group, source: source.into(), active: first.name != "None", start, overrides,
+                               default_key };
         if let Some(slot) = result.iter_mut().find(|(k, _)| *k == normal) { slot.1 = item } else { result.push((normal, item)) }
     };
     if load_defaults {
         for (key, actions) in default_binds {
-            add(&mut result, key, actions, "default", -1, String::new());
+            add(&mut result, key, actions, "default", -1, String::new(), String::new());
         }
     }
     for bind in &section.keybinds {
         let normal = normalize(&bind.key);
         let overrides = result.iter().find(|(k, _)| *k == normal).filter(|(_, p)| p.source == "default")
             .map(|(_, p)| p.description.clone()).unwrap_or_default();
-        add(&mut result, &bind.key, &bind.actions, if bind.tiling { "tiling" } else { "user" }, bind.start as i64, overrides);
+        let default_key = suite.get(&bind.start).cloned().unwrap_or_default();
+        add(&mut result, &bind.key, &bind.actions, if bind.tiling { "tiling" } else { "user" }, bind.start as i64, overrides, default_key);
     }
     if !section.keybinds.iter().any(|b| b.tiling) {
         // Tiling is off: list its shortcuts as available when it is turned on.
@@ -339,7 +409,8 @@ pub fn collect(rc_data: &[u8], tiling: &[TilingBinding], defaults: Option<&Keybi
             let normal = normalize(key);
             if !result.iter().any(|(k, _)| *k == normal) {
                 result.push((normal, Shortcut { key: key.clone(), description: description.clone(), values: Vec::new(),
-                    group: group_for(command).into(), source: "tiling".into(), active: false, start: -1, overrides: String::new() }));
+                    group: group_for(command).into(), source: "tiling".into(), active: false, start: -1, overrides: String::new(),
+                    default_key: String::new() }));
             }
         }
     }
@@ -357,6 +428,15 @@ pub fn conflicts<'a>(shortcuts: &'a [Shortcut], key: &str, ignore: Option<&Short
         normalize(&item.key) == wanted
             && !ignore.is_some_and(|i| std::ptr::eq(*item, i) || (item.start == i.start && item.source == i.source))
     }).collect()
+}
+
+/// The active shortcut of the user's own (or another suite binding) that holds
+/// `shortcut`'s default key. labwc and tiling shortcuts there are the shipped state.
+pub fn reset_blocker<'a>(shortcuts: &'a [Shortcut], shortcut: &Shortcut) -> Option<&'a Shortcut> {
+    if shortcut.default_key.is_empty() {
+        return None;
+    }
+    conflicts(shortcuts, &shortcut.default_key, Some(shortcut)).into_iter().find(|i| i.active && i.source == "user")
 }
 
 /// labwc key string for a GTK key press, or "" for a lone modifier.
@@ -389,10 +469,26 @@ pub fn key_string(name: &str, state: gdk::ModifierType) -> String {
     prefix + &name
 }
 
+/// What [`Shortcuts::reset_all`] did.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ResetSummary {
+    pub reset: usize,
+    /// Left as they are: a shortcut of the user's own uses the default key.
+    pub kept: usize,
+}
+
+/// `done(okay, summary)` of [`Shortcuts::reset_all`].
+pub type ResetDone = Box<dyn FnOnce(bool, ResetSummary)>;
+
 /// `ShortcutStore(path, reload)` and what the page needs of it.
 pub trait Shortcuts {
     fn load(&self) -> Result<Vec<Shortcut>>;
     fn rebind(&self, shortcut: &Shortcut, new_key: &str, done: Option<Done>) -> Result<()>;
+    /// Put the shipped key back. Returns the shortcut that holds it instead
+    /// (nothing is written then).
+    fn reset(&self, shortcut: &Shortcut, done: Option<Done>) -> Result<Option<Shortcut>>;
+    /// Put every changed suite key back in one write and one reload.
+    fn reset_all(&self, done: Option<ResetDone>) -> Result<()>;
 }
 
 pub struct ShortcutStore {
@@ -426,6 +522,33 @@ impl Shortcuts for ShortcutStore {
             (self.reload)(done);
         } else if let Some(done) = done {
             done(true, String::new());
+        }
+        Ok(())
+    }
+
+    fn reset(&self, shortcut: &Shortcut, done: Option<Done>) -> Result<Option<Shortcut>> {
+        if !shortcut.editable() || shortcut.default_key.is_empty() {
+            return crate::compat::value("Only your own shortcuts can be changed here.");
+        }
+        if let Some(blocker) = reset_blocker(&self.load()?, shortcut) {
+            return Ok(Some(blocker.clone()));
+        }
+        self.rebind(shortcut, &shortcut.default_key, done)?;
+        Ok(None)
+    }
+
+    fn reset_all(&self, done: Option<ResetDone>) -> Result<()> {
+        let summary = Cell::new(ResetSummary::default());
+        let changed = labwc_settings::update_rc(|data| {
+            let (changes, kept) = reset_plan(&labwc_settings::read_keyboard(data)?, suite_keybinds());
+            summary.set(ResetSummary { reset: changes.len(), kept });
+            if changes.is_empty() { Ok(data.to_vec()) } else { labwc_settings::rebind_many(data, &changes) }
+        }, Some(&self.path))?;
+        let summary = summary.get();
+        if changed {
+            (self.reload)(done.map(|done| -> Done { Box::new(move |okay, _| done(okay, summary)) }));
+        } else if let Some(done) = done {
+            done(true, ResetSummary { reset: 0, ..summary });
         }
         Ok(())
     }
@@ -537,5 +660,188 @@ pub(crate) mod tests {
         assert_eq!(*reloads.borrow(), 1);
         let tiling = store.load().unwrap().into_iter().find(|i| i.key == "W-t").unwrap();
         assert!(store.rebind(&tiling, "W-y", None).unwrap_err().is_value());
+    }
+
+    /// The block in the shape tessel-configure-session writes it.
+    pub fn suite_block() -> String {
+        let mut lines = vec![format!("{}: generated by tessel-configure-session.", tessel_core::session_keys::BLOCK_BEGIN),
+                             "     Keys changed in Global Settings are kept on reinstall. -->".to_owned()];
+        for (key, name, attribute, value) in tessel_core::session_keys::keybindings() {
+            lines.push(format!("<keybind key=\"{key}\"><action name=\"{name}\" {attribute}={}/></keybind>", labwc_settings::quoteattr(&value)));
+        }
+        lines.push(tessel_core::session_keys::BLOCK_END.to_owned());
+        lines.join("\n    ")
+    }
+
+    /// An rc.xml as tessel-configure-session writes it, with a keybind of the
+    /// user's own and the tiling block (which overrides W-C-Left).
+    pub fn suite_rc() -> String {
+        format!(r#"<?xml version="1.0"?>
+<labwc_config>
+  <keyboard>
+    <default/>
+    {}
+    <keybind key="W-e"><action name="Execute" command="foo"/></keybind>
+    <!-- Tessel Tiling keyboard begin -->
+    <keybind key="W-t"><action name="Tiling" command="float"/></keybind>
+    <keybind key="W-C-Left"><action name="Tiling" command="group prev"/></keybind>
+    <!-- Tessel Tiling keyboard end -->
+  </keyboard>
+</labwc_config>
+"#, suite_block())
+    }
+
+    /// Change the key of the nth suite row with `key`.
+    pub fn rekey(text: &str, key: &str, new_key: &str) -> String {
+        text.replacen(&format!("<keybind key=\"{key}\">"), &format!("<keybind key=\"{new_key}\">"), 1)
+    }
+
+    fn suite_defaults_for(text: &str) -> Vec<(String, String, String)> {
+        let section = labwc_settings::read_keyboard(text.as_bytes()).unwrap();
+        let defaults = suite_defaults(&section, suite_keybinds());
+        section.keybinds.iter().map(|b| (b.key.clone(), defaults.get(&b.start).cloned().unwrap_or_default(),
+                                         b.actions.first().map(|a| a.get("to", "")).unwrap_or_default())).collect()
+    }
+
+    fn store_on(text: &str, name: &str) -> (PathBuf, ShortcutStore, Rc<RefCell<i32>>, EnvGuard) {
+        let folder = scratch(name);
+        let env = EnvGuard::set(&[("XDG_STATE_HOME", folder.join("state").to_str().unwrap())]);
+        let path = folder.join("rc.xml");
+        std::fs::write(&path, text).unwrap();
+        let reloads = Rc::new(RefCell::new(0));
+        let counter = reloads.clone();
+        let mut store = ShortcutStore::new(Some(&path), Some(Rc::new(move |done: Option<Done>| {
+            *counter.borrow_mut() += 1;
+            if let Some(done) = done { done(true, String::new()) }
+        })));
+        store.tiling = Some(tiling());
+        let mut labwc = defaults();
+        labwc.push(("W-Return".into(), vec![Action::new("Execute", &[("command", "lab-sensible-terminal")])]));
+        store.defaults = Some(labwc);
+        (path, store, reloads, env)
+    }
+
+    #[test]
+    fn suite_table_is_parsed_and_markers_match_session_startup() {
+        assert_eq!(suite_keybinds().len(), tessel_core::session_keys::keybindings().len());
+        assert_eq!(suite_keybinds()[2].1[0].get("command", ""), format!("{} terminal", tessel_core::session_keys::ACTION));
+        assert_eq!(tessel_core::session_keys::BLOCK_BEGIN, format!("<!-- {}", labwc_settings::TESSEL_KEYBINDINGS_BEGIN));
+        assert_eq!(tessel_core::session_keys::BLOCK_END, format!("<!-- {} -->", labwc_settings::TESSEL_KEYBINDINGS_END));
+    }
+
+    #[test]
+    fn suite_rows_pair_with_their_shipped_keys_by_action() {
+        let text = suite_rc();
+        // Unchanged: every block row's default is its own key.
+        let rows = suite_defaults_for(&text);
+        assert_eq!(rows.iter().filter(|(_, d, _)| !d.is_empty()).count(), suite_keybinds().len());
+        assert!(rows.iter().all(|(key, d, _)| d.is_empty() || key == d));
+        // A changed key, and duplicate actions swapped: paired first to first.
+        let changed = rekey(&rekey(&rekey(&rekey(&text, "W-Return", "C-A-t"), "W-C-Left", "Swap"), "C-A-Left", "W-C-Left"), "Swap", "C-A-Left");
+        let changed = changed.replacen("<keybind key=\"C-A-Left\"><action name=\"GoToDesktop\" to=\"left\"/>",
+                                       "<keybind key=\"C-A-Left\"><action To=\"left\" name=\"GoToDesktop\"/>", 1);
+        let rows = suite_defaults_for(&changed);
+        let find = |key: &str| rows.iter().filter(|(k, _, _)| k == key).map(|(_, d, _)| d.clone()).collect::<Vec<_>>();
+        assert_eq!(find("C-A-t"), ["W-Return"]);
+        // Block order is now C-A-Left (first left row), then W-C-Left; tiling's W-C-Left has none.
+        let left: Vec<_> = rows.iter().filter(|(_, _, to)| to == "left").map(|(k, d, _)| (k.as_str(), d.as_str())).collect();
+        assert_eq!(left, [("C-A-Left", "W-C-Left"), ("W-C-Left", "C-A-Left")]);
+        assert_eq!(find("W-e"), [""]);
+        assert_eq!(find("W-t"), [""]);
+        let items = collect(changed.as_bytes(), &tiling(), Some(&defaults())).unwrap();
+        let get = |key: &str| items.iter().find(|i| i.key == key).unwrap().clone();
+        assert!(get("C-A-t").changed());
+        assert_eq!(get("C-A-t").default_key, "W-Return");
+        assert_eq!(get("W-slash").default_key, "W-slash");
+        assert!(!get("W-slash").changed());
+        assert_eq!((get("W-e").default_key.as_str(), get("W-a").default_key.as_str(), get("W-t").default_key.as_str()), ("", "", ""));
+        assert_eq!((get("W-a").source.as_str(), get("W-t").source.as_str()), ("default", "tiling"));
+        // Tiling's W-C-Left overrides the block row there.
+        assert_eq!(get("W-C-Left").source, "tiling");
+        assert!(get("C-A-Left").changed());
+    }
+
+    #[test]
+    fn reset_writes_the_default_key_and_reloads_once() {
+        let (path, store, reloads, _env) = store_on(&rekey(&suite_rc(), "W-Return", "C-A-t"), "shortcut-reset");
+        let terminal = store.load().unwrap().into_iter().find(|i| i.key == "C-A-t").unwrap();
+        // The labwc default on W-Return is the shipped state: it does not block.
+        assert!(store.load().unwrap().iter().any(|i| i.key == "W-Return" && i.source == "default"));
+        let message = Rc::new(RefCell::new(None));
+        let m = message.clone();
+        assert_eq!(store.reset(&terminal, Some(Box::new(move |okay, _| *m.borrow_mut() = Some(okay)))).unwrap(), None);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), suite_rc());
+        assert_eq!((*reloads.borrow(), *message.borrow()), (1, Some(true)));
+        // Stale: the file no longer has C-A-t there.
+        assert!(store.reset(&terminal, None).unwrap_err().is_runtime());
+        // A tiling shortcut on the default key does not block either.
+        std::fs::write(&path, rekey(&suite_rc(), "W-C-Left", "W-S-Left")).unwrap();
+        let left = store.load().unwrap().into_iter().find(|i| i.key == "W-S-Left").unwrap();
+        assert_eq!(store.reset(&left, None).unwrap(), None);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), suite_rc());
+        assert_eq!(*reloads.borrow(), 2);
+        let own = store.load().unwrap().into_iter().find(|i| i.key == "W-e").unwrap();
+        assert!(store.reset(&own, None).unwrap_err().is_value());
+    }
+
+    #[test]
+    fn reset_is_refused_while_a_user_shortcut_holds_the_default_key() {
+        // The terminal and shortcut-sheet rows moved: W-Return now opens the sheet.
+        let text = rekey(&rekey(&suite_rc(), "W-Return", "C-A-t"), "W-slash", "W-Return");
+        let (path, store, reloads, _env) = store_on(&text, "shortcut-reset-clash");
+        let items = store.load().unwrap();
+        let terminal = items.iter().find(|i| i.key == "C-A-t").unwrap();
+        let blocker = store.reset(terminal, None).unwrap().unwrap();
+        assert_eq!((blocker.key.as_str(), blocker.description.as_str()), ("W-Return", "Show keyboard shortcuts"));
+        assert_eq!(reset_blocker(&items, terminal).map(|b| b.key.as_str()), Some("W-Return"));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        assert_eq!(*reloads.borrow(), 0);
+        // A keybind of the user's own outside the block blocks too.
+        let own = rekey(&suite_rc(), "W-Return", "C-A-t").replace("<keybind key=\"W-e\">", "<keybind key=\"W-Return\">");
+        std::fs::write(&path, &own).unwrap();
+        let terminal = store.load().unwrap().into_iter().find(|i| i.key == "C-A-t").unwrap();
+        assert_eq!(store.reset(&terminal, None).unwrap().unwrap().description, "Run {value1}");
+        assert_eq!(*reloads.borrow(), 0);
+    }
+
+    #[test]
+    fn reset_all_restores_every_suite_key_in_one_write() {
+        let mut text = suite_rc();
+        for (key, new_key) in [("W-Return", "C-A-t"), ("W-l", "W-C-S-l"), ("W-S-1", "F9"), ("W-C-Right", "C-A-S-Right"),
+                               ("W-C-Left", "Swap"), ("C-A-Left", "W-C-Left"), ("Swap", "C-A-Left"), ("W-2", "W-F2")] {
+            text = rekey(&text, key, new_key);
+        }
+        // The user's own keybind on W-2 keeps that row where it is.
+        text = text.replace("<keybind key=\"W-e\">", "<keybind key=\"W-2\">");
+        let (path, store, reloads, _env) = store_on(&text, "shortcut-reset-all");
+        let summary = Rc::new(RefCell::new(None));
+        let s = summary.clone();
+        store.reset_all(Some(Box::new(move |okay, result| *s.borrow_mut() = Some((okay, result))))).unwrap();
+        assert_eq!(*summary.borrow(), Some((true, ResetSummary { reset: 6, kept: 1 })));
+        assert_eq!(*reloads.borrow(), 1);
+        let expected = rekey(&suite_rc(), "W-2", "W-F2").replace("<keybind key=\"W-e\">", "<keybind key=\"W-2\">");
+        let written = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(written, expected);
+        labwc_settings::read_keyboard(written.as_bytes()).unwrap();
+        assert!(path.parent().unwrap().join("state/tessel/backups/labwc-rc/rc.xml.orig").is_file());
+        // Again: only the kept row differs, nothing is written or reloaded.
+        let s = summary.clone();
+        store.reset_all(Some(Box::new(move |okay, result| *s.borrow_mut() = Some((okay, result))))).unwrap();
+        assert_eq!(*summary.borrow(), Some((true, ResetSummary { reset: 0, kept: 1 })));
+        assert_eq!(*reloads.borrow(), 1);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), expected);
+    }
+
+    #[test]
+    fn reset_all_with_nothing_changed_writes_nothing() {
+        let (path, store, reloads, _env) = store_on(&suite_rc(), "shortcut-reset-none");
+        assert!(!store.load().unwrap().iter().any(Shortcut::changed));
+        let summary = Rc::new(RefCell::new(None));
+        let s = summary.clone();
+        store.reset_all(Some(Box::new(move |okay, result| *s.borrow_mut() = Some((okay, result))))).unwrap();
+        assert_eq!(*summary.borrow(), Some((true, ResetSummary::default())));
+        assert_eq!(*reloads.borrow(), 0);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), suite_rc());
+        assert!(!path.parent().unwrap().join("state/tessel/backups/labwc-rc/rc.xml.orig").exists());
     }
 }

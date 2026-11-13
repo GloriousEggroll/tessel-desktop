@@ -1998,5 +1998,19 @@
   "Archive manager": "Manajer arsip",
   "Choose the application that opens PDF files and other documents.": "Pilih aplikasi yang membuka berkas PDF dan dokumen lainnya.",
   "Choose the application that opens archives.": "Pilih aplikasi yang membuka arsip.",
-  "Turn Num Lock on automatically when you sign in.": "Nyalakan Num Lock secara otomatis saat Anda masuk."
+  "Turn Num Lock on automatically when you sign in.": "Nyalakan Num Lock secara otomatis saat Anda masuk.",
+  "Default: {value1}": "Bawaan: {value1}",
+  "Reset to {value1}": "Setel ulang ke {value1}",
+  "Reset All Shortcuts…": "Setel Ulang Semua Pintasan…",
+  "Reset all shortcuts?": "Setel ulang semua pintasan?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Pintasan desktop yang Anda ubah kembali ke tombol aslinya. Pintasan yang Anda tambahkan sendiri tetap disimpan.",
+  "Reset": "Setel Ulang",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Tombol bawaan digunakan oleh “{value1}”. Ubah pintasan itu terlebih dahulu, atau setel ulang semua pintasan.",
+  "The shortcuts could not be reset: {value1}": "Pintasan tidak dapat disetel ulang: {value1}",
+  "{value1} shortcut was reset.": "{value1} pintasan disetel ulang.",
+  "{value1} shortcuts were reset.": "{value1} pintasan disetel ulang.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} pintasan dibiarkan karena salah satu pintasan Anda sendiri menggunakan tombolnya.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} pintasan dibiarkan karena pintasan Anda sendiri menggunakan tombolnya.",
+  "Reset shortcuts": "Atur ulang pintasan",
+  "Put one shortcut, or all of them, back to the original keys.": "Kembalikan satu pintasan, atau semuanya, ke tombol aslinya."
 }

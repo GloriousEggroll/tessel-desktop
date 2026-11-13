@@ -20,6 +20,10 @@ applet UI it imports. Rust: `components/settings` (shell + binary) with page cra
 - `--section KEY` (`type` alias applied before `choices`: `brightness` → `displays`); keys = §2 order.
   Invalid → argparse usage error (exit 2, message on the remote stderr).
 - `--shortcuts` toggles the Keyboard Shortcuts cheat sheet (`shortcuts_page.CheatSheet`): a second call closes it.
+- Keyboard Shortcuts page: a shortcut in rc.xml's "Tessel keybindings" block whose key differs from
+  `tessel-configure-session`'s table (`tessel_core::session_keys`) gets a reset button; "Reset All Shortcuts…" (after confirmation) rewrites every
+  changed block key in one rc.xml write and one `labwc --reconfigure`, leaving rows whose default key a keybind of the
+  user's own outside the block uses. Keybinds outside the block, labwc defaults and tiling shortcuts have no default.
 - `--quit` (suppressed in help): closes the window; if a page refuses (`can_close`), prints
   `A settings operation is still in progress.\n` and returns 1; else quits.
 - no flags: show the window (section `audio` the first time), unminimize, present, then

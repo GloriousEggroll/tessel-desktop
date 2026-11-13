@@ -1998,5 +1998,19 @@
   "Archive manager": "Менеджер архивов",
   "Choose the application that opens PDF files and other documents.": "Выберите приложение, которое открывает файлы PDF и другие документы.",
   "Choose the application that opens archives.": "Выберите приложение, которое открывает архивы.",
-  "Turn Num Lock on automatically when you sign in.": "Автоматически включать Num Lock при входе в систему."
+  "Turn Num Lock on automatically when you sign in.": "Автоматически включать Num Lock при входе в систему.",
+  "Default: {value1}": "По умолчанию: {value1}",
+  "Reset to {value1}": "Сбросить на {value1}",
+  "Reset All Shortcuts…": "Сбросить все сочетания клавиш…",
+  "Reset all shortcuts?": "Сбросить все сочетания клавиш?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Изменённые сочетания клавиш рабочего стола вернутся к исходным клавишам. Добавленные вами сочетания сохранятся.",
+  "Reset": "Сбросить",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Клавиша по умолчанию используется в «{value1}». Сначала измените это сочетание или сбросьте все сочетания клавиш.",
+  "The shortcuts could not be reset: {value1}": "Не удалось сбросить сочетания клавиш: {value1}",
+  "{value1} shortcut was reset.": "Сброшено сочетаний клавиш: {value1}.",
+  "{value1} shortcuts were reset.": "Сброшено сочетаний клавиш: {value1}.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Оставлено без изменений сочетаний клавиш: {value1} — их клавиши заняты вашими собственными сочетаниями.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Оставлено без изменений сочетаний клавиш: {value1} — их клавиши заняты вашими собственными сочетаниями.",
+  "Reset shortcuts": "Сбросить сочетания клавиш",
+  "Put one shortcut, or all of them, back to the original keys.": "Верните одно сочетание клавиш или все к исходным клавишам."
 }

@@ -148,5 +148,19 @@
   "Archive manager": "Archive manager",
   "Choose the application that opens PDF files and other documents.": "Choose the application that opens PDF files and other documents.",
   "Choose the application that opens archives.": "Choose the application that opens archives.",
-  "Turn Num Lock on automatically when you sign in.": "Turn Num Lock on automatically when you sign in."
+  "Turn Num Lock on automatically when you sign in.": "Turn Num Lock on automatically when you sign in.",
+  "Default: {value1}": "Default: {value1}",
+  "Reset to {value1}": "Reset to {value1}",
+  "Reset All Shortcuts…": "Reset All Shortcuts…",
+  "Reset all shortcuts?": "Reset all shortcuts?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.",
+  "Reset": "Reset",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.",
+  "The shortcuts could not be reset: {value1}": "The shortcuts could not be reset: {value1}",
+  "{value1} shortcut was reset.": "{value1} shortcut was reset.",
+  "{value1} shortcuts were reset.": "{value1} shortcuts were reset.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} shortcut was kept because one of your own shortcuts uses its key.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} shortcuts were kept because your own shortcuts use their keys.",
+  "Reset shortcuts": "Reset shortcuts",
+  "Put one shortcut, or all of them, back to the original keys.": "Put one shortcut, or all of them, back to the original keys."
 }

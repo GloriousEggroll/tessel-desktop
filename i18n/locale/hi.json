@@ -1998,5 +1998,19 @@
   "Archive manager": "आर्काइव प्रबंधक",
   "Choose the application that opens PDF files and other documents.": "वह ऐप्लिकेशन चुनें जो PDF फ़ाइलें और अन्य दस्तावेज़ खोलता है।",
   "Choose the application that opens archives.": "वह ऐप्लिकेशन चुनें जो आर्काइव खोलता है।",
-  "Turn Num Lock on automatically when you sign in.": "साइन इन करने पर Num Lock अपने आप चालू करें।"
+  "Turn Num Lock on automatically when you sign in.": "साइन इन करने पर Num Lock अपने आप चालू करें।",
+  "Default: {value1}": "डिफ़ॉल्ट: {value1}",
+  "Reset to {value1}": "{value1} पर रीसेट करें",
+  "Reset All Shortcuts…": "सभी शॉर्टकट रीसेट करें…",
+  "Reset all shortcuts?": "सभी शॉर्टकट रीसेट करें?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "आपके बदले गए डेस्कटॉप शॉर्टकट अपनी मूल कुंजियाँ वापस पा लेंगे। आपके स्वयं जोड़े गए शॉर्टकट बने रहेंगे।",
+  "Reset": "रीसेट करें",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "डिफ़ॉल्ट कुंजी “{value1}” द्वारा उपयोग की जा रही है। पहले उस शॉर्टकट को बदलें, या सभी शॉर्टकट रीसेट करें।",
+  "The shortcuts could not be reset: {value1}": "शॉर्टकट रीसेट नहीं किए जा सके: {value1}",
+  "{value1} shortcut was reset.": "{value1} शॉर्टकट रीसेट किया गया।",
+  "{value1} shortcuts were reset.": "{value1} शॉर्टकट रीसेट किए गए।",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} शॉर्टकट वैसा ही रखा गया क्योंकि आपका अपना एक शॉर्टकट उसकी कुंजी का उपयोग करता है।",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} शॉर्टकट वैसे ही रखे गए क्योंकि आपके अपने शॉर्टकट उनकी कुंजियों का उपयोग करते हैं।",
+  "Reset shortcuts": "शॉर्टकट रीसेट करें",
+  "Put one shortcut, or all of them, back to the original keys.": "एक शॉर्टकट या सभी को मूल कुंजियों पर वापस लाएँ।"
 }

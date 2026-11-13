@@ -1998,5 +1998,19 @@
   "Archive manager": "Gestore archivi",
   "Choose the application that opens PDF files and other documents.": "Scegli l’applicazione che apre i file PDF e gli altri documenti.",
   "Choose the application that opens archives.": "Scegli l’applicazione che apre gli archivi.",
-  "Turn Num Lock on automatically when you sign in.": "Attiva automaticamente Bloc Num all’accesso."
+  "Turn Num Lock on automatically when you sign in.": "Attiva automaticamente Bloc Num all’accesso.",
+  "Default: {value1}": "Predefinita: {value1}",
+  "Reset to {value1}": "Ripristina a {value1}",
+  "Reset All Shortcuts…": "Ripristina tutte le scorciatoie…",
+  "Reset all shortcuts?": "Ripristinare tutte le scorciatoie?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Le scorciatoie del desktop che hai modificato tornano ai tasti originali. Le scorciatoie che hai aggiunto tu vengono mantenute.",
+  "Reset": "Ripristina",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Il tasto predefinito è usato da «{value1}». Modifica prima quella scorciatoia oppure ripristina tutte le scorciatoie.",
+  "The shortcuts could not be reset: {value1}": "Impossibile ripristinare le scorciatoie: {value1}",
+  "{value1} shortcut was reset.": "{value1} scorciatoia è stata ripristinata.",
+  "{value1} shortcuts were reset.": "{value1} scorciatoie sono state ripristinate.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} scorciatoia è stata mantenuta perché una delle tue scorciatoie usa il suo tasto.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} scorciatoie sono state mantenute perché le tue scorciatoie usano i loro tasti.",
+  "Reset shortcuts": "Ripristina scorciatoie",
+  "Put one shortcut, or all of them, back to the original keys.": "Riporta una scorciatoia, o tutte, ai tasti originali."
 }

@@ -1998,5 +1998,19 @@
   "Archive manager": "Správce archivů",
   "Choose the application that opens PDF files and other documents.": "Vyberte aplikaci, která otevírá soubory PDF a další dokumenty.",
   "Choose the application that opens archives.": "Vyberte aplikaci, která otevírá archivy.",
-  "Turn Num Lock on automatically when you sign in.": "Automaticky zapnout Num Lock při přihlášení."
+  "Turn Num Lock on automatically when you sign in.": "Automaticky zapnout Num Lock při přihlášení.",
+  "Default: {value1}": "Výchozí: {value1}",
+  "Reset to {value1}": "Obnovit na {value1}",
+  "Reset All Shortcuts…": "Obnovit všechny zkratky…",
+  "Reset all shortcuts?": "Obnovit všechny zkratky?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Zkratky plochy, které jste změnili, dostanou zpět původní klávesy. Zkratky, které jste přidali sami, zůstanou zachovány.",
+  "Reset": "Obnovit",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Výchozí klávesu používá „{value1}“. Nejprve změňte tuto zkratku, nebo obnovte všechny zkratky.",
+  "The shortcuts could not be reset: {value1}": "Zkratky nelze obnovit: {value1}",
+  "{value1} shortcut was reset.": "Obnovena {value1} zkratka.",
+  "{value1} shortcuts were reset.": "Obnovené zkratky: {value1}.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Zkratky ponechané beze změny, protože jejich klávesu používá vaše vlastní zkratka: {value1}.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "Zkratky ponechané beze změny, protože jejich klávesy používají vaše vlastní zkratky: {value1}.",
+  "Reset shortcuts": "Obnovit zkratky",
+  "Put one shortcut, or all of them, back to the original keys.": "Vraťte jednu zkratku nebo všechny zpět na původní klávesy."
 }

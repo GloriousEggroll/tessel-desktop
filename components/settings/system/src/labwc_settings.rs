@@ -19,6 +19,9 @@ use crate::compat::{self, bytes_rstrip, bytes_strip, casefold, local_lower, os_e
 pub const MAX_BYTES: usize = 2 * 1024 * 1024;
 pub const TESSEL_TILING_BEGIN: &str = "Tessel Tiling keyboard begin";
 pub const TESSEL_TILING_END: &str = "Tessel Tiling keyboard end";
+/// tessel-configure-session's block; the begin comment goes on with more text.
+pub const TESSEL_KEYBINDINGS_BEGIN: &str = "Tessel keybindings begin";
+pub const TESSEL_KEYBINDINGS_END: &str = "Tessel keybindings end";
 const DOCTYPE: &str = "XML document types are not supported.";
 
 static ENV_NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z_][A-Za-z0-9_]*$").unwrap());
@@ -275,6 +278,8 @@ pub struct Keybind {
     pub end: usize,
     /// Inside the tiling manager's managed block.
     pub tiling: bool,
+    /// Inside tessel-configure-session's keybinding block.
+    pub suite: bool,
     pub on_release: bool,
 }
 
@@ -296,6 +301,7 @@ pub struct KeyboardSection {
 struct Walk<'a> {
     section: &'a mut KeyboardSection,
     tiling: bool,
+    suite: bool,
 }
 
 impl Walk<'_> {
@@ -303,6 +309,8 @@ impl Walk<'_> {
         match strip(text) {
             TESSEL_TILING_BEGIN => self.tiling = true,
             TESSEL_TILING_END => self.tiling = false,
+            TESSEL_KEYBINDINGS_END => self.suite = false,
+            text if text.starts_with(TESSEL_KEYBINDINGS_BEGIN) => self.suite = true,
             _ => {}
         }
     }
@@ -321,7 +329,7 @@ impl Walk<'_> {
     fn keybind(&mut self, element: &Element, data: &[u8]) -> Result<()> {
         let key = element.attribute("key").unwrap_or("").to_owned();
         let release = element.attribute("onRelease").unwrap_or("").to_lowercase() == "yes";
-        let tiling = self.tiling;
+        let (tiling, suite) = (self.tiling, self.suite);
         let mut actions = Vec::new();
         for node in &element.children {
             match node {
@@ -357,7 +365,7 @@ impl Walk<'_> {
         // empty keybind directly before a closing tag, that tag's end.
         let position = compat::end_event(element);
         let end = if data[position..].starts_with(b"</") { tag_end(data, position)? } else { tag_end(data, element.start)? };
-        self.section.keybinds.push(Keybind { key, actions, start: element.start, end, tiling, on_release: release });
+        self.section.keybinds.push(Keybind { key, actions, start: element.start, end, tiling, suite, on_release: release });
         Ok(())
     }
 }
@@ -376,7 +384,7 @@ pub fn read_keyboard(data: &[u8]) -> Result<KeyboardSection> {
         return value("Expected a labwc_config document.");
     }
     section.root_end = compat::end_event(root);
-    let mut walk = Walk { section: &mut section, tiling: false };
+    let mut walk = Walk { section: &mut section, tiling: false, suite: false };
     for comment in compat::prolog_comments(data, root.start) {
         walk.comment(&comment);
     }
@@ -540,25 +548,41 @@ pub fn set_numlock(data: &[u8], on: bool) -> Result<Vec<u8>> {
 
 /// Change the key of the user keybind whose start tag is at byte offset `start`.
 pub fn rebind(data: &[u8], start: usize, old_key: &str, new_key: &str) -> Result<Vec<u8>> {
-    if new_key.is_empty() || new_key.contains(['<', '>', '&', '"', '\'', '\n']) || new_key.chars().count() > 128 {
-        return value("Invalid key combination.");
+    rebind_many(data, &[(start, old_key.to_owned(), new_key.to_owned())])
+}
+
+/// `rebind` for several keybinds in one pass: `(start, old key, new key)`.
+pub fn rebind_many(data: &[u8], changes: &[(usize, String, String)]) -> Result<Vec<u8>> {
+    for (_, _, new_key) in changes {
+        if new_key.is_empty() || new_key.contains(['<', '>', '&', '"', '\'', '\n']) || new_key.chars().count() > 128 {
+            return value("Invalid key combination.");
+        }
     }
     let section = read_keyboard(data)?;
-    let bind = section.keybinds.iter().find(|item| item.start == start);
-    match bind {
-        Some(bind) if bind.key == old_key => {
-            if bind.tiling {
-                return value("Tiling shortcuts are managed by the tiling settings.");
+    for (start, old_key, _) in changes {
+        match section.keybinds.iter().find(|item| item.start == *start) {
+            Some(bind) if bind.key == *old_key => {
+                if bind.tiling {
+                    return value("Tiling shortcuts are managed by the tiling settings.");
+                }
             }
+            _ => return compat::runtime("The shortcut changed while it was being edited. Try again."),
         }
-        _ => return compat::runtime("The shortcut changed while it was being edited. Try again."),
     }
-    let end = tag_end(data, start)?;
-    let tag = &data[start..end];
-    let Some(found) = KEY_ATTRIBUTE.find(tag) else { return value("The shortcut has no key attribute.") };
-    let replacement = format!("key={}", quoteattr(new_key));
-    let tag = [&tag[..found.start()], replacement.as_bytes(), &tag[found.end()..]].concat();
-    let data = [&data[..start], &tag[..], &data[end..]].concat();
+    // From the end of the file backwards, so earlier offsets stay valid.
+    let mut ordered: Vec<&(usize, String, String)> = changes.iter().collect();
+    ordered.sort_by_key(|(start, _, _)| std::cmp::Reverse(*start));
+    ordered.dedup_by_key(|(start, _, _)| *start);
+    let mut data = data.to_vec();
+    for (start, _, new_key) in ordered {
+        let start = *start;
+        let end = tag_end(&data, start)?;
+        let tag = &data[start..end];
+        let Some(found) = KEY_ATTRIBUTE.find(tag) else { return value("The shortcut has no key attribute.") };
+        let replacement = format!("key={}", quoteattr(new_key));
+        let tag = [&tag[..found.start()], replacement.as_bytes(), &tag[found.end()..]].concat();
+        data = [&data[..start], &tag[..], &data[end..]].concat();
+    }
     read_keyboard(&data)?;
     Ok(data)
 }
@@ -690,6 +714,26 @@ pub(crate) mod tests {
         assert_eq!(lock_action.get("command", ""), "/home/u/.local/bin/tessel-shell-lock");
         assert!(section.has_default);
         assert_eq!(section.keybinds.iter().find(|b| b.key == "A-F4").unwrap().actions, vec![]);
+    }
+
+    #[test]
+    fn suite_block_is_tracked_and_several_keys_change_in_one_pass() {
+        let data = br#"<labwc_config><keyboard><keybind key="W-x"/><!-- Tessel keybindings begin: generated.
+     More text. --><keybind key="W-l"><action name="Close"/></keybind><keybind key="XF86AudioPlay"><action name="Iconify"/></keybind>
+<!-- Tessel keybindings end --><keybind key="W-y"><action name="Close"/></keybind></keyboard></labwc_config>"#;
+        let section = read_keyboard(data).unwrap();
+        let suite: Vec<(&str, bool)> = section.keybinds.iter().map(|b| (b.key.as_str(), b.suite)).collect();
+        assert_eq!(suite, [("W-x", false), ("W-l", true), ("XF86AudioPlay", true), ("W-y", false)]);
+        let at = |key: &str| section.keybinds.iter().find(|b| b.key == key).unwrap().start;
+        // Longer and shorter keys in one pass; the offsets refer to the original bytes.
+        let changes = [(at("W-l"), "W-l".to_owned(), "W-C-S-l".to_owned()), (at("XF86AudioPlay"), "XF86AudioPlay".to_owned(), "F8".to_owned()),
+                       (at("W-y"), "W-y".to_owned(), "W-S-y".to_owned())];
+        let changed = rebind_many(data, &changes).unwrap();
+        let expected = replace(&replace(&replace(data, b"\"W-l\"", b"\"W-C-S-l\""), b"\"XF86AudioPlay\"", b"\"F8\""), b"\"W-y\"", b"\"W-S-y\"");
+        assert_eq!(changed, expected);
+        // Stale: one changed key refuses the whole edit.
+        assert!(rebind_many(&changed, &changes).unwrap_err().is_runtime());
+        assert!(rebind_many(data, &[(at("W-l"), "W-l".to_owned(), "W-<".to_owned())]).unwrap_err().is_value());
     }
 
     #[test]

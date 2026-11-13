@@ -2178,5 +2178,19 @@
   "Archive manager": "归档管理器",
   "Choose the application that opens PDF files and other documents.": "选择打开 PDF 文件和其他文档的应用。",
   "Choose the application that opens archives.": "选择打开归档文件的应用。",
-  "Turn Num Lock on automatically when you sign in.": "登录时自动开启 Num Lock。"
+  "Turn Num Lock on automatically when you sign in.": "登录时自动开启 Num Lock。",
+  "Default: {value1}": "默认：{value1}",
+  "Reset to {value1}": "重置为 {value1}",
+  "Reset All Shortcuts…": "重置所有快捷键…",
+  "Reset all shortcuts?": "要重置所有快捷键吗？",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "你更改过的桌面快捷键将恢复为原来的按键。你自己添加的快捷键会保留。",
+  "Reset": "重置",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "默认按键已被“{value1}”使用。请先更改该快捷键，或重置所有快捷键。",
+  "The shortcuts could not be reset: {value1}": "无法重置快捷键：{value1}",
+  "{value1} shortcut was reset.": "已重置 {value1} 个快捷键。",
+  "{value1} shortcuts were reset.": "已重置 {value1} 个快捷键。",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "保留了 {value1} 个快捷键，因为你自己的快捷键正在使用其按键。",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "保留了 {value1} 个快捷键，因为你自己的快捷键正在使用其按键。",
+  "Reset shortcuts": "重置快捷键",
+  "Put one shortcut, or all of them, back to the original keys.": "将某个或全部快捷键恢复为原来的按键。"
 }

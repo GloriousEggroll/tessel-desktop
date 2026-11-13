@@ -18,6 +18,7 @@ pub mod pyerr;
 pub mod pyfmt;
 pub mod pyjson;
 pub mod scheduler;
+pub mod session_keys;
 pub mod secrets;
 pub mod service_settings;
 pub mod shell;

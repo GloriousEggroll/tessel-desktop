@@ -1998,5 +1998,19 @@
   "Archive manager": "ตัวจัดการไฟล์บีบอัด",
   "Choose the application that opens PDF files and other documents.": "เลือกแอปที่ใช้เปิดไฟล์ PDF และเอกสารอื่นๆ",
   "Choose the application that opens archives.": "เลือกแอปที่ใช้เปิดไฟล์บีบอัด",
-  "Turn Num Lock on automatically when you sign in.": "เปิด Num Lock โดยอัตโนมัติเมื่อคุณลงชื่อเข้าใช้"
+  "Turn Num Lock on automatically when you sign in.": "เปิด Num Lock โดยอัตโนมัติเมื่อคุณลงชื่อเข้าใช้",
+  "Default: {value1}": "ค่าเริ่มต้น: {value1}",
+  "Reset to {value1}": "รีเซ็ตเป็น {value1}",
+  "Reset All Shortcuts…": "รีเซ็ตปุ่มลัดทั้งหมด…",
+  "Reset all shortcuts?": "รีเซ็ตปุ่มลัดทั้งหมดหรือไม่",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "ปุ่มลัดของเดสก์ท็อปที่คุณเปลี่ยนจะกลับไปใช้ปุ่มเดิม ปุ่มลัดที่คุณเพิ่มเองจะยังคงอยู่",
+  "Reset": "รีเซ็ต",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "ปุ่มเริ่มต้นถูกใช้โดย “{value1}” ให้เปลี่ยนปุ่มลัดนั้นก่อน หรือรีเซ็ตปุ่มลัดทั้งหมด",
+  "The shortcuts could not be reset: {value1}": "ไม่สามารถรีเซ็ตปุ่มลัดได้: {value1}",
+  "{value1} shortcut was reset.": "รีเซ็ตปุ่มลัดแล้ว {value1} รายการ",
+  "{value1} shortcuts were reset.": "รีเซ็ตปุ่มลัดแล้ว {value1} รายการ",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "คงปุ่มลัดไว้ {value1} รายการ เพราะปุ่มลัดที่คุณเพิ่มเองใช้ปุ่มนั้นอยู่",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "คงปุ่มลัดไว้ {value1} รายการ เพราะปุ่มลัดที่คุณเพิ่มเองใช้ปุ่มเหล่านั้นอยู่",
+  "Reset shortcuts": "รีเซ็ตปุ่มลัด",
+  "Put one shortcut, or all of them, back to the original keys.": "คืนค่าปุ่มลัดหนึ่งรายการหรือทั้งหมดกลับเป็นแป้นเดิม"
 }

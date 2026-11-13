@@ -1998,5 +1998,19 @@
   "Archive manager": "مدير الأرشيف",
   "Choose the application that opens PDF files and other documents.": "اختر التطبيق الذي يفتح ملفات PDF والمستندات الأخرى.",
   "Choose the application that opens archives.": "اختر التطبيق الذي يفتح الأرشيفات.",
-  "Turn Num Lock on automatically when you sign in.": "تشغيل Num Lock تلقائيًا عند تسجيل الدخول."
+  "Turn Num Lock on automatically when you sign in.": "تشغيل Num Lock تلقائيًا عند تسجيل الدخول.",
+  "Default: {value1}": "الافتراضي: {value1}",
+  "Reset to {value1}": "إعادة التعيين إلى {value1}",
+  "Reset All Shortcuts…": "إعادة تعيين كل الاختصارات…",
+  "Reset all shortcuts?": "إعادة تعيين كل الاختصارات؟",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "تستعيد اختصارات سطح المكتب التي غيّرتها مفاتيحها الأصلية. تُحفظ الاختصارات التي أضفتها بنفسك.",
+  "Reset": "إعادة تعيين",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "المفتاح الافتراضي مستخدم من قِبل «{value1}». غيّر ذلك الاختصار أولًا، أو أعد تعيين كل الاختصارات.",
+  "The shortcuts could not be reset: {value1}": "تعذّرت إعادة تعيين الاختصارات: {value1}",
+  "{value1} shortcut was reset.": "أُعيد تعيين {value1} اختصار.",
+  "{value1} shortcuts were reset.": "أُعيد تعيين {value1} من الاختصارات.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "أُبقي على {value1} اختصار لأن أحد اختصاراتك يستخدم مفتاحه.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "أُبقي على {value1} من الاختصارات لأن اختصاراتك تستخدم مفاتيحها.",
+  "Reset shortcuts": "إعادة تعيين الاختصارات",
+  "Put one shortcut, or all of them, back to the original keys.": "أعِد اختصارًا واحدًا أو جميع الاختصارات إلى المفاتيح الأصلية."
 }

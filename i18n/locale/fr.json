@@ -2331,5 +2331,19 @@
   "Archive manager": "Gestionnaire d’archives",
   "Choose the application that opens PDF files and other documents.": "Choisissez l’application qui ouvre les fichiers PDF et les autres documents.",
   "Choose the application that opens archives.": "Choisissez l’application qui ouvre les archives.",
-  "Turn Num Lock on automatically when you sign in.": "Activer automatiquement le verrouillage numérique à l’ouverture de session."
+  "Turn Num Lock on automatically when you sign in.": "Activer automatiquement le verrouillage numérique à l’ouverture de session.",
+  "Default: {value1}": "Par défaut : {value1}",
+  "Reset to {value1}": "Rétablir {value1}",
+  "Reset All Shortcuts…": "Rétablir tous les raccourcis…",
+  "Reset all shortcuts?": "Rétablir tous les raccourcis ?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Les raccourcis du bureau que vous avez modifiés retrouvent leurs touches d’origine. Les raccourcis que vous avez ajoutés vous-même sont conservés.",
+  "Reset": "Rétablir",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "La touche par défaut est utilisée par « {value1} ». Modifiez d’abord ce raccourci ou rétablissez tous les raccourcis.",
+  "The shortcuts could not be reset: {value1}": "Les raccourcis n’ont pas pu être rétablis : {value1}",
+  "{value1} shortcut was reset.": "{value1} raccourci a été rétabli.",
+  "{value1} shortcuts were reset.": "{value1} raccourcis ont été rétablis.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} raccourci a été conservé, car l’un de vos propres raccourcis utilise sa touche.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} raccourcis ont été conservés, car vos propres raccourcis utilisent leurs touches.",
+  "Reset shortcuts": "Réinitialiser les raccourcis",
+  "Put one shortcut, or all of them, back to the original keys.": "Rétablissez un raccourci, ou tous, sur les touches d'origine."
 }

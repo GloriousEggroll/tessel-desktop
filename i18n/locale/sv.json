@@ -1998,5 +1998,19 @@
   "Archive manager": "Arkivhanterare",
   "Choose the application that opens PDF files and other documents.": "Välj programmet som öppnar PDF-filer och andra dokument.",
   "Choose the application that opens archives.": "Välj programmet som öppnar arkiv.",
-  "Turn Num Lock on automatically when you sign in.": "Slå på Num Lock automatiskt när du loggar in."
+  "Turn Num Lock on automatically when you sign in.": "Slå på Num Lock automatiskt när du loggar in.",
+  "Default: {value1}": "Standard: {value1}",
+  "Reset to {value1}": "Återställ till {value1}",
+  "Reset All Shortcuts…": "Återställ alla kortkommandon…",
+  "Reset all shortcuts?": "Återställa alla kortkommandon?",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "Skrivbordets kortkommandon som du har ändrat får tillbaka sina ursprungliga tangenter. Kortkommandon som du själv har lagt till behålls.",
+  "Reset": "Återställ",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "Standardtangenten används av ”{value1}”. Ändra det kortkommandot först eller återställ alla kortkommandon.",
+  "The shortcuts could not be reset: {value1}": "Kortkommandona kunde inte återställas: {value1}",
+  "{value1} shortcut was reset.": "{value1} kortkommando återställdes.",
+  "{value1} shortcuts were reset.": "{value1} kortkommandon återställdes.",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} kortkommando behölls eftersom ett av dina egna kortkommandon använder dess tangent.",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} kortkommandon behölls eftersom dina egna kortkommandon använder deras tangenter.",
+  "Reset shortcuts": "Återställ kortkommandon",
+  "Put one shortcut, or all of them, back to the original keys.": "Återställ ett kortkommando, eller alla, till de ursprungliga tangenterna."
 }

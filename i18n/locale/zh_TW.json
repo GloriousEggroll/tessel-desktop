@@ -2178,5 +2178,19 @@
   "Archive manager": "壓縮檔管理員",
   "Choose the application that opens PDF files and other documents.": "選擇開啟 PDF 檔案和其他文件的應用程式。",
   "Choose the application that opens archives.": "選擇開啟壓縮檔的應用程式。",
-  "Turn Num Lock on automatically when you sign in.": "登入時自動開啟 Num Lock。"
+  "Turn Num Lock on automatically when you sign in.": "登入時自動開啟 Num Lock。",
+  "Default: {value1}": "預設：{value1}",
+  "Reset to {value1}": "重設為 {value1}",
+  "Reset All Shortcuts…": "重設所有快捷鍵…",
+  "Reset all shortcuts?": "要重設所有快捷鍵嗎？",
+  "Desktop shortcuts you changed get their original keys back. Shortcuts you added yourself are kept.": "你變更過的桌面快捷鍵將恢復為原本的按鍵。你自行新增的快捷鍵會保留。",
+  "Reset": "重設",
+  "The default key is used by “{value1}”. Change that shortcut first, or reset all shortcuts.": "預設按鍵已被「{value1}」使用。請先變更該快捷鍵，或重設所有快捷鍵。",
+  "The shortcuts could not be reset: {value1}": "無法重設快捷鍵：{value1}",
+  "{value1} shortcut was reset.": "已重設 {value1} 個快捷鍵。",
+  "{value1} shortcuts were reset.": "已重設 {value1} 個快捷鍵。",
+  "{value1} shortcut was kept because one of your own shortcuts uses its key.": "保留了 {value1} 個快捷鍵，因為你自己的快捷鍵正在使用其按鍵。",
+  "{value1} shortcuts were kept because your own shortcuts use their keys.": "保留了 {value1} 個快捷鍵，因為你自己的快捷鍵正在使用其按鍵。",
+  "Reset shortcuts": "重設快捷鍵",
+  "Put one shortcut, or all of them, back to the original keys.": "將某個或全部快捷鍵還原為原本的按鍵。"
 }
