@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Nulstil genveje",
   "Put one shortcut, or all of them, back to the original keys.": "Sæt én genvej eller dem alle tilbage til de oprindelige taster.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR og ICC-profiler kræver Vulkan-rendereren, som denne session ikke bruger. SDR-farvedybde kan stadig indstilles.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR kræver Vulkan-rendereren, som denne session ikke bruger."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR kræver Vulkan-rendereren, som denne session ikke bruger.",
+  "Accent color": "Accentfarve",
+  "Window background": "Vinduesbaggrund",
+  "Used when Match wallpaper colors is off.": "Bruges, når Tilpas til baggrundsbilledets farver er slået fra.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Bruges til kontakter, skydere, markeringer og fremhævede knapper.",
+  "Used for window, menu and title bar backgrounds.": "Bruges til baggrunden i vinduer, menuer og titellinjer.",
+  "Use the built-in accent color": "Brug den indbyggede accentfarve",
+  "Use the built-in window background": "Brug den indbyggede vinduesbaggrund",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Farverne gælder for Tessels apps, andre GTK 4-apps, vinduers titellinjer og mappeikoner. En vinduesbaggrund holdes mørk eller lys nok til at være læsbar i den aktuelle stil.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Vælg farven på kontakter, skydere, markeringer og fremhævede knapper, når tilpasning til baggrundsbilledets farver er slået fra.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Vælg baggrundsfarven for vinduer, menuer og titellinjer, når tilpasning til baggrundsbilledets farver er slået fra."
 }

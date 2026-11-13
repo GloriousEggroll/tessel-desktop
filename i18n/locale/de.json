@@ -2347,5 +2347,15 @@
   "Reset shortcuts": "Tastenkürzel zurücksetzen",
   "Put one shortcut, or all of them, back to the original keys.": "Ein Tastenkürzel oder alle auf die ursprünglichen Tasten zurücksetzen.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR und ICC-Profile benötigen den Vulkan-Renderer, den diese Sitzung nicht verwendet. Die SDR-Farbtiefe kann weiterhin eingestellt werden.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR benötigt den Vulkan-Renderer, den diese Sitzung nicht verwendet."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR benötigt den Vulkan-Renderer, den diese Sitzung nicht verwendet.",
+  "Accent color": "Akzentfarbe",
+  "Window background": "Fensterhintergrund",
+  "Used when Match wallpaper colors is off.": "Wird verwendet, wenn „Hintergrundfarben übernehmen“ aus ist.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Für Schalter, Schieberegler, Auswahlen und hervorgehobene Knöpfe.",
+  "Used for window, menu and title bar backgrounds.": "Für den Hintergrund von Fenstern, Menüs und Titelleisten.",
+  "Use the built-in accent color": "Die eingebaute Akzentfarbe verwenden",
+  "Use the built-in window background": "Den eingebauten Fensterhintergrund verwenden",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Diese Farben gelten für Tessels Apps, andere GTK-4-Apps, Fenstertitelleisten und Ordnersymbole. Ein Fensterhintergrund bleibt dunkel oder hell genug, um im aktuellen Stil lesbar zu sein.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Farbe von Schaltern, Schiebereglern, Auswahlen und hervorgehobenen Schaltflächen wählen, wenn die Anpassung an die Hintergrundbildfarben aus ist.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Hintergrundfarbe von Fenstern, Menüs und Titelleisten wählen, wenn die Anpassung an die Hintergrundbildfarben aus ist."
 }

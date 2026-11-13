@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Palauta pikanäppäimet",
   "Put one shortcut, or all of them, back to the original keys.": "Palauta yksi pikanäppäin tai kaikki alkuperäisiin näppäimiin.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR ja ICC-profiilit vaativat Vulkan-renderöijän, jota tämä istunto ei käytä. SDR-värisyvyyden voi silti määrittää.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vaatii Vulkan-renderöijän, jota tämä istunto ei käytä."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vaatii Vulkan-renderöijän, jota tämä istunto ei käytä.",
+  "Accent color": "Korostusväri",
+  "Window background": "Ikkunoiden tausta",
+  "Used when Match wallpaper colors is off.": "Käytetään, kun Sovita taustakuvan väreihin on pois päältä.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Kytkimissä, liukusäätimissä, valinnoissa ja korostetuissa painikkeissa.",
+  "Used for window, menu and title bar backgrounds.": "Ikkunoiden, valikoiden ja otsikkopalkkien taustana.",
+  "Use the built-in accent color": "Käytä sisäänrakennettua korostusväriä",
+  "Use the built-in window background": "Käytä sisäänrakennettua ikkunoiden taustaa",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Nämä värit koskevat Tesselin sovelluksia, muita GTK 4 -sovelluksia, ikkunoiden otsikkopalkkeja ja kansiokuvakkeita. Ikkunoiden tausta pidetään niin tummana tai vaaleana, että se pysyy luettavana nykyisessä tyylissä.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Valitse kytkinten, liukusäätimien, valintojen ja korostettujen painikkeiden väri, kun taustakuvan värien mukailu on pois päältä.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Valitse ikkunoiden, valikoiden ja otsikkopalkkien taustaväri, kun taustakuvan värien mukailu on pois päältä."
 }

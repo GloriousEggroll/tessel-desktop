@@ -2347,5 +2347,15 @@
   "Reset shortcuts": "Réinitialiser les raccourcis",
   "Put one shortcut, or all of them, back to the original keys.": "Rétablissez un raccourci, ou tous, sur les touches d'origine.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Le HDR et les profils ICC nécessitent le moteur de rendu Vulkan, que cette session n’utilise pas. La profondeur de couleur SDR reste configurable.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "Le HDR nécessite le moteur de rendu Vulkan, que cette session n’utilise pas."
+  "HDR needs the Vulkan renderer, which this session is not using.": "Le HDR nécessite le moteur de rendu Vulkan, que cette session n’utilise pas.",
+  "Accent color": "Couleur d’accentuation",
+  "Window background": "Arrière-plan des fenêtres",
+  "Used when Match wallpaper colors is off.": "Utilisée quand « Adapter aux couleurs du fond d’écran » est désactivé.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Pour les interrupteurs, curseurs, sélections et boutons mis en avant.",
+  "Used for window, menu and title bar backgrounds.": "Pour l’arrière-plan des fenêtres, menus et barres de titre.",
+  "Use the built-in accent color": "Utiliser la couleur d’accentuation intégrée",
+  "Use the built-in window background": "Utiliser l’arrière-plan des fenêtres intégré",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Ces couleurs s’appliquent aux applications de Tessel, aux autres applications GTK 4, aux barres de titre et aux icônes de dossiers. L’arrière-plan des fenêtres reste assez sombre ou clair pour rester lisible dans le style actuel.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Choisissez la couleur des interrupteurs, curseurs, sélections et boutons mis en avant lorsque l’harmonisation avec le fond d’écran est désactivée.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Choisissez la couleur d’arrière-plan des fenêtres, des menus et des barres de titre lorsque l’harmonisation avec le fond d’écran est désactivée."
 }

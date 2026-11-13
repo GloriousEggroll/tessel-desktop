@@ -133,6 +133,11 @@ Every page that Python built from another component's module is built from that 
   `reset` of the three keys, `gtk-font-name` removed from both ini files, title fonts back to
   `tessel-configure-session`'s Sans 10 SemiBold. Samples in the interface and monospace fonts. Search targets
   `font_interface`, `font_document`, `font_monospace`, `font_titlebar`.
+- Theme & Wallpaper chosen colors (Rust-only): "Accent color" and "Window background" in the Match wallpaper colors
+  card write tessel-dock `accent_color` / `apps_background_color` (`#rrggbb` lowercase, `null` = built-in) through
+  the dock settings bridge (APPEARANCE_FIELDS), applied at once and reverted when the save fails. Both rows are
+  insensitive while `match_wallpaper` is on. Layout presets never contain these keys; applying a layout keeps them.
+  Search targets `accent_color`, `apps_background_color`.
 - Default Apps (`defaultapps`, also `org.tessel.DefaultApps.desktop`): Web browser, Mail, File manager, Terminal,
   Text editor, Document viewer, Image viewer, Video player, Music player, Archive manager (targets `default-<key>`:
   browser mail files terminal editor documents images video music archives). The first MIME type of a category gives

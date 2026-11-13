@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "إعادة تعيين الاختصارات",
   "Put one shortcut, or all of them, back to the original keys.": "أعِد اختصارًا واحدًا أو جميع الاختصارات إلى المفاتيح الأصلية.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "يتطلب HDR وملفات تعريف ICC عارض Vulkan، وهذه الجلسة لا تستخدمه. ما زال بالإمكان ضبط عمق ألوان SDR.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "يتطلب HDR عارض Vulkan، وهذه الجلسة لا تستخدمه."
+  "HDR needs the Vulkan renderer, which this session is not using.": "يتطلب HDR عارض Vulkan، وهذه الجلسة لا تستخدمه.",
+  "Accent color": "لون التمييز",
+  "Window background": "خلفية النوافذ",
+  "Used when Match wallpaper colors is off.": "يُستخدم عند إيقاف مطابقة ألوان الخلفية.",
+  "Used for switches, sliders, selections and highlighted buttons.": "يُستخدم للمفاتيح والمنزلقات والتحديدات والأزرار المميزة.",
+  "Used for window, menu and title bar backgrounds.": "يُستخدم لخلفيات النوافذ والقوائم وأشرطة العنوان.",
+  "Use the built-in accent color": "استخدام لون التمييز المدمج",
+  "Use the built-in window background": "استخدام خلفية النوافذ المدمجة",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "تنطبق هذه الألوان على تطبيقات Tessel وتطبيقات GTK 4 الأخرى وأشرطة عنوان النوافذ وأيقونات المجلدات. تبقى خلفية النوافذ داكنة أو فاتحة بما يكفي لتظل مقروءة في النمط الحالي.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "اختر لون المفاتيح وأشرطة التمرير والتحديدات والأزرار المميزة عند إيقاف مطابقة ألوان الخلفية.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "اختر لون خلفية النوافذ والقوائم وأشرطة العناوين عند إيقاف مطابقة ألوان الخلفية."
 }

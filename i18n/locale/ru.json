@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Сбросить сочетания клавиш",
   "Put one shortcut, or all of them, back to the original keys.": "Верните одно сочетание клавиш или все к исходным клавишам.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Для HDR и профилей ICC нужен рендерер Vulkan, который в этом сеансе не используется. Глубину цвета SDR по-прежнему можно настроить.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "Для HDR нужен рендерер Vulkan, который в этом сеансе не используется."
+  "HDR needs the Vulkan renderer, which this session is not using.": "Для HDR нужен рендерер Vulkan, который в этом сеансе не используется.",
+  "Accent color": "Цвет акцента",
+  "Window background": "Фон окон",
+  "Used when Match wallpaper colors is off.": "Используется, когда «Подбирать цвета под обои» выключено.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Для переключателей, ползунков, выделения и выделенных кнопок.",
+  "Used for window, menu and title bar backgrounds.": "Для фона окон, меню и заголовков.",
+  "Use the built-in accent color": "Использовать встроенный цвет акцента",
+  "Use the built-in window background": "Использовать встроенный фон окон",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Эти цвета применяются к приложениям Tessel, другим приложениям GTK 4, заголовкам окон и значкам папок. Фон окон остаётся достаточно тёмным или светлым, чтобы текст читался в текущем стиле.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Выберите цвет переключателей, ползунков, выделения и акцентных кнопок, когда подбор цветов по обоям выключен.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Выберите цвет фона окон, меню и заголовков окон, когда подбор цветов по обоям выключен."
 }

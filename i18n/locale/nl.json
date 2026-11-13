@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Sneltoetsen herstellen",
   "Put one shortcut, or all of them, back to the original keys.": "Zet één sneltoets, of allemaal, terug naar de oorspronkelijke toetsen.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR en ICC-profielen hebben de Vulkan-renderer nodig, die deze sessie niet gebruikt. De SDR-kleurdiepte kan nog wel worden ingesteld.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR heeft de Vulkan-renderer nodig, die deze sessie niet gebruikt."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR heeft de Vulkan-renderer nodig, die deze sessie niet gebruikt.",
+  "Accent color": "Accentkleur",
+  "Window background": "Vensterachtergrond",
+  "Used when Match wallpaper colors is off.": "Gebruikt wanneer Kleuren van achtergrond volgen uit staat.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Voor schakelaars, schuifregelaars, selecties en uitgelichte knoppen.",
+  "Used for window, menu and title bar backgrounds.": "Voor de achtergrond van vensters, menu’s en titelbalken.",
+  "Use the built-in accent color": "De ingebouwde accentkleur gebruiken",
+  "Use the built-in window background": "De ingebouwde vensterachtergrond gebruiken",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Deze kleuren gelden voor de apps van Tessel, andere GTK 4-apps, titelbalken van vensters en mappictogrammen. Een vensterachtergrond blijft donker of licht genoeg om leesbaar te blijven in de huidige stijl.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Kies de kleur van schakelaars, schuifregelaars, selecties en benadrukte knoppen wanneer afstemmen op de achtergrondkleuren uit staat.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Kies de achtergrondkleur van vensters, menu’s en titelbalken wanneer afstemmen op de achtergrondkleuren uit staat."
 }

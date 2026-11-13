@@ -27,6 +27,8 @@ pub struct Background {
     pub background_color: Option<Option<String>>,
     pub border_sides: Option<Vec<String>>,
     pub border_color: Option<Option<String>>,
+    /// The chosen accent (`Some(None)` = the built-in or wallpaper accent).
+    pub accent: Option<Option<Rgb>>,
 }
 
 /// The material attributes `set_background` remembers (`hasattr` = Some).
@@ -35,6 +37,7 @@ pub struct Material {
     pub border_sides: Option<Vec<String>>,
     pub border_color: Option<Option<String>>,
     pub background_color: Option<Option<String>>,
+    pub accent: Option<Option<Rgb>>,
     pub apps_transparency: Option<i64>,
     pub frosted: Option<bool>,
     pub frost_strength: Option<i64>,
@@ -174,6 +177,12 @@ impl DockSurface {
             } else if m.background_color.is_none() {
                 m.background_color = Some(if self.config.match_wallpaper { None } else { self.config.background_color.clone() });
             }
+            if let Some(accent) = request.accent {
+                m.accent = Some(accent);
+            } else if m.accent.is_none() {
+                m.accent = Some(if self.config.match_wallpaper { None }
+                                else { self.config.accent_color.as_deref().and_then(palette::parse_hex) });
+            }
             if request.apps_transparency.is_some() { m.apps_transparency = request.apps_transparency; }
             if request.frosted.is_some() { m.frosted = request.frosted; }
             if request.frost_strength.is_some() { m.frost_strength = request.frost_strength; }
@@ -213,7 +222,7 @@ impl DockSurface {
             frost_strength: m.frost_strength.unwrap_or(50), scope: self.popup_class.clone(),
             background_color: m.background_color.clone().flatten(),
             border_sides: if self.bar_mode { m.border_sides.clone().unwrap_or_default() } else { Vec::new() },
-            border_color: m.border_color.clone().flatten(), shine: self.is_app_dock && self.config.app_dock_shine, shadow: self.shadow_room() > 0,
+            border_color: m.border_color.clone().flatten(), accent: m.accent.flatten(), shine: self.is_app_dock && self.config.app_dock_shine, shadow: self.shadow_room() > 0,
             apps_transparency: m.apps_transparency.unwrap_or(0), apps_frosted: m.apps_frosted.unwrap_or(false),
             apps_frost_strength: m.apps_frost_strength.unwrap_or(50), apps_rounded_corners: m.apps_rounded_corners.unwrap_or(true),
             islands: self.config.uses_bar_islands() && self.bar_mode && !self.is_app_dock,

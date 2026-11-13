@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Скинути скорочення",
   "Put one shortcut, or all of them, back to the original keys.": "Поверніть одне скорочення або всі до початкових клавіш.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Для HDR і профілів ICC потрібен рендерер Vulkan, який цей сеанс не використовує. Глибину кольору SDR, як і раніше, можна налаштувати.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "Для HDR потрібен рендерер Vulkan, який цей сеанс не використовує."
+  "HDR needs the Vulkan renderer, which this session is not using.": "Для HDR потрібен рендерер Vulkan, який цей сеанс не використовує.",
+  "Accent color": "Колір акценту",
+  "Window background": "Тло вікон",
+  "Used when Match wallpaper colors is off.": "Використовується, коли «Підбирати кольори до шпалер» вимкнено.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Для перемикачів, повзунків, виділення та виділених кнопок.",
+  "Used for window, menu and title bar backgrounds.": "Для тла вікон, меню та заголовків.",
+  "Use the built-in accent color": "Використовувати вбудований колір акценту",
+  "Use the built-in window background": "Використовувати вбудоване тло вікон",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Ці кольори застосовуються до застосунків Tessel, інших застосунків GTK 4, заголовків вікон і значків тек. Тло вікон лишається достатньо темним або світлим, щоб текст читався в поточному стилі.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Виберіть колір перемикачів, повзунків, виділення та акцентних кнопок, коли добір кольорів за шпалерами вимкнено.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Виберіть колір тла вікон, меню та заголовків вікон, коли добір кольорів за шпалерами вимкнено."
 }

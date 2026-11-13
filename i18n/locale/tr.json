@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Kısayolları sıfırla",
   "Put one shortcut, or all of them, back to the original keys.": "Bir kısayolu veya tümünü özgün tuşlarına geri döndürün.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR ve ICC profilleri, bu oturumun kullanmadığı Vulkan işleyicisini gerektirir. SDR renk derinliği yine de yapılandırılabilir.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR, bu oturumun kullanmadığı Vulkan işleyicisini gerektirir."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR, bu oturumun kullanmadığı Vulkan işleyicisini gerektirir.",
+  "Accent color": "Vurgu rengi",
+  "Window background": "Pencere arka planı",
+  "Used when Match wallpaper colors is off.": "Duvar kâğıdı renklerine uydur kapalıyken kullanılır.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Anahtarlar, kaydırıcılar, seçimler ve öne çıkan düğmeler için.",
+  "Used for window, menu and title bar backgrounds.": "Pencere, menü ve başlık çubuğu arka planları için.",
+  "Use the built-in accent color": "Yerleşik vurgu rengini kullan",
+  "Use the built-in window background": "Yerleşik pencere arka planını kullan",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Bu renkler Tessel uygulamalarına, diğer GTK 4 uygulamalarına, pencere başlık çubuklarına ve klasör simgelerine uygulanır. Pencere arka planı, geçerli stilde okunabilir kalacak kadar koyu ya da açık tutulur.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Duvar kâğıdı renklerine uyum kapalıyken anahtarların, kaydırıcıların, seçimlerin ve vurgulanan düğmelerin rengini seçin.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Duvar kâğıdı renklerine uyum kapalıyken pencerelerin, menülerin ve başlık çubuklarının arka plan rengini seçin."
 }

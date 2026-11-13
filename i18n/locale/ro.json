@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Resetare scurtături",
   "Put one shortcut, or all of them, back to the original keys.": "Readuceți o scurtătură sau pe toate la tastele inițiale.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR și profilurile ICC au nevoie de rendererul Vulkan, pe care această sesiune nu îl folosește. Adâncimea de culoare SDR poate fi configurată în continuare.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR are nevoie de rendererul Vulkan, pe care această sesiune nu îl folosește."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR are nevoie de rendererul Vulkan, pe care această sesiune nu îl folosește.",
+  "Accent color": "Culoare de accent",
+  "Window background": "Fundalul ferestrelor",
+  "Used when Match wallpaper colors is off.": "Folosită când Potrivire cu culorile imaginii de fundal este dezactivată.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Pentru comutatoare, glisoare, selecții și butoane evidențiate.",
+  "Used for window, menu and title bar backgrounds.": "Pentru fundalul ferestrelor, meniurilor și barelor de titlu.",
+  "Use the built-in accent color": "Folosește culoarea de accent implicită",
+  "Use the built-in window background": "Folosește fundalul implicit al ferestrelor",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Aceste culori se aplică aplicațiilor Tessel, altor aplicații GTK 4, barelor de titlu și pictogramelor de dosare. Fundalul ferestrelor rămâne suficient de închis sau deschis pentru a fi lizibil în stilul curent.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Alegeți culoarea comutatoarelor, glisoarelor, selecțiilor și butoanelor evidențiate când potrivirea cu culorile imaginii de fundal este dezactivată.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Alegeți culoarea de fundal a ferestrelor, meniurilor și barelor de titlu când potrivirea cu culorile imaginii de fundal este dezactivată."
 }

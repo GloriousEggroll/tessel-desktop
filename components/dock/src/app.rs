@@ -387,7 +387,7 @@ impl App {
             let surface_config = if separate { config.for_monitor(&dock.monitor_name).for_app_dock() } else { (*config).clone() };
             let surface = SurfaceSettings {
                 effective_transparency: surface_config.effective_transparency(), match_wallpaper: surface_config.match_wallpaper,
-                background_color: surface_config.background_color.clone(),
+                background_color: surface_config.background_color.clone(), accent_color: surface_config.accent_color.clone(),
                 effective_rounded_corners: surface_config.effective_rounded_corners(),
                 effective_float_mode: surface_config.effective_float_mode(), effective_frosted: surface_config.effective_frosted(),
                 frost_strength: surface_config.frost_strength,
@@ -403,7 +403,7 @@ impl App {
                 apps_rounded_corners: Some(background.apps.apps_rounded_corners), frosted: Some(background.frosted),
                 frost_strength: Some(background.frost_strength), apps_frost_strength: Some(background.apps.apps_frost_strength),
                 background_color: Some(background.background_color.clone()), border_sides: Some(background.border_sides.clone()),
-                border_color: Some(background.border_color.clone()),
+                border_color: Some(background.border_color.clone()), accent: Some(background.accent),
             });
             dock.set_float_mode(background.float_mode);
         }
@@ -440,6 +440,8 @@ impl App {
             apps_frosted: config.apps_frosted, apps_frost_strength: config.apps_frost_strength as f64,
             apps_rounded_corners: config.apps_rounded_corners, colored_window_buttons: config.colored_window_buttons,
             window_buttons_left: config.window_buttons_left, window_shadows: config.window_shadows,
+            accent_color: config.accent_color.as_deref().and_then(tessel_gtk::palette::parse_hex),
+            apps_background_color: config.apps_background_color.as_deref().and_then(tessel_gtk::palette::parse_hex),
         };
         let monitors = self.export_monitors();
         let wallpaper = self.wallpaper.borrow().clone();

@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Atur ulang pintasan",
   "Put one shortcut, or all of them, back to the original keys.": "Kembalikan satu pintasan, atau semuanya, ke tombol aslinya.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR dan profil ICC memerlukan perender Vulkan, yang tidak digunakan sesi ini. Kedalaman warna SDR masih dapat diatur.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR memerlukan perender Vulkan, yang tidak digunakan sesi ini."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR memerlukan perender Vulkan, yang tidak digunakan sesi ini.",
+  "Accent color": "Warna aksen",
+  "Window background": "Latar jendela",
+  "Used when Match wallpaper colors is off.": "Dipakai saat Sesuaikan warna wallpaper mati.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Untuk sakelar, penggeser, pilihan, dan tombol yang disorot.",
+  "Used for window, menu and title bar backgrounds.": "Untuk latar jendela, menu, dan bilah judul.",
+  "Use the built-in accent color": "Gunakan warna aksen bawaan",
+  "Use the built-in window background": "Gunakan latar jendela bawaan",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Warna ini berlaku untuk aplikasi Tessel, aplikasi GTK 4 lain, bilah judul jendela, dan ikon folder. Latar jendela dijaga cukup gelap atau terang agar tetap terbaca dalam gaya saat ini.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Pilih warna sakelar, penggeser, pilihan, dan tombol yang disorot saat pencocokan warna wallpaper dimatikan.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Pilih warna latar jendela, menu, dan bilah judul saat pencocokan warna wallpaper dimatikan."
 }

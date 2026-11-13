@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "รีเซ็ตปุ่มลัด",
   "Put one shortcut, or all of them, back to the original keys.": "คืนค่าปุ่มลัดหนึ่งรายการหรือทั้งหมดกลับเป็นแป้นเดิม",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR และโปรไฟล์ ICC ต้องใช้ตัวเรนเดอร์ Vulkan ซึ่งเซสชันนี้ไม่ได้ใช้อยู่ ยังคงกำหนดความลึกสี SDR ได้",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR ต้องใช้ตัวเรนเดอร์ Vulkan ซึ่งเซสชันนี้ไม่ได้ใช้อยู่"
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR ต้องใช้ตัวเรนเดอร์ Vulkan ซึ่งเซสชันนี้ไม่ได้ใช้อยู่",
+  "Accent color": "สีเน้น",
+  "Window background": "พื้นหลังหน้าต่าง",
+  "Used when Match wallpaper colors is off.": "ใช้เมื่อปิดการจับคู่สีวอลเปเปอร์",
+  "Used for switches, sliders, selections and highlighted buttons.": "ใช้กับสวิตช์ แถบเลื่อน การเลือก และปุ่มที่เน้น",
+  "Used for window, menu and title bar backgrounds.": "ใช้เป็นพื้นหลังของหน้าต่าง เมนู และแถบชื่อเรื่อง",
+  "Use the built-in accent color": "ใช้สีเน้นในตัว",
+  "Use the built-in window background": "ใช้พื้นหลังหน้าต่างในตัว",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "สีเหล่านี้ใช้กับแอปของ Tessel แอป GTK 4 อื่นๆ แถบชื่อเรื่องของหน้าต่าง และไอคอนโฟลเดอร์ พื้นหลังหน้าต่างจะคงความมืดหรือสว่างพอให้อ่านได้ในสไตล์ปัจจุบัน",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "เลือกสีของสวิตช์ แถบเลื่อน ส่วนที่เลือก และปุ่มที่เน้น เมื่อปิดการปรับสีตามวอลเปเปอร์",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "เลือกสีพื้นหลังของหน้าต่าง เมนู และแถบชื่อเรื่อง เมื่อปิดการปรับสีตามวอลเปเปอร์"
 }

@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Återställ kortkommandon",
   "Put one shortcut, or all of them, back to the original keys.": "Återställ ett kortkommando, eller alla, till de ursprungliga tangenterna.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR och ICC-profiler kräver Vulkan-renderaren, som den här sessionen inte använder. SDR-färgdjup kan fortfarande ställas in.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR kräver Vulkan-renderaren, som den här sessionen inte använder."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR kräver Vulkan-renderaren, som den här sessionen inte använder.",
+  "Accent color": "Accentfärg",
+  "Window background": "Fönsterbakgrund",
+  "Used when Match wallpaper colors is off.": "Används när Matcha bakgrundsbildens färger är av.",
+  "Used for switches, sliders, selections and highlighted buttons.": "För reglage, skjutreglage, markeringar och framhävda knappar.",
+  "Used for window, menu and title bar backgrounds.": "För bakgrunden i fönster, menyer och namnlister.",
+  "Use the built-in accent color": "Använd den inbyggda accentfärgen",
+  "Use the built-in window background": "Använd den inbyggda fönsterbakgrunden",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Färgerna gäller Tessels appar, andra GTK 4-appar, fönstrens namnlister och mappikoner. En fönsterbakgrund hålls tillräckligt mörk eller ljus för att vara läsbar i den aktuella stilen.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Välj färgen på reglage, skjutreglage, markeringar och framhävda knappar när anpassning till bakgrundsbildens färger är av.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Välj bakgrundsfärgen för fönster, menyer och namnlister när anpassning till bakgrundsbildens färger är av."
 }

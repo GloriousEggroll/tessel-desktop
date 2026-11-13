@@ -2347,5 +2347,15 @@
   "Reset shortcuts": "Restablecer atajos",
   "Put one shortcut, or all of them, back to the original keys.": "Devuelva un atajo, o todos, a las teclas originales.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR y los perfiles ICC necesitan el renderizador Vulkan, que esta sesión no está usando. La profundidad de color SDR se puede seguir configurando.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR necesita el renderizador Vulkan, que esta sesión no está usando."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR necesita el renderizador Vulkan, que esta sesión no está usando.",
+  "Accent color": "Color de acento",
+  "Window background": "Fondo de las ventanas",
+  "Used when Match wallpaper colors is off.": "Se usa cuando Adaptar a los colores del fondo está desactivado.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Para interruptores, deslizadores, selecciones y botones destacados.",
+  "Used for window, menu and title bar backgrounds.": "Para el fondo de ventanas, menús y barras de título.",
+  "Use the built-in accent color": "Usar el color de acento integrado",
+  "Use the built-in window background": "Usar el fondo de ventanas integrado",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Estos colores se aplican a las aplicaciones de Tessel, a otras aplicaciones GTK 4, a las barras de título y a los iconos de carpetas. El fondo de las ventanas se mantiene lo bastante oscuro o claro para que se lea bien en el estilo actual.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Elige el color de interruptores, controles deslizantes, selecciones y botones resaltados cuando no se usan los colores del fondo de pantalla.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Elige el color de fondo de ventanas, menús y barras de título cuando no se usan los colores del fondo de pantalla."
 }

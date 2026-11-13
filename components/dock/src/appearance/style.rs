@@ -50,6 +50,8 @@ pub struct BackgroundRequest {
     pub background_color: Option<String>,
     pub border_sides: Vec<String>,
     pub border_color: Option<String>,
+    /// A chosen accent (wallpaper matching off).
+    pub accent: Option<Rgb>,
     pub shine: bool,
     pub shadow: bool,
 }
@@ -58,7 +60,7 @@ impl Default for BackgroundRequest {
     fn default() -> Self {
         Self { transparency: 5, wallpaper: None, rounded_corners: true, inner_rounded_corners: None, frosted: false,
                frost_strength: 50, scope: None, background_color: None, border_sides: Vec::new(), border_color: None,
-               shine: false, shadow: false }
+               accent: None, shine: false, shadow: false }
     }
 }
 
@@ -79,7 +81,7 @@ pub fn background_css(is_dark: bool, request: &BackgroundRequest) -> Result<Stri
     palette::background_css(is_dark, &PanelStyle {
         transparency, wallpaper: request.wallpaper, rounded_corners: request.rounded_corners,
         inner_rounded_corners: request.inner_rounded_corners, frosted: request.frosted, frost_strength,
-        scope: request.scope.as_deref(), background_color, border_sides: &sides, border_color, shine: request.shine,
+        scope: request.scope.as_deref(), background_color, border_sides: &sides, border_color, accent: request.accent, shine: request.shine,
         shadow: request.shadow,
     })
 }
@@ -88,10 +90,19 @@ pub fn background_css(is_dark: bool, request: &BackgroundRequest) -> Result<Stri
 #[allow(clippy::too_many_arguments)]
 pub fn popup_css(scope: &str, is_dark: bool, wallpaper: Option<Rgb>, transparency: i64, frosted: bool,
                  rounded_corners: bool, frost_strength: i64, background_color: Option<&str>) -> Result<String, String> {
+    popup_css_with_accent(scope, is_dark, wallpaper, transparency, frosted, rounded_corners, frost_strength, background_color, None)
+}
+
+/// [`popup_css`] with a chosen accent (wallpaper matching off).
+#[allow(clippy::too_many_arguments)]
+pub fn popup_css_with_accent(scope: &str, is_dark: bool, wallpaper: Option<Rgb>, transparency: i64, frosted: bool,
+                             rounded_corners: bool, frost_strength: i64, background_color: Option<&str>,
+                             accent: Option<Rgb>) -> Result<String, String> {
     let transparency = percent(transparency, "Transparency must be between 0 and 100 percent.")?;
     let frost_strength = percent(frost_strength, "Blur strength must be between 0 and 100 percent")?;
     let background_color = parse_background(background_color)?;
-    palette::popup_css(scope, is_dark, wallpaper, transparency, frosted, rounded_corners, frost_strength, background_color)
+    palette::popup_css_with_accent(scope, is_dark, wallpaper, transparency, frosted, rounded_corners, frost_strength,
+                                   background_color, accent)
 }
 
 /// Everything `DockSurface.set_background` styles for one clone.
@@ -112,6 +123,8 @@ pub struct DockCssRequest {
     /// Already empty outside bar mode.
     pub border_sides: Vec<String>,
     pub border_color: Option<String>,
+    /// A chosen accent (wallpaper matching off) for the panel and its menus.
+    pub accent: Option<Rgb>,
     pub shine: bool,
     pub shadow: bool,
     pub apps_transparency: i64,
@@ -160,18 +173,19 @@ pub fn dock_css(request: &DockCssRequest) -> Result<DockCss, String> {
         inner_rounded_corners: Some(request.requested_rounding), frosted: request.frosted,
         frost_strength: request.frost_strength, scope: Some(request.scope.clone()),
         background_color: request.background_color.clone(), border_sides: request.border_sides.clone(),
-        border_color: request.border_color.clone(), shine: request.shine, shadow: request.shadow,
+        border_color: request.border_color.clone(), accent: request.accent, shine: request.shine, shadow: request.shadow,
     })?;
     if request.islands {
         panel.push_str(&islands_css(&panel, &request.scope));
     }
     // Application menus inherit the surface that opened them; other app popups
     // keep the independently configured application appearance.
-    let popup = popup_css(&request.scope, request.is_dark, request.wallpaper, request.apps_transparency,
-                          request.apps_frosted, request.apps_rounded_corners, request.apps_frost_strength, None)?;
-    let menu = popup_css(&format!("{}-applications", request.scope), request.is_dark, request.wallpaper,
-                         request.transparency, request.frosted, request.requested_rounding, request.frost_strength,
-                         request.background_color.as_deref())?;
+    let popup = popup_css_with_accent(&request.scope, request.is_dark, request.wallpaper, request.apps_transparency,
+                                      request.apps_frosted, request.apps_rounded_corners, request.apps_frost_strength, None,
+                                      request.accent)?;
+    let menu = popup_css_with_accent(&format!("{}-applications", request.scope), request.is_dark, request.wallpaper,
+                                     request.transparency, request.frosted, request.requested_rounding, request.frost_strength,
+                                     request.background_color.as_deref(), request.accent)?;
     Ok(DockCss { panel, popup, menu })
 }
 
@@ -203,7 +217,7 @@ mod tests {
         let css = dock_css(&DockCssRequest {
             is_dark: true, transparency: 30, wallpaper: Some([40, 60, 80]), rounded_corners: false, requested_rounding: true,
             frosted: false, frost_strength: 50, scope: "tessel-dock-clone-1".into(), background_color: None,
-            border_sides: vec![], border_color: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
+            border_sides: vec![], border_color: None, accent: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
             apps_frost_strength: 50, apps_rounded_corners: false, islands: false }).unwrap();
         assert!(css.panel.contains(".tessel-dock-clone-1.tessel-dock-panel {"));
         assert!(css.panel.contains("border-radius: 0px;"));
@@ -215,11 +229,26 @@ mod tests {
     }
 
     #[test]
+    fn chosen_accent_reaches_panel_popups_and_menu() {
+        let request = DockCssRequest {
+            is_dark: true, transparency: 30, wallpaper: None, rounded_corners: true, requested_rounding: true,
+            frosted: false, frost_strength: 50, scope: "tessel-dock-clone-1".into(), background_color: Some("#202020".into()),
+            border_sides: vec![], border_color: None, accent: None, shine: false, shadow: false, apps_transparency: 23,
+            apps_frosted: false, apps_frost_strength: 50, apps_rounded_corners: true, islands: false };
+        let plain = dock_css(&request).unwrap();
+        let chosen = dock_css(&DockCssRequest { accent: Some([230, 120, 40]), ..request }).unwrap();
+        for (before, after) in [(&plain.panel, &chosen.panel), (&plain.popup, &chosen.popup), (&plain.menu, &chosen.menu)] {
+            assert!(!before.contains("230, 120, 40"));
+            assert!(after.contains("rgb(230, 120, 40)"), "{after}");
+        }
+    }
+
+    #[test]
     fn islands_take_the_panel_material_and_the_panel_turns_transparent() {
         let css = dock_css(&DockCssRequest {
             is_dark: true, transparency: 30, wallpaper: Some([40, 60, 80]), rounded_corners: true, requested_rounding: true,
             frosted: false, frost_strength: 50, scope: "tessel-dock-clone-1".into(), background_color: None,
-            border_sides: vec![], border_color: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
+            border_sides: vec![], border_color: None, accent: None, shine: false, shadow: false, apps_transparency: 23, apps_frosted: true,
             apps_frost_strength: 50, apps_rounded_corners: false, islands: true }).unwrap().panel;
         let panel = ".tessel-dock-clone-1.tessel-dock-panel";
         assert!(css.contains(&format!("{panel}.tessel-dock-islands {{ background-image: none; background-color: transparent;")));

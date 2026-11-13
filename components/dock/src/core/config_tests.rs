@@ -688,7 +688,7 @@ fn field_names_follow_dataclass_order() {
     let value = DockConfig::default().to_value();
     let keys: Vec<&str> = value.as_object().unwrap().keys().map(String::as_str).collect();
     assert_eq!(keys, field_names());
-    assert_eq!(field_names().len(), 63);
+    assert_eq!(field_names().len(), 65);
 }
 
 #[test]

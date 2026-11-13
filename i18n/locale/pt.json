@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Repor atalhos",
   "Put one shortcut, or all of them, back to the original keys.": "Reponha um atalho, ou todos, nas teclas originais.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "O HDR e os perfis ICC precisam do renderizador Vulkan, que esta sessão não está a utilizar. A profundidade de cor SDR pode continuar a ser configurada.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "O HDR precisa do renderizador Vulkan, que esta sessão não está a utilizar."
+  "HDR needs the Vulkan renderer, which this session is not using.": "O HDR precisa do renderizador Vulkan, que esta sessão não está a utilizar.",
+  "Accent color": "Cor de destaque",
+  "Window background": "Fundo das janelas",
+  "Used when Match wallpaper colors is off.": "Usado quando Corresponder às cores do fundo está desligado.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Para interruptores, deslizadores, seleções e botões destacados.",
+  "Used for window, menu and title bar backgrounds.": "Para o fundo de janelas, menus e barras de título.",
+  "Use the built-in accent color": "Usar a cor de destaque predefinida",
+  "Use the built-in window background": "Usar o fundo das janelas predefinido",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Estas cores aplicam-se às aplicações do Tessel, a outras aplicações GTK 4, às barras de título e aos ícones de pastas. O fundo das janelas mantém-se escuro ou claro o suficiente para continuar legível no estilo atual.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Escolha a cor dos interruptores, controlos de deslize, seleções e botões destacados quando a correspondência com as cores do papel de parede está desligada.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Escolha a cor de fundo das janelas, menus e barras de título quando a correspondência com as cores do papel de parede está desligada."
 }

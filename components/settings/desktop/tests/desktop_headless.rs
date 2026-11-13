@@ -743,10 +743,147 @@ fn theme_tests(app: &gtk::Application) {
         assert!(fx.c.status.text().contains("disconnected"));
         fx.done();
     });
+    run("chosen_colors_save_through_the_bridge_and_wait_for_matching_off", || {
+        let fx = theme_fx(app, None, None);
+        let c = &fx.c;
+        let (accent, background) = (&c.color_rows["accent_color"], &c.color_rows["apps_background_color"]);
+        // Nothing chosen: the built-in colours of the dark style, nothing to reset, nothing saved on open.
+        for (field, row) in [("accent_color", accent), ("apps_background_color", background)] {
+            assert!(row.row.is_sensitive(), "{field}");
+            assert!(!row.reset.is_sensitive(), "{field}");
+            assert_eq!(theme::rgba_hex(&row.button.rgba()), theme::builtin_color(field, true), "{field}");
+        }
+        assert!(!c.colors_hint.is_visible());
+        assert!(fx.bridge.calls.borrow().is_empty());
+        let previous = fx.bridge.get();
+        accent.button.set_rgba(&rgba("#C01C28"));
+        assert_eq!(fx.bridge.get(), replaced(&previous, json!({"accent_color": "#c01c28"})));
+        assert!(accent.reset.is_sensitive() && !background.reset.is_sensitive());
+        background.button.set_rgba(&rgba("rgb(30,42,59)"));
+        assert_eq!(fx.bridge.get(), replaced(&previous, json!({"accent_color": "#c01c28", "apps_background_color": "#1e2a3b"})));
+        assert_eq!(fx.bridge.calls.borrow().len(), 2);
+        // Reset goes back to the built-in accent (null) and shows it.
+        accent.reset.emit_clicked();
+        assert_eq!(fx.bridge.get(), replaced(&previous, json!({"apps_background_color": "#1e2a3b"})));
+        assert_eq!(fx.bridge.get().to_value()["accent_color"], Value::Null);
+        assert_eq!(theme::rgba_hex(&accent.button.rgba()), theme::builtin_color("accent_color", true));
+        assert!(!accent.reset.is_sensitive() && background.reset.is_sensitive());
+        assert_eq!(fx.bridge.calls.borrow().len(), 3);
+        // Matching on: both rows wait, say why, and keep the chosen colour.
+        c.r#match.set_active(true);
+        assert!(!accent.row.is_sensitive() && !background.row.is_sensitive());
+        assert!(c.colors_hint.is_visible());
+        assert_eq!(c.colors_hint.text(), "Used when Match wallpaper colors is off.");
+        assert_eq!(fx.bridge.get().apps_background_color.as_deref(), Some("#1e2a3b"));
+        assert!(fx.bridge.get().match_wallpaper);
+        c.r#match.set_active(false);
+        assert!(accent.row.is_sensitive() && background.row.is_sensitive() && !c.colors_hint.is_visible());
+        for name in ["accent_color", "apps_background_color"] {
+            assert!(fx.page.search_targets.borrow()[name].is::<gtk::ColorDialogButton>(), "{name}");
+        }
+        assert!(fx.requests().is_empty());
+        fx.done();
+    });
+    run("chosen_colors_rows_are_insensitive_while_matching_on_open", || {
+        let bridge = FakeBridge::new();
+        bridge.config.replace(replaced(&bridge.get(), json!({"match_wallpaper": true, "accent_color": "#336699"})));
+        let fx = theme_fx(app, Some(bridge), None);
+        let accent = &fx.c.color_rows["accent_color"];
+        assert!(!accent.row.is_sensitive() && !fx.c.color_rows["apps_background_color"].row.is_sensitive());
+        assert!(fx.c.colors_hint.is_visible());
+        assert_eq!(theme::rgba_hex(&accent.button.rgba()), "#336699");
+        assert!(accent.reset.get_sensitive());
+        assert!(fx.bridge.calls.borrow().is_empty());
+        fx.done();
+    });
+    run("failed_color_save_restores_the_saved_color", || {
+        let bridge = FakeBridge::new();
+        bridge.config.replace(replaced(&bridge.get(), json!({"accent_color": "#336699"})));
+        let fx = theme_fx(app, Some(bridge), None);
+        fx.bridge.reject.set(true);
+        let previous = fx.bridge.get();
+        let (accent, background) = (&fx.c.color_rows["accent_color"], &fx.c.color_rows["apps_background_color"]);
+        accent.button.set_rgba(&rgba("#ff0000"));
+        assert_eq!(theme::rgba_hex(&accent.button.rgba()), "#336699");
+        assert!(accent.reset.is_sensitive());
+        accent.reset.emit_clicked();
+        assert_eq!(theme::rgba_hex(&accent.button.rgba()), "#336699");
+        assert!(accent.reset.is_sensitive());
+        background.button.set_rgba(&rgba("#ffffff"));
+        assert_eq!(theme::rgba_hex(&background.button.rgba()), theme::builtin_color("apps_background_color", true));
+        assert!(!background.reset.is_sensitive());
+        assert_eq!(fx.bridge.calls.borrow().len(), 3);
+        assert_eq!(fx.bridge.get(), previous);
+        fx.done();
+    });
+    run("chosen_colors_follow_external_changes_and_the_style", || {
+        let fx = theme_fx(app, None, None);
+        fx.bridge.refresh.replace(Some(Box::new(|bridge: &FakeBridge| {
+            bridge.config.replace(replaced(&bridge.get(), json!({"accent_color": "#26a269", "apps_background_color": "#241f31"})));
+        })));
+        fx.page.activate();
+        let (accent, background) = (&fx.c.color_rows["accent_color"], &fx.c.color_rows["apps_background_color"]);
+        assert_eq!((theme::rgba_hex(&accent.button.rgba()), theme::rgba_hex(&background.button.rgba())),
+                   ("#26a269".to_owned(), "#241f31".to_owned()));
+        assert!(accent.reset.is_sensitive() && background.reset.is_sensitive());
+        fx.bridge.refresh.replace(Some(Box::new(|bridge: &FakeBridge| {
+            bridge.config.replace(replaced(&bridge.get(), json!({"accent_color": null, "apps_background_color": null,
+                                                               "match_wallpaper": true})));
+        })));
+        fx.page.activate();
+        assert_eq!(theme::rgba_hex(&accent.button.rgba()), theme::builtin_color("accent_color", true));
+        assert_eq!(theme::rgba_hex(&background.button.rgba()), theme::builtin_color("apps_background_color", true));
+        assert!(!accent.reset.get_sensitive() && !background.reset.get_sensitive());
+        assert!(!accent.row.is_sensitive() && fx.c.colors_hint.is_visible());
+        // The light style shows the light built-in colours.
+        fx.colors.set_string("color-scheme", "prefer-light");
+        assert_eq!(theme::rgba_hex(&background.button.rgba()), theme::builtin_color("apps_background_color", false));
+        assert_eq!(theme::rgba_hex(&accent.button.rgba()), theme::builtin_color("accent_color", false));
+        assert!(fx.bridge.calls.borrow().is_empty());
+        fx.done();
+    });
+    run("theme_colors_card_screenshots", || {
+        for dark in [false, true] {
+            if let Some(settings) = gtk::Settings::default() {
+                settings.set_gtk_application_prefer_dark_theme(dark);
+            }
+            let bridge = FakeBridge::new();
+            bridge.config.replace(replaced(&bridge.get(), json!({"accent_color": "#c01c28"})));
+            let fx = theme_fx(app, Some(bridge), None);
+            fx.colors.set_string("color-scheme", if dark { "prefer-dark" } else { "prefer-light" });
+            let _style = gs_base::style::install(&fx.host.window);
+            fx.host.window.set_default_size(900, 760);
+            let card = fx.c.color_rows["accent_color"].row.parent().unwrap();
+            let scrolled = card.ancestor(gtk::ScrolledWindow::static_type()).and_downcast::<gtk::ScrolledWindow>().unwrap();
+            GtkWindowExt::set_focus(&fx.host.window, None::<&gtk::Widget>);
+            for _ in 0..3 {
+                settle(0.3);
+                let child = scrolled.child().unwrap();
+                let point = card.compute_point(&child, &gtk::graphene::Point::new(0.0, 0.0)).unwrap();
+                let adjustment = scrolled.vadjustment();
+                adjustment.set_value(adjustment.value() + point.y() as f64 - 12.0);
+            }
+            settle(0.4);
+            assert!(card.width() <= fx.c.content.width(), "{} > {}", card.width(), fx.c.content.width());
+            // The colour buttons line up with the Match switch on the right.
+            let right = |widget: &gtk::Widget| widget.compute_bounds(&card).map(|b| b.x() + b.width()).unwrap_or_default();
+            let switch_right = right(fx.c.r#match.upcast_ref());
+            for row in fx.c.color_rows.values() {
+                assert!((right(row.button.upcast_ref()) - switch_right).abs() < 1.0,
+                        "{} vs {switch_right}", right(row.button.upcast_ref()));
+            }
+            let path = screenshot(&format!("theme-colors-{}", if dark { "dark" } else { "light" }));
+            println!("screenshot {}", path.display());
+            fx.done();
+        }
+        if let Some(settings) = gtk::Settings::default() {
+            settings.set_gtk_application_prefer_dark_theme(false);
+        }
+    });
     run("theme_search_targets_use_settings_search_names", || {
         let fx = theme_fx(app, None, None);
         for name in ["match", "dock_transparency", "apps_transparency", "frosted", "apps_frosted", "frost_strength",
-                     "apps_frost_strength", "apps_rounded_corners"] {
+                     "apps_frost_strength", "apps_rounded_corners", "accent_color", "apps_background_color"] {
             assert!(fx.page.search_targets.borrow().contains_key(name), "{name}");
         }
         fx.done();
@@ -1549,6 +1686,21 @@ fn layout_tests(app: &gtk::Application) {
         settle(0.2);
         assert_eq!((bridge.config().edge.as_str(), *workspaces.0.lock().unwrap(), *tiling.0.lock().unwrap()), ("bottom", 4, true));
         assert!(page.card("win").unwrap().current.is_visible());
+        page.close();
+        window.destroy();
+    });
+    run("applying_a_layout_keeps_the_chosen_colors", || {
+        let (page, window, bridge, ..) = setup(app);
+        let chosen = replaced(&bridge.config(), json!({"accent_color": "#c01c28", "apps_background_color": "#1e2a3b"}));
+        *bridge.config.lock().unwrap() = chosen;
+        page.flow.select_child(&page.card("side").unwrap().child);
+        settle(0.05);
+        page.apply_button.emit_clicked();
+        assert!(wait(|| !page.busy.get() && page.status.text().contains("Side")));
+        settle(0.2);
+        let config = bridge.config();
+        assert_eq!(config.edge, "left");
+        assert_eq!((config.accent_color.as_deref(), config.apps_background_color.as_deref()), (Some("#c01c28"), Some("#1e2a3b")));
         page.close();
         window.destroy();
     });

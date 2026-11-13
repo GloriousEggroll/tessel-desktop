@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Επαναφορά συντομεύσεων",
   "Put one shortcut, or all of them, back to the original keys.": "Επαναφέρετε μία συντόμευση ή όλες στα αρχικά πλήκτρα.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Το HDR και τα προφίλ ICC χρειάζονται τον αποδότη Vulkan, τον οποίο δεν χρησιμοποιεί αυτή η συνεδρία. Το βάθος χρώματος SDR μπορεί ακόμη να ρυθμιστεί.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "Το HDR χρειάζεται τον αποδότη Vulkan, τον οποίο δεν χρησιμοποιεί αυτή η συνεδρία."
+  "HDR needs the Vulkan renderer, which this session is not using.": "Το HDR χρειάζεται τον αποδότη Vulkan, τον οποίο δεν χρησιμοποιεί αυτή η συνεδρία.",
+  "Accent color": "Χρώμα έμφασης",
+  "Window background": "Φόντο παραθύρων",
+  "Used when Match wallpaper colors is off.": "Χρησιμοποιείται όταν η Αντιστοίχιση χρωμάτων ταπετσαρίας είναι ανενεργή.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Για διακόπτες, ολισθητές, επιλογές και επισημασμένα κουμπιά.",
+  "Used for window, menu and title bar backgrounds.": "Για το φόντο παραθύρων, μενού και γραμμών τίτλου.",
+  "Use the built-in accent color": "Χρήση του ενσωματωμένου χρώματος έμφασης",
+  "Use the built-in window background": "Χρήση του ενσωματωμένου φόντου παραθύρων",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Τα χρώματα αυτά ισχύουν για τις εφαρμογές του Tessel, άλλες εφαρμογές GTK 4, τις γραμμές τίτλου και τα εικονίδια φακέλων. Το φόντο παραθύρων μένει αρκετά σκούρο ή ανοιχτό ώστε να διαβάζεται στο τρέχον στυλ.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Επιλέξτε το χρώμα των διακοπτών, των ρυθμιστικών, των επιλογών και των τονισμένων κουμπιών όταν η αντιστοίχιση με τα χρώματα της ταπετσαρίας είναι ανενεργή.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Επιλέξτε το χρώμα φόντου των παραθύρων, των μενού και των γραμμών τίτλου όταν η αντιστοίχιση με τα χρώματα της ταπετσαρίας είναι ανενεργή."
 }

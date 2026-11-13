@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Obnoviť skratky",
   "Put one shortcut, or all of them, back to the original keys.": "Vráťte jednu skratku alebo všetky späť na pôvodné klávesy.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR a profily ICC vyžadujú vykresľovač Vulkan, ktorý táto relácia nepoužíva. Farebnú hĺbku SDR možno nastaviť aj tak.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vyžaduje vykresľovač Vulkan, ktorý táto relácia nepoužíva."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vyžaduje vykresľovač Vulkan, ktorý táto relácia nepoužíva.",
+  "Accent color": "Farba zvýraznenia",
+  "Window background": "Pozadie okien",
+  "Used when Match wallpaper colors is off.": "Použije sa, keď je vypnuté Prispôsobiť farbám tapety.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Pre prepínače, posuvníky, výbery a zvýraznené tlačidlá.",
+  "Used for window, menu and title bar backgrounds.": "Pre pozadie okien, ponúk a záhlaví.",
+  "Use the built-in accent color": "Použiť vstavanú farbu zvýraznenia",
+  "Use the built-in window background": "Použiť vstavané pozadie okien",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Tieto farby platia pre aplikácie Tessel, ostatné aplikácie GTK 4, záhlavia okien a ikony priečinkov. Pozadie okien zostane dosť tmavé alebo svetlé, aby bolo v aktuálnom štýle čitateľné.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Vyberte farbu prepínačov, posuvníkov, výberov a zvýraznených tlačidiel, keď je prispôsobenie farbám tapety vypnuté.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Vyberte farbu pozadia okien, ponúk a záhlaví okien, keď je prispôsobenie farbám tapety vypnuté."
 }

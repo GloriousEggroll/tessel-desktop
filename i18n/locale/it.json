@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Ripristina scorciatoie",
   "Put one shortcut, or all of them, back to the original keys.": "Riporta una scorciatoia, o tutte, ai tasti originali.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR e profili ICC richiedono il renderer Vulkan, che questa sessione non sta usando. La profondità di colore SDR può comunque essere configurata.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR richiede il renderer Vulkan, che questa sessione non sta usando."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR richiede il renderer Vulkan, che questa sessione non sta usando.",
+  "Accent color": "Colore di accento",
+  "Window background": "Sfondo delle finestre",
+  "Used when Match wallpaper colors is off.": "Usato quando Adatta ai colori dello sfondo è disattivato.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Per interruttori, cursori, selezioni e pulsanti evidenziati.",
+  "Used for window, menu and title bar backgrounds.": "Per lo sfondo di finestre, menu e barre del titolo.",
+  "Use the built-in accent color": "Usa il colore di accento predefinito",
+  "Use the built-in window background": "Usa lo sfondo delle finestre predefinito",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Questi colori si applicano alle app di Tessel, alle altre app GTK 4, alle barre del titolo e alle icone delle cartelle. Lo sfondo delle finestre resta abbastanza scuro o chiaro da restare leggibile nello stile attuale.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Scegli il colore di interruttori, cursori, selezioni e pulsanti in evidenza quando l’abbinamento ai colori dello sfondo è disattivato.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Scegli il colore di sfondo di finestre, menu e barre del titolo quando l’abbinamento ai colori dello sfondo è disattivato."
 }

@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Obnovit zkratky",
   "Put one shortcut, or all of them, back to the original keys.": "Vraťte jednu zkratku nebo všechny zpět na původní klávesy.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR a profily ICC vyžadují vykreslovač Vulkan, který tato relace nepoužívá. Barevnou hloubku SDR lze nastavit i tak.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vyžaduje vykreslovač Vulkan, který tato relace nepoužívá."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vyžaduje vykreslovač Vulkan, který tato relace nepoužívá.",
+  "Accent color": "Barva zvýraznění",
+  "Window background": "Pozadí oken",
+  "Used when Match wallpaper colors is off.": "Použije se, když je vypnuto Přizpůsobit barvám tapety.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Pro přepínače, posuvníky, výběry a zvýrazněná tlačítka.",
+  "Used for window, menu and title bar backgrounds.": "Pro pozadí oken, nabídek a záhlaví.",
+  "Use the built-in accent color": "Použít vestavěnou barvu zvýraznění",
+  "Use the built-in window background": "Použít vestavěné pozadí oken",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Tyto barvy platí pro aplikace Tessel, ostatní aplikace GTK 4, záhlaví oken a ikony složek. Pozadí oken zůstane dost tmavé nebo světlé, aby bylo v aktuálním stylu čitelné.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Zvolte barvu přepínačů, posuvníků, výběrů a zvýrazněných tlačítek, když je vypnuté přizpůsobení barvám tapety.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Zvolte barvu pozadí oken, nabídek a záhlaví oken, když je vypnuté přizpůsobení barvám tapety."
 }

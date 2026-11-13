@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "איפוס קיצורי דרך",
   "Put one shortcut, or all of them, back to the original keys.": "החזרת קיצור דרך אחד, או את כולם, למקשים המקוריים.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR ופרופילי ICC דורשים את מנוע העיבוד Vulkan, שההפעלה הזו אינה משתמשת בו. עדיין ניתן להגדיר את עומק הצבע של SDR.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR דורש את מנוע העיבוד Vulkan, שההפעלה הזו אינה משתמשת בו."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR דורש את מנוע העיבוד Vulkan, שההפעלה הזו אינה משתמשת בו.",
+  "Accent color": "צבע הדגשה",
+  "Window background": "רקע החלונות",
+  "Used when Match wallpaper colors is off.": "בשימוש כאשר התאמה לצבעי הרקע כבויה.",
+  "Used for switches, sliders, selections and highlighted buttons.": "למתגים, מחוונים, בחירות ולחצנים מודגשים.",
+  "Used for window, menu and title bar backgrounds.": "לרקע של חלונות, תפריטים ושורות כותרת.",
+  "Use the built-in accent color": "שימוש בצבע ההדגשה המובנה",
+  "Use the built-in window background": "שימוש ברקע החלונות המובנה",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "הצבעים האלה חלים על היישומים של Tessel, על יישומי GTK 4 אחרים, על שורות הכותרת של החלונות ועל סמלי התיקיות. רקע החלונות נשמר כהה או בהיר מספיק כדי להישאר קריא בסגנון הנוכחי.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "בחירת צבע המתגים, המחוונים, הבחירות והכפתורים המודגשים כאשר התאמת הצבעים לתמונת הרקע כבויה.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "בחירת צבע הרקע של חלונות, תפריטים ושורות כותרת כאשר התאמת הצבעים לתמונת הרקע כבויה."
 }

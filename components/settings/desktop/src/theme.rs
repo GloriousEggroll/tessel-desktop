@@ -34,6 +34,8 @@ pub const THEME_CSS: &str = "
 const TOGGLES: [&str; 6] = ["frosted", "apps_frosted", "apps_rounded_corners", "window_buttons_left", "colored_window_buttons",
                             "window_shadows"];
 const STRENGTHS: [&str; 2] = ["frost_strength", "apps_frost_strength"];
+/// Chosen colours used while wallpaper matching is off (`None` = built-in).
+pub const COLOR_FIELDS: [&str; 2] = ["accent_color", "apps_background_color"];
 
 /// The shared GNOME interface settings, or `None` when the schema (or its
 /// `color-scheme` key) is missing.
@@ -180,6 +182,8 @@ pub fn set_appearance_field(config: &mut DockConfig, field: &str, value: &Value)
         "window_buttons_left" => config.window_buttons_left = flag(),
         "colored_window_buttons" => config.colored_window_buttons = flag(),
         "window_shadows" => config.window_shadows = flag(),
+        "accent_color" => config.accent_color = value.as_str().map(str::to_owned),
+        "apps_background_color" => config.apps_background_color = value.as_str().map(str::to_owned),
         _ => {}
     }
 }
@@ -193,6 +197,36 @@ fn config_bool(config: &DockConfig, field: &str) -> bool {
 
 fn config_number(config: &DockConfig, field: &str) -> f64 {
     config.to_value().get(field).and_then(Value::as_f64).unwrap_or(0.0)
+}
+
+fn config_color(config: &DockConfig, field: &str) -> Option<String> {
+    match field {
+        "accent_color" => config.accent_color.clone(),
+        _ => config.apps_background_color.clone(),
+    }
+}
+
+/// `#rrggbb` (lowercase) of a colour button's colour.
+pub fn rgba_hex(rgba: &gdk::RGBA) -> String {
+    let channel = |c: f32| py_round(c as f64 * 255.0).clamp(0, 255);
+    format!("#{:02x}{:02x}{:02x}", channel(rgba.red()), channel(rgba.green()), channel(rgba.blue()))
+}
+
+/// The colour a field uses when none is chosen, in the light or dark style.
+pub fn builtin_color(field: &str, dark: bool) -> String {
+    let palette = tessel_gtk::palette::color_palette(dark, None);
+    let [r, g, b] = if field == "accent_color" { palette.accent } else { palette.background };
+    format!("#{r:02x}{g:02x}{b:02x}")
+}
+
+/// One chosen-colour row: its colour button and the button back to the built-in colour.
+pub struct ColorRow {
+    pub row: gtk::Box,
+    pub button: gtk::ColorDialogButton,
+    pub reset: gtk::Button,
+    /// The colour the page last showed (`#rrggbb`): a late `rgba` notification
+    /// of a revert must not save it.
+    shown: RefCell<String>,
 }
 
 /// One display's wallpaper row (`self.rows[connector]`).
@@ -247,6 +281,10 @@ pub struct ThemeWallpaperPage {
     pub apps_transparency_enabled: gtk::Switch,
     pub toggles: IndexMap<String, gtk::Switch>,
     pub strengths: IndexMap<String, gtk::Scale>,
+    /// `accent_color`, `apps_background_color`.
+    pub color_rows: IndexMap<String, ColorRow>,
+    /// "Used when Match wallpaper colors is off.", shown while matching.
+    pub colors_hint: gtk::Label,
     pub status: gtk::Label,
     pub cards: gtk::Box,
     pub discard_button: gtk::Button,
@@ -359,7 +397,23 @@ impl ThemeWallpaperPage {
         let match_switch = switch();
         row.append(&match_switch);
         match_card.append(&row);
-        content.append(&match_card);
+        let colors_hint = label(&tr!("Used when Match wallpaper colors is off."), Some("subtitle"));
+        colors_hint.set_margin_top(8);
+        colors_hint.set_visible(false);
+        match_card.append(&colors_hint);
+        let mut color_rows = IndexMap::new();
+        color_rows.insert("accent_color".to_owned(), Self::color_row(&match_card, &tr!("Accent color"),
+            &tr!("Used for switches, sliders, selections and highlighted buttons."), &tr!("Use the built-in accent color")));
+        color_rows.insert("apps_background_color".to_owned(), Self::color_row(&match_card, &tr!("Window background"),
+            &tr!("Used for window, menu and title bar backgrounds."), &tr!("Use the built-in window background")));
+        // The note sits right under its card.
+        let match_group = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        match_group.append(&match_card);
+        let colors_note = label(&tr!("These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style."), Some("subtitle"));
+        colors_note.set_margin_start(12);
+        colors_note.set_margin_end(12);
+        match_group.append(&colors_note);
+        content.append(&match_group);
 
         let mut toggles = IndexMap::new();
         let mut strengths = IndexMap::new();
@@ -401,7 +455,7 @@ impl ThemeWallpaperPage {
             cursors,
             fonts,
             r#match: match_switch, dock_transparency, dock_transparency_enabled, apps_transparency,
-            apps_transparency_enabled, toggles, strengths, status, cards: cards.clone(), discard_button: discard_button.clone(),
+            apps_transparency_enabled, toggles, strengths, color_rows, colors_hint, status, cards: cards.clone(), discard_button: discard_button.clone(),
             apply_button: apply_button.clone(), rows: RefCell::new(IndexMap::new()), style_provider,
             closed: Cell::new(false), busy: Cell::new(false), updating: Cell::new(false), saving: Cell::new(false),
             pending_appearance: RefCell::new(Map::new()), appearance_source: RefCell::new(None),
@@ -488,6 +542,20 @@ impl ThemeWallpaperPage {
             page.strengths[field].connect_value_changed(move |scale| {
                 if let Some(page) = weak.upgrade() {
                     page.transparency_changed(scale, field);
+                }
+            });
+        }
+        for field in COLOR_FIELDS {
+            let weak = Rc::downgrade(&page);
+            page.color_rows[field].button.connect_rgba_notify(move |button| {
+                if let Some(page) = weak.upgrade() {
+                    page.color_chosen(field, Some(rgba_hex(&button.rgba())));
+                }
+            });
+            let weak = Rc::downgrade(&page);
+            page.color_rows[field].reset.connect_clicked(move |_| {
+                if let Some(page) = weak.upgrade() {
+                    page.color_chosen(field, None);
                 }
             });
         }
@@ -584,6 +652,29 @@ impl ThemeWallpaperPage {
         toggle
     }
 
+    fn color_row(card: &gtk::Box, title: &str, detail: &str, reset_text: &str) -> ColorRow {
+        let row = gtk::Box::builder().orientation(gtk::Orientation::Horizontal).spacing(16).margin_top(8).build();
+        let labels = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(5).hexpand(true).build();
+        labels.append(&label(title, None));
+        labels.append(&label(detail, Some("subtitle")));
+        row.append(&labels);
+        let controls = gtk::Box::builder().spacing(8).valign(gtk::Align::Center).build();
+        let reset = gtk::Button::with_label(&tr!("Reset"));
+        reset.set_valign(gtk::Align::Center);
+        reset.set_tooltip_text(Some(reset_text));
+        accessible_label(&reset, reset_text);
+        controls.append(&reset);
+        let dialog = gtk::ColorDialog::builder().title(title).with_alpha(false).build();
+        let button = gtk::ColorDialogButton::new(Some(dialog));
+        button.set_valign(gtk::Align::Center);
+        accessible_label(&button, title);
+        button.set_tooltip_text(Some(title));
+        controls.append(&button);
+        row.append(&controls);
+        card.append(&row);
+        ColorRow { row, button, reset, shown: RefCell::new(String::new()) }
+    }
+
     fn frost_strength_control(card: &gtk::Box) -> gtk::Scale {
         let title = tr!("Blur strength");
         card.append(&label(&title, None));
@@ -603,6 +694,74 @@ impl ThemeWallpaperPage {
         self.updating.set(true);
         self.scheme_buttons.get(&value).unwrap_or(&self.scheme_buttons["default"]).set_active(true);
         self.updating.set(false);
+        // A built-in colour differs between the light and dark style.
+        let bridge = self.bridge.borrow().clone();
+        if let Some(bridge) = bridge {
+            self.sync_color_rows(&bridge.config());
+        }
+    }
+
+    /// Whether the light/dark style in use is dark.
+    #[allow(deprecated)] // Same Automatic test as the Dock page's colour pickers.
+    pub fn style_is_dark(&self) -> bool {
+        match self.color_settings.as_ref().map(|s| s.get_string("color-scheme")).as_deref() {
+            Some("prefer-dark") => true,
+            Some("prefer-light") => false,
+            _ => gtk::Settings::default().is_some_and(|settings| settings.is_gtk_application_prefer_dark_theme()
+                || settings.gtk_theme_name().is_some_and(|name| name.to_lowercase().contains("dark"))),
+        }
+    }
+
+    /// Show the saved colours (or the built-in ones) without saving.
+    fn sync_color_rows(&self, config: &DockConfig) {
+        let previous = self.updating.replace(true);
+        let dark = self.style_is_dark();
+        for field in COLOR_FIELDS {
+            let row = &self.color_rows[field];
+            let saved = config_color(config, field).filter(|c| gdk::RGBA::parse(c.as_str()).is_ok());
+            let text = saved.clone().unwrap_or_else(|| builtin_color(field, dark));
+            if let Ok(rgba) = gdk::RGBA::parse(text.as_str()) {
+                row.shown.replace(rgba_hex(&rgba));
+                if rgba_hex(&row.button.rgba()) != rgba_hex(&rgba) {
+                    row.button.set_rgba(&rgba);
+                }
+            }
+            row.reset.set_sensitive(saved.is_some());
+        }
+        self.sync_color_sensitivity(config.match_wallpaper);
+        self.updating.set(previous);
+    }
+
+    fn sync_color_sensitivity(&self, matching: bool) {
+        for row in self.color_rows.values() {
+            row.row.set_sensitive(!matching);
+        }
+        self.colors_hint.set_visible(matching);
+    }
+
+    fn color_chosen(self: &Rc<Self>, field: &str, color: Option<String>) {
+        if self.updating.get() || self.closed.get() {
+            return;
+        }
+        let row = &self.color_rows[field];
+        match &color {
+            Some(color) if *row.shown.borrow() == *color => return,
+            Some(color) => {
+                row.shown.replace(color.clone());
+            }
+            None => {
+                // Show the built-in colour again.
+                let previous = self.updating.replace(true);
+                if let Ok(rgba) = gdk::RGBA::parse(builtin_color(field, self.style_is_dark()).as_str()) {
+                    row.shown.replace(rgba_hex(&rgba));
+                    row.button.set_rgba(&rgba);
+                }
+                self.updating.set(previous);
+            }
+        }
+        row.reset.set_sensitive(color.is_some());
+        self.pending_appearance.borrow_mut().insert(field.into(), color.map(Value::from).unwrap_or(Value::Null));
+        self.flush_appearance();
     }
 
     fn scheme_toggled(&self, button: &gtk::ToggleButton, value: &str) {
@@ -640,6 +799,7 @@ impl ThemeWallpaperPage {
             self.strengths[field].set_value(config_number(&config, field));
         }
         self.sync_material_controls();
+        self.sync_color_rows(&config);
         self.updating.set(false);
     }
 
@@ -945,6 +1105,7 @@ impl ThemeWallpaperPage {
         if self.updating.get() || self.closed.get() {
             return;
         }
+        self.sync_color_sensitivity(self.r#match.is_active());
         self.pending_appearance.borrow_mut().insert("match_wallpaper".into(), self.r#match.is_active().into());
         self.flush_appearance();
     }
@@ -1108,6 +1269,9 @@ impl ThemeWallpaperPage {
         }
         for field in STRENGTHS {
             page.add_target(field, &self.strengths[field]);
+        }
+        for field in COLOR_FIELDS {
+            page.add_target(field, &self.color_rows[field].button);
         }
     }
 }

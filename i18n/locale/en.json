@@ -164,5 +164,15 @@
   "Reset shortcuts": "Reset shortcuts",
   "Put one shortcut, or all of them, back to the original keys.": "Put one shortcut, or all of them, back to the original keys.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR needs the Vulkan renderer, which this session is not using."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR needs the Vulkan renderer, which this session is not using.",
+  "Accent color": "Accent color",
+  "Window background": "Window background",
+  "Used when Match wallpaper colors is off.": "Used when Match wallpaper colors is off.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Used for switches, sliders, selections and highlighted buttons.",
+  "Used for window, menu and title bar backgrounds.": "Used for window, menu and title bar backgrounds.",
+  "Use the built-in accent color": "Use the built-in accent color",
+  "Use the built-in window background": "Use the built-in window background",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Choose the background color of windows, menus and title bars when Match wallpaper colors is off."
 }

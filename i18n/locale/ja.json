@@ -2194,5 +2194,15 @@
   "Reset shortcuts": "ショートカットをリセット",
   "Put one shortcut, or all of them, back to the original keys.": "1 つまたはすべてのショートカットを元のキーに戻します。",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR と ICC プロファイルには Vulkan レンダラーが必要ですが、このセッションでは使用されていません。SDR の色深度は引き続き設定できます。",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR には Vulkan レンダラーが必要ですが、このセッションでは使用されていません。"
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR には Vulkan レンダラーが必要ですが、このセッションでは使用されていません。",
+  "Accent color": "アクセントカラー",
+  "Window background": "ウィンドウの背景",
+  "Used when Match wallpaper colors is off.": "「壁紙の色に合わせる」がオフのときに使われます。",
+  "Used for switches, sliders, selections and highlighted buttons.": "スイッチ、スライダー、選択範囲、強調されたボタンに使われます。",
+  "Used for window, menu and title bar backgrounds.": "ウィンドウ、メニュー、タイトルバーの背景に使われます。",
+  "Use the built-in accent color": "標準のアクセントカラーを使う",
+  "Use the built-in window background": "標準のウィンドウの背景を使う",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "これらの色は Tessel のアプリ、ほかの GTK 4 アプリ、ウィンドウのタイトルバー、フォルダーアイコンに適用されます。ウィンドウの背景は、現在のスタイルで読みやすいよう十分に暗く、または明るく保たれます。",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "壁紙の色に合わせる設定がオフのときの、スイッチ、スライダー、選択部分、強調ボタンの色を選びます。",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "壁紙の色に合わせる設定がオフのときの、ウィンドウ、メニュー、タイトルバーの背景色を選びます。"
 }

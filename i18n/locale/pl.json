@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Przywróć skróty",
   "Put one shortcut, or all of them, back to the original keys.": "Przywróć jeden skrót lub wszystkie do pierwotnych klawiszy.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR i profile ICC wymagają renderera Vulkan, którego ta sesja nie używa. Głębię kolorów SDR nadal można ustawić.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR wymaga renderera Vulkan, którego ta sesja nie używa."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR wymaga renderera Vulkan, którego ta sesja nie używa.",
+  "Accent color": "Kolor akcentu",
+  "Window background": "Tło okien",
+  "Used when Match wallpaper colors is off.": "Używane, gdy Dopasuj do kolorów tapety jest wyłączone.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Dla przełączników, suwaków, zaznaczeń i wyróżnionych przycisków.",
+  "Used for window, menu and title bar backgrounds.": "Dla tła okien, menu i pasków tytułu.",
+  "Use the built-in accent color": "Użyj wbudowanego koloru akcentu",
+  "Use the built-in window background": "Użyj wbudowanego tła okien",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Te kolory dotyczą aplikacji Tessel, innych aplikacji GTK 4, pasków tytułu okien i ikon folderów. Tło okien pozostaje na tyle ciemne lub jasne, by w bieżącym stylu było czytelne.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Wybierz kolor przełączników, suwaków, zaznaczeń i wyróżnionych przycisków, gdy dopasowanie do kolorów tapety jest wyłączone.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Wybierz kolor tła okien, menu i pasków tytułu, gdy dopasowanie do kolorów tapety jest wyłączone."
 }

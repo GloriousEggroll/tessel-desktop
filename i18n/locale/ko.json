@@ -2194,5 +2194,15 @@
   "Reset shortcuts": "단축키 초기화",
   "Put one shortcut, or all of them, back to the original keys.": "단축키 하나 또는 전체를 원래 키로 되돌립니다.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR 및 ICC 프로필에는 Vulkan 렌더러가 필요하지만 이 세션은 이를 사용하고 있지 않습니다. SDR 색 심도는 계속 설정할 수 있습니다.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR에는 Vulkan 렌더러가 필요하지만 이 세션은 이를 사용하고 있지 않습니다."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR에는 Vulkan 렌더러가 필요하지만 이 세션은 이를 사용하고 있지 않습니다.",
+  "Accent color": "강조 색상",
+  "Window background": "창 배경",
+  "Used when Match wallpaper colors is off.": "배경화면 색상 맞추기가 꺼져 있을 때 사용됩니다.",
+  "Used for switches, sliders, selections and highlighted buttons.": "스위치, 슬라이더, 선택 항목, 강조된 버튼에 사용됩니다.",
+  "Used for window, menu and title bar backgrounds.": "창, 메뉴, 제목 표시줄 배경에 사용됩니다.",
+  "Use the built-in accent color": "기본 강조 색상 사용",
+  "Use the built-in window background": "기본 창 배경 사용",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "이 색상은 Tessel 앱, 다른 GTK 4 앱, 창 제목 표시줄, 폴더 아이콘에 적용됩니다. 창 배경은 현재 스타일에서 읽기 쉽도록 충분히 어둡거나 밝게 유지됩니다.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "배경화면 색상 맞춤이 꺼져 있을 때 스위치, 슬라이더, 선택 영역, 강조 버튼의 색상을 선택합니다.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "배경화면 색상 맞춤이 꺼져 있을 때 창, 메뉴, 제목 표시줄의 배경색을 선택합니다."
 }

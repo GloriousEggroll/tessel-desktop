@@ -2194,5 +2194,15 @@
   "Reset shortcuts": "重設快捷鍵",
   "Put one shortcut, or all of them, back to the original keys.": "將某個或全部快捷鍵還原為原本的按鍵。",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR 和 ICC 設定檔需要 Vulkan 繪製器，而此工作階段並未使用。仍可設定 SDR 色彩深度。",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR 需要 Vulkan 繪製器，而此工作階段並未使用。"
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR 需要 Vulkan 繪製器，而此工作階段並未使用。",
+  "Accent color": "強調色",
+  "Window background": "視窗背景",
+  "Used when Match wallpaper colors is off.": "在「配合桌布顏色」關閉時使用。",
+  "Used for switches, sliders, selections and highlighted buttons.": "用於開關、滑桿、選取項目與醒目按鈕。",
+  "Used for window, menu and title bar backgrounds.": "用於視窗、選單與標題列的背景。",
+  "Use the built-in accent color": "使用內建強調色",
+  "Use the built-in window background": "使用內建視窗背景",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "這些顏色會套用到 Tessel 的應用程式、其他 GTK 4 應用程式、視窗標題列與資料夾圖示。視窗背景會保持夠深或夠淺，在目前樣式下仍清晰易讀。",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "在關閉「配合桌布顏色」時，選擇開關、滑桿、選取項目和強調按鈕的顏色。",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "在關閉「配合桌布顏色」時，選擇視窗、選單和標題列的背景顏色。"
 }

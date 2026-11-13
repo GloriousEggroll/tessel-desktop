@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Đặt lại phím tắt",
   "Put one shortcut, or all of them, back to the original keys.": "Đưa một phím tắt, hoặc tất cả, về các phím ban đầu.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR và hồ sơ ICC cần trình kết xuất Vulkan, mà phiên này không sử dụng. Vẫn có thể cấu hình độ sâu màu SDR.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR cần trình kết xuất Vulkan, mà phiên này không sử dụng."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR cần trình kết xuất Vulkan, mà phiên này không sử dụng.",
+  "Accent color": "Màu nhấn",
+  "Window background": "Nền cửa sổ",
+  "Used when Match wallpaper colors is off.": "Dùng khi Khớp màu hình nền đang tắt.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Dùng cho công tắc, thanh trượt, vùng chọn và nút được làm nổi bật.",
+  "Used for window, menu and title bar backgrounds.": "Dùng cho nền cửa sổ, menu và thanh tiêu đề.",
+  "Use the built-in accent color": "Dùng màu nhấn có sẵn",
+  "Use the built-in window background": "Dùng nền cửa sổ có sẵn",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Các màu này áp dụng cho ứng dụng của Tessel, các ứng dụng GTK 4 khác, thanh tiêu đề cửa sổ và biểu tượng thư mục. Nền cửa sổ được giữ đủ tối hoặc đủ sáng để vẫn dễ đọc trong kiểu hiện tại.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Chọn màu cho công tắc, thanh trượt, vùng chọn và nút nổi bật khi tắt khớp màu theo hình nền.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Chọn màu nền cho cửa sổ, trình đơn và thanh tiêu đề khi tắt khớp màu theo hình nền."
 }

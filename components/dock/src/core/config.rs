@@ -160,6 +160,12 @@ pub struct DockConfig {
     pub window_shadows: bool,
     pub match_wallpaper: bool,
     pub background_color: Option<String>,
+    /// Chosen accent (`#rrggbb`) for the dock, our apps, GTK and title bars
+    /// while Match wallpaper colors is off; `None` is the built-in accent.
+    pub accent_color: Option<String>,
+    /// Chosen window background (`#rrggbb`) for our apps, GTK and title bars
+    /// while Match wallpaper colors is off; `None` is the built-in background.
+    pub apps_background_color: Option<String>,
     pub rounded_corners: bool,
     pub float_mode: bool,
     pub bar_rounded_corners: bool,
@@ -187,7 +193,7 @@ const FIELD_NAMES: &[&str] = &[
     "hover_scale", "magnification", "compact_bar", "bar_islands", "transparency", "transparency_enabled", "frosted", "frost_strength",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
     "window_buttons_left", "colored_window_buttons", "window_shadows", "match_wallpaper", "background_color",
-    "rounded_corners", "float_mode", "bar_rounded_corners", "bar_float_mode", "bar_border_enabled", "bar_border_sides",
+    "accent_color", "apps_background_color", "rounded_corners", "float_mode", "bar_rounded_corners", "bar_float_mode", "bar_border_enabled", "bar_border_sides",
     "bar_border_color", "hide_on_fullscreen", "menu_hotkey_fullscreen", "group_visibility", "hot_corners",
     "hot_corner_delay_ms", "auto_hide", "reveal_delay_ms", "hide_delay_ms",
 ];
@@ -253,6 +259,8 @@ impl Default for DockConfig {
             window_shadows: true,
             match_wallpaper: false,
             background_color: None,
+            accent_color: None,
+            apps_background_color: None,
             rounded_corners: true,
             float_mode: true,
             bar_rounded_corners: false,
@@ -477,6 +485,8 @@ impl DockConfig {
         put("window_shadows", Value::from(self.window_shadows));
         put("match_wallpaper", Value::from(self.match_wallpaper));
         put("background_color", self.background_color.clone().map(Value::from).unwrap_or(Value::Null));
+        put("accent_color", self.accent_color.clone().map(Value::from).unwrap_or(Value::Null));
+        put("apps_background_color", self.apps_background_color.clone().map(Value::from).unwrap_or(Value::Null));
         put("rounded_corners", Value::from(self.rounded_corners));
         put("float_mode", Value::from(self.float_mode));
         put("bar_rounded_corners", Value::from(self.bar_rounded_corners));
@@ -547,9 +557,9 @@ impl DockConfig {
             c.insert(key, value);
         }
 
-        for name in ["background_color", "app_dock_background_color", "bar_border_color"] {
+        for name in ["background_color", "accent_color", "apps_background_color", "app_dock_background_color", "bar_border_color"] {
             let color = &c[name];
-            if color.is_null() && name == "background_color" {
+            if color.is_null() && ["background_color", "accent_color", "apps_background_color"].contains(&name) {
                 continue;
             }
             let valid = color
@@ -791,6 +801,8 @@ impl DockConfig {
             window_shadows: flag("window_shadows"),
             match_wallpaper: flag("match_wallpaper"),
             background_color: c["background_color"].as_str().map(str::to_owned),
+            accent_color: c["accent_color"].as_str().map(str::to_owned),
+            apps_background_color: c["apps_background_color"].as_str().map(str::to_owned),
             rounded_corners: flag("rounded_corners"),
             float_mode: flag("float_mode"),
             bar_rounded_corners: flag("bar_rounded_corners"),

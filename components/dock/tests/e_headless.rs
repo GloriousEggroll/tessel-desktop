@@ -786,6 +786,70 @@ fn menu_icon_follows_a_dark_and_a_light_bar() -> Result<(), String> {
     Ok(())
 }
 
+fn read_json(path: &Path) -> Option<Value> {
+    std::fs::read(path).ok().and_then(|data| serde_json::from_slice(&data).ok())
+}
+
+/// Chosen accent and window colours (Match wallpaper colors off) reach
+/// palette.json, the published GTK colours and Papirus, follow a saved change
+/// live, and give way to matching or to clearing them.
+fn chosen_colors_publish_while_matching_is_off() -> Result<(), String> {
+    use tessel_gtk::palette::{chosen_palette, color_palette, parse_hex};
+    let dock = Dock::start_with("chosen-colors", serde_json::json!({
+        "mode": "bar", "edge": "top", "match_wallpaper": false, "accent_color": "#e67828",
+        "apps_background_color": "#1e2846"}), |home| {
+        // A user's own Papirus copy: publishing the folder colour reports it
+        // instead of mirroring the system theme into the test HOME.
+        for name in ["Papirus", "Papirus-Dark", "Papirus-Light"] {
+            std::fs::create_dir_all(home.join(".icons").join(name)).unwrap();
+            std::fs::write(home.join(".icons").join(name).join("index.theme"), "custom theme").unwrap();
+        }
+    })?;
+    let palette_path = dock.home.join(".cache/tessel/dock/palette.json");
+    let colors_path = dock.home.join(".config/gtk-4.0/tessel-dock-colors.css");
+    let gtk_path = dock.home.join(".config/gtk-4.0/gtk.css");
+    let is_dark = read_json(&palette_path).and_then(|p| p["is_dark"].as_bool()).ok_or("no palette.json")?;
+    let monitors_are = |expected: tessel_gtk::palette::Palette| read_json(&palette_path).is_some_and(|p| {
+        p["monitors"].as_array().is_some_and(|m| m.len() == 2 && m.iter().all(|m| {
+            m["background"] == serde_json::json!(expected.background) && m["accent"] == serde_json::json!(expected.accent)
+                && m["foreground"] == serde_json::json!(expected.foreground)
+        }))
+    });
+    let hex = |c: [u8; 3]| format!("#{:02x}{:02x}{:02x}", c[0], c[1], c[2]);
+    let gtk_has = |palette: tessel_gtk::palette::Palette| std::fs::read_to_string(&colors_path).is_ok_and(|css| {
+        css.contains(&format!("@define-color window_bg_color {};", hex(palette.background)))
+            && css.contains(&format!("@define-color accent_bg_color {};", hex(palette.accent)))
+    });
+    let imported = || std::fs::read_to_string(&gtk_path).is_ok_and(|css| css.contains("tessel-dock-colors.css"));
+    let chosen = chosen_palette(is_dark, parse_hex("#e67828"), parse_hex("#1e2846"));
+    ensure!(wait_for(5.0, || monitors_are(chosen)), "palette.json lacks the chosen colours: {:?}", read_json(&palette_path));
+    ensure!(wait_for(5.0, || gtk_has(chosen) && imported()), "GTK colours not published: {:?}",
+            std::fs::read_to_string(&colors_path));
+    let papirus = || dock.check().ok().and_then(|c| c["background"]["papirus_folders_error"].as_str().map(str::to_owned));
+    ensure!(wait_for(5.0, || papirus().is_some_and(|e| e.contains("Existing custom Papirus"))),
+            "Papirus folder colour not published: {:?}", papirus());
+    // A saved change applies live.
+    let request = serde_json::json!({"changes": {"accent_color": "#2a9d8f"}, "expected": {"accent_color": "#e67828"}}).to_string();
+    settings_call("Apply", Some(&(request,).to_variant()))?;
+    let changed = chosen_palette(is_dark, parse_hex("#2a9d8f"), parse_hex("#1e2846"));
+    ensure!(wait_for(5.0, || monitors_are(changed) && gtk_has(changed)), "accent change not applied live: {:?}",
+            read_json(&palette_path));
+    // Matching on: the chosen colours are ignored (no wallpaper here, so the built-in palette).
+    let request = serde_json::json!({"changes": {"match_wallpaper": true}, "expected": {"match_wallpaper": false}}).to_string();
+    settings_call("Apply", Some(&(request,).to_variant()))?;
+    let built_in = color_palette(is_dark, None);
+    ensure!(wait_for(5.0, || monitors_are(built_in) && gtk_has(built_in)), "matching on still uses chosen colours: {:?}",
+            read_json(&palette_path));
+    // Matching off with nothing chosen: as before, GTK colours unpublished.
+    let request = serde_json::json!({"changes": {"match_wallpaper": false, "accent_color": null, "apps_background_color": null},
+                                     "expected": {"match_wallpaper": true, "accent_color": "#2a9d8f",
+                                                  "apps_background_color": "#1e2846"}}).to_string();
+    settings_call("Apply", Some(&(request,).to_variant()))?;
+    ensure!(wait_for(5.0, || monitors_are(built_in) && !imported()), "clearing the colours left GTK colours published");
+    dock.stop()?;
+    Ok(())
+}
+
 /// The real-config regression (center section empty while start/end render):
 /// every custom `group_layouts` path must map its center groups with a real
 /// size at the monitor midpoint: bar on horizontal and vertical edges, dock
@@ -1103,6 +1167,7 @@ fn main() {
         ("menu_churn_does_not_grow_memory", menu_churn_does_not_grow_memory),
         ("menu_icon_follows_a_dark_and_a_light_bar", menu_icon_follows_a_dark_and_a_light_bar),
         ("tray_icon_sizes_apply_live_and_never_thicken_the_panel", tray_icon_sizes_apply_live_and_never_thicken_the_panel),
+        ("chosen_colors_publish_while_matching_is_off", chosen_colors_publish_while_matching_is_off),
     ];
     let mut failed = 0;
     for (name, test) in tests {

@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Gyorsbillentyűk visszaállítása",
   "Put one shortcut, or all of them, back to the original keys.": "Egy vagy az összes gyorsbillentyű visszaállítása az eredeti billentyűkre.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "A HDR-hez és az ICC-profilokhoz a Vulkan megjelenítő szükséges, amelyet ez a munkamenet nem használ. Az SDR színmélység továbbra is beállítható.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "A HDR-hez a Vulkan megjelenítő szükséges, amelyet ez a munkamenet nem használ."
+  "HDR needs the Vulkan renderer, which this session is not using.": "A HDR-hez a Vulkan megjelenítő szükséges, amelyet ez a munkamenet nem használ.",
+  "Accent color": "Kiemelőszín",
+  "Window background": "Ablakháttér",
+  "Used when Match wallpaper colors is off.": "Akkor érvényes, ha a Háttérkép színeihez igazítás ki van kapcsolva.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Kapcsolókhoz, csúszkákhoz, kijelölésekhez és kiemelt gombokhoz.",
+  "Used for window, menu and title bar backgrounds.": "Ablakok, menük és címsorok hátteréhez.",
+  "Use the built-in accent color": "A beépített kiemelőszín használata",
+  "Use the built-in window background": "A beépített ablakháttér használata",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Ezek a színek a Tessel alkalmazásaira, más GTK 4 alkalmazásokra, az ablakok címsoraira és a mappaikonokra vonatkoznak. Az ablakháttér elég sötét vagy világos marad ahhoz, hogy az aktuális stílusban olvasható legyen.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Válassza ki a kapcsolók, csúszkák, kijelölések és kiemelt gombok színét, ha a háttérkép színeihez igazítás ki van kapcsolva.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Válassza ki az ablakok, menük és címsorok háttérszínét, ha a háttérkép színeihez igazítás ki van kapcsolva."
 }

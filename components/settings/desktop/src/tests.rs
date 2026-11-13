@@ -380,10 +380,52 @@ fn appearance_fields_replace_only_named_values() {
     assert_eq!((config.apps_transparency, config.match_wallpaper, config.transparency), (62, true, 35));
     for field in tessel_dock::dbus::settings_api::APPEARANCE_FIELDS {
         let mut copy = config.clone();
-        let value = if copy.to_value()[*field].is_boolean() { json!(!copy.to_value()[*field].as_bool().unwrap()) } else { json!(13) };
+        let value = if copy.to_value()[*field].is_boolean() { json!(!copy.to_value()[*field].as_bool().unwrap()) }
+            else if crate::theme::COLOR_FIELDS.contains(field) { json!("#123456") } else { json!(13) };
         crate::theme::set_appearance_field(&mut copy, field, &value);
         assert_eq!(copy.to_value()[*field], value, "{field}");
     }
+    // A chosen colour goes back to the built-in one (null).
+    for field in crate::theme::COLOR_FIELDS {
+        let mut copy = config_with(json!({field: "#a1b2c3"}));
+        assert_eq!(copy.to_value()[field], json!("#a1b2c3"));
+        crate::theme::set_appearance_field(&mut copy, field, &Value::Null);
+        assert_eq!(copy.to_value()[field], Value::Null, "{field}");
+        assert_eq!(copy, DockConfig::default(), "{field}");
+    }
+}
+
+#[test]
+fn layouts_keep_the_chosen_colors() {
+    let (presets, problems) = load_presets();
+    assert!(problems.is_empty(), "{problems:?}");
+    let chosen = json!({"accent_color": "#c01c28", "apps_background_color": "#1e2a3b", "edge": "left"});
+    for preset in &presets {
+        for field in crate::theme::COLOR_FIELDS {
+            assert!(!preset.dock.contains_key(field), "{} sets {field}", preset.name);
+        }
+        let bridge = FakeBridge::new(config_with(chosen.clone()), false);
+        assert!(apply_preset(preset, &bridge, None, None, None).unwrap().is_empty(), "{}", preset.name);
+        let config = bridge.config();
+        assert_eq!((config.accent_color.as_deref(), config.apps_background_color.as_deref()),
+                   (Some("#c01c28"), Some("#1e2a3b")), "{}", preset.name);
+        assert_eq!(bridge.saved.lock().unwrap().len(), 1, "{}", preset.name);
+        // The colours never make a layout look changed.
+        assert!(matches(preset, &config, None, None, None), "{}", preset.name);
+    }
+}
+
+#[test]
+fn chosen_color_helpers() {
+    let rgba = gtk::gdk::RGBA::new(0.5, 1.0, 0.0, 1.0);
+    assert_eq!(crate::theme::rgba_hex(&rgba), "#80ff00");
+    for dark in [false, true] {
+        for field in crate::theme::COLOR_FIELDS {
+            let color = crate::theme::builtin_color(field, dark);
+            assert!(tessel_gtk::palette::parse_hex(&color).is_some() && color == color.to_lowercase(), "{color}");
+        }
+    }
+    assert_ne!(crate::theme::builtin_color("apps_background_color", false), crate::theme::builtin_color("apps_background_color", true));
 }
 
 #[test]

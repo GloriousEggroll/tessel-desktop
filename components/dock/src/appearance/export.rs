@@ -15,7 +15,7 @@ use super::wallpaper::WallpaperPalette;
 use super::window_buttons::WindowButtons;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
-use tessel_gtk::palette::{color_palette, Palette, Rgb};
+use tessel_gtk::palette::{chosen_palette, color_palette, Palette, Rgb};
 
 /// One output: connector name and logical geometry `[x, y, width, height]`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,6 +41,10 @@ pub struct ExportSettings {
     pub colored_window_buttons: bool,
     pub window_buttons_left: bool,
     pub window_shadows: bool,
+    /// The saved `config.accent_color` / `apps_background_color`; used while
+    /// the matching that applies (dock tint or saved GTK) is off.
+    pub accent_color: Option<Rgb>,
+    pub apps_background_color: Option<Rgb>,
 }
 
 /// What one export publishes.
@@ -50,6 +54,9 @@ pub struct ExportPlan {
     pub monitors: Vec<Value>,
     /// GTK candidates (`wallpaper_ready` + saved-preference palette).
     pub gtk_monitors: Vec<Value>,
+    /// Publish the GTK colours and Papirus folder colour: wallpaper matching
+    /// is saved on, or a colour was chosen.
+    pub gtk_enabled: bool,
     /// `WallpaperPalette.set_monitor_sizes` argument.
     pub monitor_sizes: BTreeMap<String, (i64, i64)>,
     pub app_options: AppOptions,
@@ -57,18 +64,23 @@ pub struct ExportPlan {
 
 pub fn export_palette(is_dark: bool, settings: &ExportSettings, monitors: &[MonitorInfo],
                       color_for: &dyn Fn(&str) -> Option<Rgb>) -> ExportPlan {
+    let chosen = settings.accent_color.is_some() || settings.apps_background_color.is_some();
     let mut plan = ExportPlan { monitors: Vec::new(), gtk_monitors: Vec::new(), monitor_sizes: BTreeMap::new(),
+        gtk_enabled: settings.saved_match_wallpaper || chosen,
         app_options: AppOptions {
             apps_transparency: settings.apps_transparency, apps_transparency_enabled: settings.apps_transparency_enabled,
             apps_frosted: settings.apps_frosted, apps_frost_strength: settings.apps_frost_strength,
             apps_rounded_corners: settings.apps_rounded_corners, colored_window_buttons: settings.colored_window_buttons,
         } };
+    // Without matching, the chosen colours (or the built-in palette).
+    let manual = chosen_palette(is_dark, settings.accent_color, settings.apps_background_color);
     // Companion windows can be moved to outputs without a dock clone.
     for monitor in monitors {
-        let color = if settings.match_wallpaper { color_for(&monitor.name) } else { None };
-        plan.monitors.push(monitor_entry(&monitor.name, monitor.geometry, &color_palette(is_dark, color)));
+        let palette = if settings.match_wallpaper { color_palette(is_dark, color_for(&monitor.name)) } else { manual };
+        plan.monitors.push(monitor_entry(&monitor.name, monitor.geometry, &palette));
         let saved = if settings.saved_match_wallpaper { color_for(&monitor.name) } else { None };
-        plan.gtk_monitors.push(gtk_entry(&monitor.name, saved.is_some(), &color_palette(is_dark, saved)));
+        let palette = if settings.saved_match_wallpaper { color_palette(is_dark, saved) } else { manual };
+        plan.gtk_monitors.push(gtk_entry(&monitor.name, saved.is_some(), &palette));
         plan.monitor_sizes.insert(monitor.name.clone(), (monitor.geometry[2], monitor.geometry[3]));
     }
     plan
@@ -111,6 +123,8 @@ pub struct SurfaceSettings {
     pub effective_transparency: i64,
     pub match_wallpaper: bool,
     pub background_color: Option<String>,
+    /// `config.accent_color` (`#rrggbb`), used while matching is off.
+    pub accent_color: Option<String>,
     pub effective_rounded_corners: bool,
     pub effective_float_mode: bool,
     pub effective_frosted: bool,
@@ -147,6 +161,8 @@ pub struct DockBackground {
     pub border_sides: Vec<String>,
     pub border_color: Option<String>,
     pub background_color: Option<String>,
+    /// The chosen accent while matching is off.
+    pub accent: Option<Rgb>,
     pub rounded_corners: bool,
     pub frosted: bool,
     pub frost_strength: i64,
@@ -170,6 +186,7 @@ pub fn dock_background(is_dark: bool, surface: &SurfaceSettings, separate: bool,
         border_sides: if border.enabled { border.sides.clone() } else { Vec::new() },
         border_color: if matched { None } else { Some(border.color.clone()) },
         background_color: if matched { None } else { surface.background_color.clone() },
+        accent: if matched { None } else { surface.accent_color.as_deref().and_then(tessel_gtk::palette::parse_hex) },
         rounded_corners: if separate { surface.effective_rounded_corners } else { rounded },
         frosted: if separate { surface.effective_frosted } else { frosted_preview.unwrap_or(surface.effective_frosted) },
         frost_strength: if separate { surface.frost_strength } else { strength_preview.unwrap_or(surface.frost_strength) },
@@ -208,7 +225,7 @@ impl Publisher {
         }
         self.palette_state.publish(is_dark, settings.transparency, &plan.monitors, &plan.app_options);
         let saved = self.gtk_color_scheme.select_palette(&plan.gtk_monitors).cloned();
-        self.gtk_color_scheme.publish(settings.saved_match_wallpaper, is_dark, saved.as_ref(), settings.colored_window_buttons);
+        self.gtk_color_scheme.publish(plan.gtk_enabled, is_dark, saved.as_ref(), settings.colored_window_buttons);
         // labwc title bars use the same palette as GTK header bars.
         self.window_buttons.set_palette(is_dark, saved.as_ref().and_then(palette_of).as_ref());
         self.window_buttons.apply(settings.window_buttons_left, settings.colored_window_buttons, settings.window_shadows,
@@ -217,7 +234,7 @@ impl Publisher {
         // wait for the real wallpaper rather than briefly applying default blue.
         let ready = saved.as_ref().and_then(|s| s.get("wallpaper_ready")).and_then(Value::as_bool).unwrap_or(false);
         if !settings.saved_match_wallpaper || ready {
-            self.papirus_palette.publish(settings.saved_match_wallpaper, saved.as_ref());
+            self.papirus_palette.publish(plan.gtk_enabled, saved.as_ref());
         }
         saved
     }
@@ -240,7 +257,8 @@ mod tests {
     fn settings() -> ExportSettings {
         ExportSettings { transparency: 65.0, match_wallpaper: false, saved_match_wallpaper: true, apps_transparency: 23.0,
                          apps_transparency_enabled: true, apps_frosted: true, apps_frost_strength: 50.0,
-                         apps_rounded_corners: false, colored_window_buttons: false, window_buttons_left: false, window_shadows: true }
+                         apps_rounded_corners: false, colored_window_buttons: false, window_buttons_left: false, window_shadows: true,
+                         accent_color: None, apps_background_color: None }
     }
 
     #[test]
@@ -262,7 +280,7 @@ mod tests {
         assert!(plan.app_options.apps_frosted);
         assert!(!plan.app_options.apps_rounded_corners);
         assert_eq!(plan.monitor_sizes["HDMI-1"], (2560, 1440));
-        let surface = SurfaceSettings { effective_transparency: 70, match_wallpaper: true, background_color: None,
+        let surface = SurfaceSettings { effective_transparency: 70, match_wallpaper: true, background_color: None, accent_color: None,
                                         effective_rounded_corners: true, effective_float_mode: true, effective_frosted: false,
                                         frost_strength: 50 };
         let apps = AppsAppearance { effective_apps_transparency: 23, effective_apps_frosted: true, apps_frost_strength: 50,
@@ -271,12 +289,12 @@ mod tests {
         let background = dock_background(true, &surface, false, Some((65, false, true, false)), None, None, &border, &apps, Some([40, 60, 80]));
         assert_eq!(background, DockBackground {
             is_dark: true, transparency: 65, wallpaper: None, border_sides: vec![], border_color: Some("#777777".into()),
-            background_color: None, rounded_corners: true, frosted: false, frost_strength: 50, apps, float_mode: false });
+            background_color: None, accent: None, rounded_corners: true, frosted: false, frost_strength: 50, apps, float_mode: false });
     }
 
     #[test]
     fn bar_border_preview_tracks_wallpaper_and_restores_saved_color() {
-        let surface = SurfaceSettings { effective_transparency: 5, match_wallpaper: false, background_color: None,
+        let surface = SurfaceSettings { effective_transparency: 5, match_wallpaper: false, background_color: None, accent_color: None,
                                         effective_rounded_corners: false, effective_float_mode: false, effective_frosted: false,
                                         frost_strength: 50 };
         let apps = AppsAppearance { effective_apps_transparency: 0, effective_apps_frosted: false, apps_frost_strength: 50,
@@ -295,7 +313,7 @@ mod tests {
 
     #[test]
     fn strength_preview_routes_only_to_dock_and_restores() {
-        let surface = SurfaceSettings { effective_transparency: 0, match_wallpaper: false, background_color: None,
+        let surface = SurfaceSettings { effective_transparency: 0, match_wallpaper: false, background_color: None, accent_color: None,
                                         effective_rounded_corners: true, effective_float_mode: true, effective_frosted: true,
                                         frost_strength: 67 };
         let apps = AppsAppearance { effective_apps_transparency: 40, effective_apps_frosted: true, apps_frost_strength: 29,
@@ -309,6 +327,136 @@ mod tests {
         let separate = dock_background(true, &SurfaceSettings { frost_strength: 12, ..surface }, true, Some((80, true, false, false)),
                                        Some(false), Some(90), &border, &apps, Some([1, 2, 3]));
         assert_eq!((separate.transparency, separate.frost_strength, separate.wallpaper), (0, 12, None));
+    }
+
+    fn chosen() -> ExportSettings {
+        ExportSettings { saved_match_wallpaper: false, accent_color: Some([230, 120, 40]), apps_background_color: Some([30, 40, 70]),
+                         ..settings() }
+    }
+
+    #[test]
+    fn chosen_colors_apply_only_while_matching_is_off() {
+        let colors = |name: &str| Some(if name == "DP-1" { [40, 60, 80] } else { [70, 30, 90] });
+        let manual = tessel_gtk::palette::chosen_palette(true, Some([230, 120, 40]), Some([30, 40, 70]));
+        assert_eq!((manual.background, manual.accent), ([30, 40, 70], [230, 120, 40]));
+        let plan = export_palette(true, &chosen(), &monitors(), &colors);
+        assert!(plan.gtk_enabled);
+        for (dock, gtk) in plan.monitors.iter().zip(&plan.gtk_monitors) {
+            assert_eq!((&dock["background"], &dock["accent"]), (&json!([30, 40, 70]), &json!([230, 120, 40])));
+            assert_eq!((&gtk["background"], &gtk["accent"]), (&json!([30, 40, 70]), &json!([230, 120, 40])));
+            assert_eq!(gtk["wallpaper_ready"], false);
+        }
+        // Nothing chosen: exactly today's output, GTK colours unpublished.
+        let none = ExportSettings { accent_color: None, apps_background_color: None, ..chosen() };
+        let plain = export_palette(true, &none, &monitors(), &colors);
+        assert!(!plain.gtk_enabled);
+        for (dock, gtk) in plain.monitors.iter().zip(&plain.gtk_monitors) {
+            for entry in [dock, gtk] {
+                assert_eq!(palette_of(entry), Some(color_palette(true, None)));
+            }
+        }
+        // Either colour alone publishes too.
+        assert!(export_palette(true, &ExportSettings { accent_color: None, ..chosen() }, &monitors(), &colors).gtk_enabled);
+        assert!(export_palette(false, &ExportSettings { apps_background_color: None, ..chosen() }, &monitors(), &colors).gtk_enabled);
+        // Matching on (saved and in the dock tint): the wallpaper wins.
+        let matched = export_palette(true, &ExportSettings { match_wallpaper: true, saved_match_wallpaper: true, ..chosen() },
+                                     &monitors(), &colors);
+        let wallpaper = export_palette(true, &ExportSettings { match_wallpaper: true, saved_match_wallpaper: true, ..none },
+                                       &monitors(), &colors);
+        assert_eq!(matched, wallpaper);
+        assert_eq!(palette_of(&matched.monitors[0]), Some(color_palette(true, Some([40, 60, 80]))));
+        // A preview turning matching off shows the chosen colours on the dock only.
+        let preview = export_palette(true, &ExportSettings { saved_match_wallpaper: true, ..chosen() }, &monitors(), &colors);
+        assert_eq!(preview.monitors[0]["accent"], json!([230, 120, 40]));
+        assert_eq!(preview.gtk_monitors, matched.gtk_monitors);
+    }
+
+    #[test]
+    fn chosen_accent_routes_to_the_dock_only_while_its_matching_is_off() {
+        let surface = SurfaceSettings { effective_transparency: 0, match_wallpaper: false, background_color: Some("#202020".into()),
+                                        accent_color: Some("#e67828".into()), effective_rounded_corners: true,
+                                        effective_float_mode: true, effective_frosted: false, frost_strength: 50 };
+        let apps = AppsAppearance { effective_apps_transparency: 0, effective_apps_frosted: false, apps_frost_strength: 50,
+                                    apps_rounded_corners: true };
+        let border = BarBorder { enabled: false, sides: vec![], color: "#777777".into() };
+        let off = dock_background(true, &surface, false, None, None, None, &border, &apps, Some([1, 2, 3]));
+        assert_eq!(off.accent, Some([230, 120, 40]));
+        let on = dock_background(true, &SurfaceSettings { match_wallpaper: true, ..surface.clone() }, false, None, None, None,
+                                 &border, &apps, Some([1, 2, 3]));
+        assert_eq!((on.accent, on.wallpaper), (None, Some([1, 2, 3])));
+        let preview = dock_background(true, &surface, false, Some((0, true, true, true)), None, None, &border, &apps, None);
+        assert_eq!(preview.accent, None);
+        // The separate app dock follows its own matching switch.
+        let separate = dock_background(true, &surface, true, Some((0, true, true, true)), None, None, &border, &apps, None);
+        assert_eq!(separate.accent, Some([230, 120, 40]));
+        let unset = dock_background(true, &SurfaceSettings { accent_color: None, ..surface }, false, None, None, None, &border, &apps, None);
+        assert_eq!(unset.accent, None);
+    }
+
+    struct NoGsettings;
+    impl super::super::window_buttons::ButtonLayoutStore for NoGsettings {
+        fn get(&self) -> Option<String> { None }
+        fn set(&self, _: &str) -> Result<(), String> { panic!("never write real gsettings") }
+    }
+
+    struct Recording(std::sync::Mutex<std::sync::mpsc::Sender<(bool, Option<Rgb>)>>);
+    impl super::super::papirus::PapirusApply for Recording {
+        fn apply(&self, enabled: bool, accent: Option<Rgb>, _: &std::sync::atomic::AtomicBool) -> super::super::papirus::ApplyOutcome {
+            self.0.lock().unwrap().send((enabled, accent)).unwrap();
+            Default::default()
+        }
+    }
+
+    struct NoIdle;
+    impl super::super::papirus::IdleQueue for NoIdle {
+        fn idle_add(&self, _: Box<dyn FnOnce() + Send>) -> u64 { 1 }
+        fn source_remove(&self, _: u64) {}
+    }
+
+    #[test]
+    fn publisher_publishes_chosen_colors_and_unpublishes_without_them() {
+        use super::super::papirus::PapirusOptions;
+        use super::super::window_buttons::WindowButtonsOptions;
+        let root = std::env::temp_dir().join(format!("d-export-chosen-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("config/labwc")).unwrap();
+        std::fs::write(root.join("config/labwc/rc.xml"), "<labwc_config/>\n").unwrap();
+        let (sender, received) = std::sync::mpsc::channel();
+        let mut publisher = Publisher {
+            palette_state: PaletteState::new(Some(root.join("cache/palette.json"))),
+            gtk_color_scheme: GtkColorScheme::new(Some(root.join("config"))),
+            window_buttons: WindowButtons::new(WindowButtonsOptions {
+                config_home: Some(root.join("config")), data_home: Some(root.join("data")),
+                palette_path: Some(root.join("cache/palette.json")), reconfigure: Some(Box::new(|| {})),
+                scheduler: Some(std::rc::Rc::new(tessel_core::scheduler::FakeScheduler::default())),
+                button_layout: Some(Box::new(NoGsettings)), ..Default::default()
+            }),
+            papirus_palette: PapirusPalette::new(None, PapirusOptions {
+                debounce: std::time::Duration::ZERO, apply: Some(Box::new(Recording(std::sync::Mutex::new(sender)))),
+                idle: Some(Box::new(NoIdle)) }),
+        };
+        let recv = || received.recv_timeout(std::time::Duration::from_secs(2)).unwrap();
+        let used = publisher.export(true, &chosen(), &monitors(), None).unwrap();
+        assert_eq!((&used["background"], &used["accent"]), (&json!([30, 40, 70]), &json!([230, 120, 40])));
+        let palette: Value = serde_json::from_slice(&std::fs::read(root.join("cache/palette.json")).unwrap()).unwrap();
+        for monitor in palette["monitors"].as_array().unwrap() {
+            assert_eq!((&monitor["background"], &monitor["accent"]), (&json!([30, 40, 70]), &json!([230, 120, 40])));
+        }
+        let colors = std::fs::read_to_string(&publisher.gtk_color_scheme.colors_path).unwrap();
+        assert!(colors.contains("@define-color window_bg_color #1e2846;"), "{colors}");
+        assert!(colors.contains("@define-color accent_bg_color #e67828;"));
+        assert!(std::fs::read(&publisher.gtk_color_scheme.path).unwrap().ends_with(super::super::gtk_color_scheme::MANAGED_IMPORT));
+        assert!(publisher.gtk_color_scheme.error.is_none());
+        assert_eq!(recv(), (true, Some([230, 120, 40])));
+        // Both colours cleared: the import goes and Papirus restores, as with matching off today.
+        let none = ExportSettings { accent_color: None, apps_background_color: None, ..chosen() };
+        publisher.export(true, &none, &monitors(), None);
+        assert_eq!(std::fs::read(&publisher.gtk_color_scheme.path).unwrap(), b"");
+        assert_eq!(recv(), (false, None));
+        let palette: Value = serde_json::from_slice(&std::fs::read(root.join("cache/palette.json")).unwrap()).unwrap();
+        assert_eq!(palette_of(&palette["monitors"][0]), Some(color_palette(true, None)));
+        publisher.close();
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

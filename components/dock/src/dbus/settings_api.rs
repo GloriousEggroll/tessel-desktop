@@ -33,7 +33,7 @@ pub const ERROR: &str = "org.tessel.Dock.Settings.Error";
 
 pub const APPEARANCE_FIELDS: &[&str] = &["transparency", "transparency_enabled", "frosted", "frost_strength", "match_wallpaper",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
-    "window_buttons_left", "colored_window_buttons", "window_shadows"];
+    "window_buttons_left", "colored_window_buttons", "window_shadows", "accent_color", "apps_background_color"];
 pub const BORDER_FIELDS: &[&str] = &["bar_border_enabled", "bar_border_sides", "bar_border_color"];
 const DOCK_BASE_FIELDS: &[&str] = &["mode", "application_display", "monitor", "monitor_overrides", "icon_size", "gap", "transparency",
     "transparency_enabled", "match_wallpaper", "background_color", "frosted", "frost_strength", "rounded_corners", "float_mode",

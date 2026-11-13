@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "Tilbakestill snarveier",
   "Put one shortcut, or all of them, back to the original keys.": "Sett én snarvei, eller alle, tilbake til de opprinnelige tastene.",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR og ICC-profiler krever Vulkan-rendereren, som denne økten ikke bruker. SDR-fargedybde kan fortsatt stilles inn.",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR krever Vulkan-rendereren, som denne økten ikke bruker."
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR krever Vulkan-rendereren, som denne økten ikke bruker.",
+  "Accent color": "Uthevingsfarge",
+  "Window background": "Vindusbakgrunn",
+  "Used when Match wallpaper colors is off.": "Brukes når Tilpass bakgrunnsbildets farger er slått av.",
+  "Used for switches, sliders, selections and highlighted buttons.": "Brukes på brytere, glidebrytere, markeringer og uthevede knapper.",
+  "Used for window, menu and title bar backgrounds.": "Brukes som bakgrunn i vinduer, menyer og tittellinjer.",
+  "Use the built-in accent color": "Bruk den innebygde uthevingsfargen",
+  "Use the built-in window background": "Bruk den innebygde vindusbakgrunnen",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Disse fargene gjelder Tessels apper, andre GTK 4-apper, tittellinjer og mappeikoner. En vindusbakgrunn holdes mørk eller lys nok til å være lesbar i gjeldende stil.",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Velg fargen på brytere, glidebrytere, markeringer og uthevede knapper når tilpasning til bakgrunnsbildets farger er av.",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Velg bakgrunnsfargen for vinduer, menyer og tittellinjer når tilpasning til bakgrunnsbildets farger er av."
 }

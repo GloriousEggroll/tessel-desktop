@@ -126,6 +126,49 @@ pub fn color_palette(is_dark: bool, wallpaper: Option<Rgb>) -> Palette {
     Palette { background: base, foreground: if is_dark { [238, 238, 238] } else { [35, 38, 45] }, accent }
 }
 
+/// Step a colour's lightness toward `target` (0 black, 1 white), keeping its
+/// hue and saturation, until `readable` holds; unchanged if it already does.
+fn shift_lightness(color: Rgb, target: f64, readable: impl Fn(Rgb) -> bool) -> Rgb {
+    if readable(color) {
+        return color;
+    }
+    let (hue, lightness, saturation) = rgb_to_hls(color[0] as f64 / 255.0, color[1] as f64 / 255.0, color[2] as f64 / 255.0);
+    let mut candidate = color;
+    for step in 1..=100 {
+        let amount = step as f64 / 100.0;
+        let (r, g, b) = hls_to_rgb(hue, lightness * (1.0 - amount) + target * amount, saturation);
+        candidate = [r, g, b].map(|channel| round_half_even(channel * 255.0) as u8);
+        if readable(candidate) {
+            return candidate;
+        }
+    }
+    candidate
+}
+
+/// A chosen accent as picked, or lighter (dark surface) / darker (light
+/// surface) only as far as 4.5:1 on `background` needs.
+pub fn legible_accent(accent: Rgb, background: Rgb, is_dark: bool) -> Rgb {
+    shift_lightness(accent, if is_dark { 1.0 } else { 0.0 }, |c| contrast(c, background) >= 4.5)
+}
+
+/// A chosen window background fitted to the global style: its hue is kept and
+/// its lightness limited until the style's normal text reads at 4.5:1.
+pub fn fitted_background(background: Rgb, is_dark: bool) -> Rgb {
+    let foreground = color_palette(is_dark, None).foreground;
+    shift_lightness(background, if is_dark { 0.0 } else { 1.0 }, |c| contrast(c, foreground) >= 4.5)
+}
+
+/// The palette while wallpaper matching is off: the built-in one, with a
+/// chosen accent and/or window background made legible in the current style.
+pub fn chosen_palette(is_dark: bool, accent: Option<Rgb>, background: Option<Rgb>) -> Palette {
+    let mut palette = color_palette(is_dark, None);
+    if let Some(background) = background {
+        palette.background = fitted_background(background, is_dark);
+    }
+    palette.accent = legible_accent(accent.unwrap_or(palette.accent), palette.background, is_dark);
+    palette
+}
+
 /// Parse `#RRGGBB`.
 pub fn parse_hex(color: &str) -> Option<Rgb> {
     let hex = color.strip_prefix('#').filter(|h| h.len() == 6 && h.chars().all(|c| c.is_ascii_hexdigit()))?;
@@ -139,6 +182,18 @@ pub fn surface_palette(is_dark: bool, wallpaper: Option<Rgb>, background_color: 
     let mut palette = color_palette(dark, None);
     palette.background = base;
     palette.accent = wallpaper_accent(palette.accent, base, dark);
+    palette
+}
+
+/// [`surface_palette`] with a chosen accent (wallpaper matching off), kept
+/// legible on the panel colour.
+pub fn surface_palette_with_accent(is_dark: bool, wallpaper: Option<Rgb>, background_color: Option<Rgb>,
+                                   accent: Option<Rgb>) -> Palette {
+    let mut palette = surface_palette(is_dark, wallpaper, background_color);
+    if let Some(accent) = accent {
+        let dark = background_color.map_or(is_dark, |base| relative_luminance(base) < 0.179);
+        palette.accent = legible_accent(accent, palette.background, dark);
+    }
     palette
 }
 
@@ -170,6 +225,8 @@ pub struct PanelStyle<'a> {
     /// Any of `top`, `bottom`, `left`, `right`.
     pub border_sides: &'a [&'a str],
     pub border_color: Option<Rgb>,
+    /// A chosen accent (wallpaper matching off).
+    pub accent: Option<Rgb>,
     pub shine: bool,
     /// A soft drop shadow outside the panel (the surface must leave room for it).
     pub shadow: bool,
@@ -178,7 +235,7 @@ pub struct PanelStyle<'a> {
 impl Default for PanelStyle<'_> {
     fn default() -> Self {
         Self { transparency: 5, wallpaper: None, rounded_corners: true, inner_rounded_corners: None, frosted: false,
-               frost_strength: 50, scope: None, background_color: None, border_sides: &[], border_color: None, shine: false,
+               frost_strength: 50, scope: None, background_color: None, border_sides: &[], border_color: None, accent: None, shine: false,
                shadow: false }
     }
 }
@@ -194,7 +251,7 @@ pub fn background_css(is_dark: bool, style: &PanelStyle) -> Result<String, Strin
     if style.transparency > 100 || style.frost_strength > 100 {
         return Err("Transparency must be between 0 and 100 percent.".into());
     }
-    let palette = surface_palette(is_dark, style.wallpaper, style.background_color);
+    let palette = surface_palette_with_accent(is_dark, style.wallpaper, style.background_color, style.accent);
     // Paint inside the panel, without affecting its size or exclusive zone.
     // Inset shadows also follow rounded corners and never extend into the float gap.
     let offsets = [("top", (0, 1)), ("bottom", (0, -1)), ("left", (1, 0)), ("right", (-1, 0))];
@@ -251,11 +308,19 @@ pub fn background_css(is_dark: bool, style: &PanelStyle) -> Result<String, Strin
 /// popovers) to its own wallpaper-derived palette.
 pub fn popup_css(scope: &str, is_dark: bool, wallpaper: Option<Rgb>, transparency: u8, frosted: bool,
                  rounded_corners: bool, frost_strength: u8, background_color: Option<Rgb>) -> Result<String, String> {
+    popup_css_with_accent(scope, is_dark, wallpaper, transparency, frosted, rounded_corners, frost_strength, background_color, None)
+}
+
+/// [`popup_css`] with a chosen accent (wallpaper matching off).
+#[allow(clippy::too_many_arguments)]
+pub fn popup_css_with_accent(scope: &str, is_dark: bool, wallpaper: Option<Rgb>, transparency: u8, frosted: bool,
+                             rounded_corners: bool, frost_strength: u8, background_color: Option<Rgb>,
+                             accent: Option<Rgb>) -> Result<String, String> {
     if transparency > 100 || frost_strength > 100 {
         return Err("Transparency must be between 0 and 100 percent.".into());
     }
     let radius = if rounded_corners { tessel_core::look::CORNER_RADIUS } else { 0 };
-    let palette = surface_palette(is_dark, wallpaper, background_color);
+    let palette = surface_palette_with_accent(is_dark, wallpaper, background_color, accent);
     let alpha = surface_alpha(palette.background, transparency);
     let (background, foreground, accent) = (join(palette.background), join(palette.foreground), join(palette.accent));
     let material = if frosted {
@@ -436,6 +501,109 @@ mod tests {
     fn matching_disabled_retains_normal_light_and_dark_accents() {
         assert_eq!(color_palette(true, None).accent, [105, 167, 255]);
         assert_eq!(color_palette(false, None).accent, [36, 112, 210]);
+    }
+
+    fn hls(color: Rgb) -> (f64, f64, f64) {
+        rgb_to_hls(color[0] as f64 / 255.0, color[1] as f64 / 255.0, color[2] as f64 / 255.0)
+    }
+
+    #[test]
+    fn chosen_palette_without_choices_is_the_built_in_one() {
+        for dark in [false, true] {
+            assert_eq!(chosen_palette(dark, None, None), color_palette(dark, None));
+        }
+    }
+
+    #[test]
+    fn chosen_accent_is_used_as_picked_when_readable() {
+        assert_eq!(chosen_palette(true, Some([230, 120, 40]), None),
+                   Palette { accent: [230, 120, 40], ..color_palette(true, None) });
+        assert_eq!(chosen_palette(false, Some([160, 30, 90]), None),
+                   Palette { accent: [160, 30, 90], ..color_palette(false, None) });
+    }
+
+    #[test]
+    fn unreadable_chosen_accent_is_nudged_keeping_its_hue() {
+        for (dark, accent) in [(true, [20, 30, 140]), (false, [250, 220, 90]), (true, [60, 60, 60]), (false, [255, 255, 255])] {
+            let palette = chosen_palette(dark, Some(accent), None);
+            assert_ne!(palette.accent, accent);
+            assert!(contrast(palette.accent, palette.background) >= 4.5, "{dark} {accent:?} {:?}", palette.accent);
+            let (hue, _, _) = hls(accent);
+            let (fitted_hue, _, _) = hls(palette.accent);
+            assert!((hue - fitted_hue).abs() < 0.02 || accent[0] == accent[1], "{accent:?} {:?}", palette.accent);
+            // Only as far as needed: one step back would be unreadable.
+            assert!(contrast(palette.accent, palette.background) < 6.0, "{dark} {accent:?} {:?}", palette.accent);
+        }
+    }
+
+    #[test]
+    fn chosen_background_is_used_when_it_suits_the_style() {
+        let dark = chosen_palette(true, None, Some([30, 40, 70]));
+        assert_eq!((dark.background, dark.foreground, dark.accent), ([30, 40, 70], [238, 238, 238], default_accent(true)));
+        let light = chosen_palette(false, None, Some([240, 230, 210]));
+        assert_eq!((light.background, light.foreground), ([240, 230, 210], [35, 38, 45]));
+        assert!(contrast(light.accent, light.background) >= 4.5);
+    }
+
+    #[test]
+    fn chosen_background_is_fitted_to_the_style() {
+        // A light colour in dark style turns dark enough, a dark one in light style light enough.
+        for (dark, background) in [(true, [240, 200, 210]), (true, [255, 255, 255]), (true, [255, 0, 0]),
+                                   (false, [20, 40, 30]), (false, [0, 0, 0]), (false, [0, 0, 255])] {
+            let palette = chosen_palette(dark, None, Some(background));
+            assert_ne!(palette.background, background);
+            assert_eq!(palette.foreground, color_palette(dark, None).foreground);
+            assert!(contrast(palette.foreground, palette.background) >= 4.5, "{dark} {background:?} {:?}", palette.background);
+            assert_eq!(relative_luminance(palette.background) < 0.179, dark, "{background:?}");
+            if background.iter().max() != background.iter().min() {
+                let ((hue, _, saturation), (fitted_hue, _, fitted_saturation)) = (hls(background), hls(palette.background));
+                assert!((hue - fitted_hue).abs() < 0.02 && (saturation - fitted_saturation).abs() < 0.05,
+                        "{background:?} {:?}", palette.background);
+            }
+            assert!(contrast(palette.accent, palette.background) >= 4.5);
+        }
+    }
+
+    #[test]
+    fn chosen_accent_and_background_stay_readable_together() {
+        for dark in [false, true] {
+            for background in [[250, 250, 250], [5, 5, 5], [120, 60, 160], [60, 160, 120], [128, 128, 128]] {
+                for accent in [[0, 0, 0], [255, 255, 255], [128, 128, 128], [255, 0, 0], [0, 0, 255], [90, 200, 120]] {
+                    let palette = chosen_palette(dark, Some(accent), Some(background));
+                    assert!(contrast(palette.foreground, palette.background) >= 4.5, "{dark} {background:?}");
+                    assert!(contrast(palette.accent, palette.background) >= 4.5, "{dark} {background:?} {accent:?}");
+                    // Every published GTK role keeps readable text too.
+                    let css = color_css(dark, &palette, false);
+                    let definition = |name: &str| -> Rgb {
+                        let marker = format!("@define-color {name} #");
+                        let start = css.find(&marker).unwrap() + marker.len();
+                        std::array::from_fn(|i| u8::from_str_radix(&css[start + i * 2..start + i * 2 + 2], 16).unwrap())
+                    };
+                    assert_eq!(definition("window_bg_color"), palette.background);
+                    assert_eq!(definition("accent_bg_color"), palette.accent);
+                    for role in ["window", "view", "headerbar", "sidebar", "card", "dialog", "popover", "accent"] {
+                        assert!(contrast(definition(&format!("{role}_bg_color")), definition(&format!("{role}_fg_color"))) >= 4.5,
+                                "{dark} {background:?} {accent:?} {role}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn panel_and_popup_css_take_a_chosen_accent() {
+        let accent = |css: &str| css.contains("button.focused { background-color: rgba(230, 120, 40, 0.16); }");
+        let plain = background_css(true, &PanelStyle::default()).unwrap();
+        assert!(!accent(&plain));
+        assert!(accent(&background_css(true, &PanelStyle { accent: Some([230, 120, 40]), ..Default::default() }).unwrap()));
+        assert_eq!(popup_css_with_accent("p", true, None, 10, false, true, 50, None, None).unwrap(),
+                   popup_css("p", true, None, 10, false, true, 50, None).unwrap());
+        let popup = popup_css_with_accent("p", true, None, 10, false, true, 50, None, Some([230, 120, 40])).unwrap();
+        assert!(popup.contains("outline-color: rgb(230, 120, 40);"));
+        // On a manual light panel the accent darkens just enough to read.
+        let panel = surface_palette_with_accent(true, None, parse_hex("#f0f0f0"), Some([250, 220, 90]));
+        assert!(contrast(panel.accent, [240, 240, 240]) >= 4.5);
+        assert_eq!(surface_palette_with_accent(true, None, parse_hex("#336699"), None), surface_palette(true, None, parse_hex("#336699")));
     }
 
     #[test]

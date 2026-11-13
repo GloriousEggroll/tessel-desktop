@@ -2014,5 +2014,15 @@
   "Reset shortcuts": "शॉर्टकट रीसेट करें",
   "Put one shortcut, or all of them, back to the original keys.": "एक शॉर्टकट या सभी को मूल कुंजियों पर वापस लाएँ।",
   "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR और ICC प्रोफ़ाइल के लिए Vulkan रेंडरर चाहिए, जिसका यह सत्र उपयोग नहीं कर रहा है। SDR रंग गहराई अब भी सेट की जा सकती है।",
-  "HDR needs the Vulkan renderer, which this session is not using.": "HDR के लिए Vulkan रेंडरर चाहिए, जिसका यह सत्र उपयोग नहीं कर रहा है।"
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR के लिए Vulkan रेंडरर चाहिए, जिसका यह सत्र उपयोग नहीं कर रहा है।",
+  "Accent color": "एक्सेंट रंग",
+  "Window background": "विंडो पृष्ठभूमि",
+  "Used when Match wallpaper colors is off.": "जब वॉलपेपर रंगों से मिलाएँ बंद हो तब उपयोग होता है।",
+  "Used for switches, sliders, selections and highlighted buttons.": "स्विच, स्लाइडर, चयन और प्रमुख बटनों के लिए।",
+  "Used for window, menu and title bar backgrounds.": "विंडो, मेनू और शीर्षक पट्टी की पृष्ठभूमि के लिए।",
+  "Use the built-in accent color": "अंतर्निहित एक्सेंट रंग का उपयोग करें",
+  "Use the built-in window background": "अंतर्निहित विंडो पृष्ठभूमि का उपयोग करें",
+  "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "ये रंग Tessel के ऐप्स, अन्य GTK 4 ऐप्स, विंडो शीर्षक पट्टियों और फ़ोल्डर आइकनों पर लागू होते हैं। विंडो पृष्ठभूमि को इतना गहरा या हल्का रखा जाता है कि वह मौजूदा शैली में पढ़ने योग्य रहे।",
+  "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "जब वॉलपेपर के रंगों से मिलान बंद हो, तब स्विच, स्लाइडर, चयन और हाइलाइट किए गए बटन का रंग चुनें।",
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "जब वॉलपेपर के रंगों से मिलान बंद हो, तब विंडो, मेनू और शीर्षक पट्टी की पृष्ठभूमि का रंग चुनें।"
 }
