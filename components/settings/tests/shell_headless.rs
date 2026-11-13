@@ -322,6 +322,25 @@ fn pages_share_one_header_and_sidebar_icons_are_symbolic() {
         style::symbolic_image(&ring); // re-resolves through symbolic names; the optical class follows the file
     }
     assert!(!symbolic_icon("help-about-symbolic", 16).has_css_class(style::OPTICAL_SCALE_CLASS));
+    // A watched image that a page updates later, with a name the icon theme has
+    // no symbolic file for (Breeze-based themes): the update must settle.
+    let live = gtk::Image::from_icon_name("battery-good-symbolic");
+    let updates = Rc::new(std::cell::Cell::new(0u32));
+    let seen = updates.clone();
+    // Connected first: a restarted emission starts again from this handler.
+    live.connect_notify_local(Some("gicon"), move |_, _| {
+        seen.set(seen.get() + 1);
+        if seen.get() > 100 {
+            eprintln!("symbolic_image keeps rewriting a themed icon");
+            std::process::abort();
+        }
+    });
+    style::symbolic_image(&live);
+    updates.set(0);
+    live.set_from_gicon(&gio::ThemedIcon::from_names(&["gs-test-missing-symbolic", "gs-test-missing"]));
+    assert!(updates.get() >= 1);
+    let themed = live.gicon().and_then(|icon| icon.downcast::<gio::ThemedIcon>().ok()).expect("themed icon kept");
+    assert_eq!(themed.names().first().map(|name| name.to_string()).as_deref(), Some("gs-test-missing-symbolic"));
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let content = gtk::Box::builder().orientation(gtk::Orientation::Vertical).margin_start(20).margin_end(20).build();
     root.append(&content);

@@ -108,8 +108,14 @@ pub fn symbolic_image(picture: &gtk::Image) {
         }
         tags::set_flag(picture, "gs_symbolic_busy", true);
         let size = picture.pixel_size();
+        // "notify" is a no-recurse signal: changing the icon from its own
+        // handler restarts the emission once this call returns, when the busy
+        // flag is clear again. Only an actual change may be written, or a
+        // themed result (icon themes without the symbolic file) never settles.
         if let Some(gicon) = symbolic_icon(&name, 24).gicon() {
-            picture.set_from_gicon(&gicon);
+            if !picture.gicon().is_some_and(|current| current.equal(Some(&gicon))) {
+                picture.set_from_gicon(&gicon);
+            }
         }
         if size > 0 {
             picture.set_pixel_size(size);
