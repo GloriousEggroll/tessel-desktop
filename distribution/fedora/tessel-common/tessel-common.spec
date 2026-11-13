@@ -5,12 +5,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit f7209983a6330964899b85449aa68cf6c189c433}
+%{!?commit:%global commit e382ef1a484f27dc616642c31651a6972e248240}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-common
 Version:        0.1.0
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        Tessel desktop: translations, logo and system defaults
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -62,6 +62,9 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %config(noreplace) %{_sysconfdir}/security/tessel-login-faillock.conf
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-14
+- Translations for the HDR renderer messages
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-13
 - Translations for resetting keyboard shortcuts
 

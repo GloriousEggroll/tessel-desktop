@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 2750ba753e1b9c6ddbdd89f1d570ef89b14babe7}
+%{!?commit:%global commit e382ef1a484f27dc616642c31651a6972e248240}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-displays
 Version:        0.1.0
-Release:        10%{?dist}
+Release:        11%{?dist}
 Summary:        Tessel display settings and layout daemon
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -37,7 +37,7 @@ BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
 # Per-screen adaptive sync modes in rc.xml
-Requires:       labwc >= 0.20.2-26
+Requires:       labwc >= 0.20.2-28
 Requires:       wlr-randr
 Requires:       libnotify
 Requires:       lcms2
@@ -86,6 +86,10 @@ install -Dm644 packaging/defaults/etc/tessel/displays/cfg.yaml %{buildroot}%{_sy
 %{_datadir}/applications/org.tessel.Displays.desktop
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
+- The HDR switch cannot be turned on, and says why, when the session is not on the Vulkan renderer
+- Requires labwc 0.20.2-28, which tries the Vulkan renderer first so HDR works without setting WLR_RENDERER
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-10
 - Saved display settings follow a monitor when its connector name changes (two graphics cards, or another port)
 

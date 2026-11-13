@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 8e01ca67e6d346b1695e3c123cc94587e560506c}
+%{!?commit:%global commit e382ef1a484f27dc616642c31651a6972e248240}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-login
 Version:        0.1.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Tessel login screen (greetd greeter)
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -139,6 +139,9 @@ fi
 %{_unitdir}/tessel-login.service
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
+- The login screen keeps the GLES2 renderer first with labwc 0.20.2-28
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
 - Num Lock is on at the login screen
 
