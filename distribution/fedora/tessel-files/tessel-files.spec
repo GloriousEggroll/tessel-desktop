@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 8e01ca67e6d346b1695e3c123cc94587e560506c}
+%{!?commit:%global commit d8c008901e8265c5f64c014a537215323150e395}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-files
 Version:        0.1.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Tessel file manager
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -86,6 +86,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Files.desktop
 %{_datadir}/applications/org.tessel.Files.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
+- Places pane no longer jumps while disk space loads or when mounts change
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - Open in Terminal uses the terminal chosen in Default Apps at once
 
