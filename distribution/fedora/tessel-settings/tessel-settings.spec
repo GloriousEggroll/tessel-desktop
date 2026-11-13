@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 8e01ca67e6d346b1695e3c123cc94587e560506c}
+%{!?commit:%global commit f7209983a6330964899b85449aa68cf6c189c433}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        22%{?dist}
+Release:        23%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -111,6 +111,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-23
+- Keyboard Shortcuts: reset one shortcut or all of them to the shipped keys; the default key is shown
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-22
 - Keyboard: turn on Num Lock at sign-in (on by default)
 - Default Apps: own launcher entry, Document viewer and Archive manager, terminal choice applies at once
