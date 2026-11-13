@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 13c6ee44844185931576106097b82bc6f5b3b497}
+%{!?commit:%global commit 9455a1f3556e03865540361d80572826ea18593d}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        10%{?dist}
+Release:        11%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -100,6 +100,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
+- Apply a chosen accent color and window background while Match wallpaper colors is off
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-10
 - Keep Awake and Weather applets use themed icons instead of icon fonts
 - Recommend the Font Awesome fonts for the last-resort glyphs of themes without an icon

@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit e382ef1a484f27dc616642c31651a6972e248240}
+%{!?commit:%global commit 9455a1f3556e03865540361d80572826ea18593d}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-welcome
 Version:        0.1.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Tessel welcome screen
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -88,6 +88,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Welcome.desktop
 %{_datadir}/applications/org.tessel.Welcome.desktop
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
+- Rebuilt with the Theme & Wallpaper color choices
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
 - Rebuilt with the Displays change for HDR without the Vulkan renderer
 

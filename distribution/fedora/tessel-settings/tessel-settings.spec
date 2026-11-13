@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit e382ef1a484f27dc616642c31651a6972e248240}
+%{!?commit:%global commit 9455a1f3556e03865540361d80572826ea18593d}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        24%{?dist}
+Release:        25%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -111,6 +111,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-25
+- Theme & Wallpaper: choose an accent color and a window background by hand
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-24
 - Displays: the HDR switch cannot be turned on, and says why, when the session is not on the Vulkan renderer
 
