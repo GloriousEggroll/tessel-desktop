@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "קיצור {value1} נשמר כי אחד מהקיצורים שלך משתמש במקש שלו.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} קיצורים נשמרו כי הקיצורים שלך משתמשים במקשים שלהם.",
   "Reset shortcuts": "איפוס קיצורי דרך",
-  "Put one shortcut, or all of them, back to the original keys.": "החזרת קיצור דרך אחד, או את כולם, למקשים המקוריים."
+  "Put one shortcut, or all of them, back to the original keys.": "החזרת קיצור דרך אחד, או את כולם, למקשים המקוריים.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR ופרופילי ICC דורשים את מנוע העיבוד Vulkan, שההפעלה הזו אינה משתמשת בו. עדיין ניתן להגדיר את עומק הצבע של SDR.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR דורש את מנוע העיבוד Vulkan, שההפעלה הזו אינה משתמשת בו."
 }

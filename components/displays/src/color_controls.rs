@@ -67,7 +67,7 @@ pub fn status_messages(status: &Status, connector: &str, error: &str, hdr: bool,
     if status.is_empty() {
         messages.push(tr!("Color controls require the updated labwc compositor. Start a session with that build to use them."));
     } else if !supported {
-        messages.push(tr!("ICC profiles require the Vulkan renderer. SDR color depth can still be configured."));
+        messages.push(tr!("HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured."));
     }
     if !active.is_empty() {
         let get = |key: &str| active.get(key).cloned().unwrap_or_default();

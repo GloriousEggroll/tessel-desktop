@@ -2192,5 +2192,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} 件のショートカットは、自分で追加したショートカットがそのキーを使用しているため、そのままにしました。",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} 件のショートカットは、自分で追加したショートカットがそのキーを使用しているため、そのままにしました。",
   "Reset shortcuts": "ショートカットをリセット",
-  "Put one shortcut, or all of them, back to the original keys.": "1 つまたはすべてのショートカットを元のキーに戻します。"
+  "Put one shortcut, or all of them, back to the original keys.": "1 つまたはすべてのショートカットを元のキーに戻します。",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR と ICC プロファイルには Vulkan レンダラーが必要ですが、このセッションでは使用されていません。SDR の色深度は引き続き設定できます。",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR には Vulkan レンダラーが必要ですが、このセッションでは使用されていません。"
 }

@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} sneltoets is behouden omdat een van uw eigen sneltoetsen de toets gebruikt.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} sneltoetsen zijn behouden omdat uw eigen sneltoetsen hun toetsen gebruiken.",
   "Reset shortcuts": "Sneltoetsen herstellen",
-  "Put one shortcut, or all of them, back to the original keys.": "Zet één sneltoets, of allemaal, terug naar de oorspronkelijke toetsen."
+  "Put one shortcut, or all of them, back to the original keys.": "Zet één sneltoets, of allemaal, terug naar de oorspronkelijke toetsen.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR en ICC-profielen hebben de Vulkan-renderer nodig, die deze sessie niet gebruikt. De SDR-kleurdiepte kan nog wel worden ingesteld.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR heeft de Vulkan-renderer nodig, die deze sessie niet gebruikt."
 }

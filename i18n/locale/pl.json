@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Pozostawione skróty, bo ich klawisza używa Twój własny skrót: {value1}.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Pozostawione skróty, bo ich klawiszy używają Twoje własne skróty: {value1}.",
   "Reset shortcuts": "Przywróć skróty",
-  "Put one shortcut, or all of them, back to the original keys.": "Przywróć jeden skrót lub wszystkie do pierwotnych klawiszy."
+  "Put one shortcut, or all of them, back to the original keys.": "Przywróć jeden skrót lub wszystkie do pierwotnych klawiszy.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR i profile ICC wymagają renderera Vulkan, którego ta sesja nie używa. Głębię kolorów SDR nadal można ustawić.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR wymaga renderera Vulkan, którego ta sesja nie używa."
 }

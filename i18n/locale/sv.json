@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} kortkommando behölls eftersom ett av dina egna kortkommandon använder dess tangent.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} kortkommandon behölls eftersom dina egna kortkommandon använder deras tangenter.",
   "Reset shortcuts": "Återställ kortkommandon",
-  "Put one shortcut, or all of them, back to the original keys.": "Återställ ett kortkommando, eller alla, till de ursprungliga tangenterna."
+  "Put one shortcut, or all of them, back to the original keys.": "Återställ ett kortkommando, eller alla, till de ursprungliga tangenterna.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR och ICC-profiler kräver Vulkan-renderaren, som den här sessionen inte använder. SDR-färgdjup kan fortfarande ställas in.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR kräver Vulkan-renderaren, som den här sessionen inte använder."
 }

@@ -2345,5 +2345,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} raccourci a été conservé, car l’un de vos propres raccourcis utilise sa touche.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} raccourcis ont été conservés, car vos propres raccourcis utilisent leurs touches.",
   "Reset shortcuts": "Réinitialiser les raccourcis",
-  "Put one shortcut, or all of them, back to the original keys.": "Rétablissez un raccourci, ou tous, sur les touches d'origine."
+  "Put one shortcut, or all of them, back to the original keys.": "Rétablissez un raccourci, ou tous, sur les touches d'origine.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Le HDR et les profils ICC nécessitent le moteur de rendu Vulkan, que cette session n’utilise pas. La profondeur de couleur SDR reste configurable.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "Le HDR nécessite le moteur de rendu Vulkan, que cette session n’utilise pas."
 }

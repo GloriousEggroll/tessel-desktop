@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} gyorsbillentyű változatlan maradt, mert az egyik saját gyorsbillentyűje használja a billentyűjét.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} gyorsbillentyű változatlan maradt, mert a saját gyorsbillentyűi használják a billentyűiket.",
   "Reset shortcuts": "Gyorsbillentyűk visszaállítása",
-  "Put one shortcut, or all of them, back to the original keys.": "Egy vagy az összes gyorsbillentyű visszaállítása az eredeti billentyűkre."
+  "Put one shortcut, or all of them, back to the original keys.": "Egy vagy az összes gyorsbillentyű visszaállítása az eredeti billentyűkre.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "A HDR-hez és az ICC-profilokhoz a Vulkan megjelenítő szükséges, amelyet ez a munkamenet nem használ. Az SDR színmélység továbbra is beállítható.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "A HDR-hez a Vulkan megjelenítő szükséges, amelyet ez a munkamenet nem használ."
 }

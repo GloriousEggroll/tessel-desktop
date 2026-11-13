@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Залишено без змін скорочень: {value1} — їхні клавіші використовують ваші власні скорочення.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Залишено без змін скорочень: {value1} — їхні клавіші використовують ваші власні скорочення.",
   "Reset shortcuts": "Скинути скорочення",
-  "Put one shortcut, or all of them, back to the original keys.": "Поверніть одне скорочення або всі до початкових клавіш."
+  "Put one shortcut, or all of them, back to the original keys.": "Поверніть одне скорочення або всі до початкових клавіш.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Для HDR і профілів ICC потрібен рендерер Vulkan, який цей сеанс не використовує. Глибину кольору SDR, як і раніше, можна налаштувати.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "Для HDR потрібен рендерер Vulkan, який цей сеанс не використовує."
 }

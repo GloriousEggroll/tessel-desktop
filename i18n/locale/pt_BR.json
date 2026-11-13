@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} atalho foi mantido porque um dos seus atalhos usa a tecla dele.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} atalhos foram mantidos porque os seus atalhos usam as teclas deles.",
   "Reset shortcuts": "Redefinir atalhos",
-  "Put one shortcut, or all of them, back to the original keys.": "Volte um atalho, ou todos, para as teclas originais."
+  "Put one shortcut, or all of them, back to the original keys.": "Volte um atalho, ou todos, para as teclas originais.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "O HDR e os perfis ICC precisam do renderizador Vulkan, que esta sessão não está usando. A profundidade de cor SDR ainda pode ser configurada.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "O HDR precisa do renderizador Vulkan, que esta sessão não está usando."
 }

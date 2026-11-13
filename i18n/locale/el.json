@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Διατηρήθηκε {value1} συντόμευση, επειδή μια δική σας συντόμευση χρησιμοποιεί το πλήκτρο της.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Διατηρήθηκαν {value1} συντομεύσεις, επειδή δικές σας συντομεύσεις χρησιμοποιούν τα πλήκτρα τους.",
   "Reset shortcuts": "Επαναφορά συντομεύσεων",
-  "Put one shortcut, or all of them, back to the original keys.": "Επαναφέρετε μία συντόμευση ή όλες στα αρχικά πλήκτρα."
+  "Put one shortcut, or all of them, back to the original keys.": "Επαναφέρετε μία συντόμευση ή όλες στα αρχικά πλήκτρα.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Το HDR και τα προφίλ ICC χρειάζονται τον αποδότη Vulkan, τον οποίο δεν χρησιμοποιεί αυτή η συνεδρία. Το βάθος χρώματος SDR μπορεί ακόμη να ρυθμιστεί.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "Το HDR χρειάζεται τον αποδότη Vulkan, τον οποίο δεν χρησιμοποιεί αυτή η συνεδρία."
 }

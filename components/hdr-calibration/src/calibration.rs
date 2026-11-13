@@ -281,6 +281,10 @@ pub type Section = std::collections::BTreeMap<String, String>;
 pub fn check_monitor(status: &Status, connector: &str, identity: Option<&str>) -> Result<Section, CalError> {
     let monitor = status.get(connector).cloned().unwrap_or_default();
     let get = |k: &str| monitor.get(k).map(String::as_str);
+    if get("hdr") != Some("true") && !color_config::renderer_supports_color(status) {
+        // Displays cannot turn HDR on either: name the real reason.
+        return Err(value_error(color_config::NEEDS_VULKAN));
+    }
     if get("enabled") != Some("true") || get("hdr") != Some("true") || get("bit_depth") != Some("10") {
         return Err(value_error("Enable HDR on this monitor in Displays first. A 10-bit HDR output is required."));
     }

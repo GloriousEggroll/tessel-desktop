@@ -162,5 +162,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} shortcut was kept because one of your own shortcuts uses its key.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} shortcuts were kept because your own shortcuts use their keys.",
   "Reset shortcuts": "Reset shortcuts",
-  "Put one shortcut, or all of them, back to the original keys.": "Put one shortcut, or all of them, back to the original keys."
+  "Put one shortcut, or all of them, back to the original keys.": "Put one shortcut, or all of them, back to the original keys.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR needs the Vulkan renderer, which this session is not using."
 }

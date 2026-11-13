@@ -2345,5 +2345,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} Tastenkürzel wurde beibehalten, weil eines Ihrer eigenen Tastenkürzel seine Taste verwendet.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} Tastenkürzel wurden beibehalten, weil Ihre eigenen Tastenkürzel deren Tasten verwenden.",
   "Reset shortcuts": "Tastenkürzel zurücksetzen",
-  "Put one shortcut, or all of them, back to the original keys.": "Ein Tastenkürzel oder alle auf die ursprünglichen Tasten zurücksetzen."
+  "Put one shortcut, or all of them, back to the original keys.": "Ein Tastenkürzel oder alle auf die ursprünglichen Tasten zurücksetzen.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR und ICC-Profile benötigen den Vulkan-Renderer, den diese Sitzung nicht verwendet. Die SDR-Farbtiefe kann weiterhin eingestellt werden.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR benötigt den Vulkan-Renderer, den diese Sitzung nicht verwendet."
 }

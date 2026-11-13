@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} scurtătură a fost păstrată deoarece una dintre scurtăturile dvs. îi folosește tasta.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Scurtături păstrate deoarece scurtăturile dvs. le folosesc tastele: {value1}.",
   "Reset shortcuts": "Resetare scurtături",
-  "Put one shortcut, or all of them, back to the original keys.": "Readuceți o scurtătură sau pe toate la tastele inițiale."
+  "Put one shortcut, or all of them, back to the original keys.": "Readuceți o scurtătură sau pe toate la tastele inițiale.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR și profilurile ICC au nevoie de rendererul Vulkan, pe care această sesiune nu îl folosește. Adâncimea de culoare SDR poate fi configurată în continuare.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR are nevoie de rendererul Vulkan, pe care această sesiune nu îl folosește."
 }

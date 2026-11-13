@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Đã giữ nguyên {value1} phím tắt vì một phím tắt của riêng bạn đang dùng phím đó.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Đã giữ nguyên {value1} phím tắt vì các phím tắt của riêng bạn đang dùng các phím đó.",
   "Reset shortcuts": "Đặt lại phím tắt",
-  "Put one shortcut, or all of them, back to the original keys.": "Đưa một phím tắt, hoặc tất cả, về các phím ban đầu."
+  "Put one shortcut, or all of them, back to the original keys.": "Đưa một phím tắt, hoặc tất cả, về các phím ban đầu.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR và hồ sơ ICC cần trình kết xuất Vulkan, mà phiên này không sử dụng. Vẫn có thể cấu hình độ sâu màu SDR.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR cần trình kết xuất Vulkan, mà phiên này không sử dụng."
 }

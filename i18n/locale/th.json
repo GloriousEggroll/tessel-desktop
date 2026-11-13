@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "คงปุ่มลัดไว้ {value1} รายการ เพราะปุ่มลัดที่คุณเพิ่มเองใช้ปุ่มนั้นอยู่",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "คงปุ่มลัดไว้ {value1} รายการ เพราะปุ่มลัดที่คุณเพิ่มเองใช้ปุ่มเหล่านั้นอยู่",
   "Reset shortcuts": "รีเซ็ตปุ่มลัด",
-  "Put one shortcut, or all of them, back to the original keys.": "คืนค่าปุ่มลัดหนึ่งรายการหรือทั้งหมดกลับเป็นแป้นเดิม"
+  "Put one shortcut, or all of them, back to the original keys.": "คืนค่าปุ่มลัดหนึ่งรายการหรือทั้งหมดกลับเป็นแป้นเดิม",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR และโปรไฟล์ ICC ต้องใช้ตัวเรนเดอร์ Vulkan ซึ่งเซสชันนี้ไม่ได้ใช้อยู่ ยังคงกำหนดความลึกสี SDR ได้",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR ต้องใช้ตัวเรนเดอร์ Vulkan ซึ่งเซสชันนี้ไม่ได้ใช้อยู่"
 }

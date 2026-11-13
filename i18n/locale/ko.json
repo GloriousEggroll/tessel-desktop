@@ -2192,5 +2192,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "직접 추가한 바로 가기가 해당 키를 사용 중이므로 바로 가기 {value1}개는 그대로 두었습니다.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "직접 추가한 바로 가기가 해당 키를 사용 중이므로 바로 가기 {value1}개는 그대로 두었습니다.",
   "Reset shortcuts": "단축키 초기화",
-  "Put one shortcut, or all of them, back to the original keys.": "단축키 하나 또는 전체를 원래 키로 되돌립니다."
+  "Put one shortcut, or all of them, back to the original keys.": "단축키 하나 또는 전체를 원래 키로 되돌립니다.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR 및 ICC 프로필에는 Vulkan 렌더러가 필요하지만 이 세션은 이를 사용하고 있지 않습니다. SDR 색 심도는 계속 설정할 수 있습니다.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR에는 Vulkan 렌더러가 필요하지만 이 세션은 이를 사용하고 있지 않습니다."
 }

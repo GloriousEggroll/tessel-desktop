@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} scorciatoia è stata mantenuta perché una delle tue scorciatoie usa il suo tasto.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} scorciatoie sono state mantenute perché le tue scorciatoie usano i loro tasti.",
   "Reset shortcuts": "Ripristina scorciatoie",
-  "Put one shortcut, or all of them, back to the original keys.": "Riporta una scorciatoia, o tutte, ai tasti originali."
+  "Put one shortcut, or all of them, back to the original keys.": "Riporta una scorciatoia, o tutte, ai tasti originali.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR e profili ICC richiedono il renderer Vulkan, che questa sessione non sta usando. La profondità di colore SDR può comunque essere configurata.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR richiede il renderer Vulkan, che questa sessione non sta usando."
 }

@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} snarvei ble beholdt fordi en av dine egne snarveier bruker tasten.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} snarveier ble beholdt fordi dine egne snarveier bruker tastene deres.",
   "Reset shortcuts": "Tilbakestill snarveier",
-  "Put one shortcut, or all of them, back to the original keys.": "Sett én snarvei, eller alle, tilbake til de opprinnelige tastene."
+  "Put one shortcut, or all of them, back to the original keys.": "Sett én snarvei, eller alle, tilbake til de opprinnelige tastene.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR og ICC-profiler krever Vulkan-rendereren, som denne økten ikke bruker. SDR-fargedybde kan fortsatt stilles inn.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR krever Vulkan-rendereren, som denne økten ikke bruker."
 }

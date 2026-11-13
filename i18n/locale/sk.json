@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Ponechané skratky, lebo ich kláves používa vaša vlastná skratka: {value1}.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Ponechané skratky, lebo ich klávesy používajú vaše vlastné skratky: {value1}.",
   "Reset shortcuts": "Obnoviť skratky",
-  "Put one shortcut, or all of them, back to the original keys.": "Vráťte jednu skratku alebo všetky späť na pôvodné klávesy."
+  "Put one shortcut, or all of them, back to the original keys.": "Vráťte jednu skratku alebo všetky späť na pôvodné klávesy.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR a profily ICC vyžadujú vykresľovač Vulkan, ktorý táto relácia nepoužíva. Farebnú hĺbku SDR možno nastaviť aj tak.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vyžaduje vykresľovač Vulkan, ktorý táto relácia nepoužíva."
 }

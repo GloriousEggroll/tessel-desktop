@@ -32,6 +32,8 @@ pub struct MonitorWidget {
     pub initial_enabled: Cell<bool>,
     pub initial_hdr: Cell<bool>,
     pub hdr_available: bool,
+    /// The compositor's renderer can show HDR (`color_config::renderer_supports_color`).
+    pub hdr_renderer: bool,
     pub initial_vrr: Cell<VrrMode>,
     pub initial_scale_auto: bool,
     pub enable_switch: gtk::Switch,
@@ -190,8 +192,15 @@ impl MonitorWidget {
         vrr_hint.add_css_class("dim-label");
         let hdr_switch = gtk::Switch::new();
         hdr_switch.set_active(hdr);
-        hdr_switch.set_sensitive(enabled && hdr_available);
-        hdr_switch.set_tooltip_text(Some(&tr!("Requests HDR for this output through Labwc. Unsupported outputs remain in SDR. The Vulkan renderer is required.")));
+        // Without the Vulkan renderer labwc refuses HDR: the switch can only
+        // turn a saved HDR setting off, and says why.
+        let hdr_renderer = crate::color_config::renderer_supports_color(&crate::color_config::read_status());
+        hdr_switch.set_sensitive(enabled && hdr_available && (hdr_renderer || hdr));
+        hdr_switch.set_tooltip_text(Some(&if hdr_renderer {
+            tr!("Requests HDR for this output through Labwc. Unsupported outputs remain in SDR. The Vulkan renderer is required.")
+        } else {
+            tr!(crate::color_config::NEEDS_VULKAN)
+        }));
 
         let app_for_color = app.clone();
         let color_controls = ColorControls::new(&name, color_config_path, Some(Rc::new(move || {
@@ -202,7 +211,7 @@ impl MonitorWidget {
 
         let this = Rc::new(Self {
             root, monitor: RefCell::new(monitor), app, layout_area: RefCell::new(layout_area), initial_enabled: Cell::new(enabled),
-            initial_hdr: Cell::new(hdr), hdr_available, initial_vrr: Cell::new(vrr_mode), initial_scale_auto: scale_auto,
+            initial_hdr: Cell::new(hdr), hdr_available, hdr_renderer, initial_vrr: Cell::new(vrr_mode), initial_scale_auto: scale_auto,
             enable_switch, primary_switch, res_combo, scale_slider, scale_auto_switch, rotation_buttons,
             rotation_handlers: RefCell::new(Vec::new()), flip_switch, vrr_combo, vrr_hint, vrr_capable: Cell::new(vrr_capable), hdr_switch,
             brightness_controls, color_controls,
@@ -418,7 +427,7 @@ impl MonitorWidget {
 
     fn on_enabled_toggled(&self, enabled: bool) {
         self.primary_switch.set_sensitive(enabled);
-        self.hdr_switch.set_sensitive(enabled && self.hdr_available);
+        self.hdr_switch.set_sensitive(enabled && self.hdr_available && (self.hdr_renderer || self.hdr_switch.is_active()));
         if !enabled && self.primary_switch.is_active() {
             self.primary_switch.set_active(false);
         }

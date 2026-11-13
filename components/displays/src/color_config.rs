@@ -262,6 +262,17 @@ pub fn set_status_override(provider: Option<Rc<dyn Fn() -> Status>>) {
     STATUS_OVERRIDE.with(|o| o.replace(provider));
 }
 
+/// Shown where HDR is refused because of the renderer.
+pub const NEEDS_VULKAN: &str = "HDR needs the Vulkan renderer, which this session is not using.";
+
+/// False when the running compositor says its renderer has no output colour
+/// transforms (GLES2, pixman): HDR and ICC profiles then stay off whatever is
+/// saved. labwc tries Vulkan first, so this means no Vulkan renderer could be
+/// created or another one was chosen with `WLR_RENDERER`.
+pub fn renderer_supports_color(status: &Status) -> bool {
+    status.get("compositor").and_then(|c| c.get("icc_supported")).map(String::as_str) != Some("false")
+}
+
 /// The running compositor's colour status; `{}` unless current and trusted.
 pub fn read_status() -> Status {
     if let Some(provider) = STATUS_OVERRIDE.with(|o| o.borrow().clone()) {

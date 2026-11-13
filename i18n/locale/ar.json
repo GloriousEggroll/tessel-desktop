@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "أُبقي على {value1} اختصار لأن أحد اختصاراتك يستخدم مفتاحه.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "أُبقي على {value1} من الاختصارات لأن اختصاراتك تستخدم مفاتيحها.",
   "Reset shortcuts": "إعادة تعيين الاختصارات",
-  "Put one shortcut, or all of them, back to the original keys.": "أعِد اختصارًا واحدًا أو جميع الاختصارات إلى المفاتيح الأصلية."
+  "Put one shortcut, or all of them, back to the original keys.": "أعِد اختصارًا واحدًا أو جميع الاختصارات إلى المفاتيح الأصلية.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "يتطلب HDR وملفات تعريف ICC عارض Vulkan، وهذه الجلسة لا تستخدمه. ما زال بالإمكان ضبط عمق ألوان SDR.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "يتطلب HDR عارض Vulkan، وهذه الجلسة لا تستخدمه."
 }

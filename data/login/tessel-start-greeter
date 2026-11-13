@@ -16,6 +16,10 @@ export XDG_CONFIG_DIRS=/etc/tessel/login
 if [ ! -x /usr/libexec/at-spi-bus-launcher ] && [ ! -x /usr/lib/at-spi-bus-launcher ]; then
     export GTK_A11Y=none
 fi
+# The login screen shows no HDR, so its compositor keeps the usual renderer
+# order (GLES2, then Vulkan, then software) instead of the session's Vulkan
+# first. Only the Nobara labwc build reads this; it never forces a renderer.
+export WLR_RENDERER_PREFER_GLES2=1
 umask 077
 # Keep what the compositor and the greeter say in the journal (identifier
 # tessel-login-greeter). greetd gives them the console, where a login screen

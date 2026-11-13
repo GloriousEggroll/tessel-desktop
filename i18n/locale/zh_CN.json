@@ -2192,5 +2192,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "保留了 {value1} 个快捷键，因为你自己的快捷键正在使用其按键。",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "保留了 {value1} 个快捷键，因为你自己的快捷键正在使用其按键。",
   "Reset shortcuts": "重置快捷键",
-  "Put one shortcut, or all of them, back to the original keys.": "将某个或全部快捷键恢复为原来的按键。"
+  "Put one shortcut, or all of them, back to the original keys.": "将某个或全部快捷键恢复为原来的按键。",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR 和 ICC 配置文件需要 Vulkan 渲染器，而此会话未使用它。仍可配置 SDR 色深。",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR 需要 Vulkan 渲染器，而此会话未使用它。"
 }

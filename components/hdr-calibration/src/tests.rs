@@ -174,6 +174,14 @@ fn monitor_identity_sdr_and_8bit_rejected() {
         changed.insert(key.into(), value.into());
         assert!(c::check_monitor(&status(&[], changed), "DP-1", identity).is_err());
     }
+    // Issue #14: with a renderer that cannot show HDR, say that instead of
+    // sending the user to a Displays switch that cannot turn it on.
+    let mut sdr = monitor();
+    sdr.insert("hdr".into(), "false".into());
+    let error = c::check_monitor(&status(&[("icc_supported", "false")], sdr.clone()), "DP-1", identity).unwrap_err();
+    assert_eq!(error.to_string(), tessel_displays::color_config::NEEDS_VULKAN);
+    let error = c::check_monitor(&status(&[("icc_supported", "true")], sdr), "DP-1", identity).unwrap_err();
+    assert!(error.to_string().starts_with("Enable HDR on this monitor in Displays first"), "{error}");
 }
 
 fn outputs(text: &str) -> Vec<BTreeMap<String, String>> {

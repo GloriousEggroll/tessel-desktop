@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} pikanäppäin säilytettiin, koska jokin omista pikanäppäimistäsi käyttää sen näppäintä.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} pikanäppäintä säilytettiin, koska omat pikanäppäimesi käyttävät niiden näppäimiä.",
   "Reset shortcuts": "Palauta pikanäppäimet",
-  "Put one shortcut, or all of them, back to the original keys.": "Palauta yksi pikanäppäin tai kaikki alkuperäisiin näppäimiin."
+  "Put one shortcut, or all of them, back to the original keys.": "Palauta yksi pikanäppäin tai kaikki alkuperäisiin näppäimiin.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR ja ICC-profiilit vaativat Vulkan-renderöijän, jota tämä istunto ei käytä. SDR-värisyvyyden voi silti määrittää.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR vaatii Vulkan-renderöijän, jota tämä istunto ei käytä."
 }

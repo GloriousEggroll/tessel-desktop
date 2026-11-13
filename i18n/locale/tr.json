@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Kendi kısayollarınızdan biri tuşunu kullandığı için {value1} kısayol olduğu gibi bırakıldı.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Kendi kısayollarınız tuşlarını kullandığı için {value1} kısayol olduğu gibi bırakıldı.",
   "Reset shortcuts": "Kısayolları sıfırla",
-  "Put one shortcut, or all of them, back to the original keys.": "Bir kısayolu veya tümünü özgün tuşlarına geri döndürün."
+  "Put one shortcut, or all of them, back to the original keys.": "Bir kısayolu veya tümünü özgün tuşlarına geri döndürün.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR ve ICC profilleri, bu oturumun kullanmadığı Vulkan işleyicisini gerektirir. SDR renk derinliği yine de yapılandırılabilir.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR, bu oturumun kullanmadığı Vulkan işleyicisini gerektirir."
 }

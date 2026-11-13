@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "{value1} शॉर्टकट वैसा ही रखा गया क्योंकि आपका अपना एक शॉर्टकट उसकी कुंजी का उपयोग करता है।",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "{value1} शॉर्टकट वैसे ही रखे गए क्योंकि आपके अपने शॉर्टकट उनकी कुंजियों का उपयोग करते हैं।",
   "Reset shortcuts": "शॉर्टकट रीसेट करें",
-  "Put one shortcut, or all of them, back to the original keys.": "एक शॉर्टकट या सभी को मूल कुंजियों पर वापस लाएँ।"
+  "Put one shortcut, or all of them, back to the original keys.": "एक शॉर्टकट या सभी को मूल कुंजियों पर वापस लाएँ।",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "HDR और ICC प्रोफ़ाइल के लिए Vulkan रेंडरर चाहिए, जिसका यह सत्र उपयोग नहीं कर रहा है। SDR रंग गहराई अब भी सेट की जा सकती है।",
+  "HDR needs the Vulkan renderer, which this session is not using.": "HDR के लिए Vulkan रेंडरर चाहिए, जिसका यह सत्र उपयोग नहीं कर रहा है।"
 }

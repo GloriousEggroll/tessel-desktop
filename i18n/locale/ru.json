@@ -2012,5 +2012,7 @@
   "{value1} shortcut was kept because one of your own shortcuts uses its key.": "Оставлено без изменений сочетаний клавиш: {value1} — их клавиши заняты вашими собственными сочетаниями.",
   "{value1} shortcuts were kept because your own shortcuts use their keys.": "Оставлено без изменений сочетаний клавиш: {value1} — их клавиши заняты вашими собственными сочетаниями.",
   "Reset shortcuts": "Сбросить сочетания клавиш",
-  "Put one shortcut, or all of them, back to the original keys.": "Верните одно сочетание клавиш или все к исходным клавишам."
+  "Put one shortcut, or all of them, back to the original keys.": "Верните одно сочетание клавиш или все к исходным клавишам.",
+  "HDR and ICC profiles need the Vulkan renderer, which this session is not using. SDR color depth can still be configured.": "Для HDR и профилей ICC нужен рендерер Vulkan, который в этом сеансе не используется. Глубину цвета SDR по-прежнему можно настроить.",
+  "HDR needs the Vulkan renderer, which this session is not using.": "Для HDR нужен рендерер Vulkan, который в этом сеансе не используется."
 }

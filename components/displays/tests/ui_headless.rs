@@ -651,6 +651,39 @@ fn color_controls_explain_an_unsupported_compositor(app: &gtk::Application) {
     println!("ok color_controls_explain_an_unsupported_compositor");
 }
 
+/// Issue #14: without the Vulkan renderer labwc refuses HDR, so the switch
+/// must not look as if it worked.
+fn hdr_cannot_be_turned_on_without_the_vulkan_renderer(app: &gtk::Application) {
+    let gles2 = status(&[("compositor", &[("icc_supported", "false")]),
+                         ("DP-1", &[("icc_active", "false"), ("bit_depth", "8"), ("hdr", "false"), ("hdr_supported", "true")])]);
+    let f = Fx::new(app);
+    let source = gles2.clone();
+    color_config::set_status_override(Some(Rc::new(move || source.clone())));
+    let window = f.window();
+    let widget = window.monitor_widgets.borrow()[0].clone();
+    assert!(!widget.hdr_switch.is_active() && !widget.hdr_switch.is_sensitive());
+    assert_eq!(widget.hdr_switch.tooltip_text().as_deref(), Some(color_config::NEEDS_VULKAN));
+    assert!(widget.color_controls.status.text().contains("HDR and ICC profiles need the Vulkan renderer"));
+    // HDR saved from a session that had the renderer: it can be turned off.
+    let f = Fx::new(app);
+    let mut hooks = test_hooks();
+    hooks.read_labwc_hdr_config = Rc::new(|_| HdrConfig { global: true, overrides: BTreeMap::new(), managed: BTreeMap::new(), text: String::new() });
+    window::set_default_hooks(Some(hooks));
+    color_config::set_status_override(Some(Rc::new(move || gles2.clone())));
+    let window = f.window();
+    let widget = window.monitor_widgets.borrow()[0].clone();
+    assert!(widget.hdr_switch.is_active() && widget.hdr_switch.is_sensitive());
+    // With the renderer the switch is offered as before.
+    let f = Fx::new(app);
+    let vulkan = status(&[("compositor", &[("icc_supported", "true")]), ("DP-1", &[("hdr", "false"), ("hdr_supported", "true")])]);
+    color_config::set_status_override(Some(Rc::new(move || vulkan.clone())));
+    let window = f.window();
+    let widget = window.monitor_widgets.borrow()[0].clone();
+    assert!(!widget.hdr_switch.is_active() && widget.hdr_switch.is_sensitive());
+    assert_ne!(widget.hdr_switch.tooltip_text().as_deref(), Some(color_config::NEEDS_VULKAN));
+    println!("ok hdr_cannot_be_turned_on_without_the_vulkan_renderer");
+}
+
 fn hdr_report_distinguishes_metadata_white_target_and_measurement(app: &gtk::Application) {
     let f = Fx::new(app);
     let active: Rc<RefCell<BTreeMap<String, String>>> = Rc::new(RefCell::new(
@@ -1364,6 +1397,7 @@ fn main() {
     local_policy_value_waits_for_async_reply_and_reverts_on_failure(&app);
     color_changes_are_pending_and_shared_with_the_embedded_editor(&app);
     color_controls_explain_an_unsupported_compositor(&app);
+    hdr_cannot_be_turned_on_without_the_vulkan_renderer(&app);
     hdr_report_distinguishes_metadata_white_target_and_measurement(&app);
     vrr_changes_in_two_stale_editors_preserve_the_other_monitor(&app);
     automatic_scaling_removes_only_that_displays_scale(&app);

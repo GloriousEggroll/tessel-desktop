@@ -509,6 +509,12 @@ fn hdr_report_distinguishes_metadata_white_target_and_measurement() {
     let lines = status_messages(&status, "DP-1", "", false, "", true);
     assert_eq!(lines, ["Active color: built-in SDR", "Active output depth: 8-bit", "Color changes are pending until Apply."]);
     assert!(status_messages(&BTreeMap::new(), "DP-1", "", false, "", false)[0].contains("updated labwc"));
+    // A renderer without color transforms (GLES2): HDR is named too.
+    assert!(color::renderer_supports_color(&status) && color::renderer_supports_color(&BTreeMap::new()));
+    let mut gles2 = status.clone();
+    gles2.get_mut("compositor").unwrap().insert("icc_supported".into(), "false".into());
+    assert!(!color::renderer_supports_color(&gles2));
+    assert!(status_messages(&gles2, "DP-1", "", false, "", false)[0].starts_with("HDR and ICC profiles need the Vulkan renderer"));
 }
 
 // ------------------------------------------------------- save_config plan
