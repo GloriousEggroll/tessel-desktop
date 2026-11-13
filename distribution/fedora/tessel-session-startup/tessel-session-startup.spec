@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d496d451a4dc2133ebf8bf31b1f4a00e089c3272}
+%{!?commit:%global commit 8e01ca67e6d346b1695e3c123cc94587e560506c}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
 Version:        0.1.0
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        Tessel session: labwc configuration, autostart and login entry
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -113,6 +113,9 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %config(noreplace) %{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-10
+- Turn Num Lock on at sign-in unless rc.xml already says otherwise
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-9
 - Session setup keeps the weight and slant of a window title font chosen in Global Settings
 

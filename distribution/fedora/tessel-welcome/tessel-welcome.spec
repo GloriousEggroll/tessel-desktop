@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 3cab8928eac55fcccf6411d12cfbe039068b0b49}
+%{!?commit:%global commit 8e01ca67e6d346b1695e3c123cc94587e560506c}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-welcome
 Version:        0.1.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Tessel welcome screen
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -88,6 +88,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Welcome.desktop
 %{_datadir}/applications/org.tessel.Welcome.desktop
 
 %changelog
+* Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
+- Keyboard step: turn on Num Lock at sign-in
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - Layouts use the single system tray
 
