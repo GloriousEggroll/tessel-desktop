@@ -233,6 +233,23 @@ impl KeyboardConfig {
         Ok(state_from(&environment, &keyboard))
     }
 
+    /// Num Lock at sign-in (`<numlock>` in rc.xml).
+    pub fn load_numlock(&self) -> Result<bool> {
+        Ok(labwc_settings::numlock_enabled(&labwc_settings::read_keyboard(&labwc_settings::read_bytes(&self.rc)?)?))
+    }
+
+    /// Write `<numlock>on|off</numlock>` and reload once; true when rc.xml changed.
+    /// labwc applies it to keyboards it recognises afterwards, not to attached ones.
+    pub fn save_numlock(&self, on: bool, done: Option<Done>) -> Result<bool> {
+        let changed = labwc_settings::update_rc(|data| labwc_settings::set_numlock(data, on), Some(&self.rc))?;
+        if changed {
+            (self.reload)(done);
+        } else if let Some(done) = done {
+            done(true, String::new());
+        }
+        Ok(changed)
+    }
+
     /// Write both files; returns `(environment_changed, rc_changed)`.
     pub fn save(&self, state: &KeyboardState, done: Option<Done>) -> Result<(bool, bool)> {
         validate(state)?;
@@ -319,6 +336,32 @@ mod tests {
         assert!(config.save(&bad, None).unwrap_err().is_value());
         let empty = KeyboardState { layouts: vec![], ..Default::default() };
         assert!(config.save(&empty, None).unwrap_err().is_value());
+    }
+
+    #[test]
+    fn numlock_save_writes_rc_and_reloads_once() {
+        let root = scratch("kbd-numlock");
+        let _env = EnvGuard::set(&[("XDG_STATE_HOME", root.join("state").to_str().unwrap())]);
+        let (rc, env) = (root.join("rc.xml"), root.join("environment"));
+        std::fs::write(&rc, RC).unwrap();
+        let reloads = Rc::new(RefCell::new(0));
+        let counter = reloads.clone();
+        let config = KeyboardConfig::new(Some(&rc), Some(&env), Some(Rc::new(move |_done| *counter.borrow_mut() += 1)));
+        assert!(config.load_numlock().unwrap());
+        assert!(config.save_numlock(false, None).unwrap());
+        assert!(!config.load_numlock().unwrap());
+        assert!(std::fs::read_to_string(&rc).unwrap().contains("<numlock>off</numlock>"));
+        assert_eq!(*reloads.borrow(), 1);
+        assert!(!config.save_numlock(false, None).unwrap());
+        assert_eq!(*reloads.borrow(), 1);
+        assert!(!env.exists(), "Num Lock does not touch the environment file");
+        // The other keyboard values keep the element.
+        let state = KeyboardState { repeat_delay: 400, ..config.load().unwrap() };
+        config.save(&state, None).unwrap();
+        assert!(!config.load_numlock().unwrap());
+        assert!(config.save_numlock(true, None).unwrap());
+        assert!(config.load_numlock().unwrap());
+        assert_eq!(*reloads.borrow(), 3);
     }
 
     #[test]

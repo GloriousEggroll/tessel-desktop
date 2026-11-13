@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Písmo nelze změnit: {error}",
   "The fonts could not be reset: {error}": "Písma nelze obnovit na výchozí: {error}",
   "The shared font setting could not be changed.": "Sdílené nastavení písma nelze změnit.",
-  "The window manager did not reload its settings: {error}": "Správce oken znovu nenačetl svá nastavení: {error}"
+  "The window manager did not reload its settings: {error}": "Správce oken znovu nenačetl svá nastavení: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Zapnout Num Lock při přihlášení",
+  "Takes effect the next time you sign in or connect a keyboard.": "Projeví se při příštím přihlášení nebo po připojení klávesnice.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Uloženo. Změny Num Lock se projeví při příštím přihlášení.",
+  "Document viewer": "Prohlížeč dokumentů",
+  "Archive manager": "Správce archivů",
+  "Choose the application that opens PDF files and other documents.": "Vyberte aplikaci, která otevírá soubory PDF a další dokumenty.",
+  "Choose the application that opens archives.": "Vyberte aplikaci, která otevírá archivy.",
+  "Turn Num Lock on automatically when you sign in.": "Automaticky zapnout Num Lock při přihlášení."
 }

@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "फ़ॉन्ट नहीं बदला जा सका: {error}",
   "The fonts could not be reset: {error}": "फ़ॉन्ट रीसेट नहीं किए जा सके: {error}",
   "The shared font setting could not be changed.": "साझा फ़ॉन्ट सेटिंग नहीं बदली जा सकी।",
-  "The window manager did not reload its settings: {error}": "विंडो मैनेजर ने अपनी सेटिंग दोबारा लोड नहीं कीं: {error}"
+  "The window manager did not reload its settings: {error}": "विंडो मैनेजर ने अपनी सेटिंग दोबारा लोड नहीं कीं: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "साइन इन करते समय Num Lock चालू करें",
+  "Takes effect the next time you sign in or connect a keyboard.": "अगली बार साइन इन करने या कीबोर्ड जोड़ने पर लागू होगा।",
+  "Saved. Num Lock changes apply the next time you sign in.": "सहेजा गया। Num Lock परिवर्तन अगली बार साइन इन करने पर लागू होंगे।",
+  "Document viewer": "दस्तावेज़ दर्शक",
+  "Archive manager": "आर्काइव प्रबंधक",
+  "Choose the application that opens PDF files and other documents.": "वह ऐप्लिकेशन चुनें जो PDF फ़ाइलें और अन्य दस्तावेज़ खोलता है।",
+  "Choose the application that opens archives.": "वह ऐप्लिकेशन चुनें जो आर्काइव खोलता है।",
+  "Turn Num Lock on automatically when you sign in.": "साइन इन करने पर Num Lock अपने आप चालू करें।"
 }

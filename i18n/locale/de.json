@@ -2322,5 +2322,14 @@
   "The font could not be changed: {error}": "Die Schriftart konnte nicht geändert werden: {error}",
   "The fonts could not be reset: {error}": "Die Schriftarten konnten nicht zurückgesetzt werden: {error}",
   "The shared font setting could not be changed.": "Die gemeinsame Schriftarteinstellung konnte nicht geändert werden.",
-  "The window manager did not reload its settings: {error}": "Die Fensterverwaltung hat ihre Einstellungen nicht neu geladen: {error}"
+  "The window manager did not reload its settings: {error}": "Die Fensterverwaltung hat ihre Einstellungen nicht neu geladen: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Num Lock beim Anmelden einschalten",
+  "Takes effect the next time you sign in or connect a keyboard.": "Gilt ab der nächsten Anmeldung oder wenn Sie eine Tastatur anschließen.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Gespeichert. Änderungen an Num Lock gelten ab der nächsten Anmeldung.",
+  "Document viewer": "Dokumentbetrachter",
+  "Archive manager": "Archivverwaltung",
+  "Choose the application that opens PDF files and other documents.": "Wählen Sie die Anwendung, die PDF-Dateien und andere Dokumente öffnet.",
+  "Choose the application that opens archives.": "Wählen Sie die Anwendung, die Archive öffnet.",
+  "Turn Num Lock on automatically when you sign in.": "Num Lock beim Anmelden automatisch einschalten."
 }

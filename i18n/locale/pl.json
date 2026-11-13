@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Nie udało się zmienić czcionki: {error}",
   "The fonts could not be reset: {error}": "Nie udało się przywrócić czcionek: {error}",
   "The shared font setting could not be changed.": "Nie udało się zmienić wspólnego ustawienia czcionki.",
-  "The window manager did not reload its settings: {error}": "Menedżer okien nie wczytał ponownie ustawień: {error}"
+  "The window manager did not reload its settings: {error}": "Menedżer okien nie wczytał ponownie ustawień: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Włączaj Num Lock po zalogowaniu",
+  "Takes effect the next time you sign in or connect a keyboard.": "Zacznie działać po następnym zalogowaniu lub podłączeniu klawiatury.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Zapisano. Zmiany Num Lock zostaną zastosowane po następnym zalogowaniu.",
+  "Document viewer": "Przeglądarka dokumentów",
+  "Archive manager": "Menedżer archiwów",
+  "Choose the application that opens PDF files and other documents.": "Wybierz aplikację, która otwiera pliki PDF i inne dokumenty.",
+  "Choose the application that opens archives.": "Wybierz aplikację, która otwiera archiwa.",
+  "Turn Num Lock on automatically when you sign in.": "Automatycznie włączaj Num Lock po zalogowaniu."
 }

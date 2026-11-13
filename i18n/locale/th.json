@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "ไม่สามารถเปลี่ยนแบบอักษรได้: {error}",
   "The fonts could not be reset: {error}": "ไม่สามารถรีเซ็ตแบบอักษรได้: {error}",
   "The shared font setting could not be changed.": "ไม่สามารถเปลี่ยนการตั้งค่าแบบอักษรที่ใช้ร่วมกันได้",
-  "The window manager did not reload its settings: {error}": "ตัวจัดการหน้าต่างไม่ได้โหลดการตั้งค่าใหม่: {error}"
+  "The window manager did not reload its settings: {error}": "ตัวจัดการหน้าต่างไม่ได้โหลดการตั้งค่าใหม่: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "เปิด Num Lock เมื่อเข้าสู่ระบบ",
+  "Takes effect the next time you sign in or connect a keyboard.": "จะมีผลเมื่อคุณเข้าสู่ระบบครั้งถัดไปหรือเชื่อมต่อแป้นพิมพ์",
+  "Saved. Num Lock changes apply the next time you sign in.": "บันทึกแล้ว การเปลี่ยนแปลง Num Lock จะมีผลเมื่อคุณเข้าสู่ระบบครั้งถัดไป",
+  "Document viewer": "โปรแกรมดูเอกสาร",
+  "Archive manager": "ตัวจัดการไฟล์บีบอัด",
+  "Choose the application that opens PDF files and other documents.": "เลือกแอปที่ใช้เปิดไฟล์ PDF และเอกสารอื่นๆ",
+  "Choose the application that opens archives.": "เลือกแอปที่ใช้เปิดไฟล์บีบอัด",
+  "Turn Num Lock on automatically when you sign in.": "เปิด Num Lock โดยอัตโนมัติเมื่อคุณลงชื่อเข้าใช้"
 }

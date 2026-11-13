@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Default Apps
+Comment=Choose the applications that open links, folders and files
+Exec=@LIBDIR@/tessel-settings --section defaultapps
+Icon=preferences-desktop-default-applications
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=default;applications;browser;web;mail;email;file manager;terminal;editor;pdf;documents;images;video;music;archive;mime;open with;
+StartupNotify=true

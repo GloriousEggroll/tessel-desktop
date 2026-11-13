@@ -2322,5 +2322,14 @@
   "The font could not be changed: {error}": "Impossible de changer la police : {error}",
   "The fonts could not be reset: {error}": "Impossible de réinitialiser les polices : {error}",
   "The shared font setting could not be changed.": "Impossible de modifier le réglage de police partagé.",
-  "The window manager did not reload its settings: {error}": "Le gestionnaire de fenêtres n’a pas rechargé ses réglages : {error}"
+  "The window manager did not reload its settings: {error}": "Le gestionnaire de fenêtres n’a pas rechargé ses réglages : {error}",
+  "Num Lock": "Verr. Num.",
+  "Turn on Num Lock at sign-in": "Activer Verr. Num. à la connexion",
+  "Takes effect the next time you sign in or connect a keyboard.": "S’applique à la prochaine connexion ou lorsque vous branchez un clavier.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Enregistré. Les changements de Verr. Num. s’appliquent à la prochaine connexion.",
+  "Document viewer": "Visionneuse de documents",
+  "Archive manager": "Gestionnaire d’archives",
+  "Choose the application that opens PDF files and other documents.": "Choisissez l’application qui ouvre les fichiers PDF et les autres documents.",
+  "Choose the application that opens archives.": "Choisissez l’application qui ouvre les archives.",
+  "Turn Num Lock on automatically when you sign in.": "Activer automatiquement le verrouillage numérique à l’ouverture de session."
 }

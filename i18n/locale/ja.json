@@ -2169,5 +2169,14 @@
   "The font could not be changed: {error}": "フォントを変更できませんでした: {error}",
   "The fonts could not be reset: {error}": "フォントを初期設定に戻せませんでした: {error}",
   "The shared font setting could not be changed.": "共有のフォント設定を変更できませんでした。",
-  "The window manager did not reload its settings: {error}": "ウィンドウマネージャーが設定を再読み込みしませんでした: {error}"
+  "The window manager did not reload its settings: {error}": "ウィンドウマネージャーが設定を再読み込みしませんでした: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "サインイン時に Num Lock をオンにする",
+  "Takes effect the next time you sign in or connect a keyboard.": "次回サインインしたとき、またはキーボードを接続したときに有効になります。",
+  "Saved. Num Lock changes apply the next time you sign in.": "保存しました。Num Lock の変更は次回サインインしたときに適用されます。",
+  "Document viewer": "ドキュメントビューアー",
+  "Archive manager": "アーカイブマネージャー",
+  "Choose the application that opens PDF files and other documents.": "PDF ファイルやその他のドキュメントを開くアプリを選択します。",
+  "Choose the application that opens archives.": "アーカイブを開くアプリを選択します。",
+  "Turn Num Lock on automatically when you sign in.": "サインイン時に Num Lock を自動的にオンにします。"
 }

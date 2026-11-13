@@ -40,6 +40,9 @@ regex!(KEYBIND, r"(?s)<keybind\b[^>]*?(?:/>|>.*?</keybind\s*>)");
 regex!(KEYBOARD_ANY, r"(?s)<keyboard\b[^>]*?(?:/>|>.*?</keyboard\s*>)");
 regex!(KEYBOARD, r"(?s)<keyboard\b[^>]*?>.*?</keyboard\s*>");
 regex!(DEFAULT, r"<default\s*/>");
+// labwc matches element and attribute names without regard to case.
+regex!(NUMLOCK_ELEMENT, r"(?i)<numlock[\s/>]");
+regex!(NUMLOCK_ATTRIBUTE, r"(?i)\snumlock\s*=");
 regex!(COMMAND_DQ, r#"(\bcommand\s*=\s*")([^"]*)(")"#);
 regex!(COMMAND_SQ, r"(\bcommand\s*=\s*')([^']*)(')");
 regex!(COMMAND_ELEMENT, r"(?s)(<command\s*>)(.*?)(</command\s*>)");
@@ -366,10 +369,26 @@ pub fn edit_rc(text: &str, home: &Path) -> Result<(String, Vec<String>), Error> 
         Some((start, finish)) => edits.push((start, finish, content)),
         None => edits.push((insertion, insertion, format!("\n    {content}"))),
     }
-    let text = apply_edits(text, edits);
+    let text = ensure_numlock(&apply_edits(text, edits))?;
     let text = edit_theme(&portable_prompts(&portable_commands(&text, home), home))?;
     xml::parse(&text)?;
     Ok((text, skipped))
+}
+
+/// Num Lock on at sign-in for a keyboard section that does not say: an existing
+/// `<numlock>` (on or off, set in Global Settings) is never changed.
+pub fn ensure_numlock(text: &str) -> Result<String, Error> {
+    let masked = mask_comments(text);
+    let Some(section) = KEYBOARD.find(&masked) else { return Ok(text.to_owned()) };
+    let open_end = index_from(&masked, ">", section.start())? + 1;
+    let close = rindex(&masked, "</keyboard", section.start(), section.end())?;
+    if NUMLOCK_ELEMENT.is_match(&masked[open_end..close]) || NUMLOCK_ATTRIBUTE.is_match(&masked[section.start()..open_end]) {
+        return Ok(text.to_owned());
+    }
+    let insertion = DEFAULT.find_iter(&masked[open_end..close]).last().map_or(open_end, |m| open_end + m.end());
+    let mut text = text.to_owned();
+    text.insert_str(insertion, "\n    <numlock>on</numlock>");
+    Ok(text)
 }
 
 /// `tessel_core::look::CORNER_RADIUS`, as rc.xml has it (a test keeps them the same).
@@ -1309,6 +1328,54 @@ mod new_user_tests {
         std::fs::remove_dir_all(&home).unwrap();
         assert!(rc.contains("my-shot") && rc.contains("key=\"W-l\""), "{rc}");
         assert!(!rc.contains("tessel-capture") && !rc.contains("A-Tab") && !rc.contains("promptCommand"), "defaults must not be merged in:\n{rc}");
+    }
+}
+
+#[cfg(test)]
+mod numlock_tests {
+    use super::*;
+
+    fn edit(text: &str) -> String {
+        edit_rc(text, Path::new("/home/example")).unwrap().0
+    }
+
+    #[test]
+    fn a_keyboard_section_without_numlock_gets_it_on_once() {
+        let text = edit("<labwc_config>\n  <keyboard>\n    <default/>\n  </keyboard>\n</labwc_config>\n");
+        assert_eq!(text.matches("<numlock>").count(), 1, "{text}");
+        let after_default = text.find("<default/>").unwrap() + "<default/>".len();
+        assert!(text[after_default..].starts_with("\n    <numlock>on</numlock>\n    <!-- Tessel keybindings begin"), "{text}");
+        assert_eq!(edit(&text), text, "a second sign-in changes nothing");
+        for missing in ["<labwc_config>\n</labwc_config>\n", "<labwc_config><keyboard/></labwc_config>"] {
+            let text = edit(missing);
+            assert_eq!(text.matches("<numlock>on</numlock>").count(), 1, "{text}");
+            xml::parse(&text).unwrap();
+        }
+    }
+
+    #[test]
+    fn an_existing_numlock_is_kept_as_it_is() {
+        for element in ["<numlock>off</numlock>", "<numlock>on</numlock>", "<NumLock> No </NumLock>", "<numlock/>", "<numlock >yes</numlock >"] {
+            let rc = format!("<labwc_config>\n  <keyboard>\n    {element}\n    <default/>\n  </keyboard>\n</labwc_config>\n");
+            let text = edit(&rc);
+            assert!(text.contains(element), "{text}");
+            assert_eq!(text.to_lowercase().matches("numlock").count(), rc.to_lowercase().matches("numlock").count(), "{text}");
+            assert_eq!(edit(&text), text);
+        }
+        let attribute = "<labwc_config><keyboard numlock=\"off\"><default/></keyboard></labwc_config>";
+        assert!(!edit(attribute).contains("<numlock>"));
+    }
+
+    #[test]
+    fn a_commented_numlock_does_not_count() {
+        let text = edit("<labwc_config><keyboard><!-- <numlock>off</numlock> --><default/></keyboard></labwc_config>");
+        assert!(text.contains("<!-- <numlock>off</numlock> -->") && text.contains("<default/>\n    <numlock>on</numlock>"), "{text}");
+    }
+
+    #[test]
+    fn the_default_rc_has_numlock_on() {
+        assert_eq!(DEFAULT_RC.matches("<numlock>on</numlock>").count(), 1);
+        assert_eq!(edit(&default_file(DEFAULT_RC, DEFAULT_PATHS)).matches("numlock").count(), 2);
     }
 }
 

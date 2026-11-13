@@ -2322,5 +2322,14 @@
   "The font could not be changed: {error}": "No se pudo cambiar el tipo de letra: {error}",
   "The fonts could not be reset: {error}": "No se pudieron restablecer los tipos de letra: {error}",
   "The shared font setting could not be changed.": "No se pudo cambiar el ajuste compartido de tipo de letra.",
-  "The window manager did not reload its settings: {error}": "El gestor de ventanas no volvió a cargar su configuración: {error}"
+  "The window manager did not reload its settings: {error}": "El gestor de ventanas no volvió a cargar su configuración: {error}",
+  "Num Lock": "Bloq Num",
+  "Turn on Num Lock at sign-in": "Activar Bloq Num al iniciar sesión",
+  "Takes effect the next time you sign in or connect a keyboard.": "Se aplica la próxima vez que inicie sesión o conecte un teclado.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Guardado. Los cambios de Bloq Num se aplican la próxima vez que inicie sesión.",
+  "Document viewer": "Visor de documentos",
+  "Archive manager": "Gestor de archivos comprimidos",
+  "Choose the application that opens PDF files and other documents.": "Elija la aplicación que abre los archivos PDF y otros documentos.",
+  "Choose the application that opens archives.": "Elija la aplicación que abre los archivos comprimidos.",
+  "Turn Num Lock on automatically when you sign in.": "Activar Bloq Num automáticamente al iniciar sesión."
 }

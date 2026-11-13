@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Δεν ήταν δυνατή η αλλαγή της γραμματοσειράς: {error}",
   "The fonts could not be reset: {error}": "Δεν ήταν δυνατή η επαναφορά των γραμματοσειρών: {error}",
   "The shared font setting could not be changed.": "Δεν ήταν δυνατή η αλλαγή της κοινής ρύθμισης γραμματοσειράς.",
-  "The window manager did not reload its settings: {error}": "Ο διαχειριστής παραθύρων δεν φόρτωσε ξανά τις ρυθμίσεις του: {error}"
+  "The window manager did not reload its settings: {error}": "Ο διαχειριστής παραθύρων δεν φόρτωσε ξανά τις ρυθμίσεις του: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Ενεργοποίηση του Num Lock κατά τη σύνδεση",
+  "Takes effect the next time you sign in or connect a keyboard.": "Εφαρμόζεται την επόμενη φορά που θα συνδεθείτε ή θα συνδέσετε ένα πληκτρολόγιο.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Αποθηκεύτηκε. Οι αλλαγές στο Num Lock εφαρμόζονται την επόμενη φορά που θα συνδεθείτε.",
+  "Document viewer": "Προβολή εγγράφων",
+  "Archive manager": "Διαχείριση αρχειοθηκών",
+  "Choose the application that opens PDF files and other documents.": "Επιλέξτε την εφαρμογή που ανοίγει αρχεία PDF και άλλα έγγραφα.",
+  "Choose the application that opens archives.": "Επιλέξτε την εφαρμογή που ανοίγει αρχειοθήκες.",
+  "Turn Num Lock on automatically when you sign in.": "Αυτόματη ενεργοποίηση του Num Lock κατά τη σύνδεση."
 }

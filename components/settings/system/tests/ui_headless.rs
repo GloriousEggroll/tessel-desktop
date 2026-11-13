@@ -238,6 +238,46 @@ fn keyboard_layout_edits_and_repeat_are_saved_to_private_files(app: &gtk::Applic
     Ok(())
 }
 
+fn keyboard_numlock_switch_reflects_and_writes_rc(app: &gtk::Application) -> Result<(), String> {
+    let base = Base::new(app, "numlock");
+    let (rc, env) = (base.root.join("rc.xml"), base.root.join("environment"));
+    let reloads = Rc::new(RefCell::new(0));
+    let open = |text: &str| {
+        std::fs::write(&rc, text).unwrap();
+        let r = reloads.clone();
+        let config = KeyboardConfig::new(Some(&rc), Some(&env), Some(Rc::new(move |done: Option<gs_system::labwc_settings::Done>| {
+            *r.borrow_mut() += 1;
+            if let Some(done) = done { done(true, String::new()) }
+        })));
+        let factory: gs_system::keyboard_page::OskFactory = Box::new(|| Err("none".to_owned()));
+        base.show(gs_system::keyboard_page::build_page_with(Some(config), Some(Catalog::default()), Some(factory)))
+    };
+    let off = RC.replace("  <keyboard>\n", "  <keyboard>\n    <numlock>off</numlock>\n");
+    let page = open(&off);
+    let c = page.controller::<KeyboardPage>().unwrap();
+    check!(page.search_targets.borrow().contains_key("keyboard-numlock"));
+    check!(!c.numlock.is_active(), "off in the file shows off");
+    check!(*reloads.borrow() == 0, "opening the page writes nothing");
+    c.numlock.set_active(true);
+    check!(read(&rc) == off.replace("<numlock>off</numlock>", "<numlock>on</numlock>"), "{}", read(&rc));
+    check!(*reloads.borrow() == 1);
+    check!(c.status.text().contains("Saved"));
+    c.numlock.set_active(false);
+    check!(read(&rc) == off, "{}", read(&rc));
+    check!(*reloads.borrow() == 2);
+    check!(!env.exists(), "Num Lock does not touch the environment file");
+    page.close();
+    let page = open(RC);
+    let c = page.controller::<KeyboardPage>().unwrap();
+    check!(c.numlock.is_active(), "missing shows on (session startup adds it)");
+    check!(read(&rc) == RC && *reloads.borrow() == 2);
+    c.numlock.set_active(false);
+    check!(read(&rc).contains("<keyboard>\n    <numlock>off</numlock>\n    <default/>"), "{}", read(&rc));
+    check!(*reloads.borrow() == 3);
+    base.keep(page);
+    Ok(())
+}
+
 // ---- shortcuts -------------------------------------------------------------
 
 fn store(rc: &Path) -> Rc<dyn Shortcuts> {
@@ -637,6 +677,82 @@ fn default_apps_set_through_backend(app: &gtk::Application) -> Result<(), String
     // Activation refreshes in place; search targets stay the same widgets.
     page.activate();
     check!(page.search_targets.borrow()["default-browser"] == browser.upcast::<gtk::Widget>());
+    base.keep(page);
+    Ok(())
+}
+
+/// Per-category candidates and current choices, and a `set` that can refuse.
+struct StateApps {
+    calls: RefCell<Vec<(String, String)>>,
+    current: RefCell<Option<App>>,
+    refuse: std::cell::Cell<bool>,
+}
+
+impl DefaultApps for StateApps {
+    fn candidates(&self, key: &str, _types: &[&str]) -> Vec<App> {
+        match key {
+            "documents" => Vec::new(),
+            "browser" => vec![App::new("firefox.desktop", "Firefox"), App::new("org.mozilla.firefox.desktop", "Firefox")],
+            _ => vec![App::new("a.desktop", "App A"), App::new("b.desktop", "App B")],
+        }
+    }
+    fn current(&self, key: &str, _types: &[&str], _apps: &[App]) -> Option<App> {
+        match key {
+            "documents" | "archives" => None,
+            "images" => self.current.borrow().clone(),
+            "browser" => Some(App::new("firefox.desktop", "Firefox")),
+            _ => Some(App::new("a.desktop", "App A")),
+        }
+    }
+    fn set(&self, key: &str, _types: &[&str], app: &App, done: Done) -> PyResult<()> {
+        self.calls.borrow_mut().push((key.into(), app.id.clone()));
+        if self.refuse.get() {
+            return Err(gs_system::compat::Error::Os("refused".into()));
+        }
+        done(true, String::new());
+        Ok(())
+    }
+}
+
+fn names(widget: &gtk::DropDown) -> Vec<String> {
+    let model = widget.model().unwrap();
+    (0..model.n_items()).map(|i| model.item(i).and_downcast::<gtk::StringObject>().unwrap().string().to_string()).collect()
+}
+
+fn default_apps_states_new_categories_and_refusals(app: &gtk::Application) -> Result<(), String> {
+    let base = Base::new(app, "defaultapps-states");
+    let backend = Rc::new(StateApps { calls: RefCell::new(Vec::new()), current: RefCell::new(Some(App::new("a.desktop", "App A"))),
+                                      refuse: std::cell::Cell::new(false) });
+    let page = base.show(gs_system::default_apps_page::build_page_with(Some(backend.clone())));
+    let c = page.controller::<DefaultAppsPage>().unwrap();
+    for key in ["default-documents", "default-archives"] {
+        check!(page.search_targets.borrow().contains_key(key), "missing target {key}");
+    }
+    // Nothing installed: one insensitive placeholder.
+    let documents = c.controls.borrow()["documents"].clone();
+    check!(names(&documents) == ["No applications installed"]);
+    check!(!documents.is_sensitive());
+    // Installed but no default: "Not set" first and selected; picking it does nothing.
+    let archives = c.controls.borrow()["archives"].clone();
+    check!(names(&archives) == ["Not set", "App A", "App B"]);
+    check!(archives.selected() == 0 && archives.is_sensitive());
+    archives.set_selected(2);
+    check!(*backend.calls.borrow() == [("archives".to_string(), "b.desktop".to_string())]);
+    // Two applications with one name are told apart.
+    let browser = c.controls.borrow()["browser"].clone();
+    check!(names(&browser) == ["Firefox (firefox)", "Firefox (org.mozilla.firefox)"], "{:?}", names(&browser));
+    // A refused change reports the error and shows the real default again.
+    backend.refuse.set(true);
+    let images = c.controls.borrow()["images"].clone();
+    check!(images.selected() == 0);
+    images.set_selected(1);
+    check!(c.status.has_css_class("error") && c.status.text().contains("refused"), "{}", c.status.text());
+    check!(wait(|| images.selected() == 0, 2.0), "the dropdown went back to the current default");
+    // A default that disappeared (uninstalled) reads as "Not set".
+    backend.refuse.set(false);
+    backend.current.replace(None);
+    page.activate();
+    check!(names(&images)[0] == "Not set" && images.selected() == 0);
     base.keep(page);
     Ok(())
 }
@@ -1073,8 +1189,8 @@ fn every_section_builds_with_search_targets(app: &gtk::Application) -> Result<()
                        "keyboard-automatic", "automatic", "layout", "size", "devices"]),
         ("shortcuts", &["shortcuts-list", "shortcuts-search", "search"]),
         ("accessibility", &["a11y-text", "a11y-contrast", "a11y-motion", "a11y-cursor-size", "a11y-large-cursor", "a11y-screen-reader"]),
-        ("defaultapps", &["default-browser", "default-mail", "default-files", "default-terminal", "default-editor", "default-images",
-                          "default-video", "default-music"]),
+        ("defaultapps", &["default-browser", "default-mail", "default-files", "default-terminal", "default-editor", "default-documents",
+                          "default-images", "default-video", "default-music", "default-archives"]),
         ("nightlight", &["night-enabled", "night-schedule", "night-temperature", "night-times"]),
         ("users", &["users-name", "users-picture", "users-password", "users-others"]),
     ];
@@ -1116,12 +1232,14 @@ fn main() {
     app.register(gio::Cancellable::NONE).expect("register");
     let cases: &[(&str, Case)] = &[
         ("keyboard_layout_edits_and_repeat_are_saved_to_private_files", keyboard_layout_edits_and_repeat_are_saved_to_private_files),
+        ("keyboard_numlock_switch_reflects_and_writes_rc", keyboard_numlock_switch_reflects_and_writes_rc),
         ("shortcuts_listing_search_conflicts_and_rebinding", shortcuts_listing_search_conflicts_and_rebinding),
         ("cheat_sheet_filters_and_closes", cheat_sheet_filters_and_closes),
         ("rebind_dialog_keeps_compositor_shortcuts_from_firing", rebind_dialog_keeps_compositor_shortcuts_from_firing),
         ("about_values_copy_and_restart_command", about_values_copy_and_restart_command),
         ("users_name_and_password_flow", users_name_and_password_flow),
         ("default_apps_set_through_backend", default_apps_set_through_backend),
+        ("default_apps_states_new_categories_and_refusals", default_apps_states_new_categories_and_refusals),
         ("accessibility_writes_gsettings_and_cursor_environment", accessibility_writes_gsettings_and_cursor_environment),
         ("night_light_saves_and_controls_the_unit_and_warns_about_hdr", night_light_saves_and_controls_the_unit_and_warns_about_hdr),
         ("night_light_is_disabled_when_every_output_is_hdr", night_light_is_disabled_when_every_output_is_hdr),

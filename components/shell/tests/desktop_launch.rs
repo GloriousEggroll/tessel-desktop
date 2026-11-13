@@ -79,6 +79,19 @@ fn launches_leave_the_cgroup_through_systemd_run() {
         fake(&dir, "foot", "exit 0");
         with_terminal.insert("TERMINAL".into(), "foot".into());
         assert_eq!(launch::resolve_terminal(&with_terminal, "/h").unwrap().0, ["foot"]);
+        // $TERMINAL with arguments (a Flatpak, or flags) as lab-sensible-terminal runs it.
+        fake(&dir, "kitty", "exit 0");
+        fake(&dir, "flatpak", "exit 0");
+        with_terminal.insert("TERMINAL".into(), "kitty --class Chosen".into());
+        assert_eq!(launch::resolve_terminal(&with_terminal, "/h").unwrap().0, ["kitty", "--class", "Chosen", "--directory", "/h"]);
+        with_terminal.insert("TERMINAL".into(), "flatpak run --command=wezterm org.wezfurlong.wezterm".into());
+        let (argv, exe) = launch::resolve_terminal(&with_terminal, "/h").unwrap();
+        assert_eq!(argv, ["flatpak", "run", "--command=wezterm", "org.wezfurlong.wezterm"]);
+        assert_eq!(exe, dir.join("bin/flatpak"));
+        // Without $TERMINAL, xdg-terminal-exec (it reads xdg-terminals.list) comes before the fixed list.
+        let xdg = fake(&dir, "xdg-terminal-exec", "exit 0");
+        assert_eq!(launch::resolve_terminal(&environment, "/home/u").unwrap(), (vec!["xdg-terminal-exec".to_owned()], xdg.clone()));
+        std::fs::remove_file(&xdg).unwrap();
         let mut empty = environment.clone();
         empty.insert("PATH".into(), dir.join("nothing").display().to_string());
         assert!(launch::resolve_terminal(&empty, "/h").is_none());

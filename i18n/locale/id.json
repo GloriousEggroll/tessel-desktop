@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Fon tidak dapat diubah: {error}",
   "The fonts could not be reset: {error}": "Fon tidak dapat diatur ulang: {error}",
   "The shared font setting could not be changed.": "Pengaturan fon bersama tidak dapat diubah.",
-  "The window manager did not reload its settings: {error}": "Pengelola jendela tidak memuat ulang pengaturannya: {error}"
+  "The window manager did not reload its settings: {error}": "Pengelola jendela tidak memuat ulang pengaturannya: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Nyalakan Num Lock saat masuk",
+  "Takes effect the next time you sign in or connect a keyboard.": "Berlaku saat Anda masuk lagi atau menyambungkan papan ketik.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Tersimpan. Perubahan Num Lock berlaku saat Anda masuk lagi.",
+  "Document viewer": "Penampil dokumen",
+  "Archive manager": "Manajer arsip",
+  "Choose the application that opens PDF files and other documents.": "Pilih aplikasi yang membuka berkas PDF dan dokumen lainnya.",
+  "Choose the application that opens archives.": "Pilih aplikasi yang membuka arsip.",
+  "Turn Num Lock on automatically when you sign in.": "Nyalakan Num Lock secara otomatis saat Anda masuk."
 }

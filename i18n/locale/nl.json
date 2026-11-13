@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Het lettertype kan niet worden gewijzigd: {error}",
   "The fonts could not be reset: {error}": "De lettertypen kunnen niet worden hersteld: {error}",
   "The shared font setting could not be changed.": "De gedeelde lettertype-instelling kan niet worden gewijzigd.",
-  "The window manager did not reload its settings: {error}": "Het vensterbeheer heeft zijn instellingen niet opnieuw geladen: {error}"
+  "The window manager did not reload its settings: {error}": "Het vensterbeheer heeft zijn instellingen niet opnieuw geladen: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Num Lock inschakelen bij aanmelden",
+  "Takes effect the next time you sign in or connect a keyboard.": "Wordt van kracht wanneer u zich opnieuw aanmeldt of een toetsenbord aansluit.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Opgeslagen. Wijzigingen in Num Lock worden toegepast wanneer u zich opnieuw aanmeldt.",
+  "Document viewer": "Documentviewer",
+  "Archive manager": "Archiefbeheer",
+  "Choose the application that opens PDF files and other documents.": "Kies de toepassing die pdf-bestanden en andere documenten opent.",
+  "Choose the application that opens archives.": "Kies de toepassing die archieven opent.",
+  "Turn Num Lock on automatically when you sign in.": "Num Lock automatisch inschakelen bij het aanmelden."
 }

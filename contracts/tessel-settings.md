@@ -94,6 +94,12 @@ Every page that Python built from another component's module is built from that 
 - rc.xml (labwc `-c/-C` of `LABWC_PID`, else `$XDG_CONFIG_HOME/labwc/rc.xml`): workspaces/input/keyboard/
   shortcuts/accessibility/night light blocks via `labwc_settings` / `workspace_config` / `input_config`
   (backups `$XDG_STATE_HOME/tessel/backups/{input,…}`, reload `labwc --reconfigure`, restore on failure).
+- Keyboard "Turn on Num Lock at sign-in" (Rust-only): `<numlock>on|off</numlock>` inside rc.xml `<keyboard>`
+  (spliced like repeatRate; other content kept), then `labwc --reconfigure`. Shown on unless the element holds a word
+  labwc reads as off (`no/false/off/0`, any case); a missing element shows on because `tessel-configure-session`
+  adds `<numlock>on</numlock>` to a `<keyboard>` without one (never changing an existing element or a `numlock=`
+  attribute). labwc applies it only to keyboards it recognises after the reload (next sign-in, a newly plugged
+  keyboard), not to attached ones; a Num Lock key press works as usual.
 - Desktop Behavior "Snap layouts" (Rust-only, `gs_desktop::snap_layouts`): `$XDG_CONFIG_HOME/tessel/snap-layouts.json`
   (0600, atomic; `{"version": 1, "outputs": {"<connector>": {"columns": [..], "rows": [..]}}}`, integer percentages
   summing to 100, 1–6 columns, 1–4 rows, each area ≥ 10 %, unknown keys kept, invalid entries read as the default) is
@@ -123,6 +129,15 @@ Every page that Python built from another component's module is built from that 
   `reset` of the three keys, `gtk-font-name` removed from both ini files, title fonts back to
   `tessel-configure-session`'s Sans 10 SemiBold. Samples in the interface and monospace fonts. Search targets
   `font_interface`, `font_document`, `font_monospace`, `font_titlebar`.
+- Default Apps (`defaultapps`, also `org.tessel.DefaultApps.desktop`): Web browser, Mail, File manager, Terminal,
+  Text editor, Document viewer, Image viewer, Video player, Music player, Archive manager (targets `default-<key>`:
+  browser mail files terminal editor documents images video music archives). The first MIME type of a category gives
+  the choices and the current app; the others are set only when the chosen app lists them in `MimeType=`. GIO writes
+  `~/.config/mimeapps.list`, which beats the packaged `/usr/share/applications/labwc-mimeapps.list`; entries that a
+  `~/.config/<desktop>-mimeapps.list` already has are pointed at the choice too. Browser: also
+  `xdg-settings set default-web-browser` (apps that open `x-scheme-handler/http` only). Terminal: `TERMINAL` in
+  labwc's environment (`flatpak run … <app id>` for a Flatpak), first line of `~/.config/xdg-terminals.list`, then
+  `labwc --reconfigure`; the note asks to sign out and in only when that reload fails.
 - `labwc/environment` keys (`XCURSOR_SIZE`, `TERMINAL`, XKB_*), `night-light` config, `mimeapps.list`
   (default apps), `~/.config/tessel-dock/config.json` (when tessel-dock is offline), `~/.config/tessel/clock.json`,
   `layout_presets` previous-layout state, tiling config, tessel-lock config, login appearance (via pkexec helper).

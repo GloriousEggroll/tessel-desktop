@@ -153,6 +153,7 @@ pub struct KeyboardPage {
     pub delay: gtk::Scale,
     pub rate: gtk::Scale,
     pub test: gtk::Entry,
+    pub numlock: gtk::Switch,
     pub status: gtk::Label,
     pub osk: RefCell<Option<OskEmbed>>,
     pub search_targets: RefCell<Vec<(String, gtk::Widget)>>,
@@ -195,6 +196,10 @@ impl KeyboardPage {
         Page::row(&repeat, &tr!("Repeat rate"), Some(rate.upcast_ref()), Some(&tr!("How quickly a held key repeats.")));
         let test = gtk::Entry::builder().placeholder_text(tr!("Type here to test")).build();
         repeat.append(&test);
+        let numlock_group = page.group(Some(&tr!("Num Lock")), None, None);
+        let numlock = gtk::Switch::builder().active(config.load_numlock().unwrap_or(true)).build();
+        Page::row(&numlock_group, &tr!("Turn on Num Lock at sign-in"), Some(numlock.upcast_ref()),
+                  Some(&tr!("Takes effect the next time you sign in or connect a keyboard.")));
         let status = label("", Some("detail"));
         page.content.append(&status);
         page.content.append(&gtk::Separator::builder().margin_top(8).build());
@@ -202,7 +207,7 @@ impl KeyboardPage {
         let this = Rc::new(KeyboardPage {
             page, config, catalog: RefCell::new(catalog.unwrap_or_default()), state: RefCell::new(state), loading: Cell::new(true),
             save_source: RefCell::new(None), layout_list, add_button, switch_options: RefCell::new(none.clone()), switch,
-            compose_options: RefCell::new(none), compose, delay, rate, test, status, osk: RefCell::new(None), search_targets: Default::default(),
+            compose_options: RefCell::new(none), compose, delay, rate, test, numlock, status, osk: RefCell::new(None), search_targets: Default::default(),
         });
         match osk_factory.unwrap_or_else(|| Box::new(default_osk))() {
             Ok(osk) => {
@@ -239,7 +244,8 @@ impl KeyboardPage {
             let mut targets = this.search_targets.borrow_mut();
             targets.extend([("keyboard-layouts".to_owned(), this.layout_list.clone().upcast::<gtk::Widget>()),
                             ("keyboard-switch".into(), this.switch.clone().upcast()), ("keyboard-compose".into(), this.compose.clone().upcast()),
-                            ("keyboard-repeat-delay".into(), this.delay.clone().upcast()), ("keyboard-repeat-rate".into(), this.rate.clone().upcast())]);
+                            ("keyboard-repeat-delay".into(), this.delay.clone().upcast()), ("keyboard-repeat-rate".into(), this.rate.clone().upcast()),
+                            ("keyboard-numlock".into(), this.numlock.clone().upcast())]);
             if let Some(osk) = this.osk.borrow().as_ref() {
                 for (key, widget) in &osk.search_targets {
                     // Search metadata names on-screen keyboard controls without the prefix.
@@ -258,6 +264,8 @@ impl KeyboardPage {
         this.delay.connect_value_changed(move |_| if let Some(t) = weak.upgrade() { t.repeat_changed() });
         let weak = Rc::downgrade(&this);
         this.rate.connect_value_changed(move |_| if let Some(t) = weak.upgrade() { t.repeat_changed() });
+        let weak = Rc::downgrade(&this);
+        this.numlock.connect_active_notify(move |w| if let Some(t) = weak.upgrade() { t.numlock_changed(w.is_active()) });
         this.render_layouts();
         this.fill_options();
         this.loading.set(false);
@@ -392,6 +400,27 @@ impl KeyboardPage {
             t.save(false);
         });
         *self.save_source.borrow_mut() = Some(id);
+    }
+
+    fn numlock_changed(self: &Rc<Self>, on: bool) {
+        if self.loading.get() {
+            return;
+        }
+        let closed = self.page.closed_flag();
+        let status = self.status.clone();
+        let done: crate::labwc_settings::Done = Box::new(move |okay, _message| {
+            if closed.get() {
+                return;
+            }
+            if okay {
+                status_text(&status, &tr!("Saved. Num Lock changes apply the next time you sign in."), None);
+            } else {
+                status_text(&status, &tr!("Saved, but the desktop could not reload its configuration."), Some("warning"));
+            }
+        });
+        if let Err(error) = self.config.save_numlock(on, Some(done)) {
+            status_text(&self.status, &tr!("Keyboard settings could not be saved: {value1}", value1 = error.to_string()), Some("error"));
+        }
     }
 
     pub fn save(self: &Rc<Self>, layout: bool) {

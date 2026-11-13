@@ -2169,5 +2169,14 @@
   "The font could not be changed: {error}": "글꼴을 바꿀 수 없습니다: {error}",
   "The fonts could not be reset: {error}": "글꼴을 초기화할 수 없습니다: {error}",
   "The shared font setting could not be changed.": "공유 글꼴 설정을 바꿀 수 없습니다.",
-  "The window manager did not reload its settings: {error}": "창 관리자가 설정을 다시 불러오지 않았습니다: {error}"
+  "The window manager did not reload its settings: {error}": "창 관리자가 설정을 다시 불러오지 않았습니다: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "로그인할 때 Num Lock 켜기",
+  "Takes effect the next time you sign in or connect a keyboard.": "다음에 로그인하거나 키보드를 연결하면 적용됩니다.",
+  "Saved. Num Lock changes apply the next time you sign in.": "저장했습니다. Num Lock 변경 사항은 다음에 로그인하면 적용됩니다.",
+  "Document viewer": "문서 뷰어",
+  "Archive manager": "압축 파일 관리자",
+  "Choose the application that opens PDF files and other documents.": "PDF 파일과 기타 문서를 여는 앱을 선택합니다.",
+  "Choose the application that opens archives.": "압축 파일을 여는 앱을 선택합니다.",
+  "Turn Num Lock on automatically when you sign in.": "로그인할 때 Num Lock을 자동으로 켭니다."
 }

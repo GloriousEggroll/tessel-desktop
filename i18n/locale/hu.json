@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "A betűtípust nem sikerült módosítani: {error}",
   "The fonts could not be reset: {error}": "A betűtípusokat nem sikerült visszaállítani: {error}",
   "The shared font setting could not be changed.": "A közös betűtípus-beállítást nem sikerült módosítani.",
-  "The window manager did not reload its settings: {error}": "Az ablakkezelő nem töltötte be újra a beállításait: {error}"
+  "The window manager did not reload its settings: {error}": "Az ablakkezelő nem töltötte be újra a beállításait: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Num Lock bekapcsolása bejelentkezéskor",
+  "Takes effect the next time you sign in or connect a keyboard.": "A következő bejelentkezéskor vagy billentyűzet csatlakoztatásakor lép érvénybe.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Mentve. A Num Lock módosításai a következő bejelentkezéskor lépnek érvénybe.",
+  "Document viewer": "Dokumentumnézegető",
+  "Archive manager": "Archívumkezelő",
+  "Choose the application that opens PDF files and other documents.": "Válassza ki az alkalmazást, amely a PDF-fájlokat és más dokumentumokat megnyitja.",
+  "Choose the application that opens archives.": "Válassza ki az alkalmazást, amely az archívumokat megnyitja.",
+  "Turn Num Lock on automatically when you sign in.": "A Num Lock automatikus bekapcsolása bejelentkezéskor."
 }

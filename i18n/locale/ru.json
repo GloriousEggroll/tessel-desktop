@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Не удалось изменить шрифт: {error}",
   "The fonts could not be reset: {error}": "Не удалось сбросить шрифты: {error}",
   "The shared font setting could not be changed.": "Не удалось изменить общий параметр шрифта.",
-  "The window manager did not reload its settings: {error}": "Оконный менеджер не перечитал свои настройки: {error}"
+  "The window manager did not reload its settings: {error}": "Оконный менеджер не перечитал свои настройки: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Включать Num Lock при входе",
+  "Takes effect the next time you sign in or connect a keyboard.": "Вступит в силу при следующем входе или подключении клавиатуры.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Сохранено. Изменения Num Lock применятся при следующем входе.",
+  "Document viewer": "Просмотр документов",
+  "Archive manager": "Менеджер архивов",
+  "Choose the application that opens PDF files and other documents.": "Выберите приложение, которое открывает файлы PDF и другие документы.",
+  "Choose the application that opens archives.": "Выберите приложение, которое открывает архивы.",
+  "Turn Num Lock on automatically when you sign in.": "Автоматически включать Num Lock при входе в систему."
 }

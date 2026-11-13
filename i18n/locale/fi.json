@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Fonttia ei voitu vaihtaa: {error}",
   "The fonts could not be reset: {error}": "Fontteja ei voitu palauttaa oletuksiin: {error}",
   "The shared font setting could not be changed.": "Jaettua fonttiasetusta ei voitu muuttaa.",
-  "The window manager did not reload its settings: {error}": "Ikkunaohjelma ei ladannut asetuksiaan uudelleen: {error}"
+  "The window manager did not reload its settings: {error}": "Ikkunaohjelma ei ladannut asetuksiaan uudelleen: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Ota Num Lock käyttöön kirjauduttaessa",
+  "Takes effect the next time you sign in or connect a keyboard.": "Tulee voimaan, kun seuraavan kerran kirjaudut sisään tai liität näppäimistön.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Tallennettu. Num Lockin muutokset tulevat voimaan seuraavalla kirjautumiskerralla.",
+  "Document viewer": "Asiakirjakatselin",
+  "Archive manager": "Arkistonhallinta",
+  "Choose the application that opens PDF files and other documents.": "Valitse sovellus, joka avaa PDF-tiedostot ja muut asiakirjat.",
+  "Choose the application that opens archives.": "Valitse sovellus, joka avaa arkistot.",
+  "Turn Num Lock on automatically when you sign in.": "Ota Num Lock käyttöön automaattisesti sisäänkirjautuessa."
 }

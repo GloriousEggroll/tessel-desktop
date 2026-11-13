@@ -23,6 +23,8 @@ const DOCTYPE: &str = "XML document types are not supported.";
 
 static ENV_NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z_][A-Za-z0-9_]*$").unwrap());
 static SETTING_NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z]+$").unwrap());
+static COMMENT: LazyLock<regex::bytes::Regex> = LazyLock::new(|| regex::bytes::Regex::new(r"(?s-u)<!--.*?-->").unwrap());
+static EMPTY_NUMLOCK: LazyLock<regex::bytes::Regex> = LazyLock::new(|| regex::bytes::Regex::new(r"(?i-u)<numlock\s*/>").unwrap());
 static KEY_ATTRIBUTE: LazyLock<regex::bytes::Regex> =
     LazyLock::new(|| regex::bytes::Regex::new(r#"(?-u)\bkey\s*=\s*("[^"]*"|'[^']*')"#).unwrap());
 
@@ -504,6 +506,38 @@ pub fn set_keyboard_values(data: &[u8], values: &[(String, Option<String>)]) -> 
     Ok(data)
 }
 
+/// labwc's `parse_bool` words; None for anything else.
+pub fn labwc_bool(text: &str) -> Option<bool> {
+    match text.to_ascii_lowercase().as_str() {
+        "yes" | "true" | "on" | "1" => Some(true),
+        "no" | "false" | "off" | "0" => Some(false),
+        _ => None,
+    }
+}
+
+/// Num Lock at sign-in: on unless `<numlock>` says off. A missing element is
+/// on because `tessel-configure-session` adds `<numlock>on</numlock>` then.
+pub fn numlock_enabled(section: &KeyboardSection) -> bool {
+    section.values.get("numlock").is_none_or(|(text, _)| labwc_bool(text) != Some(false))
+}
+
+/// Write `<numlock>on|off</numlock>` into `<keyboard>`.
+pub fn set_numlock(data: &[u8], on: bool) -> Result<Vec<u8>> {
+    let word = if on { "on" } else { "off" };
+    let section = read_keyboard(data)?;
+    if let Some((start, end)) = section.span.filter(|_| !section.values.contains_key("numlock")) {
+        // An empty `<numlock/>` has no value labwc reads; replace it rather than add a second element.
+        let masked = COMMENT.replace_all(&data[start..end], |c: &regex::bytes::Captures| vec![b' '; c[0].len()]).into_owned();
+        if let Some(found) = EMPTY_NUMLOCK.find(&masked) {
+            let element = format!("<numlock>{word}</numlock>");
+            let data = [&data[..start + found.start()], element.as_bytes(), &data[start + found.end()..]].concat();
+            read_keyboard(&data)?;
+            return Ok(data);
+        }
+    }
+    set_keyboard_values(data, &[("numlock".to_owned(), Some(word.to_owned()))])
+}
+
 /// Change the key of the user keybind whose start tag is at byte offset `start`.
 pub fn rebind(data: &[u8], start: usize, old_key: &str, new_key: &str) -> Result<Vec<u8>> {
     if new_key.is_empty() || new_key.contains(['<', '>', '&', '"', '\'', '\n']) || new_key.chars().count() > 128 {
@@ -604,6 +638,41 @@ pub(crate) mod tests {
         let selfclosed = set_keyboard_values(b"<labwc_config><keyboard/></labwc_config>", &env_values(&[("repeatRate", Some("9"))])).unwrap();
         assert!(String::from_utf8_lossy(&selfclosed).contains("<keyboard>"));
         assert!(set_keyboard_values(RC, &env_values(&[("bad-name", Some("1"))])).unwrap_err().is_value());
+    }
+
+    #[test]
+    fn numlock_is_spliced_into_the_keyboard_section() {
+        assert!(numlock_enabled(&read_keyboard(RC).unwrap()), "missing reads as on");
+        let off = set_numlock(RC, false).unwrap();
+        assert_eq!(off, replace(RC, b"  <keyboard>\n", b"  <keyboard>\n    <numlock>off</numlock>\n"), "inserted, the rest kept");
+        assert!(!numlock_enabled(&read_keyboard(&off).unwrap()));
+        let on = set_numlock(&off, true).unwrap();
+        assert_eq!(on, replace(&off, b"<numlock>off</numlock>", b"<numlock>on</numlock>"), "replaced in place");
+        assert_eq!(set_numlock(&on, true).unwrap(), on, "idempotent");
+        assert!(numlock_enabled(&read_keyboard(&on).unwrap()));
+        let spaced = b"<labwc_config><keyboard><!-- mine --><NumLock> No </NumLock><repeatRate>9</repeatRate></keyboard></labwc_config>";
+        assert!(!numlock_enabled(&read_keyboard(spaced).unwrap()));
+        assert_eq!(set_numlock(spaced, true).unwrap(),
+                   b"<labwc_config><keyboard><!-- mine --><NumLock>on</NumLock><repeatRate>9</repeatRate></keyboard></labwc_config>");
+        let selfclosed = set_numlock(b"<labwc_config><keyboard/></labwc_config>", false).unwrap();
+        assert_eq!(selfclosed, b"<labwc_config><keyboard>\n    <numlock>off</numlock>\n  </keyboard></labwc_config>");
+        let missing = set_numlock(b"<labwc_config>\n</labwc_config>\n", false).unwrap();
+        assert_eq!(missing, b"<labwc_config>\n  <keyboard>\n    <numlock>off</numlock>\n  </keyboard>\n</labwc_config>\n");
+        let created = set_numlock(b"", true).unwrap();
+        assert!(numlock_enabled(&read_keyboard(&created).unwrap()));
+        assert!(String::from_utf8_lossy(&created).contains("<numlock>on</numlock>"));
+        // labwc reads no value from `<numlock/>`: it becomes the written element.
+        let empty = b"<labwc_config><keyboard><!-- <numlock/> --><NumLock /><default/></keyboard></labwc_config>";
+        assert_eq!(set_numlock(empty, false).unwrap(),
+                   b"<labwc_config><keyboard><!-- <numlock/> --><numlock>off</numlock><default/></keyboard></labwc_config>");
+        for word in ["off", "OFF", "no", "false", "0"] {
+            let data = format!("<labwc_config><keyboard><numlock>{word}</numlock></keyboard></labwc_config>");
+            assert!(!numlock_enabled(&read_keyboard(data.as_bytes()).unwrap()), "{word}");
+        }
+        for word in ["on", "Yes", "true", "1", "maybe"] {
+            let data = format!("<labwc_config><keyboard><numlock>{word}</numlock></keyboard></labwc_config>");
+            assert!(numlock_enabled(&read_keyboard(data.as_bytes()).unwrap()), "{word}");
+        }
     }
 
     #[test]

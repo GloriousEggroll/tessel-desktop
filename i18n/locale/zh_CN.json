@@ -2169,5 +2169,14 @@
   "The font could not be changed: {error}": "无法更改字体：{error}",
   "The fonts could not be reset: {error}": "无法重置字体：{error}",
   "The shared font setting could not be changed.": "无法更改共享的字体设置。",
-  "The window manager did not reload its settings: {error}": "窗口管理器未重新加载其设置：{error}"
+  "The window manager did not reload its settings: {error}": "窗口管理器未重新加载其设置：{error}",
+  "Num Lock": "数字锁定键",
+  "Turn on Num Lock at sign-in": "登录时打开数字锁定键",
+  "Takes effect the next time you sign in or connect a keyboard.": "将在下次登录或连接键盘时生效。",
+  "Saved. Num Lock changes apply the next time you sign in.": "已保存。数字锁定键的更改将在下次登录时生效。",
+  "Document viewer": "文档查看器",
+  "Archive manager": "归档管理器",
+  "Choose the application that opens PDF files and other documents.": "选择打开 PDF 文件和其他文档的应用。",
+  "Choose the application that opens archives.": "选择打开归档文件的应用。",
+  "Turn Num Lock on automatically when you sign in.": "登录时自动开启 Num Lock。"
 }

@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Não foi possível alterar a fonte: {error}",
   "The fonts could not be reset: {error}": "Não foi possível redefinir as fontes: {error}",
   "The shared font setting could not be changed.": "Não foi possível alterar a configuração compartilhada de fonte.",
-  "The window manager did not reload its settings: {error}": "O gerenciador de janelas não recarregou as configurações: {error}"
+  "The window manager did not reload its settings: {error}": "O gerenciador de janelas não recarregou as configurações: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Ativar o Num Lock ao entrar",
+  "Takes effect the next time you sign in or connect a keyboard.": "Vale a partir da próxima vez que você entrar ou conectar um teclado.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Salvo. As alterações do Num Lock são aplicadas na próxima vez que você entrar.",
+  "Document viewer": "Visualizador de documentos",
+  "Archive manager": "Gerenciador de arquivos compactados",
+  "Choose the application that opens PDF files and other documents.": "Escolha o aplicativo que abre arquivos PDF e outros documentos.",
+  "Choose the application that opens archives.": "Escolha o aplicativo que abre arquivos compactados.",
+  "Turn Num Lock on automatically when you sign in.": "Ativar o Num Lock automaticamente ao entrar."
 }

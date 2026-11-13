@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Yazı tipi değiştirilemedi: {error}",
   "The fonts could not be reset: {error}": "Yazı tipleri sıfırlanamadı: {error}",
   "The shared font setting could not be changed.": "Paylaşılan yazı tipi ayarı değiştirilemedi.",
-  "The window manager did not reload its settings: {error}": "Pencere yöneticisi ayarlarını yeniden yüklemedi: {error}"
+  "The window manager did not reload its settings: {error}": "Pencere yöneticisi ayarlarını yeniden yüklemedi: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Oturum açılırken Num Lock’u aç",
+  "Takes effect the next time you sign in or connect a keyboard.": "Bir sonraki oturum açışınızda veya bir klavye bağladığınızda geçerli olur.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Kaydedildi. Num Lock değişiklikleri bir sonraki oturum açışınızda uygulanır.",
+  "Document viewer": "Belge görüntüleyici",
+  "Archive manager": "Arşiv yöneticisi",
+  "Choose the application that opens PDF files and other documents.": "PDF dosyalarını ve diğer belgeleri açan uygulamayı seçin.",
+  "Choose the application that opens archives.": "Arşivleri açan uygulamayı seçin.",
+  "Turn Num Lock on automatically when you sign in.": "Oturum açtığınızda Num Lock’u otomatik olarak aç."
 }

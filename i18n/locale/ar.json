@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "تعذّر تغيير الخط: {error}",
   "The fonts could not be reset: {error}": "تعذّرت استعادة الخطوط الافتراضية: {error}",
   "The shared font setting could not be changed.": "تعذّر تغيير إعداد الخط المشترك.",
-  "The window manager did not reload its settings: {error}": "لم يُعِد مدير النوافذ تحميل إعداداته: {error}"
+  "The window manager did not reload its settings: {error}": "لم يُعِد مدير النوافذ تحميل إعداداته: {error}",
+  "Num Lock": "مفتاح Num Lock",
+  "Turn on Num Lock at sign-in": "تشغيل Num Lock عند تسجيل الدخول",
+  "Takes effect the next time you sign in or connect a keyboard.": "يسري في المرة التالية التي تسجّل فيها الدخول أو توصل فيها لوحة مفاتيح.",
+  "Saved. Num Lock changes apply the next time you sign in.": "حُفظ. تُطبَّق تغييرات Num Lock في المرة التالية التي تسجّل فيها الدخول.",
+  "Document viewer": "عارض المستندات",
+  "Archive manager": "مدير الأرشيف",
+  "Choose the application that opens PDF files and other documents.": "اختر التطبيق الذي يفتح ملفات PDF والمستندات الأخرى.",
+  "Choose the application that opens archives.": "اختر التطبيق الذي يفتح الأرشيفات.",
+  "Turn Num Lock on automatically when you sign in.": "تشغيل Num Lock تلقائيًا عند تسجيل الدخول."
 }

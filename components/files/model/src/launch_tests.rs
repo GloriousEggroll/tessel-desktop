@@ -57,6 +57,35 @@ fn terminal_launch_is_independent_and_preserves_literal_directory() {
 }
 
 #[test]
+fn terminal_chosen_after_files_started_is_used_at_once() {
+    crate::test_env();
+    let home = std::env::temp_dir().join(format!("files-model-terminal-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&home);
+    std::fs::create_dir_all(home.join(".config/labwc/environment.d")).unwrap();
+    // Default Apps rewrote labwc's environment file; this process still has the old value.
+    std::fs::write(home.join(".config/labwc/environment"), "# x\nTERMINAL=foot\nexport  TERMINAL = kitty --class Chosen\n").unwrap();
+    std::fs::write(home.join(".config/labwc/environment.d/ignored.txt"), "TERMINAL=never\n").unwrap();
+    let environment = env(&[("HOME", home.to_str().unwrap()), ("TERMINAL", "old-terminal"), ("PATH", "/test/bin")]);
+    assert_eq!(desktop_terminal(&environment).as_deref(), Some("kitty --class Chosen"));
+    let spawner = FakeSpawner::new();
+    let mut launch = launcher(&spawner, environment.clone(), None);
+    launch.which = Box::new(|name, _path| ["kitty", "old-terminal"].contains(&name).then(|| format!("/test/bin/{name}")));
+    launch.launch_terminal(&gio::File::for_path("/example"), None, None).unwrap();
+    let argv = spawner.last_argv();
+    assert_eq!(argv[argv.len() - 5..], ["/test/bin/kitty", "--class", "Chosen", "--directory", "/example"]);
+    let child: Vec<(String, String)> = spawner.last_environment().unwrap();
+    assert!(child.contains(&("TERMINAL".to_owned(), "kitty --class Chosen".to_owned())));
+    // Later environment.d files win; an empty value or no file keeps the process value.
+    std::fs::write(home.join(".config/labwc/environment.d/20-term.env"), "TERMINAL=wezterm\n").unwrap();
+    assert_eq!(desktop_terminal(&environment).as_deref(), Some("wezterm"));
+    std::fs::write(home.join(".config/labwc/environment.d/30-term.env"), "TERMINAL=\n").unwrap();
+    assert_eq!(desktop_terminal(&environment), None);
+    let config = env(&[("XDG_CONFIG_HOME", home.join("nothing").to_str().unwrap()), ("HOME", home.to_str().unwrap())]);
+    assert_eq!(desktop_terminal(&config), None);
+    std::fs::remove_dir_all(&home).unwrap();
+}
+
+#[test]
 fn xdg_terminal_preference_is_used_before_fallback() {
     let calls: Rc<RefCell<Vec<(String, Option<String>)>>> = Rc::default();
     let record = calls.clone();

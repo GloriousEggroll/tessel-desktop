@@ -163,7 +163,11 @@ impl FileLauncher {
             ));
         };
         let path = path.to_string_lossy().into_owned();
-        let (environment, token) = (self.environment)(context.as_deref(), None, std::slice::from_ref(directory));
+        let (mut environment, token) = (self.environment)(context.as_deref(), None, std::slice::from_ref(directory));
+        // Global Settings > Default Apps saves the terminal there; this process may predate it.
+        if let Some(terminal) = desktop_terminal(&environment) {
+            environment.insert("TERMINAL", terminal);
+        }
         let command = self.terminal_command(&path, &environment).map_err(LaunchError::Value)?;
         let mut helper = self.helper.clone();
         helper.extend(["--terminal".to_owned(), path]);
@@ -200,6 +204,37 @@ pub fn launch_with(app_info: &gio::AppInfo, files: &[gio::File], context: Option
 /// `launch_terminal(directory, context, on_done)` with the real spawner.
 pub fn launch_terminal(directory: &gio::File, context: Option<Rc<dyn LaunchContext>>, on_done: Option<DoneFn>) -> Result<(), LaunchError> {
     FileLauncher::default().launch_terminal(directory, context, on_done)
+}
+
+/// `TERMINAL` as labwc's environment files set it now (`labwc/environment`, then
+/// `labwc/environment.d/*.env` in order; the last assignment wins), or None.
+pub fn desktop_terminal(environment: &OrderedMap<String>) -> Option<String> {
+    let config = match (environment.get("XDG_CONFIG_HOME").filter(|v| v.starts_with('/')), environment.get("HOME").filter(|v| !v.is_empty())) {
+        (Some(config), _) => std::path::PathBuf::from(config),
+        (None, Some(home)) => Path::new(home).join(".config"),
+        (None, None) => tessel_core::paths::config_home(),
+    };
+    let main = config.join("labwc/environment");
+    let mut files = vec![main.clone()];
+    if let Ok(entries) = std::fs::read_dir(config.join("labwc/environment.d")) {
+        let mut extra: Vec<_> = entries.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "env")).collect();
+        extra.sort();
+        files.extend(extra);
+    }
+    let mut value = None;
+    for file in files {
+        let Ok(text) = std::fs::read_to_string(&file) else { continue };
+        for line in text.lines() {
+            let line = line.trim();
+            let line = line.strip_prefix("export ").map(str::trim_start).unwrap_or(line);
+            if let Some((name, rest)) = line.split_once('=') {
+                if !line.starts_with('#') && name.trim() == "TERMINAL" {
+                    value = Some(rest.trim().to_owned());
+                }
+            }
+        }
+    }
+    value.filter(|v| !v.is_empty())
 }
 
 /// `_terminal_command(directory, environment)`.

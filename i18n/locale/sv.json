@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Typsnittet kunde inte ändras: {error}",
   "The fonts could not be reset: {error}": "Typsnitten kunde inte återställas: {error}",
   "The shared font setting could not be changed.": "Den delade typsnittsinställningen kunde inte ändras.",
-  "The window manager did not reload its settings: {error}": "Fönsterhanteraren läste inte in sina inställningar igen: {error}"
+  "The window manager did not reload its settings: {error}": "Fönsterhanteraren läste inte in sina inställningar igen: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Slå på Num Lock vid inloggning",
+  "Takes effect the next time you sign in or connect a keyboard.": "Gäller nästa gång du loggar in eller ansluter ett tangentbord.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Sparat. Ändringar av Num Lock gäller nästa gång du loggar in.",
+  "Document viewer": "Dokumentvisare",
+  "Archive manager": "Arkivhanterare",
+  "Choose the application that opens PDF files and other documents.": "Välj programmet som öppnar PDF-filer och andra dokument.",
+  "Choose the application that opens archives.": "Välj programmet som öppnar arkiv.",
+  "Turn Num Lock on automatically when you sign in.": "Slå på Num Lock automatiskt när du loggar in."
 }

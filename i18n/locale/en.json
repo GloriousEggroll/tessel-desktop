@@ -139,5 +139,14 @@
   "The font could not be changed: {error}": "The font could not be changed: {error}",
   "The fonts could not be reset: {error}": "The fonts could not be reset: {error}",
   "The shared font setting could not be changed.": "The shared font setting could not be changed.",
-  "The window manager did not reload its settings: {error}": "The window manager did not reload its settings: {error}"
+  "The window manager did not reload its settings: {error}": "The window manager did not reload its settings: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Turn on Num Lock at sign-in",
+  "Takes effect the next time you sign in or connect a keyboard.": "Takes effect the next time you sign in or connect a keyboard.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Saved. Num Lock changes apply the next time you sign in.",
+  "Document viewer": "Document viewer",
+  "Archive manager": "Archive manager",
+  "Choose the application that opens PDF files and other documents.": "Choose the application that opens PDF files and other documents.",
+  "Choose the application that opens archives.": "Choose the application that opens archives.",
+  "Turn Num Lock on automatically when you sign in.": "Turn Num Lock on automatically when you sign in."
 }

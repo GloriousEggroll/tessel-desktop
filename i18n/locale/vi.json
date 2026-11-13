@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Không thể đổi phông chữ: {error}",
   "The fonts could not be reset: {error}": "Không thể đặt lại phông chữ: {error}",
   "The shared font setting could not be changed.": "Không thể thay đổi cài đặt phông chữ dùng chung.",
-  "The window manager did not reload its settings: {error}": "Trình quản lý cửa sổ không tải lại cài đặt: {error}"
+  "The window manager did not reload its settings: {error}": "Trình quản lý cửa sổ không tải lại cài đặt: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Bật Num Lock khi đăng nhập",
+  "Takes effect the next time you sign in or connect a keyboard.": "Có hiệu lực vào lần đăng nhập tới hoặc khi bạn kết nối bàn phím.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Đã lưu. Thay đổi Num Lock có hiệu lực vào lần đăng nhập tới.",
+  "Document viewer": "Trình xem tài liệu",
+  "Archive manager": "Trình quản lý lưu trữ",
+  "Choose the application that opens PDF files and other documents.": "Chọn ứng dụng mở tệp PDF và các tài liệu khác.",
+  "Choose the application that opens archives.": "Chọn ứng dụng mở tệp lưu trữ.",
+  "Turn Num Lock on automatically when you sign in.": "Tự động bật Num Lock khi bạn đăng nhập."
 }

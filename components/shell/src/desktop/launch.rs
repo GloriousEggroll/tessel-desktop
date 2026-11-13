@@ -454,11 +454,12 @@ pub fn is_helper_invocation(args: &[String]) -> bool {
 
 // ------------------------------------------------------------- terminal
 
-/// Preferred terminal order (tessel-shell:1085).
+/// Preferred terminal order (tessel-shell:1085); `xdg-terminal-exec` follows the
+/// `xdg-terminals.list` that Global Settings > Default Apps writes.
 pub fn terminal_candidates(environment: &Environment) -> Vec<String> {
     let mut list = vec![environment.get("TERMINAL").cloned().unwrap_or_default()];
     list.extend(
-        ["xdg-terminal", "ptyxis", "kgx", "gnome-terminal", "konsole", "xfce4-terminal", "tilix", "alacritty", "kitty", "wezterm", "xterm", "ghostty"]
+        ["xdg-terminal-exec", "xdg-terminal", "ptyxis", "kgx", "gnome-terminal", "konsole", "xfce4-terminal", "tilix", "alacritty", "kitty", "wezterm", "xterm", "ghostty"]
             .map(String::from),
     );
     list
@@ -479,13 +480,23 @@ pub fn terminal_command(name: &str, cwd: &str) -> Vec<String> {
     }
 }
 
+/// A candidate's argv and executable. `$TERMINAL` may carry arguments, as in
+/// lab-sensible-terminal (`footclient --title x`, `flatpak run org.wezfurlong.wezterm`).
+fn terminal_argv(candidate: &str, cwd: &str, path: Option<&str>) -> Option<(Vec<String>, PathBuf)> {
+    let words = tessel_core::shell::shell_split(candidate);
+    let program = words.first()?;
+    let exe = which_in(program, path)?;
+    let name = Path::new(program).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let mut command = terminal_command(&name, cwd);
+    command[0] = program.clone();
+    command.splice(1..1, words[1..].iter().cloned());
+    Some((command, exe))
+}
+
 /// What `open_default_terminal` resolves: (argv, cwd) or None (no terminal).
 pub fn resolve_terminal(environment: &Environment, cwd: &str) -> Option<(Vec<String>, PathBuf)> {
     let path = environment.get("PATH").map(String::as_str);
-    terminal_candidates(environment).into_iter().filter(|c| !c.is_empty()).find_map(|candidate| {
-        let exe = which_in(&candidate, path)?;
-        Some((terminal_command(&candidate, cwd), exe))
-    })
+    terminal_candidates(environment).into_iter().filter(|c| !c.is_empty()).find_map(|candidate| terminal_argv(&candidate, cwd, path))
 }
 
 /// `open_default_terminal(cwd)`: Err(()) means "No terminal app was found."
@@ -496,9 +507,9 @@ pub fn open_default_terminal(environment: &Environment, cwd: &str, on_done: impl
         if candidate.is_empty() {
             continue;
         }
-        let Some(exe) = which_in(&candidate, path) else { continue };
+        let Some((command, exe)) = terminal_argv(&candidate, cwd, path) else { continue };
         let done = on_done.clone();
-        if launch_process(&terminal_command(&candidate, cwd), Some(environment), Some(cwd), Some(Box::new(move |e| done(e)))).is_ok() {
+        if launch_process(&command, Some(environment), Some(cwd), Some(Box::new(move |e| done(e)))).is_ok() {
             return Ok(());
         }
         let done = on_done.clone();
@@ -569,7 +580,7 @@ mod tests {
         assert_eq!(terminal_command("xterm", "/h"), ["xterm"]);
         assert_eq!(terminal_command("foot", "/h"), ["foot"]);
         let list = terminal_candidates(&env(&[("TERMINAL", "foot")]));
-        assert_eq!(list[..4], ["foot", "xdg-terminal", "ptyxis", "kgx"]);
+        assert_eq!(list[..5], ["foot", "xdg-terminal-exec", "xdg-terminal", "ptyxis", "kgx"]);
         assert_eq!(list.last().unwrap(), "ghostty");
     }
 

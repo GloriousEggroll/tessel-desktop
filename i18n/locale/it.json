@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Impossibile cambiare il carattere: {error}",
   "The fonts could not be reset: {error}": "Impossibile ripristinare i caratteri: {error}",
   "The shared font setting could not be changed.": "Impossibile modificare l’impostazione condivisa del carattere.",
-  "The window manager did not reload its settings: {error}": "Il gestore delle finestre non ha ricaricato le impostazioni: {error}"
+  "The window manager did not reload its settings: {error}": "Il gestore delle finestre non ha ricaricato le impostazioni: {error}",
+  "Num Lock": "Bloc Num",
+  "Turn on Num Lock at sign-in": "Attiva Bloc Num all’accesso",
+  "Takes effect the next time you sign in or connect a keyboard.": "Si applica al prossimo accesso o quando colleghi una tastiera.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Salvato. Le modifiche a Bloc Num si applicano al prossimo accesso.",
+  "Document viewer": "Visualizzatore di documenti",
+  "Archive manager": "Gestore archivi",
+  "Choose the application that opens PDF files and other documents.": "Scegli l’applicazione che apre i file PDF e gli altri documenti.",
+  "Choose the application that opens archives.": "Scegli l’applicazione che apre gli archivi.",
+  "Turn Num Lock on automatically when you sign in.": "Attiva automaticamente Bloc Num all’accesso."
 }

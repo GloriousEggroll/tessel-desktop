@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "Fontul nu a putut fi schimbat: {error}",
   "The fonts could not be reset: {error}": "Fonturile nu au putut fi resetate: {error}",
   "The shared font setting could not be changed.": "Setarea comună a fontului nu a putut fi schimbată.",
-  "The window manager did not reload its settings: {error}": "Managerul de ferestre nu și-a reîncărcat setările: {error}"
+  "The window manager did not reload its settings: {error}": "Managerul de ferestre nu și-a reîncărcat setările: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "Activează Num Lock la autentificare",
+  "Takes effect the next time you sign in or connect a keyboard.": "Se aplică la următoarea autentificare sau când conectați o tastatură.",
+  "Saved. Num Lock changes apply the next time you sign in.": "Salvat. Modificările Num Lock se aplică la următoarea autentificare.",
+  "Document viewer": "Vizualizator de documente",
+  "Archive manager": "Manager de arhive",
+  "Choose the application that opens PDF files and other documents.": "Alegeți aplicația care deschide fișierele PDF și alte documente.",
+  "Choose the application that opens archives.": "Alegeți aplicația care deschide arhivele.",
+  "Turn Num Lock on automatically when you sign in.": "Activează automat Num Lock la autentificare."
 }

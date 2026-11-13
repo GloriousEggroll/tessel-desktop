@@ -1989,5 +1989,14 @@
   "The font could not be changed: {error}": "לא ניתן לשנות את הגופן: {error}",
   "The fonts could not be reset: {error}": "לא ניתן לאפס את הגופנים: {error}",
   "The shared font setting could not be changed.": "לא ניתן לשנות את הגדרת הגופן המשותפת.",
-  "The window manager did not reload its settings: {error}": "מנהל החלונות לא טען מחדש את ההגדרות שלו: {error}"
+  "The window manager did not reload its settings: {error}": "מנהל החלונות לא טען מחדש את ההגדרות שלו: {error}",
+  "Num Lock": "Num Lock",
+  "Turn on Num Lock at sign-in": "הפעלת Num Lock בכניסה",
+  "Takes effect the next time you sign in or connect a keyboard.": "ייכנס לתוקף בכניסה הבאה או כשתחברו מקלדת.",
+  "Saved. Num Lock changes apply the next time you sign in.": "נשמר. שינויי Num Lock יחולו בכניסה הבאה.",
+  "Document viewer": "מציג מסמכים",
+  "Archive manager": "מנהל ארכיונים",
+  "Choose the application that opens PDF files and other documents.": "בחרו את היישום שפותח קובצי PDF ומסמכים אחרים.",
+  "Choose the application that opens archives.": "בחרו את היישום שפותח ארכיונים.",
+  "Turn Num Lock on automatically when you sign in.": "הפעלת Num Lock אוטומטית בעת הכניסה."
 }
