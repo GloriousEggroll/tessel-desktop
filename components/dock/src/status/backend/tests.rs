@@ -294,6 +294,20 @@ fn weather_stream_preserves_units_and_updates_without_respawning() {
 }
 
 #[test]
+fn weather_icon_name_passes_through_and_bad_names_are_dropped() {
+    let f = Fixture::new();
+    f.backend.refresh(Some("weather"));
+    let job = f.job("weather");
+    job.line(json!({"text": "󰖐", "class": ["weather", "unconfigured"], "icon": "weather-few-clouds-symbolic"}));
+    assert_eq!(f.status("weather")["icon"], "weather-few-clouds-symbolic");
+    job.line(json!({"text": "⛅ 72°F", "icon": "../../etc/passwd"}));
+    assert_eq!(f.status("weather")["text"], "⛅ 72°F");
+    assert!(f.status("weather").get("icon").is_none());
+    job.line(json!({"text": "⛅ 72°F", "icon": 3}));
+    assert!(f.status("weather").get("icon").is_none());
+}
+
+#[test]
 fn actions_only_allow_fixed_scripts_and_refresh_after_completion() {
     let f = Fixture::new();
     assert!(!f.backend.action("$(bad-command)"));

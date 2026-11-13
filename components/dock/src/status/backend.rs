@@ -124,7 +124,17 @@ pub fn indicator(value: &Value, hide_empty: bool) -> Result<Status, String> {
     result.insert("classes".into(), Value::Array(classes.clone()));
     result.insert("class".into(), Value::Array(classes));
     result.insert("visible".into(), visible);
+    // Tessel: a themed icon name the status offers (Weather) passes through.
+    if let Some(Value::String(icon)) = object.get("icon") {
+        if valid_icon_name(icon) {
+            result.insert("icon".into(), Value::String(icon.clone()));
+        }
+    }
     Ok(result)
+}
+
+fn valid_icon_name(name: &str) -> bool {
+    !name.is_empty() && name.len() <= 128 && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.'))
 }
 
 /// `wpctl get-volume` line → indicator.

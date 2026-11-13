@@ -174,7 +174,7 @@ Indicator names (DEFAULT_APPS, dock_config.py:38-45): `idle_inhibitor screen_rec
 **Status sources** (one shared monitor for all clones):
 | Name | Source | Ref |
 |---|---|---|
-| power, battery, brightness, network, capslock, notifications, weather, keyboard, tiling | long-running `/usr/bin/python3 -u ~/.config/waybar/scripts/<STREAMS path>` (weather adds `--watch`), one JSON line per update `{"text":str,"tooltip"?:str,"class"?:str|[str]}`; Pango markup stripped; capslock hidden when text empty; exit/invalid → "unavailable" + restart after 3 s; line >65536 rejected; startup deadline 10 s until first line | status_backend.py:30-36,90-187,259-330 |
+| power, battery, brightness, network, capslock, notifications, weather, keyboard, tiling | long-running `/usr/bin/python3 -u ~/.config/waybar/scripts/<STREAMS path>` (weather adds `--watch`), one JSON line per update `{"text":str,"tooltip"?:str,"class"?:str|[str],"icon"?:str}` (`icon`, Tessel: a themed icon name, `[A-Za-z0-9_.-]{1,128}`, kept in the status; Weather shows it beside `text` minus its leading symbol); Pango markup stripped; capslock hidden when text empty; exit/invalid → "unavailable" + restart after 3 s; line >65536 rejected; startup deadline 10 s until first line | status_backend.py:30-36,90-187,259-330 |
 | audio | `/usr/bin/wpctl get-volume @DEFAULT_AUDIO_SINK@` every 2 s (`Volume: 0.42 [MUTED]`); scroll → `wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ N%+/-` (5%/step, coalesced ±20, serialized) | :61-74,277,404-414 |
 | bluetooth | BlueZ GetManagedObjects / 5 s | :342-370 |
 | idle_inhibitor | KeepAwake D-Bus; click → `python3 ~/.config/waybar/scripts/tessel-keep-awake/keep_awake.py --toggle` | :279,394 |

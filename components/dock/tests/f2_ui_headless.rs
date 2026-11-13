@@ -1767,7 +1767,13 @@ fn status_visuals_and_vpn_badge() -> TestResult {
         ensure!(network.icon.pixel_size() == 24 && network.icon.get_visible() && !network.label.get_visible());
     }
     let weather = panel.status_button("weather").unwrap();
-    ensure!(weather.label.get_visible() && !weather.icon.get_visible() && weather.label.text() == "☀ 72°");
+    // Weather: a themed icon (a weather fallback here: the status has no
+    // `icon`) and the temperature without its leading symbol.
+    ensure!(weather.label.get_visible() && weather.label.text() == "72°", "weather label {:?}", weather.label.text());
+    if theme.has_icon("weather-few-clouds-symbolic") {
+        ensure!(weather.icon.get_visible() && weather.icon.icon_name().as_deref() == Some("weather-few-clouds-symbolic"));
+        ensure!(weather.icon.pixel_size() == 24, "weather icon {}", weather.icon.pixel_size());
+    }
     app.status_set("network", "classes", json!(["wifi"]));
     panel.refresh();
     ensure!(!network.vpn_badge.as_ref().unwrap().get_visible());
@@ -2219,6 +2225,172 @@ fn proof_screenshots() -> TestResult {
     Ok(())
 }
 
+// ------------------------------------------------------------------ no icon font
+
+/// Icon-font codepoints (Font Awesome, Nerd Fonts) live in the private use areas.
+fn private_use(text: &str) -> bool {
+    text.chars().any(|c| matches!(c as u32, 0xE000..=0xF8FF | 0xF0000..=0xFFFFD | 0x100000..=0x10FFFD))
+}
+
+/// What tessel-weather-status prints, through the dock's status parser.
+fn weather_status(app: &FakeApp, text: &str, classes: &[&str], icon: &str) {
+    let value = indicator(&json!({"text": text, "tooltip": "Weather", "class": classes, "icon": icon}), false).unwrap();
+    app.status.borrow_mut().insert("weather".into(), Value::Object(value));
+}
+
+/// What tessel-keep-awake publishes (only its Font Awesome eye glyphs).
+fn keep_awake_status(app: &FakeApp, active: bool) {
+    let value = indicator(&json!({"text": if active { "\u{f06e}" } else { "\u{f070}" },
+                                  "class": if active { "active" } else { "inactive" }}), false).unwrap();
+    app.status.borrow_mut().insert("idle_inhibitor".into(), Value::Object(value));
+}
+
+/// Keep Awake and Weather show themed icons, never an icon-font glyph, in
+/// Adwaita and Papirus-Dark, in the dock, the full bar and the compact bar, at
+/// every system tray size; the other applets' defaults resolve too.
+fn themed_weather_and_keep_awake_need_no_icon_font() -> TestResult {
+    let settings = gtk::Settings::default().unwrap();
+    let original = settings.gtk_icon_theme_name();
+    let result = (|| -> TestResult {
+        for theme_name in ["Adwaita", "Papirus-Dark"] {
+            if !std::path::Path::new("/usr/share/icons").join(theme_name).join("index.theme").exists() {
+                ensure!(theme_name != "Adwaita", "Adwaita is not installed");
+                println!("     {theme_name} is not installed: skipped");
+                continue;
+            }
+            settings.set_gtk_icon_theme_name(Some(theme_name));
+            let app = FakeApp::new();
+            for (mode, compact) in [("dock", false), ("bar", false), ("bar", true)] {
+                for size in ["small", "medium", "large"] {
+                    let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+                        c.mode = mode.into(); c.compact_bar = compact; c.tray_icon_size = size.into();
+                        c.edge = if mode == "dock" { "bottom" } else { "top" }.into();
+                        c.group_visibility.insert("weather", true);
+                    });
+                    if compact {
+                        dock.core.add_css_class("tessel-dock-panel");
+                        dock.core.add_css_class("tessel-dock-compact-bar");
+                    }
+                    let panel = dock.panel();
+                    let config = dock.config();
+                    let label = format!("{theme_name} {mode} compact={compact} {size}");
+                    if mode == "bar" {
+                        ensure!(panel.weather().parent() == panel.bar_start().map(|b| b.upcast()), "{label}: weather in the bar start");
+                    } else {
+                        ensure!(panel.weather().parent() == Some(panel.widget().upcast()), "{label}: weather group");
+                    }
+                    for (active, names) in [(true, ["view-reveal-symbolic", "view-visible-symbolic", "view-visible"]),
+                                            (false, ["view-conceal-symbolic", "view-hidden-symbolic", "view-hidden"])] {
+                        keep_awake_status(&app, active);
+                        panel.refresh();
+                        let status = panel.status_button("idle_inhibitor").unwrap();
+                        let name = status.icon.icon_name().map(|n| n.to_string()).unwrap_or_default();
+                        ensure!(status.icon.get_visible() && !status.label.get_visible(), "{label}: Keep Awake active={active} shows its glyph");
+                        ensure!(names.contains(&name.as_str()) || name.starts_with("caffeine-cup-"), "{label}: Keep Awake active={active}: {name}");
+                        ensure!(status.icon.pixel_size() == panel.applet_icon_size(), "{label}: Keep Awake {}", status.icon.pixel_size());
+                    }
+                    for (text, classes, icon, want_icon, want_text) in [
+                        ("󰖐", &["weather", "unconfigured"][..], "weather-few-clouds-symbolic", "weather-few-clouds-symbolic", ""),
+                        ("󰖐 —", &["weather", "unavailable"][..], "weather-severe-alert-symbolic", "weather-severe-alert-symbolic", "—"),
+                        ("⛅ 72°F", &["weather"][..], "weather-few-clouds-symbolic", "weather-few-clouds-symbolic", "72°F"),
+                        ("☾ −3°C", &["weather"][..], "weather-clear-night-symbolic", "weather-clear-night-symbolic", "−3°C"),
+                        ("☁ 64°F", &["weather", "stale"][..], "weather-no-such-icon-symbolic", "weather-few-clouds-symbolic", "64°F"),
+                    ] {
+                        weather_status(&app, text, classes, icon);
+                        panel.refresh();
+                        let weather = panel.status_button("weather").unwrap();
+                        let case = format!("{label}: weather {text:?}");
+                        ensure!(weather.icon.get_visible(), "{case}: no icon");
+                        ensure!(weather.icon.icon_name().as_deref() == Some(want_icon), "{case}: {:?}", weather.icon.icon_name());
+                        ensure!(weather.icon.pixel_size() == tessel_dock::ui::indicators::status_icon_size(&config), "{case}: {}", weather.icon.pixel_size());
+                        ensure!(weather.label.get_visible() == !want_text.is_empty(), "{case}: label visible {}", weather.label.get_visible());
+                        if !want_text.is_empty() {
+                            ensure!(weather.label.text() == want_text, "{case}: label {:?}", weather.label.text());
+                        }
+                        ensure!(!private_use(&weather.label.text()), "{case}: label {:?}", weather.label.text());
+                    }
+                    for name in INDICATORS {
+                        let status = panel.status_button(name).unwrap();
+                        if name == "capslock" {
+                            continue;
+                        }
+                        ensure!(status.icon.get_visible() && !status.label.get_visible(),
+                                "{label}: {name} has no themed icon (glyph {:?})", status.label.text());
+                    }
+                    dock.destroy(&app);
+                }
+            }
+        }
+        Ok(())
+    })();
+    settings.set_gtk_icon_theme_name(original.as_deref());
+    settle(0.1);
+    result
+}
+
+/// grim shots of the tray with Keep Awake and Weather in their real states
+/// (run with the argument `font_free_tray_shots`, optionally under a
+/// FONTCONFIG_FILE that hides the icon fonts).
+fn font_free_tray_shots() -> TestResult {
+    if std::env::args().nth(1).as_deref() != Some("font_free_tray_shots") {
+        return Ok(());
+    }
+    let out = PathBuf::from(std::env::var("TMPDIR").unwrap()).join("proof");
+    std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+    for charset in ["f06e", "f070", "f0590"] {
+        let fonts = Command::new("fc-list").arg(format!(":charset={charset}")).arg("family").output().map_err(|e| e.to_string())?;
+        println!("font faces with U+{charset}: {}", String::from_utf8_lossy(&fonts.stdout).lines().count());
+    }
+    let display = gdk::Display::default().unwrap();
+    let css = format!("{}\n.tessel-dock-proof {{ background: #2b2b30; color: #eeeeee; padding: 4px; }}", tessel_dock::appearance::style::CSS);
+    tessel_gtk::utils::add_css(&css, Some(&display), gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    let settings = gtk::Settings::default().unwrap();
+    let original = settings.gtk_icon_theme_name();
+    let result = (|| -> TestResult {
+        for theme_name in ["Adwaita", "Papirus-Dark"] {
+            settings.set_gtk_icon_theme_name(Some(theme_name));
+            let app = default_apps_setup();
+            for name in ["notifications", "power", "keyboard", "discovery", "tiling", "capslock"] {
+                app.status_set(name, "visible", json!(false));
+            }
+            app.workspaces.replace(Vec::new());
+            for (mode, edge) in [("dock", "bottom"), ("bar", "top"), ("compact", "top")] {
+                let dock = make_dock(&app, 0, "HEADLESS-1", |c| {
+                    c.mode = if mode == "compact" { "bar" } else { mode }.into(); c.compact_bar = mode == "compact";
+                    c.edge = edge.into(); c.group_visibility.insert("weather", true);
+                });
+                if mode == "compact" {
+                    dock.core.add_css_class("tessel-dock-panel");
+                    dock.core.add_css_class("tessel-dock-compact-bar");
+                }
+                dock.core.add_css_class("tessel-dock-proof");
+                let panel = dock.panel();
+                for (state, active, text, classes, icon) in [
+                    ("unconfigured-off", false, "󰖐", &["weather", "unconfigured"][..], "weather-few-clouds-symbolic"),
+                    ("unavailable-off", false, "󰖐 —", &["weather", "unavailable"][..], "weather-severe-alert-symbolic"),
+                    ("sunny-on", true, "☀ 72°F", &["weather"][..], "weather-clear-symbolic"),
+                ] {
+                    keep_awake_status(&app, active);
+                    weather_status(&app, text, classes, icon);
+                    panel.refresh();
+                    pointer_move(640.0, 360.0);
+                    settle(0.4);
+                    let (x, y) = dock.origin();
+                    let region = format!("{},{} {}x{}", x as i32, y as i32, dock.window.width(), dock.window.height());
+                    let file = out.join(format!("{theme_name}-{mode}-{edge}-{state}.png"));
+                    let status = Command::new("grim").args(["-g", &region]).arg(&file).status().map_err(|e| e.to_string())?;
+                    ensure!(status.success(), "grim {region}");
+                    println!("proof {}", file.display());
+                }
+                dock.destroy(&app);
+            }
+        }
+        Ok(())
+    })();
+    settings.set_gtk_icon_theme_name(original.as_deref());
+    result
+}
+
 // ------------------------------------------------------------------ runner
 
 fn main() {
@@ -2268,6 +2440,8 @@ fn main() {
         ("coordinates_scaled_output_and_menu_only_left_click", coordinates_scaled_output_and_menu_only_left_click),
         ("tray_icon_size_applies_to_applets_items_and_more_apps", tray_icon_size_applies_to_applets_items_and_more_apps),
         ("proof_screenshots", proof_screenshots),
+        ("themed_weather_and_keep_awake_need_no_icon_font", themed_weather_and_keep_awake_need_no_icon_font),
+        ("font_free_tray_shots", font_free_tray_shots),
     ];
     let filter = std::env::args().nth(1).unwrap_or_default();
     let (mut passed, mut failed) = (0, Vec::new());

@@ -3,7 +3,10 @@
 //!
 //! Pure API: [`INDICATORS`], [`DEFAULTS`]/[`default_glyph`], [`TITLES`]/[`title_source`],
 //! [`TEXT_INDICATORS`], [`status_icon_names`] (glyph/class → themed symbolic
-//! icon candidates, verbatim from panel_ui.py), [`status_icon_size`]
+//! icon candidates, from panel_ui.py; Keep Awake adds the eye icons),
+//! [`weather_icon_names`]/[`weather_text`] (Weather shows the status's themed
+//! `icon` beside its text without the leading symbol, so no applet needs an
+//! icon font), [`status_icon_size`]
 //! (compact `clamp(round(icon·.4), 12, 20)`, else `clamp(round(icon·.5), 14, 32)`),
 //! [`tray_icon_size`] (16 compact / 22), [`system_tray_icon_size`] (the
 //! `tray_icon_size` setting: Small keeps those two sizes; Medium and Large give
@@ -226,10 +229,48 @@ pub fn status_icon_names(name: &str, text: &str, classes: &BTreeSet<String>) -> 
             }
         }
         "idle_inhibitor" => {
-            let active = text == "\u{f06e}" || has("activated");
-            owned(if active { &["caffeine-cup-full-symbolic"] } else { &["caffeine-cup-empty-symbolic"] })
+            // No common theme has the caffeine cups as symbolic icons; the eye
+            // icons match the Font Awesome glyphs (Adwaita and Papirus have
+            // view-reveal/conceal, Breeze view-visible/hidden).
+            let active = text == "\u{f06e}" || any(&["activated", "active"]);
+            owned(if active {
+                &["caffeine-cup-full-symbolic", "view-reveal-symbolic", "view-visible-symbolic", "view-visible"]
+            } else {
+                &["caffeine-cup-empty-symbolic", "view-conceal-symbolic", "view-hidden-symbolic", "view-hidden"]
+            })
         }
         _ => owned(fixed_icons(name)),
+    }
+}
+
+/// Weather icon candidates: the status's `icon`, its day variant, then
+/// common weather names.
+pub fn weather_icon_names(icon: &str) -> Vec<String> {
+    let day = icon.replace("-night", "");
+    let mut names: Vec<String> = Vec::new();
+    for name in [icon, day.as_str(), "weather-few-clouds-symbolic", "weather-overcast-symbolic", "weather-few-clouds",
+                 "weather-overcast"] {
+        if !name.is_empty() && !names.iter().any(|known| known == name) {
+            names.push(name.to_owned());
+        }
+    }
+    names
+}
+
+/// A symbol a weather status may lead with: icon-font codepoints (private use
+/// areas), arrows, symbols, dingbats and emoji (☀ ⛅ ☁ ❄ ☂ ≋ ☾), and ϟ.
+fn weather_symbol(c: char) -> bool {
+    matches!(c as u32, 0xE000..=0xF8FF | 0xF0000..=0xFFFFD | 0x100000..=0x10FFFD | 0x2190..=0x2BFF
+                       | 0x1F300..=0x1FAFF | 0xFE0E | 0xFE0F | 0x200D | 0x03DF)
+}
+
+/// The weather text without its leading symbol (the themed icon shows it):
+/// `"󰖐"` → `""`, `"󰖐 —"` → `"—"`, `"⛅ 72°F"` → `"72°F"`.
+pub fn weather_text(text: &str) -> &str {
+    let text = text.trim();
+    match text.split_whitespace().next() {
+        Some(first) if first.chars().all(weather_symbol) => text[first.len()..].trim_start(),
+        _ => text,
     }
 }
 
@@ -375,6 +416,8 @@ pub struct StatusButton {
     /// so wide glyphs stay within the button.
     tray_sized: Cell<bool>,
     glyph_floor: Cell<i32>,
+    /// The themed icon the status names (`icon`; Weather).
+    state_icon: RefCell<String>,
 }
 
 impl StatusButton {
@@ -394,6 +437,9 @@ fn glyph_button(text: &str, tooltip: &str, name: &str, size: i32) -> Rc<StatusBu
     visual.set_valign(gtk::Align::Center);
     visual.append(&icon);
     visual.append(&label);
+    if name == "weather" {
+        visual.set_spacing(4);
+    }
     let mut vpn_badge = None;
     if name == "network" {
         let content = gtk::Overlay::new();
@@ -415,7 +461,7 @@ fn glyph_button(text: &str, tooltip: &str, name: &str, size: i32) -> Rc<StatusBu
     }
     let status = Rc::new(StatusButton { button, name: name.into(), label, icon, visual, vpn_badge,
                                         panel_classes: RefCell::default(), tray_sized: Cell::new(false),
-                                        glyph_floor: Cell::new(0) });
+                                        glyph_floor: Cell::new(0), state_icon: RefCell::default() });
     set_status_visual(&status, text, &BTreeSet::new(), size);
     status.button.set_tooltip_text(Some(tooltip));
     accessible_name(&status.button, tooltip);
@@ -423,13 +469,23 @@ fn glyph_button(text: &str, tooltip: &str, name: &str, size: i32) -> Rc<StatusBu
     status
 }
 
-/// `_set_status_visual`: themed icon if the theme has a candidate, else the glyph.
+/// `_set_status_visual`: themed icon if the theme has a candidate (or one of
+/// the suite's fallback names for it), else the glyph. Weather shows its icon
+/// beside its text without the leading symbol.
 pub fn set_status_visual(status: &StatusButton, text: &str, classes: &BTreeSet<String>, size: i32) {
-    let names = status_icon_names(&status.name, text, classes);
+    let weather = status.name == "weather";
+    let names = if weather {
+        weather_icon_names(&status.state_icon.borrow())
+    } else {
+        status_icon_names(&status.name, text, classes)
+    };
     let theme = gtk::IconTheme::for_display(&status.button.display());
-    let icon = names.iter().find(|candidate| theme.has_icon(candidate));
+    let icon = names.iter().map(String::as_str).find(|candidate| theme.has_icon(candidate)).or_else(|| {
+        names.iter().flat_map(|name| tessel_gtk::utils::icon_fallbacks(name)).copied()
+            .find(|candidate| theme.has_icon(candidate))
+    });
     if let Some(icon) = icon {
-        if status.icon.icon_name().as_deref() != Some(icon.as_str()) {
+        if status.icon.icon_name().as_deref() != Some(icon) {
             status.icon.set_icon_name(Some(icon));
         }
         status.icon.set_pixel_size(size);
@@ -441,7 +497,18 @@ pub fn set_status_visual(status: &StatusButton, text: &str, classes: &BTreeSet<S
         status.label.set_attributes(Some(&attributes));
     }
     status.icon.set_visible(icon.is_some());
-    status.label.set_visible(icon.is_none());
+    if weather {
+        let label = match weather_text(text) {
+            "" if icon.is_none() => default_glyph("weather"),
+            label => label,
+        };
+        if status.label.text() != label {
+            status.label.set_text(label);
+        }
+        status.label.set_visible(!label.is_empty());
+    } else {
+        status.label.set_visible(icon.is_none());
+    }
     // The network button's overlay leaves room for the VPN badge; a bigger
     // system tray icon (Medium, Large) carries the badge on its corner.
     if status.vpn_badge.is_some() {
@@ -1197,7 +1264,11 @@ impl DockIndicators {
                 text = text.split_whitespace().next().unwrap_or("").to_owned();
                 badge.set_visible(classes.contains("vpn"));
             }
-            button.label.set_text(&text);
+            if name == "weather" {
+                button.state_icon.replace(state.get("icon").map(py_str_or_empty).unwrap_or_default());
+            } else {
+                button.label.set_text(&text);
+            }
             let size = if INDICATORS.contains(&name.as_str()) { applet_size } else { size };
             set_status_visual(&button, &text, &classes, size);
             let title = translated_title(&name);
@@ -1299,12 +1370,36 @@ mod tests {
         assert_eq!(status_icon_names("power", "", &set(&[])), ["power-profile-balanced-symbolic", "power-profile-balanced-symbolic"]);
         assert_eq!(status_icon_names("notifications", "", &set(&["dnd"]))[0], "notifications-disabled-symbolic");
         assert_eq!(status_icon_names("notifications", "", &set(&[]))[0], "preferences-system-notifications-symbolic");
-        assert_eq!(status_icon_names("idle_inhibitor", "\u{f06e}", &set(&[])), ["caffeine-cup-full-symbolic"]);
-        assert_eq!(status_icon_names("idle_inhibitor", "\u{f070}", &set(&["activated"])), ["caffeine-cup-full-symbolic"]);
-        assert_eq!(status_icon_names("idle_inhibitor", "\u{f070}", &set(&[])), ["caffeine-cup-empty-symbolic"]);
+        let on = ["caffeine-cup-full-symbolic", "view-reveal-symbolic", "view-visible-symbolic", "view-visible"];
+        let off = ["caffeine-cup-empty-symbolic", "view-conceal-symbolic", "view-hidden-symbolic", "view-hidden"];
+        assert_eq!(status_icon_names("idle_inhibitor", "\u{f06e}", &set(&[])), on);
+        assert_eq!(status_icon_names("idle_inhibitor", "\u{f070}", &set(&["activated"])), on);
+        assert_eq!(status_icon_names("idle_inhibitor", "\u{f070}", &set(&["active"])), on);
+        assert_eq!(status_icon_names("idle_inhibitor", "\u{f070}", &set(&["inactive"])), off);
+        assert_eq!(status_icon_names("idle_inhibitor", "\u{f070}", &set(&[])), off);
         assert_eq!(status_icon_names("logout", "", &set(&[])), ["system-shutdown-symbolic"]);
         assert_eq!(status_icon_names("showdesktop", "", &set(&[]))[0], "user-desktop-symbolic");
         assert!(status_icon_names("unknown", "", &set(&[])).is_empty());
+    }
+
+    #[test]
+    fn weather_shows_a_themed_icon_and_text_without_its_symbol() {
+        // tessel-weather-status: unconfigured, unavailable, and each condition.
+        assert_eq!(weather_text("󰖐"), "");
+        assert_eq!(weather_text("󰖐 —"), "—");
+        for symbol in ["☀", "☾", "⛅", "☁", "≋", "❄", "ϟ", "☂", "\u{f0c2}", "🌧\u{fe0f}"] {
+            assert_eq!(weather_text(&format!("{symbol} 72°F")), "72°F", "{symbol}");
+        }
+        assert_eq!(weather_text("72°F"), "72°F");
+        assert_eq!(weather_text("−3°C"), "−3°C");
+        assert_eq!(weather_text("Denver 72°F"), "Denver 72°F");
+        assert_eq!(weather_text("…"), "…");
+        assert_eq!(weather_icon_names("weather-few-clouds-night-symbolic"),
+                   ["weather-few-clouds-night-symbolic", "weather-few-clouds-symbolic", "weather-overcast-symbolic",
+                    "weather-few-clouds", "weather-overcast"]);
+        assert_eq!(weather_icon_names("weather-snow-symbolic")[..2], ["weather-snow-symbolic", "weather-few-clouds-symbolic"]);
+        assert_eq!(weather_icon_names("")[0], "weather-few-clouds-symbolic");
+        assert!(status_icon_names("weather", "☀ 72°F", &set(&["weather"])).is_empty());
     }
 
     #[test]

@@ -5,6 +5,7 @@
 # activation, own XDG dirs, 2 outputs, no input devices (pointer input only via
 # wlrctl's virtual pointer on the PRIVATE compositor). Never touches the live
 # session. Optional $1 = test-name filter (substring).
+# An optional $FONTCONFIG_FILE is passed on (e.g. one that hides the icon fonts).
 set -eu
 export TMPDIR=/run/user/1000/cbt/rust-tessel-dock/${AGENT:-f2}
 mkdir -p "$TMPDIR"
@@ -45,6 +46,7 @@ env -i GDK_DEBUG=no-portals GIO_USE_VFS=local GTK_USE_PORTAL=0 \
   HOME="$HOME" PATH="$PATH" XDG_RUNTIME_DIR="$R/rt" TMPDIR="$R" WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 \
   WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 RUST_BACKTRACE=1 \
   XDG_CONFIG_HOME="$R/xdg-config" XDG_CACHE_HOME="$R/cache" XDG_DATA_HOME="$R/data" \
+  ${FONTCONFIG_FILE:+FONTCONFIG_FILE="$FONTCONFIG_FILE"} \
   dbus-run-session --config-file="$R/d.conf" -- labwc -C "$R/cfg" -s "$R/run.sh" \
   > "$R/labwc.log" 2>&1 || true
 cat "$R/log" 2>/dev/null || true

@@ -193,7 +193,7 @@ window.tessel-dock-settings { background: @theme_bg_color; color: @theme_fg_colo
 .status-network .tessel-dock-status-glyph {
   font-family: "Font Awesome 6 Free", "JetBrainsMono Nerd Font Propo", "JetBrainsMonoNL Nerd Font Propo", "Symbols Nerd Font", sans-serif;
 }
-.status-weather .tessel-dock-status-glyph { font-family: "Noto Sans", "Symbols Nerd Font", sans-serif; font-size: 10pt; font-weight: 600; }
+.status-weather .tessel-dock-status-glyph { font-family: "Noto Sans", sans-serif; font-size: 10pt; font-weight: 600; }
 .status-capslock .tessel-dock-status-glyph { font-family: "Noto Sans", sans-serif; }
 .status-showdesktop.regular .tessel-dock-status-glyph { font-weight: 400; }
 .tessel-dock-status.unavailable, .tessel-dock-status.off, .tessel-dock-status.inactive { opacity: 0.45; }
