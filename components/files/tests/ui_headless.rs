@@ -1342,6 +1342,8 @@ fn more_checks() -> Vec<(&'static str, Check)> {
         ("test_without_tessel_archive_the_internal_archive_items_remain", test_without_tessel_archive_the_internal_archive_items_remain),
         ("test_archive_service_actions_run_tessel_archive_and_the_folder_updates", test_archive_service_actions_run_tessel_archive_and_the_folder_updates),
         ("test_archive_service_submenus_screenshot", test_archive_service_submenus_screenshot),
+        ("test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes",
+         test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes),
     ]
 }
 
@@ -2925,5 +2927,153 @@ fn test_archive_service_submenus_screenshot(f: &mut Fixture) -> Outcome {
         settle(0.1);
     }
     remove_fake_tessel_archive();
+    Ok(())
+}
+
+
+// ------------------------------------------------------------- Places pane
+
+fn sidebar_children(w: &FilesWindow) -> Vec<gtk::Widget> {
+    let mut children = Vec::new();
+    let mut child = w.sidebar.first_child();
+    while let Some(widget) = child {
+        child = widget.next_sibling();
+        children.push(widget);
+    }
+    children
+}
+
+/// The pane's width and each row's (y, height) as laid out.
+fn sidebar_layout(w: &FilesWindow) -> (i32, Vec<(i32, i32)>) {
+    let rows = sidebar_children(w).iter().filter_map(|c| c.compute_bounds(&w.sidebar))
+        .map(|b| (b.y().round() as i32, b.height().round() as i32)).collect();
+    (w.sidebar_scroll.width(), rows)
+}
+
+/// The same, measured without a layout pass (nothing has to be drawn yet).
+fn sidebar_measured(w: &FilesWindow) -> (i32, Vec<i32>) {
+    let (width, _, _, _) = w.sidebar.measure(gtk::Orientation::Horizontal, -1);
+    let heights = sidebar_children(w).iter().map(|c| c.measure(gtk::Orientation::Vertical, width).0).collect();
+    (width, heights)
+}
+
+fn usage_texts(w: &FilesWindow) -> Vec<String> {
+    w.disk_usage.borrow().iter().map(|u| u.detail.text().to_string()).collect()
+}
+
+fn showing_placeholder(w: &FilesWindow) -> bool {
+    usage_texts(w).iter().any(|t| t.starts_with("Checking space"))
+}
+
+/// Regression: the Places pane jumped (wider, rows lower) as each disk's space arrived, and
+/// again whenever a mount signal rebuilt every row with "Checking space…".
+fn test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes(f: &mut Fixture) -> Outcome {
+    tessel_files_widgets::devices::forget_last_capacities();
+    let w = FilesWindow::new(&f.app);
+    let result = (|| -> Outcome {
+        w.new_tab(Some(&file(&f.source)), None);
+        ensure!(!w.disk_usage.borrow().is_empty(), "no disk rows (local_disks: {:?})",
+                tessel_files_model::devices::local_disks().iter().map(|d| d.path.clone()).collect::<Vec<_>>());
+        // Every reply is still pending: answer them by hand and compare before and after.
+        ensure!(showing_placeholder(&w));
+        let before = sidebar_measured(&w);
+        for usage in w.disk_usage.borrow().iter() {
+            let token = usage.pending().ok_or("no query running")?;
+            usage.finished(&token, Some((8_000_000_000_000, 1_100_000_000_000, 6_900_000_000_000)));
+        }
+        ensure!(!showing_placeholder(&w), "{:?}", usage_texts(&w));
+        ensure_eq!(sidebar_measured(&w), before);
+        // Drawn frames from the first one on: one width and one set of row positions.
+        tessel_files_widgets::devices::forget_last_capacities();
+        w.window.close();
+        Ok(())
+    })();
+    settle(0.1);
+    result?;
+    let w = FilesWindow::new(&f.app);
+    let frames: Rc<RefCell<Vec<(i32, Vec<(i32, i32)>)>>> = Rc::default();
+    let (sink, weak) = (frames.clone(), w.downgrade());
+    w.window.add_tick_callback(move |_, _| {
+        let Some(w) = weak.upgrade().map(FilesWindow) else { return glib::ControlFlow::Break };
+        let layout = sidebar_layout(&w);
+        if layout.0 > 0 && layout.1.iter().all(|r| r.1 > 0) && sink.borrow().last() != Some(&layout) {
+            sink.borrow_mut().push(layout);
+        }
+        glib::ControlFlow::Continue
+    });
+    let result = (|| -> Outcome {
+        w.new_tab(Some(&file(&f.source)), None);
+        w.window.present();
+        wait!(|| w.disk_usage.borrow().iter().all(|u| u.pending().is_none()));
+        settle(0.3);
+        ensure!(!showing_placeholder(&w), "{:?}", usage_texts(&w));
+        ensure_eq!(frames.borrow().len(), 1);
+        let settled = frames.borrow()[0].clone();
+        // Unchanged state: no rebuild, by call or by a burst of mount signals.
+        let rows = sidebar_children(&w);
+        w.refresh_sidebar();
+        ensure!(!showing_placeholder(&w));
+        ensure!(sidebar_children(&w) == rows, "an unchanged refresh rebuilt the rows");
+        let monitor = w.mount_monitor.borrow().clone();
+        if let Some(monitor) = &monitor {
+            for _ in 0..6 {
+                monitor.emit_by_name::<()>("mounts-changed", &[]);
+            }
+        }
+        settle(0.4);
+        ensure!(!showing_placeholder(&w));
+        ensure!(sidebar_children(&w) == rows, "mount signals rebuilt an unchanged pane");
+        ensure_eq!(*frames.borrow(), vec![settled.clone()]);
+        // A real change still rebuilds at once, and the disk rows keep their numbers.
+        let disks = usage_texts(&w);
+        f.app.bookmarks().borrow().add(&uri(&f.target), "Pane bookmark").map_err(|e| e.to_string())?;
+        w.refresh_sidebar();
+        ensure!(sidebar_children(&w) != rows);
+        ensure!(sidebar_button_in(&w, &uri(&f.target)).is_some(), "bookmark row missing");
+        ensure_eq!(usage_texts(&w), disks);
+        settle(0.3);
+        let last = frames.borrow().last().cloned().ok_or("no frame")?;
+        ensure_eq!(last.0, settled.0);
+        // A signal burst after a change: one rebuild shortly after.
+        f.app.bookmarks().borrow().add(&uri(&f.source), "Second bookmark").map_err(|e| e.to_string())?;
+        if let Some(monitor) = &monitor {
+            for _ in 0..6 {
+                monitor.emit_by_name::<()>("mounts-changed", &[]);
+            }
+            wait!(|| sidebar_button_in(&w, &uri(&f.source)).is_some());
+            let rebuilt = sidebar_children(&w);
+            settle(0.4);
+            ensure!(sidebar_children(&w) == rebuilt, "the burst rebuilt more than once");
+            ensure!(!showing_placeholder(&w));
+        }
+        if let Some(shot) = std::env::var("TESSEL_FILES_UI_SHOT").ok().filter(|s| !s.is_empty()) {
+            f.app.bookmarks().borrow().remove(&uri(&f.source)).map_err(|e| e.to_string())?;
+            f.app.bookmarks().borrow().remove(&uri(&f.target)).map_err(|e| e.to_string())?;
+            w.refresh_sidebar();
+            sidebar_shot(&w, &format!("{shot}.sidebar.png"))?;
+        }
+        Ok(())
+    })();
+    w.window.close();
+    settle(0.1);
+    result
+}
+
+fn sidebar_button_in(w: &FilesWindow, location: &str) -> Option<gtk::Button> {
+    tile::descendants(w.sidebar.upcast_ref()).into_iter().filter_map(|b| b.downcast::<gtk::Button>().ok())
+        .find(|b| tile::location_uri(b).as_deref() == Some(location))
+}
+
+/// Grab the settled Places pane of a maximized window (output scale 1).
+fn sidebar_shot(w: &FilesWindow, path: &str) -> Outcome {
+    w.window.maximize();
+    wait!(|| w.window.is_maximized());
+    settle(1.0);
+    let bounds = w.sidebar_scroll.compute_bounds(&w.window).ok_or("no sidebar bounds")?;
+    let full = format!("{path}.full.png");
+    run("grim", &[&full])?;
+    let crop = format!("{}x{}+{}+{}", bounds.width().round(), bounds.height().round(), bounds.x().round(), bounds.y().round());
+    run("magick", &[&full, "-crop", &crop, "+repage", path])?;
+    let _ = std::fs::remove_file(&full);
     Ok(())
 }

@@ -12,7 +12,7 @@ use tessel_files_widgets::dialogs::{self, ChooserMode, OpenWithDialog, OpenWithO
 use tessel_files_widgets::information::{self, InformationPane, IMAGE};
 use tessel_files_widgets::jobs::{self, JobManager, JobsButton};
 use tessel_files_widgets::quicklook::{QuickLook, QuickLookPane};
-use tessel_files_widgets::{devices::DiskUsage, poppler, print, style};
+use tessel_files_widgets::{devices::{self, DiskUsage}, poppler, print, style};
 use gtk::prelude::*;
 use gtk::{gdk, gdk_pixbuf, gio, glib};
 use std::cell::{Cell, RefCell};
@@ -814,7 +814,7 @@ fn printing_renders_pdf_text_and_images(env: &Env) -> Check {
 fn disk_usage_bar_shows_free_and_total(_: &Env) -> Check {
     let usage = DiskUsage::new(&gio::File::for_path(std::env::temp_dir()));
     check!(wait(5.0, || usage.pending().is_none()));
-    check!(usage.bar.is_visible(), "detail {}", usage.detail.text());
+    check!(usage.showing_capacity(), "detail {}", usage.detail.text());
     check!(usage.detail.text().contains("free\n"));
     check!(usage.detail.text().contains("total"));
     check!((0.0..=1.0).contains(&usage.bar.fraction()));
@@ -825,6 +825,7 @@ fn disk_usage_bar_shows_free_and_total(_: &Env) -> Check {
 }
 
 fn slow_capacity_query_does_not_queue_and_ignores_stale_reply(_: &Env) -> Check {
+    devices::forget_last_capacities();
     let usage = DiskUsage::new(&gio::File::for_path(std::env::temp_dir()));
     let token = usage.pending().ok_or("no query started")?;
     usage.refresh();
@@ -833,9 +834,89 @@ fn slow_capacity_query_does_not_queue_and_ignores_stale_reply(_: &Env) -> Check 
     check!(token.is_cancelled());
     usage.finished(&token, Some((1000, 10, 990)));
     pump(0.2);
-    check!(!usage.bar.is_visible());
-    eq!(usage.detail.text().to_string(), "Checking space…".to_string());
+    check!(!usage.showing_capacity());
+    eq!(usage.detail.text().lines().next().map(str::to_string), Some("Checking space…".to_string()));
     Ok(())
+}
+
+/// The Files stylesheet on the display while `body` runs, around a `.files-window`.
+fn in_files_window(env: &Env, usage: &DiskUsage, body: impl FnOnce(&gtk::ApplicationWindow) -> Check) -> Check {
+    let provider = gtk::CssProvider::new();
+    provider.load_from_string(style::CSS);
+    let display = gdk::Display::default().ok_or("no display")?;
+    gtk::style_context_add_provider_for_display(&display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    let window = env.parent();
+    window.add_css_class("files-window");
+    let column = gtk::Box::builder().orientation(gtk::Orientation::Vertical).width_request(176).build();
+    column.append(usage.widget());
+    window.set_child(Some(&column));
+    window.present();
+    let result = body(&window);
+    usage.close();
+    window.destroy();
+    gtk::style_context_remove_provider_for_display(&display, &provider);
+    result
+}
+
+fn size_of(usage: &DiskUsage) -> (i32, i32, i32) {
+    let (min_width, _, _, _) = usage.widget().measure(gtk::Orientation::Horizontal, -1);
+    let (min_height, natural_height, _, _) = usage.widget().measure(gtk::Orientation::Vertical, 176);
+    (min_width, min_height, natural_height)
+}
+
+// The Places pane jumped when the replies came: the bar appeared (wider, taller) and one line became two.
+fn disk_usage_keeps_its_size_when_the_reply_arrives(env: &Env) -> Check {
+    devices::forget_last_capacities();
+    let usage = DiskUsage::new(&gio::File::for_path(std::env::temp_dir()));
+    in_files_window(env, &usage, |_| {
+        let token = usage.pending().ok_or("no query started")?;
+        check!(!usage.showing_capacity());
+        let before = size_of(&usage);
+        check!(before.0 > 0 && before.1 > 0);
+        usage.finished(&token, Some((8_000_000_000_000, 1_100_000_000_000, 6_900_000_000_000)));
+        check!(usage.showing_capacity());
+        check!(usage.detail.text().contains(" free\n"), "detail {}", usage.detail.text());
+        eq!(size_of(&usage), before);
+        // A later reply with other numbers, and the rare unavailable outcome, keep it too.
+        usage.refresh();
+        let token = usage.pending().ok_or("no second query")?;
+        usage.finished(&token, Some((500_000_000, 1_000_000, 499_000_000)));
+        eq!(size_of(&usage), before);
+        usage.refresh();
+        let token = usage.pending().ok_or("no third query")?;
+        usage.finished(&token, None);
+        check!(!usage.showing_capacity());
+        eq!(usage.detail.text().lines().next().map(str::to_string), Some("Space unavailable".to_string()));
+        eq!(size_of(&usage), before);
+        Ok(())
+    })
+}
+
+fn disk_usage_starts_with_the_last_known_numbers(env: &Env) -> Check {
+    devices::forget_last_capacities();
+    let location = gio::File::for_path(std::env::temp_dir());
+    let seeded = DiskUsage::seeded(&location, Some((1000, 50, 950)));
+    check!(seeded.showing_capacity());
+    check!(seeded.detail.text().ends_with(" total"), "detail {}", seeded.detail.text());
+    check!(seeded.bar.has_css_class("low-space"));
+    check!(seeded.pending().is_some(), "a seeded row still asks for fresh numbers");
+    seeded.close();
+    // A reply is remembered: the next row for that place shows it before its own query returns.
+    let first = DiskUsage::new(&location);
+    check!(!first.showing_capacity());
+    check!(wait(5.0, || first.pending().is_none()));
+    let shown = first.detail.text().to_string();
+    first.close();
+    let rebuilt = DiskUsage::new(&location);
+    check!(rebuilt.pending().is_some());
+    check!(rebuilt.showing_capacity());
+    eq!(rebuilt.detail.text().to_string(), shown);
+    in_files_window(env, &rebuilt, |_| {
+        let before = size_of(&rebuilt);
+        check!(wait(5.0, || rebuilt.pending().is_none()));
+        eq!(size_of(&rebuilt), before);
+        Ok(())
+    })
 }
 
 // ---------------------------------------------------------------- jobs (file_jobs.py)
@@ -937,6 +1018,8 @@ fn main() {
         ("printing_renders_pdf_text_and_images", printing_renders_pdf_text_and_images),
         ("disk_usage_bar_shows_free_and_total", disk_usage_bar_shows_free_and_total),
         ("slow_capacity_query_does_not_queue_and_ignores_stale_reply", slow_capacity_query_does_not_queue_and_ignores_stale_reply),
+        ("disk_usage_keeps_its_size_when_the_reply_arrives", disk_usage_keeps_its_size_when_the_reply_arrives),
+        ("disk_usage_starts_with_the_last_known_numbers", disk_usage_starts_with_the_last_known_numbers),
         ("jobs_button_lists_cancels_and_notifies", jobs_button_lists_cancels_and_notifies),
     ];
     let (mut passed, mut failed) = (0, Vec::new());

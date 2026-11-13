@@ -9,8 +9,8 @@ pub const CSS: &str = r#"
 .files-window .files-toolbar button { min-width: 24px; min-height: 24px; padding: 5px; }
 .files-window .files-sidebar { padding: 12px 8px; min-width: 176px; border-right: 1px solid alpha(currentColor, .12); }
 .files-window .files-disk-usage label { font-size: 9pt; }
-.files-window .files-disk-usage trough { min-height: 5px; border: none; border-radius: 3px; box-shadow: none; background: alpha(currentColor, .12); }
-.files-window .files-disk-usage progress { min-width: 0; min-height: 5px; border: none; border-radius: 3px; box-shadow: none; background: @theme_selected_bg_color; }
+.files-window .files-disk-usage trough { min-width: 150px; min-height: 5px; border: none; border-radius: 3px; box-shadow: none; background: alpha(currentColor, .12); }
+.files-window .files-disk-usage progress { min-width: 0; min-height: 5px; margin: 0; border: none; border-radius: 3px; box-shadow: none; background: @theme_selected_bg_color; }
 .files-window .files-sidebar .section-heading { font-size: 10pt; font-weight: 650; opacity: .7; padding: 10px 10px 4px; }
 .files-window .files-location { padding: 8px; border-bottom: 1px solid alpha(currentColor, .1); }
 .files-window .files-location button { padding: 5px 7px; }

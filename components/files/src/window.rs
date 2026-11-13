@@ -178,6 +178,9 @@ pub struct WindowInner {
     mount_signal: RefCell<Option<glib::SignalHandlerId>>,
     volume_signals: RefCell<Vec<glib::SignalHandlerId>>,
     disk_usage_timer: RefCell<Option<glib::SourceId>>,
+    /// What the Places rows were last built from (`sidebar_key`).
+    sidebar_shown: RefCell<Vec<String>>,
+    sidebar_source: RefCell<Option<glib::SourceId>>,
     trash_loader: RefCell<Option<DirectoryLoader>>,
     switch_signal: RefCell<Option<glib::SignalHandlerId>>,
 }
@@ -280,7 +283,8 @@ impl FilesWindow {
             view_buttons: RefCell::new(Vec::new()), syncing_views: Cell::new(false), information_toggle, error_row, error_label, sidebar,
             sidebar_scroll, navigation_size, notebook, content_split, information, volumes: gio::VolumeMonitor::get(),
             disk_usage: RefCell::new(Vec::new()), mount_monitor: RefCell::new(None), mount_signal: RefCell::new(None),
-            volume_signals: RefCell::new(Vec::new()), disk_usage_timer: RefCell::new(None), trash_loader: RefCell::new(None),
+            volume_signals: RefCell::new(Vec::new()), disk_usage_timer: RefCell::new(None), sidebar_shown: RefCell::new(Vec::new()),
+            sidebar_source: RefCell::new(None), trash_loader: RefCell::new(None),
             switch_signal: RefCell::new(None),
         });
         *weak_slot.borrow_mut() = Rc::downgrade(&inner);
@@ -427,7 +431,7 @@ impl FilesWindow {
             let weak = self.downgrade();
             let id = monitor.connect_local("mounts-changed", false, move |_| {
                 if let Some(window) = weak.upgrade() {
-                    FilesWindow(window).refresh_sidebar()
+                    FilesWindow(window).schedule_sidebar_refresh()
                 }
                 None
             });
@@ -439,7 +443,7 @@ impl FilesWindow {
             let weak = self.downgrade();
             signals.push(self.volumes.connect_local(signal, false, move |_| {
                 if let Some(window) = weak.upgrade() {
-                    FilesWindow(window).refresh_sidebar()
+                    FilesWindow(window).schedule_sidebar_refresh()
                 }
                 None
             }));
@@ -1938,7 +1942,17 @@ impl tessel_files_widgets::quicklook::QuickLookPane for QuickLookAdapter {
 
 // Places, location menus, mounts, settings, session and closing.
 impl FilesWindow {
+    /// Rebuild the Places rows now; an unchanged list only refreshes the disk usage.
     pub fn refresh_sidebar(&self) {
+        let entries = self.sidebar_entries();
+        let key = sidebar_key(&entries);
+        if *self.sidebar_shown.borrow() == key && self.sidebar.first_child().is_some() {
+            for usage in self.disk_usage.borrow().iter() {
+                usage.refresh();
+            }
+            return;
+        }
+        *self.sidebar_shown.borrow_mut() = key;
         for usage in self.disk_usage.borrow_mut().drain(..) {
             usage.close();
         }
@@ -1949,15 +1963,49 @@ impl FilesWindow {
         while let Some(child) = self.sidebar.first_child() {
             self.sidebar.remove(&child);
         }
-        let heading = |text: &str| {
-            let label = gtk::Label::builder().label(text).xalign(0.).build();
-            label.add_css_class("section-heading");
-            self.sidebar.append(&label);
-        };
+        for entry in entries {
+            match entry {
+                SidebarEntry::Heading(text) => {
+                    let label = gtk::Label::builder().label(text).xalign(0.).build();
+                    label.add_css_class("section-heading");
+                    self.sidebar.append(&label);
+                }
+                SidebarEntry::Place { title, icon, visit, unmount, location, bookmark_uri, volume, disk } => {
+                    self.place(&title, icon, visit, unmount, location, bookmark_uri, volume, disk)
+                }
+            }
+        }
+    }
+
+    /// Mount and volume signals come in bursts: one refresh shortly after the first.
+    fn schedule_sidebar_refresh(&self) {
+        if self.sidebar_source.borrow().is_some() || !self.alive.get() {
+            return;
+        }
+        let weak = self.downgrade();
+        let source = glib::timeout_add_local_once(std::time::Duration::from_millis(100), move || {
+            let Some(window) = weak.upgrade().map(FilesWindow) else { return };
+            window.sidebar_source.replace(None);
+            if window.alive.get() {
+                window.refresh_sidebar();
+            }
+        });
+        *self.sidebar_source.borrow_mut() = Some(source);
+    }
+
+    fn sidebar_entries(&self) -> Vec<SidebarEntry> {
+        let mut entries = Vec::new();
+        let heading = |entries: &mut Vec<SidebarEntry>, text: &'static str| entries.push(SidebarEntry::Heading(text));
+        #[allow(clippy::too_many_arguments)]
+        fn place(entries: &mut Vec<SidebarEntry>, title: &str, icon: PlaceIcon, visit: Visit, unmount: Option<gio::Mount>,
+                 location: Option<gio::File>, bookmark_uri: Option<String>, volume: Option<gio::Volume>, disk: bool) {
+            entries.push(SidebarEntry::Place { title: title.to_string(), icon, visit, unmount, location, bookmark_uri, volume, disk });
+        }
+        let e = &mut entries;
         let app = self.app();
-        heading("Places");
+        heading(e, "Places");
         let home = tessel_core::paths::home().to_string_lossy().into_owned();
-        self.place("Home", PlaceIcon::Name("user-home-symbolic"), Visit::Uri(home.clone()), None, Some(as_file(&home)), None, None, false);
+        place(e, "Home", PlaceIcon::Name("user-home-symbolic"), Visit::Uri(home.clone()), None, Some(as_file(&home)), None, None, false);
         for (name, kind, icon) in [("Desktop", glib::UserDirectory::Desktop, "user-desktop-symbolic"),
                                    ("Downloads", glib::UserDirectory::Downloads, "folder-download-symbolic"),
                                    ("Documents", glib::UserDirectory::Documents, "folder-documents-symbolic"),
@@ -1966,15 +2014,15 @@ impl FilesWindow {
                                    ("Videos", glib::UserDirectory::Videos, "folder-videos-symbolic")] {
             if let Some(path) = glib::user_special_dir(kind) {
                 let path = path.to_string_lossy().into_owned();
-                self.place(name, PlaceIcon::Name(icon), Visit::Uri(path.clone()), None, Some(as_file(&path)), None, None, false);
+                place(e, name, PlaceIcon::Name(icon), Visit::Uri(path.clone()), None, Some(as_file(&path)), None, None, false);
             }
         }
-        self.place("Trash", PlaceIcon::Name("user-trash-symbolic"), Visit::Uri("trash:///".into()), None, Some(as_file("trash:///")), None, None, false);
-        self.place("Network", PlaceIcon::Name("network-workgroup-symbolic"), Visit::Uri("network:///".into()), None, Some(as_file("network:///")),
-                   None, None, false);
+        place(e, "Trash", PlaceIcon::Name("user-trash-symbolic"), Visit::Uri("trash:///".into()), None, Some(as_file("trash:///")), None, None, false);
+        place(e, "Network", PlaceIcon::Name("network-workgroup-symbolic"), Visit::Uri("network:///".into()), None, Some(as_file("network:///")),
+              None, None, false);
         let bookmarks = app.bookmarks().borrow().list();
         if !bookmarks.is_empty() {
-            heading("Bookmarks");
+            heading(e, "Bookmarks");
             for bookmark in bookmarks {
                 let title = if bookmark.label.is_empty() {
                     as_file(&bookmark.uri).basename().map(|b| b.to_string_lossy().into_owned()).filter(|b| !b.is_empty()).unwrap_or_else(|| bookmark.uri.clone())
@@ -1982,12 +2030,12 @@ impl FilesWindow {
                     bookmark.label.clone()
                 };
                 let icon: gio::Icon = gio::ThemedIcon::from_names(&["bookmarks-symbolic", "user-bookmarks-symbolic"]).upcast();
-                self.place(&title, PlaceIcon::Gicon(icon), Visit::Uri(bookmark.uri.clone()), None, None, Some(bookmark.uri.clone()), None, false);
+                place(e, &title, PlaceIcon::Gicon(icon), Visit::Uri(bookmark.uri.clone()), None, None, Some(bookmark.uri.clone()), None, false);
             }
         }
         let mounts = self.volumes.mounts();
         let volumes: Vec<gio::Volume> = self.volumes.volumes().into_iter().filter(|v| v.get_mount().is_none()).collect();
-        heading("Devices");
+        heading(e, "Devices");
         let mut shown_paths: Vec<String> = Vec::new();
         let mut shown_devices: Vec<String> = Vec::new();
         for mount in &mounts {
@@ -1998,7 +2046,7 @@ impl FilesWindow {
                     shown_devices.push(device.to_string());
                 }
                 let unmount = (mount.can_unmount() || mount.can_eject()).then(|| mount.clone());
-                self.place(&mount.name(), PlaceIcon::Gicon(mount.icon()), Visit::Uri(root.uri().to_string()), unmount, Some(root.clone()), None, None, true);
+                place(e, &mount.name(), PlaceIcon::Gicon(mount.icon()), Visit::Uri(root.uri().to_string()), unmount, Some(root.clone()), None, None, true);
             }
         }
         for disk in tessel_files_model::devices::local_disks() {
@@ -2007,32 +2055,33 @@ impl FilesWindow {
                 continue;
             }
             shown_paths.push(path.clone());
-            self.place(&disk.name, PlaceIcon::Gicon(disk.icon.clone()), Visit::Uri(path.clone()), None, Some(as_file(&path)), None, None, true);
+            place(e, &disk.name, PlaceIcon::Gicon(disk.icon.clone()), Visit::Uri(path.clone()), None, Some(as_file(&path)), None, None, true);
         }
         if !shown_paths.iter().any(|p| p == "/") {
-            self.place("System", PlaceIcon::Name("drive-harddisk-symbolic"), Visit::Uri("/".into()), None, Some(as_file("/")), None, None, true);
+            place(e, "System", PlaceIcon::Name("drive-harddisk-symbolic"), Visit::Uri("/".into()), None, Some(as_file("/")), None, None, true);
         }
         for volume in volumes {
-            self.place(&volume.name(), PlaceIcon::Gicon(volume.icon()), Visit::Volume(volume.clone()), None, None, None, Some(volume.clone()), true);
+            place(e, &volume.name(), PlaceIcon::Gicon(volume.icon()), Visit::Volume(volume.clone()), None, None, None, Some(volume.clone()), true);
         }
         let remote: Vec<&gio::Mount> = mounts.iter().filter(|m| m.root().path().is_none()).collect();
         if !remote.is_empty() {
-            heading("Network Locations");
+            heading(e, "Network Locations");
             for mount in remote {
                 let unmount = (mount.can_unmount() || mount.can_eject()).then(|| mount.clone());
-                self.place(&mount.name(), PlaceIcon::Gicon(mount.icon()), Visit::Uri(mount.root().uri().to_string()), unmount, Some(mount.root()),
-                           None, None, false);
+                place(e, &mount.name(), PlaceIcon::Gicon(mount.icon()), Visit::Uri(mount.root().uri().to_string()), unmount, Some(mount.root()),
+                      None, None, false);
             }
         }
         let searches = bridge::pget(&app.preferences(), "search_saved").as_array().cloned().unwrap_or_default();
         if !searches.is_empty() {
-            heading("Saved Searches");
+            heading(e, "Saved Searches");
             for value in searches {
                 let name = value.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
                 let uri = value.get("uri").and_then(Value::as_str).unwrap_or_default().to_string();
-                self.place(&name, PlaceIcon::Name("system-search-symbolic"), Visit::Search(value.clone()), None, Some(as_file(&uri)), None, None, false);
+                place(e, &name, PlaceIcon::Name("system-search-symbolic"), Visit::Search(value.clone()), None, Some(as_file(&uri)), None, None, false);
             }
         }
+        entries
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -2496,6 +2545,9 @@ impl FilesWindow {
         if let Some(timer) = self.disk_usage_timer.borrow_mut().take() {
             timer.remove();
         }
+        if let Some(source) = self.sidebar_source.borrow_mut().take() {
+            source.remove();
+        }
         if let (Some(monitor), Some(id)) = (self.mount_monitor.borrow().clone(), self.mount_signal.borrow_mut().take()) {
             monitor.disconnect(id);
         }
@@ -2529,6 +2581,33 @@ enum Visit {
     Uri(String),
     Volume(gio::Volume),
     Search(Value),
+}
+
+enum SidebarEntry {
+    Heading(&'static str),
+    Place { title: String, icon: PlaceIcon, visit: Visit, unmount: Option<gio::Mount>, location: Option<gio::File>,
+            bookmark_uri: Option<String>, volume: Option<gio::Volume>, disk: bool },
+}
+
+/// Everything a Places row is built from; the same key means the same rows. Mount and
+/// volume objects count by identity (the rows keep them for unmount and mount actions).
+fn sidebar_key(entries: &[SidebarEntry]) -> Vec<String> {
+    entries.iter().map(|entry| match entry {
+        SidebarEntry::Heading(text) => format!("heading\t{text}"),
+        SidebarEntry::Place { title, icon, visit, unmount, location, bookmark_uri, volume, disk } => {
+            let icon = match icon {
+                PlaceIcon::Name(name) => name.to_string(),
+                PlaceIcon::Gicon(icon) => IconExt::to_string(icon).map(|s| s.to_string()).unwrap_or_else(|| format!("{:p}", icon.as_ptr())),
+            };
+            let visit = match visit {
+                Visit::Uri(uri) => format!("uri {uri}"),
+                Visit::Volume(volume) => format!("volume {:p}", volume.as_ptr()),
+                Visit::Search(saved) => format!("search {saved}"),
+            };
+            format!("place\t{title}\t{icon}\t{visit}\t{:?}\t{:?}\t{bookmark_uri:?}\t{:?}\t{disk}",
+                    unmount.as_ref().map(|m| m.as_ptr()), location.as_ref().map(|l| l.uri().to_string()), volume.as_ref().map(|v| v.as_ptr()))
+        }
+    }).collect()
 }
 
 impl PaneHost for WindowInner {

@@ -164,6 +164,7 @@ private desktop entries; mimeapps.list only under the private XDG_CONFIG_HOME). 
 | Properties: ownership, ACL page, "Set as default" association | implemented, not exercised (would need root / real setfacl on fixtures / a real default change) | — |
 | Jobs: hold/release, notification only with no live window, button rows/tooltip/pulse, cancel, ask_keep_running | yes | ui `jobs_button_lists_cancels_and_notifies` (notifier hook) |
 | DiskUsage free/total bar, no queueing, stale reply ignored | yes | ui `disk_usage_bar_shows_free_and_total`, `slow_capacity_query_does_not_queue_and_ignores_stale_reply`; unit `capacity_bounds` |
+| DiskUsage keeps its size (Rust-only fix for a jumping Places pane): the bar always takes its space (transparent until known, trough pinned at 150 px) and the text is always two lines; the last capacity per location is remembered for the app's life and seeds new rows; unchanged numbers leave the text alone | yes | ui `disk_usage_keeps_its_size_when_the_reply_arrives`, `disk_usage_starts_with_the_last_known_numbers`; app ui `test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes` |
 
 Gaps / differences (honest):
 - Pillow is replaced by kamadak-exif + a header sniffer for `Color mode`: modes for PNG/JPEG/GIF/WebP/BMP only
@@ -195,6 +196,7 @@ private headless labwc; `tests/ui_headless.rs`). Measurements: `tests/measure_he
 | Jobs: concurrent, shared popover, keep running + notification, cancel on close, Ctrl+Q asks once | done | `test_jobs_*`, `test_closing_window_*`, `test_ctrl_q_*` |
 | New folder/file dialogs, statusbar/single-click prefs | done | `test_new_folder_dialog_accept_and_cancel`, `test_statusbar_*` |
 | Context menus: folder vs file actions, blank menu clears selection, details non-name cell, breadcrumb/places/bookmark/virtual/trash menus, keyboard activation, release on navigation/anchor unmap/tab close/Escape | done | all `test_files_context.py` names |
+| Places pane rebuilds only when its rows would differ (places, bookmarks, mounts, volumes, disks, saved searches; Rust-only); mount/volume signal bursts are folded into one refresh 100 ms after the first; direct `refresh_sidebar()` stays synchronous | done | `test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes` |
 | **Menus show fully without a scrollbar (window-child parent, RIGHT, offset after popup)** | done | `test_context_menus_show_every_item_without_scrolling`, `test_context_menu_on_a_short_output_shows_every_item` (Rust-only; fails with the old BOTTOM placement: verified by mutation) |
 | **No selection + any arrow selects first item (all four views)** | done | `test_arrow_key_without_selection_selects_first_item` |
 | **Selection after delete/trash moves to the item before (or index 0)** | done | `test_deleting_selects_the_item_before_the_deleted_items`, `test_trashing_selects_the_item_before_the_trashed_item` (private XDG_DATA_HOME, same-filesystem check) |
@@ -218,8 +220,8 @@ Gaps (app crate):
 - Real terminal/app launches, mounting, unmounting, Connect to Server, Empty Trash execution, archive dialogs, templates
   and saved searches are wired but only exercised through hooks/fakes or not at all.
 - `media_chooser.py` is not part of this binary (Tessel Shell's Rust wallpaper chooser has its own port).
-- Python's `GTK_DEBUG`-style warnings: GTK reports `GtkGizmo (progress) reported min width -2` for the DiskUsage bars
-  (cosmetic).
+- GTK's `GtkGizmo (progress) reported min width -2` for the DiskUsage bars (the theme's -1 px progress margin) is gone:
+  `.files-disk-usage progress` has `margin: 0`.
 
 ## Swap notes (not installed; do this with the user present)
 Python today: `desktop-apps/install.py --apply` (root, pkexec) copies `tessel-files/*.py` + shared/tessel-dock modules to
