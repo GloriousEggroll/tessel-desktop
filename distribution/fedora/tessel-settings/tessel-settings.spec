@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9455a1f3556e03865540361d80572826ea18593d}
+%{!?commit:%global commit 183641a8bc0e7cd7a1626b3f180f5049e7120444}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        25%{?dist}
+Release:        26%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -42,7 +42,7 @@ BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
-Requires:       labwc >= 0.20.2-27
+Requires:       labwc >= 0.20.2-29
 Requires:       glib2
 Requires:       libinput
 Requires:       pciutils
@@ -111,6 +111,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-26
+- Desktop Behavior: Window positions saves where an app's window is, so the app opens there next time; needs labwc 0.20.2-29
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-25
 - Theme & Wallpaper: choose an accent color and a window background by hand
 
