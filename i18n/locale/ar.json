@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "استخدام خلفية النوافذ المدمجة",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "تنطبق هذه الألوان على تطبيقات Tessel وتطبيقات GTK 4 الأخرى وأشرطة عنوان النوافذ وأيقونات المجلدات. تبقى خلفية النوافذ داكنة أو فاتحة بما يكفي لتظل مقروءة في النمط الحالي.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "اختر لون المفاتيح وأشرطة التمرير والتحديدات والأزرار المميزة عند إيقاف مطابقة ألوان الخلفية.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "اختر لون خلفية النوافذ والقوائم وأشرطة العناوين عند إيقاف مطابقة ألوان الخلفية."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "اختر لون خلفية النوافذ والقوائم وأشرطة العناوين عند إيقاف مطابقة ألوان الخلفية.",
+  "Window positions": "مواضع النوافذ",
+  "Save where an app's window is, and the app opens there the next time it starts.": "احفظ موضع نافذة التطبيق، وسيفتح التطبيق هناك في المرة القادمة التي يبدأ فيها.",
+  "No window positions saved yet.": "لم تُحفظ أي مواضع نوافذ بعد.",
+  "Add a window…": "إضافة نافذة…",
+  "Choose a window to save where it is now.": "اختر نافذة لحفظ موضعها الحالي.",
+  "Save where its open window is now": "حفظ الموضع الحالي لنافذته المفتوحة",
+  "{screen}, maximized": "{screen}، مكبّرة",
+  "{screen}, {width} × {height}": "{screen}، {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "هذه الشاشة غير متصلة الآن. يُحتفظ بالموضع لحين عودتها.",
+  "Could not read the open windows: {error}": "تعذّرت قراءة النوافذ المفتوحة: {error}",
+  "{app} has no open window now.": "لا توجد نافذة مفتوحة لـ {app} الآن.",
+  "Could not save the window positions: {error}": "تعذّر حفظ مواضع النوافذ: {error}",
+  "Could not apply the window positions: {error}": "تعذّر تطبيق مواضع النوافذ: {error}",
+  "Looking for open windows…": "جارٍ البحث عن النوافذ المفتوحة…",
+  "No open windows to add. Open the app and place its window first.": "لا توجد نوافذ مفتوحة لإضافتها. افتح التطبيق وضع نافذته في مكانها أولًا.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "تحتاج مواضع النوافذ إلى إصدار أحدث من labwc؛ بعد تحديثه، سجّل الخروج ثم الدخول مجددًا."
 }

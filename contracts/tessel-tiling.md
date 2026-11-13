@@ -41,6 +41,13 @@ Status must import no GTK (watch is long-running inside tessel-dock).
 - Server: `SO_PASSCRED`, drops requests without matching `SCM_CREDENTIALS` uid, truncated (`MSG_TRUNC`) or >255 bytes; socket chmod 0600; stale same-uid socket unlinked only on `ECONNREFUSED`; reply dropped if ≥60000 bytes.
 - Requests (exact strings): `status`, `windows`, `enable`, `disable`, `outline on`, `outline off`, `outline-color <output> <r> <g> <b>` (0-255, ≤64 outputs, name ≤127), `action <tiling command>`, `capture-output <foreign-toplevel identifier>` (labwc-color only). While session locked, everything except `status`/`windows`(/capture-output) returns `error:"The session is locked."`; unknown → `"Unknown tiling request."`.
 - Reply JSON: `{"version":1,"ready":true,"compositor_pid":N,"enabled":B,"parking_supported":true,"tile_bounds_supported":true,"outline_supported":true,"outline_enabled":B,"error":"…","windows":[…],"capture_output_supported":true,"capture_output":{x,y,width,height}|null}`. `windows` entries (only for `windows`): `id,active,tiled,visible,output(id_bit),x,y,width,height,fullscreen,minimized,outlined,parked,current{x,y,width,height},workarea{x,y,width,height}`.
+- From labwc 0.20.2-29 every reply also has `"positions_supported":true`, and each `windows` entry adds `app_id` (what
+  `<windowRule identifier>` matches: app_id, or WM_CLASS for XWayland; ≤128 bytes, "" unknown), `title` (≤96 bytes, cut on
+  a UTF-8 boundary; emptied rather than dropping the reply near the 60000-byte limit), `type_normal` (matches
+  `<windowRule type="normal">`), `output_name` (connector, "" none), `maximized` (both axes) and `place{x,y,width,height}`
+  (relative to its output's top-left; the restore geometry for maximized/fullscreen/tiled windows when known on that
+  output), exactly what the `PlaceOnOutput` action takes. Missing or false `positions_supported` = older labwc. Consumer:
+  Global Settings → Desktop Behavior → Window positions (`gs_desktop::window_positions`).
 - Other consumers: `tessel-shell/capture_output.py:22-41` (`request('capture-output '+id)` → match Gdk monitor geometry → connector; falls back to `tessel-dock-toplevel --snapshot`). `tessel-shell/install_capture_picker.py:34` ships `tiling_client.py`. So the Rust crate must expose the client as a library (tessel-core) too.
 
 ### status() dict (tiling_client.py:57-68) — the tessel-dock status-stream schema

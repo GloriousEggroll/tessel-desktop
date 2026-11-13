@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "A beépített ablakháttér használata",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Ezek a színek a Tessel alkalmazásaira, más GTK 4 alkalmazásokra, az ablakok címsoraira és a mappaikonokra vonatkoznak. Az ablakháttér elég sötét vagy világos marad ahhoz, hogy az aktuális stílusban olvasható legyen.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Válassza ki a kapcsolók, csúszkák, kijelölések és kiemelt gombok színét, ha a háttérkép színeihez igazítás ki van kapcsolva.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Válassza ki az ablakok, menük és címsorok háttérszínét, ha a háttérkép színeihez igazítás ki van kapcsolva."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Válassza ki az ablakok, menük és címsorok háttérszínét, ha a háttérkép színeihez igazítás ki van kapcsolva.",
+  "Window positions": "Ablakpozíciók",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Mentse el, hol van egy alkalmazás ablaka, és az alkalmazás a következő indításkor ott nyílik meg.",
+  "No window positions saved yet.": "Még nincs mentett ablakpozíció.",
+  "Add a window…": "Ablak hozzáadása…",
+  "Choose a window to save where it is now.": "Válasszon ki egy ablakot a jelenlegi helyének mentéséhez.",
+  "Save where its open window is now": "A nyitott ablak jelenlegi helyének mentése",
+  "{screen}, maximized": "{screen}, teljes méretben",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Ez a képernyő most nincs csatlakoztatva. A pozíció megmarad, amíg újra csatlakozik.",
+  "Could not read the open windows: {error}": "A nyitott ablakok nem olvashatók be: {error}",
+  "{app} has no open window now.": "A(z) {app} alkalmazásnak most nincs nyitott ablaka.",
+  "Could not save the window positions: {error}": "Az ablakpozíciók nem menthetők: {error}",
+  "Could not apply the window positions: {error}": "Az ablakpozíciók nem alkalmazhatók: {error}",
+  "Looking for open windows…": "Nyitott ablakok keresése…",
+  "No open windows to add. Open the app and place its window first.": "Nincs hozzáadható nyitott ablak. Először nyissa meg az alkalmazást, és helyezze el az ablakát.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Az ablakpozíciókhoz újabb labwc kell; a frissítés után jelentkezzen ki, majd újra be."
 }

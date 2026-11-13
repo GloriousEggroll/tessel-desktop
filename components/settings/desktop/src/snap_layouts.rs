@@ -275,7 +275,7 @@ fn find_block(text: &str) -> Option<(usize, usize)> {
 /// The managed block in rc.xml text, markers included.
 pub fn current_block(text: &str) -> Option<&str> { find_block(text).map(|(s, e)| &text[s..e]) }
 
-fn closing_tag(text: &str) -> Option<usize> {
+pub(crate) fn closing_tag(text: &str) -> Option<usize> {
     let lower = text.to_ascii_lowercase();
     ["</labwc_config", "</openbox_config"].iter().filter_map(|tag| {
         let index = lower.rfind(tag)?;
@@ -284,7 +284,7 @@ fn closing_tag(text: &str) -> Option<usize> {
 }
 
 /// `<labwc_config …/>` opened into `<labwc_config …>\n</labwc_config>`.
-fn open_empty_root(text: &str) -> Option<String> {
+pub(crate) fn open_empty_root(text: &str) -> Option<String> {
     let lower = text.to_ascii_lowercase();
     for name in ["labwc_config", "openbox_config"] {
         let tag = format!("<{name}");

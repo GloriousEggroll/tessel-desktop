@@ -2204,5 +2204,21 @@
   "Use the built-in window background": "標準のウィンドウの背景を使う",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "これらの色は Tessel のアプリ、ほかの GTK 4 アプリ、ウィンドウのタイトルバー、フォルダーアイコンに適用されます。ウィンドウの背景は、現在のスタイルで読みやすいよう十分に暗く、または明るく保たれます。",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "壁紙の色に合わせる設定がオフのときの、スイッチ、スライダー、選択部分、強調ボタンの色を選びます。",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "壁紙の色に合わせる設定がオフのときの、ウィンドウ、メニュー、タイトルバーの背景色を選びます。"
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "壁紙の色に合わせる設定がオフのときの、ウィンドウ、メニュー、タイトルバーの背景色を選びます。",
+  "Window positions": "ウィンドウの位置",
+  "Save where an app's window is, and the app opens there the next time it starts.": "アプリのウィンドウの位置を保存すると、次回の起動時にその位置で開きます。",
+  "No window positions saved yet.": "保存されたウィンドウの位置はまだありません。",
+  "Add a window…": "ウィンドウを追加…",
+  "Choose a window to save where it is now.": "現在の位置を保存するウィンドウを選んでください。",
+  "Save where its open window is now": "開いているウィンドウの現在の位置を保存",
+  "{screen}, maximized": "{screen}、最大化",
+  "{screen}, {width} × {height}": "{screen}、{width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "この画面は現在接続されていません。再び接続されるまで位置は保持されます。",
+  "Could not read the open windows: {error}": "開いているウィンドウを読み取れませんでした: {error}",
+  "{app} has no open window now.": "{app} には現在開いているウィンドウがありません。",
+  "Could not save the window positions: {error}": "ウィンドウの位置を保存できませんでした: {error}",
+  "Could not apply the window positions: {error}": "ウィンドウの位置を適用できませんでした: {error}",
+  "Looking for open windows…": "開いているウィンドウを探しています…",
+  "No open windows to add. Open the app and place its window first.": "追加できる開いているウィンドウがありません。先にアプリを開いてウィンドウを配置してください。",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "ウィンドウの位置には新しい labwc が必要です。更新後、サインアウトしてから再度サインインしてください。"
 }

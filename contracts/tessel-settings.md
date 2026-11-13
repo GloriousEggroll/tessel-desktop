@@ -112,6 +112,23 @@ Every page that Python built from another component's module is built from that 
   the shared `rc.xml.tessel-lock`; removed when every screen keeps "Halves (default)"; `labwc --reconfigure` only when
   the block changed. A user's own `<regions>` is never touched. Applies immediately (keyboard divider moves after 300 ms,
   mouse drags on release). Not rewritten on page load; `snap_layouts::sync_rc()` regenerates it from the JSON.
+- Desktop Behavior "Window positions" (Rust-only, `gs_desktop::window_positions`, after Snap layouts):
+  `$XDG_CONFIG_HOME/tessel/window-positions.json` (0600, atomic; `{"version": 1, "positions": [{"app_id", "name", "output",
+  "x", "y", "width", "height", "maximized"}]}`, one entry per app_id compared case-insensitively, a bad or missing file is
+  empty, invalid entries skipped, unknown top-level keys kept) is the source of truth; rc.xml gets the block
+  `<!-- tessel window positions begin -->` `<windowRules>` `<windowRule identifier="<app_id, fnmatch-escaped * ? [ ] \\>"
+  type="normal" matchOnce="true">` `<action name="PlaceOnOutput" output= x= y= width= height= maximized="yes|no"/>` …
+  `<!-- tessel window positions end -->` before `</labwc_config>` under the shared `rc.xml.tessel-lock` (values XML-escaped;
+  no block when empty; a user's own `<windowRules>` and the snap layouts block are never touched); `labwc --reconfigure`
+  only when the block changed. "Add a window…" asks the tiling control socket for `windows` off the GTK thread and offers
+  windows with `type_normal`, an `app_id` and an `output_name` (never `org.tessel.GlobalSettings` or the running app's own
+  id); choosing one saves its `output_name` + `place` unconverted, replacing the app's entry in place. Rows show the app
+  (desktop entry via `AppCatalog::resolve`, else the saved name / app_id), the screen label (`monitor_label`, else the
+  connector) and `W × H` or "maximized", a note when that screen is not connected (the entry stays), Update (re-reads the
+  app's active/first open window; hidden without one) and Remove. A reply without `positions_supported:true` shows that a
+  newer labwc (0.20.2-29) and signing out and back in are needed. A failed JSON or rc.xml write keeps the previous state
+  (the JSON is restored); a failed reload keeps the written change and shows the error. Search target `window_positions`
+  (the Add button). `window_positions::sync_rc()` regenerates the block from the JSON.
 - Theme & Wallpaper "Pointer" card (Rust-only, `gs_desktop::cursor_themes` over `tessel_core::cursor_theme`): lists
   every dir of the icon search path whose `cursors/` has `left_ptr` or `default` (never `default` itself; first dir
   wins an id; sorted by `Name=`), previews six cursors read from the theme's Xcursor files (aliases + `Inherits=`), and

@@ -17,6 +17,7 @@ pub mod login;
 pub mod snap_layouts;
 pub mod theme;
 pub mod util;
+pub mod window_positions;
 pub mod workspaces;
 
 #[cfg(test)]

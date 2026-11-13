@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Použít vestavěné pozadí oken",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Tyto barvy platí pro aplikace Tessel, ostatní aplikace GTK 4, záhlaví oken a ikony složek. Pozadí oken zůstane dost tmavé nebo světlé, aby bylo v aktuálním stylu čitelné.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Zvolte barvu přepínačů, posuvníků, výběrů a zvýrazněných tlačítek, když je vypnuté přizpůsobení barvám tapety.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Zvolte barvu pozadí oken, nabídek a záhlaví oken, když je vypnuté přizpůsobení barvám tapety."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Zvolte barvu pozadí oken, nabídek a záhlaví oken, když je vypnuté přizpůsobení barvám tapety.",
+  "Window positions": "Pozice oken",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Uložte, kde je okno aplikace, a aplikace se tam otevře při příštím spuštění.",
+  "No window positions saved yet.": "Zatím nejsou uloženy žádné pozice oken.",
+  "Add a window…": "Přidat okno…",
+  "Choose a window to save where it is now.": "Vyberte okno, jehož současnou pozici chcete uložit.",
+  "Save where its open window is now": "Uložit, kde je teď jeho otevřené okno",
+  "{screen}, maximized": "{screen}, maximalizováno",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Tato obrazovka teď není připojena. Pozice zůstane uložena, až bude zpět.",
+  "Could not read the open windows: {error}": "Nelze přečíst otevřená okna: {error}",
+  "{app} has no open window now.": "{app} teď nemá žádné otevřené okno.",
+  "Could not save the window positions: {error}": "Pozice oken nelze uložit: {error}",
+  "Could not apply the window positions: {error}": "Pozice oken nelze použít: {error}",
+  "Looking for open windows…": "Hledání otevřených oken…",
+  "No open windows to add. Open the app and place its window first.": "Nejsou otevřená žádná okna k přidání. Nejprve otevřete aplikaci a umístěte její okno.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Pozice oken vyžadují novější labwc; po jeho aktualizaci se odhlaste a znovu přihlaste."
 }

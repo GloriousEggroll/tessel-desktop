@@ -2204,5 +2204,21 @@
   "Use the built-in window background": "使用內建視窗背景",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "這些顏色會套用到 Tessel 的應用程式、其他 GTK 4 應用程式、視窗標題列與資料夾圖示。視窗背景會保持夠深或夠淺，在目前樣式下仍清晰易讀。",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "在關閉「配合桌布顏色」時，選擇開關、滑桿、選取項目和強調按鈕的顏色。",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "在關閉「配合桌布顏色」時，選擇視窗、選單和標題列的背景顏色。"
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "在關閉「配合桌布顏色」時，選擇視窗、選單和標題列的背景顏色。",
+  "Window positions": "視窗位置",
+  "Save where an app's window is, and the app opens there the next time it starts.": "儲存應用程式視窗所在的位置，應用程式下次啟動時會在那裡開啟。",
+  "No window positions saved yet.": "尚未儲存任何視窗位置。",
+  "Add a window…": "新增視窗…",
+  "Choose a window to save where it is now.": "選擇一個視窗以儲存它目前的位置。",
+  "Save where its open window is now": "儲存其開啟視窗的目前位置",
+  "{screen}, maximized": "{screen}，最大化",
+  "{screen}, {width} × {height}": "{screen}，{width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "此螢幕目前未連接。位置會保留，直到它重新連接。",
+  "Could not read the open windows: {error}": "無法讀取開啟的視窗：{error}",
+  "{app} has no open window now.": "{app} 目前沒有開啟的視窗。",
+  "Could not save the window positions: {error}": "無法儲存視窗位置：{error}",
+  "Could not apply the window positions: {error}": "無法套用視窗位置：{error}",
+  "Looking for open windows…": "正在尋找開啟的視窗…",
+  "No open windows to add. Open the app and place its window first.": "沒有可新增的開啟視窗。請先開啟應用程式並擺放好它的視窗。",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "視窗位置需要較新版本的 labwc；更新後請登出並重新登入。"
 }

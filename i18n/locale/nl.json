@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "De ingebouwde vensterachtergrond gebruiken",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Deze kleuren gelden voor de apps van Tessel, andere GTK 4-apps, titelbalken van vensters en mappictogrammen. Een vensterachtergrond blijft donker of licht genoeg om leesbaar te blijven in de huidige stijl.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Kies de kleur van schakelaars, schuifregelaars, selecties en benadrukte knoppen wanneer afstemmen op de achtergrondkleuren uit staat.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Kies de achtergrondkleur van vensters, menu’s en titelbalken wanneer afstemmen op de achtergrondkleuren uit staat."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Kies de achtergrondkleur van vensters, menu’s en titelbalken wanneer afstemmen op de achtergrondkleuren uit staat.",
+  "Window positions": "Vensterposities",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Sla op waar het venster van een app staat; de app opent daar de volgende keer dat hij start.",
+  "No window positions saved yet.": "Nog geen vensterposities opgeslagen.",
+  "Add a window…": "Venster toevoegen…",
+  "Choose a window to save where it is now.": "Kies een venster om op te slaan waar het nu staat.",
+  "Save where its open window is now": "Opslaan waar het geopende venster nu staat",
+  "{screen}, maximized": "{screen}, gemaximaliseerd",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Dit scherm is nu niet aangesloten. De positie blijft bewaard voor als het terug is.",
+  "Could not read the open windows: {error}": "De geopende vensters konden niet worden gelezen: {error}",
+  "{app} has no open window now.": "{app} heeft nu geen geopend venster.",
+  "Could not save the window positions: {error}": "De vensterposities konden niet worden opgeslagen: {error}",
+  "Could not apply the window positions: {error}": "De vensterposities konden niet worden toegepast: {error}",
+  "Looking for open windows…": "Geopende vensters zoeken…",
+  "No open windows to add. Open the app and place its window first.": "Geen geopende vensters om toe te voegen. Open eerst de app en zet het venster op zijn plek.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vensterposities hebben een nieuwere labwc nodig; meld je na het bijwerken af en weer aan."
 }

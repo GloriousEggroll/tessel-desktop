@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Использовать встроенный фон окон",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Эти цвета применяются к приложениям Tessel, другим приложениям GTK 4, заголовкам окон и значкам папок. Фон окон остаётся достаточно тёмным или светлым, чтобы текст читался в текущем стиле.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Выберите цвет переключателей, ползунков, выделения и акцентных кнопок, когда подбор цветов по обоям выключен.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Выберите цвет фона окон, меню и заголовков окон, когда подбор цветов по обоям выключен."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Выберите цвет фона окон, меню и заголовков окон, когда подбор цветов по обоям выключен.",
+  "Window positions": "Положение окон",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Сохраните положение окна приложения, и при следующем запуске оно откроется там же.",
+  "No window positions saved yet.": "Сохранённых положений окон пока нет.",
+  "Add a window…": "Добавить окно…",
+  "Choose a window to save where it is now.": "Выберите окно, чтобы сохранить его текущее положение.",
+  "Save where its open window is now": "Сохранить текущее положение открытого окна",
+  "{screen}, maximized": "{screen}, развёрнуто",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Этот экран сейчас не подключён. Положение сохранится до его возвращения.",
+  "Could not read the open windows: {error}": "Не удалось получить открытые окна: {error}",
+  "{app} has no open window now.": "У {app} сейчас нет открытых окон.",
+  "Could not save the window positions: {error}": "Не удалось сохранить положение окон: {error}",
+  "Could not apply the window positions: {error}": "Не удалось применить положение окон: {error}",
+  "Looking for open windows…": "Поиск открытых окон…",
+  "No open windows to add. Open the app and place its window first.": "Нет открытых окон для добавления. Сначала откройте приложение и расположите его окно.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Для положения окон нужен более новый labwc; после обновления выйдите из системы и войдите снова."
 }

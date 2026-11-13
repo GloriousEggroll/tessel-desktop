@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Dùng nền cửa sổ có sẵn",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Các màu này áp dụng cho ứng dụng của Tessel, các ứng dụng GTK 4 khác, thanh tiêu đề cửa sổ và biểu tượng thư mục. Nền cửa sổ được giữ đủ tối hoặc đủ sáng để vẫn dễ đọc trong kiểu hiện tại.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Chọn màu cho công tắc, thanh trượt, vùng chọn và nút nổi bật khi tắt khớp màu theo hình nền.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Chọn màu nền cho cửa sổ, trình đơn và thanh tiêu đề khi tắt khớp màu theo hình nền."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Chọn màu nền cho cửa sổ, trình đơn và thanh tiêu đề khi tắt khớp màu theo hình nền.",
+  "Window positions": "Vị trí cửa sổ",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Lưu vị trí cửa sổ của một ứng dụng, và ứng dụng sẽ mở ở đó trong lần khởi động tiếp theo.",
+  "No window positions saved yet.": "Chưa lưu vị trí cửa sổ nào.",
+  "Add a window…": "Thêm cửa sổ…",
+  "Choose a window to save where it is now.": "Chọn một cửa sổ để lưu vị trí hiện tại của nó.",
+  "Save where its open window is now": "Lưu vị trí hiện tại của cửa sổ đang mở",
+  "{screen}, maximized": "{screen}, phóng to",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Màn hình này hiện không được kết nối. Vị trí được giữ lại cho đến khi nó quay lại.",
+  "Could not read the open windows: {error}": "Không thể đọc các cửa sổ đang mở: {error}",
+  "{app} has no open window now.": "{app} hiện không có cửa sổ nào đang mở.",
+  "Could not save the window positions: {error}": "Không thể lưu vị trí cửa sổ: {error}",
+  "Could not apply the window positions: {error}": "Không thể áp dụng vị trí cửa sổ: {error}",
+  "Looking for open windows…": "Đang tìm các cửa sổ đang mở…",
+  "No open windows to add. Open the app and place its window first.": "Không có cửa sổ đang mở nào để thêm. Hãy mở ứng dụng và đặt cửa sổ của nó trước.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vị trí cửa sổ cần labwc mới hơn; sau khi cập nhật, hãy đăng xuất rồi đăng nhập lại."
 }

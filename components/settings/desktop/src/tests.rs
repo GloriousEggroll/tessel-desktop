@@ -432,3 +432,236 @@ fn chosen_color_helpers() {
 fn sections_and_unknown_page() {
     assert_eq!(crate::SECTIONS, ["displays", "theme", "dock", "behavior", "layout", "lock", "login"]);
 }
+
+// ---------------------------------------------------------- window positions
+
+mod window_positions {
+    use super::scratch;
+    use crate::window_positions::*;
+    use serde_json::{json, Value};
+    use std::cell::Cell;
+    use tessel_displays::compat::fsx;
+    use tessel_displays::labwc::BlockWrite;
+
+    fn discord() -> Position {
+        Position { app_id: "discord".into(), name: "Discord".into(), output: "DP-2".into(), x: 1620, y: 40, width: 900,
+                   height: 1300, maximized: false }
+    }
+
+    fn browser() -> Position {
+        Position { app_id: "firefox".into(), name: "Firefox".into(), output: "HDMI-A-1".into(), x: 0, y: 0, width: 1280,
+                   height: 1000, maximized: true }
+    }
+
+    /// The block from the contract, byte for byte.
+    const CONTRACT: &str = "<!-- tessel window positions begin -->
+<windowRules>
+  <windowRule identifier=\"discord\" type=\"normal\" matchOnce=\"true\">
+    <action name=\"PlaceOnOutput\" output=\"DP-2\" x=\"1620\" y=\"40\" width=\"900\" height=\"1300\" maximized=\"no\"/>
+  </windowRule>
+</windowRules>
+<!-- tessel window positions end -->";
+
+    #[test]
+    fn json_round_trip_matches_the_contract_schema() {
+        let mut positions = WindowPositions::default();
+        positions.set(discord());
+        let saved: Value = serde_json::from_str(&positions.to_json()).unwrap();
+        assert_eq!(saved, json!({"version": 1, "positions": [{"app_id": "discord", "name": "Discord", "output": "DP-2",
+            "x": 1620, "y": 40, "width": 900, "height": 1300, "maximized": false}]}));
+        assert_eq!(WindowPositions::parse(&positions.to_json()).positions, positions.positions);
+        // Replacing keeps the entry's place; a new app is added at the end.
+        positions.set(browser());
+        positions.set(Position { x: 10, ..discord() });
+        assert_eq!(positions.positions.iter().map(|p| (p.app_id.as_str(), p.x)).collect::<Vec<_>>(), [("discord", 10), ("firefox", 0)]);
+        // labwc matches identifiers case-insensitively: one entry per app.
+        positions.set(Position { app_id: "Discord".into(), ..discord() });
+        assert_eq!(positions.positions.len(), 2);
+        assert_eq!(positions.get("DISCORD").unwrap().app_id, "Discord");
+        assert!(positions.remove("discord"));
+        assert!(!positions.remove("discord"));
+        assert_eq!(positions.positions, [browser()]);
+        assert_eq!(serde_json::from_str::<Value>(&WindowPositions::default().to_json()).unwrap(), json!({"version": 1, "positions": []}));
+    }
+
+    #[test]
+    fn loading_is_tolerant() {
+        let text = r#"{"version": 1, "future": {"a": 1}, "positions": [
+            {"app_id": "discord", "name": "Discord", "output": "DP-2", "x": 1620, "y": 40, "width": 900, "height": 1300, "maximized": false, "extra": 1},
+            {"app_id": "", "output": "DP-2", "x": 0, "y": 0, "width": 1, "height": 1},
+            {"app_id": "a", "output": "", "x": 0, "y": 0, "width": 1, "height": 1},
+            {"app_id": "b", "output": "DP-1", "x": "0", "y": 0, "width": 1, "height": 1},
+            {"app_id": "c", "output": "DP-1", "x": 0, "y": 0, "width": -1, "height": 1},
+            {"app_id": "DISCORD", "output": "DP-1", "x": 0, "y": 0, "width": 1, "height": 1},
+            {"app_id": "d", "output": "DP-1", "x": -5, "y": 2.0, "width": 0, "height": 0},
+            7, null, "x"]}"#;
+        let positions = WindowPositions::parse(text);
+        assert_eq!(positions.positions.iter().map(|p| p.app_id.as_str()).collect::<Vec<_>>(), ["discord", "d"]);
+        assert_eq!(positions.positions[0], discord());
+        let d = &positions.positions[1];
+        assert_eq!((d.name.as_str(), d.x, d.y, d.width, d.height, d.maximized), ("d", -5, 2, 0, 0, false));
+        // Unknown top-level keys survive a save.
+        let again: Value = serde_json::from_str(&positions.to_json()).unwrap();
+        assert_eq!(again["future"], json!({"a": 1}));
+        for junk in ["", "[]", "null", "{", "{\"positions\": {}}", "{\"positions\": [1]}", "\u{0}"] {
+            assert!(WindowPositions::parse(junk).positions.is_empty(), "{junk:?}");
+        }
+        let dir = scratch("positions-load");
+        assert_eq!(WindowPositions::load(&dir.join("missing.json")), WindowPositions::default());
+        std::fs::write(dir.join("bad.json"), b"\xff\xfe").unwrap();
+        assert!(WindowPositions::load(&dir.join("bad.json")).positions.is_empty());
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn json_is_saved_atomically_and_private() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scratch("positions-save");
+        let path = dir.join("tessel/window-positions.json");
+        let mut positions = WindowPositions::default();
+        positions.set(discord());
+        positions.save(&path).unwrap();
+        assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
+        assert_eq!(WindowPositions::load(&path).positions, positions.positions);
+        assert_eq!(WindowPositions::load(&path).to_json(), positions.to_json());
+        assert_eq!(std::fs::read_dir(dir.join("tessel")).unwrap().count(), 1);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn block_text_matches_the_contract_and_escapes() {
+        assert_eq!(block_text(&[discord()]).unwrap(), CONTRACT);
+        assert_eq!(block_text(&[]), None);
+        let both = block_text(&[discord(), browser()]).unwrap();
+        assert!(both.contains("<windowRule identifier=\"firefox\" type=\"normal\" matchOnce=\"true\">\n    \
+            <action name=\"PlaceOnOutput\" output=\"HDMI-A-1\" x=\"0\" y=\"0\" width=\"1280\" height=\"1000\" maximized=\"yes\"/>"));
+        assert_eq!(both.matches("<windowRule ").count(), 2);
+        assert_eq!(glob_escape("a*b?c[d]e\\f"), "a\\*b\\?c\\[d\\]e\\\\f");
+        let odd = Position { app_id: "x*?[]\\&<>\"".into(), output: "D\"<&>".into(), ..discord() };
+        let block = block_text(&[odd]).unwrap();
+        assert!(block.contains("identifier=\"x\\*\\?\\[\\]\\\\&amp;&lt;&gt;&quot;\""), "{block}");
+        assert!(block.contains("output=\"D&quot;&lt;&amp;&gt;\""), "{block}");
+    }
+
+    const USER_RC: &str = "<?xml version=\"1.0\"?>\n<labwc_config>\n  <core gap=\"4\"/>\n  <windowRules>\n    <windowRule identifier=\"mpv\" serverDecoration=\"no\"/>\n  </windowRules>\n</labwc_config>\n";
+
+    #[test]
+    fn block_coexists_with_snap_layouts_and_user_rules() {
+        let mut layouts = crate::snap_layouts::SnapLayouts::default();
+        layouts.set("DP-2", &crate::snap_layouts::Preset::Columns2.layout().unwrap());
+        let snap = crate::snap_layouts::block_text(&layouts.outputs).unwrap();
+        let ours = block_text(&[discord()]).unwrap();
+        let other = block_text(&[browser()]).unwrap();
+        // Either block first; each is replaced and removed without touching the other.
+        for snap_first in [true, false] {
+            let text = if snap_first {
+                let text = crate::snap_layouts::with_block(USER_RC, Some(&snap)).unwrap();
+                with_block(&text, Some(&ours)).unwrap()
+            } else {
+                let text = with_block(USER_RC, Some(&ours)).unwrap();
+                crate::snap_layouts::with_block(&text, Some(&snap)).unwrap()
+            };
+            assert_eq!(current_block(&text), Some(ours.as_str()));
+            assert_eq!(crate::snap_layouts::current_block(&text), Some(snap.as_str()));
+            assert!(text.contains("<windowRule identifier=\"mpv\" serverDecoration=\"no\"/>"));
+            let (s, o) = (text.find(&snap).unwrap(), text.find(&ours).unwrap());
+            assert_eq!(s < o, snap_first);
+            let replaced = with_block(&text, Some(&other)).unwrap();
+            assert_eq!(replaced, text.replace(&ours, &other));
+            let removed = with_block(&replaced, None).unwrap();
+            assert_eq!(current_block(&removed), None);
+            assert_eq!(crate::snap_layouts::current_block(&removed), Some(snap.as_str()));
+            assert_eq!(crate::snap_layouts::with_block(&removed, None).unwrap(), USER_RC);
+        }
+        // The user's own section is never taken for ours.
+        assert_eq!(current_block(USER_RC), None);
+        assert_eq!(with_block(USER_RC, None).unwrap(), USER_RC);
+        assert_eq!(with_block("<labwc_config/>\n", Some(&ours)).unwrap(), format!("<labwc_config>\n\n{ours}\n</labwc_config>\n"));
+        assert!(with_block("<other/>", Some(&ours)).is_err());
+    }
+
+    #[test]
+    fn rc_writes_only_on_change_and_reconfigures_once() {
+        let dir = scratch("positions-rc");
+        let rc = dir.join("rc.xml");
+        std::fs::write(&rc, USER_RC).unwrap();
+        let calls = Cell::new(0);
+        let reconfigure = || {
+            calls.set(calls.get() + 1);
+            (true, None)
+        };
+        let mut positions = WindowPositions::default();
+        positions.set(discord());
+        assert!(!rc_in_sync(&rc, &positions));
+        assert_eq!(sync_rc_with(&rc, &positions, &fsx::os_replace, &reconfigure).unwrap(), BlockWrite::Written);
+        assert!(rc_in_sync(&rc, &positions));
+        assert_eq!(sync_rc_with(&rc, &positions, &fsx::os_replace, &reconfigure).unwrap(), BlockWrite::Unchanged);
+        assert_eq!(calls.get(), 1);
+        assert_eq!(sync_rc_with(&rc, &WindowPositions::default(), &fsx::os_replace, &reconfigure).unwrap(), BlockWrite::Written);
+        assert_eq!(std::fs::read_to_string(&rc).unwrap(), USER_RC);
+        assert_eq!(calls.get(), 2);
+        let missing = dir.join("new/rc.xml");
+        assert_eq!(sync_rc_with(&missing, &WindowPositions::default(), &fsx::os_replace, &reconfigure).unwrap(), BlockWrite::NoFile);
+        assert!(!missing.exists());
+        let error = sync_rc_with(&rc, &positions, &fsx::os_replace, &|| (false, Some("no compositor".into()))).unwrap_err();
+        assert!(error.contains("no compositor"));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    fn reply(value: Value) -> tessel_tiling::client::Reply { value.as_object().unwrap().clone() }
+
+    fn window(app_id: &str, output: &str, normal: bool) -> Value {
+        json!({"id": 1, "active": false, "tiled": false, "visible": true, "output": 1, "x": 3000, "y": 50, "width": 900,
+               "height": 1300, "fullscreen": false, "minimized": false, "app_id": app_id, "title": format!("{app_id} window"),
+               "type_normal": normal, "output_name": output, "maximized": false,
+               "place": {"x": 1620, "y": 40, "width": 900, "height": 1300}})
+    }
+
+    #[test]
+    fn windows_reply_is_parsed_and_filtered() {
+        let own = vec![OWN_APP_ID.to_owned()];
+        // labwc before 0.20.2-29: no flag, or false.
+        let old = reply(json!({"version": 1, "ready": true, "windows": [{"id": 1, "x": 0, "y": 0, "width": 10, "height": 10}]}));
+        assert_eq!(parse_windows(&old, &own), Windows::Unsupported);
+        let mut off = old.clone();
+        off.insert("positions_supported".into(), json!(false));
+        assert_eq!(parse_windows(&off, &own), Windows::Unsupported);
+        let mut active = window("firefox", "HDMI-A-1", true);
+        active["active"] = json!(true);
+        active["maximized"] = json!(true);
+        active["place"] = json!({"x": 0, "y": 0, "width": 1280, "height": 1000});
+        let new = reply(json!({"version": 1, "ready": true, "positions_supported": true, "windows": [
+            window("discord", "DP-2", true), window("discord", "DP-2", false), window("", "DP-2", true),
+            window("vesktop", "", true), window("org.tessel.GlobalSettings", "DP-2", true), window("ORG.TESSEL.GLOBALSETTINGS", "DP-2", true),
+            {"app_id": "noplace", "type_normal": true, "output_name": "DP-2"}, active, window("firefox", "DP-2", true), 5]}));
+        let Windows::Open(open) = parse_windows(&new, &own) else { panic!() };
+        assert_eq!(open.iter().map(|w| w.app_id.as_str()).collect::<Vec<_>>(), ["discord", "firefox", "firefox"]);
+        assert_eq!(open[0], OpenWindow { app_id: "discord".into(), title: "discord window".into(), output: "DP-2".into(), x: 1620,
+                                         y: 40, width: 900, height: 1300, maximized: false, active: false });
+        let windows = Windows::Open(open.clone());
+        // The active window of an app wins.
+        assert!(windows.of_app("Firefox").unwrap().active);
+        assert_eq!(windows.of_app("discord"), Some(&open[0]));
+        assert_eq!(windows.of_app("steam"), None);
+        let saved = Position::from_window(windows.of_app("firefox").unwrap(), "Firefox");
+        assert_eq!(saved, browser());
+        assert_eq!(Position::from_window(&open[0], "").name, "discord");
+        // No answer.
+        let failed = read_windows(&|| Err(tessel_tiling::client::ClientError::Unavailable("gone".into())), &own);
+        assert_eq!(failed, Windows::Unavailable("gone".into()));
+        assert!(failed.open().is_empty() && Windows::Unsupported.of_app("discord").is_none());
+        let empty = reply(json!({"version": 1, "ready": true, "positions_supported": true}));
+        assert_eq!(parse_windows(&empty, &own), Windows::Open(Vec::new()));
+    }
+
+    #[test]
+    fn app_names_come_from_desktop_entries() {
+        use tessel_dock::core::app_catalog::{AppCatalog, AppInfoData};
+        let mut discord = AppInfoData::fake("discord.desktop", "Discord");
+        discord.startup_wm_class = Some("discord".into());
+        let catalog = AppCatalog::from_infos(vec![discord, AppInfoData::fake("org.mozilla.firefox.desktop", "Firefox")]);
+        assert_eq!(app_label(&catalog, "discord").name, "Discord");
+        assert_eq!(app_label(&catalog, "org.mozilla.firefox").name, "Firefox");
+        assert_eq!(app_label(&catalog, "unknown.app").name, "unknown.app");
+    }
+}

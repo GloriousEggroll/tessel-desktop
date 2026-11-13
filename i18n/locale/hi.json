@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "अंतर्निहित विंडो पृष्ठभूमि का उपयोग करें",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "ये रंग Tessel के ऐप्स, अन्य GTK 4 ऐप्स, विंडो शीर्षक पट्टियों और फ़ोल्डर आइकनों पर लागू होते हैं। विंडो पृष्ठभूमि को इतना गहरा या हल्का रखा जाता है कि वह मौजूदा शैली में पढ़ने योग्य रहे।",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "जब वॉलपेपर के रंगों से मिलान बंद हो, तब स्विच, स्लाइडर, चयन और हाइलाइट किए गए बटन का रंग चुनें।",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "जब वॉलपेपर के रंगों से मिलान बंद हो, तब विंडो, मेनू और शीर्षक पट्टी की पृष्ठभूमि का रंग चुनें।"
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "जब वॉलपेपर के रंगों से मिलान बंद हो, तब विंडो, मेनू और शीर्षक पट्टी की पृष्ठभूमि का रंग चुनें।",
+  "Window positions": "विंडो की स्थितियाँ",
+  "Save where an app's window is, and the app opens there the next time it starts.": "किसी ऐप की विंडो जहाँ है वह सहेजें, और अगली बार शुरू होने पर ऐप वहीं खुलेगा।",
+  "No window positions saved yet.": "अभी तक कोई विंडो स्थिति सहेजी नहीं गई है।",
+  "Add a window…": "विंडो जोड़ें…",
+  "Choose a window to save where it is now.": "किसी विंडो को चुनें ताकि वह अभी जहाँ है वह सहेजा जा सके।",
+  "Save where its open window is now": "इसकी खुली विंडो अभी जहाँ है वह सहेजें",
+  "{screen}, maximized": "{screen}, अधिकतम",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "यह स्क्रीन अभी कनेक्ट नहीं है। इसके वापस आने तक स्थिति सहेजी रहती है।",
+  "Could not read the open windows: {error}": "खुली विंडो पढ़ी नहीं जा सकीं: {error}",
+  "{app} has no open window now.": "{app} की अभी कोई विंडो खुली नहीं है।",
+  "Could not save the window positions: {error}": "विंडो की स्थितियाँ सहेजी नहीं जा सकीं: {error}",
+  "Could not apply the window positions: {error}": "विंडो की स्थितियाँ लागू नहीं की जा सकीं: {error}",
+  "Looking for open windows…": "खुली विंडो खोजी जा रही हैं…",
+  "No open windows to add. Open the app and place its window first.": "जोड़ने के लिए कोई खुली विंडो नहीं है। पहले ऐप खोलें और उसकी विंडो को जगह पर रखें।",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "विंडो की स्थितियों के लिए नया labwc चाहिए; उसे अपडेट करने के बाद साइन आउट करके फिर से साइन इन करें।"
 }

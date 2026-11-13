@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Folosește fundalul implicit al ferestrelor",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Aceste culori se aplică aplicațiilor Tessel, altor aplicații GTK 4, barelor de titlu și pictogramelor de dosare. Fundalul ferestrelor rămâne suficient de închis sau deschis pentru a fi lizibil în stilul curent.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Alegeți culoarea comutatoarelor, glisoarelor, selecțiilor și butoanelor evidențiate când potrivirea cu culorile imaginii de fundal este dezactivată.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Alegeți culoarea de fundal a ferestrelor, meniurilor și barelor de titlu când potrivirea cu culorile imaginii de fundal este dezactivată."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Alegeți culoarea de fundal a ferestrelor, meniurilor și barelor de titlu când potrivirea cu culorile imaginii de fundal este dezactivată.",
+  "Window positions": "Pozițiile ferestrelor",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Salvați unde se află fereastra unei aplicații, iar aplicația se va deschide acolo data viitoare când pornește.",
+  "No window positions saved yet.": "Nu există încă poziții de ferestre salvate.",
+  "Add a window…": "Adăugați o fereastră…",
+  "Choose a window to save where it is now.": "Alegeți o fereastră pentru a salva unde se află acum.",
+  "Save where its open window is now": "Salvați unde se află acum fereastra deschisă",
+  "{screen}, maximized": "{screen}, maximizată",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Acest ecran nu este conectat acum. Poziția este păstrată pentru când revine.",
+  "Could not read the open windows: {error}": "Ferestrele deschise nu au putut fi citite: {error}",
+  "{app} has no open window now.": "{app} nu are acum nicio fereastră deschisă.",
+  "Could not save the window positions: {error}": "Pozițiile ferestrelor nu au putut fi salvate: {error}",
+  "Could not apply the window positions: {error}": "Pozițiile ferestrelor nu au putut fi aplicate: {error}",
+  "Looking for open windows…": "Se caută ferestrele deschise…",
+  "No open windows to add. Open the app and place its window first.": "Nu există ferestre deschise de adăugat. Deschideți mai întâi aplicația și așezați-i fereastra.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Pozițiile ferestrelor necesită un labwc mai nou; după actualizare, deconectați-vă și conectați-vă din nou."
 }

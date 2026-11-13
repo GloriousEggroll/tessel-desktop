@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Χρήση του ενσωματωμένου φόντου παραθύρων",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Τα χρώματα αυτά ισχύουν για τις εφαρμογές του Tessel, άλλες εφαρμογές GTK 4, τις γραμμές τίτλου και τα εικονίδια φακέλων. Το φόντο παραθύρων μένει αρκετά σκούρο ή ανοιχτό ώστε να διαβάζεται στο τρέχον στυλ.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Επιλέξτε το χρώμα των διακοπτών, των ρυθμιστικών, των επιλογών και των τονισμένων κουμπιών όταν η αντιστοίχιση με τα χρώματα της ταπετσαρίας είναι ανενεργή.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Επιλέξτε το χρώμα φόντου των παραθύρων, των μενού και των γραμμών τίτλου όταν η αντιστοίχιση με τα χρώματα της ταπετσαρίας είναι ανενεργή."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Επιλέξτε το χρώμα φόντου των παραθύρων, των μενού και των γραμμών τίτλου όταν η αντιστοίχιση με τα χρώματα της ταπετσαρίας είναι ανενεργή.",
+  "Window positions": "Θέσεις παραθύρων",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Αποθηκεύστε πού βρίσκεται το παράθυρο μιας εφαρμογής και η εφαρμογή θα ανοίξει εκεί την επόμενη φορά που θα ξεκινήσει.",
+  "No window positions saved yet.": "Δεν έχουν αποθηκευτεί ακόμη θέσεις παραθύρων.",
+  "Add a window…": "Προσθήκη παραθύρου…",
+  "Choose a window to save where it is now.": "Επιλέξτε ένα παράθυρο για να αποθηκεύσετε πού βρίσκεται τώρα.",
+  "Save where its open window is now": "Αποθήκευση της τρέχουσας θέσης του ανοιχτού παραθύρου",
+  "{screen}, maximized": "{screen}, μεγιστοποιημένο",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Αυτή η οθόνη δεν είναι συνδεδεμένη τώρα. Η θέση διατηρείται για όταν επιστρέψει.",
+  "Could not read the open windows: {error}": "Δεν ήταν δυνατή η ανάγνωση των ανοιχτών παραθύρων: {error}",
+  "{app} has no open window now.": "Η εφαρμογή {app} δεν έχει ανοιχτό παράθυρο τώρα.",
+  "Could not save the window positions: {error}": "Δεν ήταν δυνατή η αποθήκευση των θέσεων παραθύρων: {error}",
+  "Could not apply the window positions: {error}": "Δεν ήταν δυνατή η εφαρμογή των θέσεων παραθύρων: {error}",
+  "Looking for open windows…": "Αναζήτηση ανοιχτών παραθύρων…",
+  "No open windows to add. Open the app and place its window first.": "Δεν υπάρχουν ανοιχτά παράθυρα για προσθήκη. Ανοίξτε πρώτα την εφαρμογή και τοποθετήστε το παράθυρό της.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Οι θέσεις παραθύρων χρειάζονται νεότερο labwc· μετά την ενημέρωσή του, αποσυνδεθείτε και συνδεθείτε ξανά."
 }

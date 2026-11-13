@@ -119,12 +119,14 @@ pub struct DesktopControls {
     pub widget: gtk::Box,
     pub tiling_card: gtk::Box,
     pub snap_layouts: Rc<crate::snap_layouts::SnapLayoutsGroup>,
+    pub window_positions: Rc<crate::window_positions::WindowPositionsGroup>,
 }
 
 impl DesktopControls {
     pub fn new(workspace_factory: Option<&WorkspaceFactory>, tiling_factory: Option<&TilingFactory>,
                authentication_factory: Option<&AuthenticationFactory>,
-               snap_options: Option<&crate::snap_layouts::SnapOptions>) -> Result<Rc<Self>, String> {
+               snap_options: Option<&crate::snap_layouts::SnapOptions>,
+               position_options: Option<&crate::window_positions::PositionOptions>) -> Result<Rc<Self>, String> {
         let workspace = match workspace_factory {
             Some(factory) => factory()?,
             None => crate::workspaces::default_workspace_controls()?,
@@ -146,14 +148,17 @@ impl DesktopControls {
             snap_layouts.watch_tiling(&tiling.enabled_switch());
         }
         widget.append(&snap_layouts.widget);
+        let window_positions = crate::window_positions::WindowPositionsGroup::new(position_options.cloned().unwrap_or_default());
+        widget.append(&window_positions.widget);
         widget.append(&authentication.widget);
-        Ok(Rc::new(Self { workspace, tiling, authentication, count, widget, tiling_card: card, snap_layouts }))
+        Ok(Rc::new(Self { workspace, tiling, authentication, count, widget, tiling_card: card, snap_layouts, window_positions }))
     }
 
     pub fn refresh(&self) {
         self.workspace.refresh();
         self.tiling.refresh();
         self.snap_layouts.refresh();
+        self.window_positions.refresh();
         self.authentication.refresh();
     }
 }
@@ -199,6 +204,7 @@ pub struct DockPageOptions {
     pub tiling_factory: Option<TilingFactory>,
     pub authentication_factory: Option<AuthenticationFactory>,
     pub snap_layouts: Option<crate::snap_layouts::SnapOptions>,
+    pub window_positions: Option<crate::window_positions::PositionOptions>,
 }
 
 /// One embedded page; `page.controller::<DockPage>()` gives the live
@@ -251,7 +257,8 @@ impl DockPage {
         self.bridge.replace(Some(bridge.clone()));
         let extra = if self.section == "desktop" {
             Some(DesktopControls::new(self.options.workspace_factory.as_ref(), self.options.tiling_factory.as_ref(),
-                                      self.options.authentication_factory.as_ref(), self.options.snap_layouts.as_ref())?)
+                                      self.options.authentication_factory.as_ref(), self.options.snap_layouts.as_ref(),
+                                      self.options.window_positions.as_ref())?)
         } else {
             None
         };
@@ -372,6 +379,7 @@ impl DockPage {
                 page.add_target("focus_outline_switch", &extra.tiling.outline_switch());
                 page.add_target("authentication_status", &extra.authentication.widget);
                 page.add_target("snap_layouts", &extra.snap_layouts.layout);
+                page.add_target("window_positions", &extra.window_positions.add);
             }
         }
     }

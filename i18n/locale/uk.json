@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Використовувати вбудоване тло вікон",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Ці кольори застосовуються до застосунків Tessel, інших застосунків GTK 4, заголовків вікон і значків тек. Тло вікон лишається достатньо темним або світлим, щоб текст читався в поточному стилі.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Виберіть колір перемикачів, повзунків, виділення та акцентних кнопок, коли добір кольорів за шпалерами вимкнено.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Виберіть колір тла вікон, меню та заголовків вікон, коли добір кольорів за шпалерами вимкнено."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Виберіть колір тла вікон, меню та заголовків вікон, коли добір кольорів за шпалерами вимкнено.",
+  "Window positions": "Розташування вікон",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Збережіть розташування вікна програми, і наступного запуску програма відкриється там само.",
+  "No window positions saved yet.": "Збережених розташувань вікон ще немає.",
+  "Add a window…": "Додати вікно…",
+  "Choose a window to save where it is now.": "Виберіть вікно, щоб зберегти його поточне розташування.",
+  "Save where its open window is now": "Зберегти поточне розташування відкритого вікна",
+  "{screen}, maximized": "{screen}, розгорнуто",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Цей екран зараз не під’єднано. Розташування збережеться до його повернення.",
+  "Could not read the open windows: {error}": "Не вдалося прочитати відкриті вікна: {error}",
+  "{app} has no open window now.": "У {app} зараз немає відкритих вікон.",
+  "Could not save the window positions: {error}": "Не вдалося зберегти розташування вікон: {error}",
+  "Could not apply the window positions: {error}": "Не вдалося застосувати розташування вікон: {error}",
+  "Looking for open windows…": "Пошук відкритих вікон…",
+  "No open windows to add. Open the app and place its window first.": "Немає відкритих вікон для додавання. Спершу відкрийте програму й розташуйте її вікно.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Для розташування вікон потрібен новіший labwc; після оновлення вийдіть із системи й увійдіть знову."
 }

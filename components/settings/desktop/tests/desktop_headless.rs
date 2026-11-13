@@ -24,6 +24,8 @@ use gs_desktop::layout::{LayoutOptions, LayoutSettings};
 use gs_desktop::layout_presets::{self as presets, Preset, PresetIcon, TilingBackend, WorkspaceBackend, WorkspaceState};
 use gs_desktop::icon_themes;
 use gs_desktop::snap_layouts::{self as snap, Axis, Preset as SnapPreset};
+use gs_desktop::util::Runner;
+use gs_desktop::window_positions::{self as positions, Windows};
 use gs_desktop::theme::{self, ColorSettings, ThemeBridge, ThemeOptions, ThemeWallpaperPage, MODES};
 use gtk::prelude::*;
 use serde_json::{json, Map, Value};
@@ -1071,6 +1073,11 @@ struct DockFx {
     dir: PathBuf,
     snap_config: PathBuf,
     snap_reloads: Rc<Cell<usize>>,
+    positions_config: PathBuf,
+    positions_reloads: Rc<Cell<usize>>,
+    positions_fail: Rc<Cell<bool>>,
+    /// What the fake compositor answers to `windows` (Err: unavailable).
+    reply: Arc<Mutex<Result<Value, String>>>,
 }
 
 impl DockFx {
@@ -1096,6 +1103,30 @@ fn dock_fx(app: &gtk::Application, section: &str, tiling: Option<dock::TilingFac
 
 fn dock_fx_with(app: &gtk::Application, section: &str, tiling: Option<dock::TilingFactory>,
                 screens: Option<snap::ScreenList>) -> DockFx {
+    dock_fx_positions(app, section, tiling, screens, PositionsSetup::default())
+}
+
+/// Window positions seams: by default a fake `windows` reply read inline.
+#[derive(Default)]
+struct PositionsSetup {
+    screens: Option<snap::ScreenList>,
+    windows: Option<positions::WindowSource>,
+    runner: Option<Runner>,
+}
+
+fn fake_apps() -> positions::AppLookup {
+    Rc::new(|app_id: &str| {
+        let (name, icon) = match app_id {
+            "discord" => ("Discord", "internet-chat"),
+            "firefox" => ("Firefox", "web-browser"),
+            other => (other, "application-x-executable"),
+        };
+        positions::AppLabel { name: name.into(), icon: Some(gio::ThemedIcon::new(icon).upcast()) }
+    })
+}
+
+fn dock_fx_positions(app: &gtk::Application, section: &str, tiling: Option<dock::TilingFactory>,
+                     screens: Option<snap::ScreenList>, setup: PositionsSetup) -> DockFx {
     let dir = scratch("dock");
     let store = dir.join("dock.json");
     let mut config = config_with(json!({"pins": ["org.example.App.desktop"], "hot_corners": {"offline-output": ["bottom_left"]}}));
@@ -1128,13 +1159,31 @@ fn dock_fx_with(app: &gtk::Application, section: &str, tiling: Option<dock::Tili
             counter.set(counter.get() + 1);
             (true, None)
         })), screens };
+    let positions_config = dir.join("tessel/window-positions.json");
+    let positions_reloads: Rc<Cell<usize>> = Rc::default();
+    let reply: Arc<Mutex<Result<Value, String>>> =
+        Arc::new(Mutex::new(Ok(json!({"version": 1, "ready": true, "positions_supported": true, "windows": []}))));
+    let positions_fail: Rc<Cell<bool>> = Rc::default();
+    let (rc4, counter, answer, fail) = (rc.clone(), positions_reloads.clone(), reply.clone(), positions_fail.clone());
+    let window_positions = positions::PositionOptions {
+        config: Some(positions_config.clone()), rc: Some(Rc::new(move || rc4.clone())),
+        reconfigure: Some(Rc::new(move || {
+            counter.set(counter.get() + 1);
+            if fail.get() { (false, Some("no compositor".into())) } else { (true, None) }
+        })),
+        windows: Some(setup.windows.unwrap_or_else(|| Arc::new(move || match &*answer.lock().unwrap() {
+            Ok(value) => Ok(value.as_object().unwrap().clone()),
+            Err(error) => Err(tessel_tiling::client::ClientError::Unavailable(error.clone())),
+        }))),
+        screens: setup.screens, apps: Some(fake_apps()), runner: Some(setup.runner.unwrap_or(Runner::Inline)),
+    };
     let options = DockPageOptions { bridge_factory: Some(offline_factory(store.clone())), workspace_factory: Some(workspace),
                                     tiling_factory: Some(tiling), authentication_factory: Some(authentication),
-                                    snap_layouts: Some(snap_layouts) };
+                                    snap_layouts: Some(snap_layouts), window_positions: Some(window_positions) };
     let page = dock::create_page(Some(app.clone()), section, options).unwrap();
     show(&test_host, &page);
     let dock = page.controller::<DockPage>().unwrap();
-    DockFx { host: test_host, page, dock, store, rc, reloads, dir, snap_config, snap_reloads }
+    DockFx { host: test_host, page, dock, store, rc, reloads, dir, snap_config, snap_reloads, positions_config, positions_reloads, positions_fail, reply }
 }
 
 fn tiling_backend(rc: &Path, dir: &Path) -> tessel_tiling::config::TilingConfig {
@@ -1388,7 +1437,7 @@ fn dock_tests(app: &gtk::Application) {
         assert_eq!(saved.hot_corners.get(&output).cloned(), Some(vec!["top_left".to_owned()]));
         assert_eq!(saved.transparency, 5);
         for name in ["workspace_count", "gapless_switch", "tiling_switch", "focus_outline_switch", "authentication_status",
-                     "hot_corner_delay", "menu_hotkey_fullscreen", "snap_layouts"] {
+                     "hot_corner_delay", "menu_hotkey_fullscreen", "snap_layouts", "window_positions"] {
             assert!(fx.page.search_targets.borrow().contains_key(name), "{name}");
         }
         fx.done();
@@ -2090,6 +2139,320 @@ fn snap_tests(app: &gtk::Application) {
     });
 }
 
+// --------------------------------------------------------- window positions
+
+fn open_window(app_id: &str, output: &str, place: (i64, i64, i64, i64), maximized: bool) -> Value {
+    json!({"id": 7, "active": true, "tiled": false, "visible": true, "output": 1, "x": 0, "y": 0, "width": place.2,
+           "height": place.3, "fullscreen": false, "minimized": false, "app_id": app_id, "title": format!("{app_id} – main window"),
+           "type_normal": true, "output_name": output, "maximized": maximized,
+           "place": {"x": place.0, "y": place.1, "width": place.2, "height": place.3}})
+}
+
+fn set_windows(fx: &DockFx, windows: Vec<Value>) {
+    *fx.reply.lock().unwrap() = Ok(json!({"version": 1, "ready": true, "positions_supported": true, "windows": windows}));
+}
+
+fn saved_positions(path: &Path) -> Value {
+    serde_json::from_str::<Value>(&std::fs::read_to_string(path).unwrap()).unwrap()["positions"].clone()
+}
+
+fn choose(group: &positions::WindowPositionsGroup, app_id: &str) {
+    let choices = group.choices();
+    let (_, button) = choices.iter().find(|(w, _)| w.app_id == app_id).unwrap_or_else(|| panic!("{app_id} not offered"));
+    button.emit_clicked();
+}
+
+/// The page scrolled so the Window positions card is in view; grim of the session.
+fn positions_screenshot(fx: &DockFx, name: &str) -> PathBuf {
+    let group = fx.dock.extra_controls().unwrap().window_positions.clone();
+    let scrolled = group.widget.ancestor(gtk::ScrolledWindow::static_type()).and_downcast::<gtk::ScrolledWindow>().unwrap();
+    GtkWindowExt::set_focus(&fx.host.window, None::<&gtk::Widget>);
+    for _ in 0..3 {
+        settle(0.3);
+        let child = scrolled.child().unwrap();
+        let point = group.widget.compute_point(&child, &gtk::graphene::Point::new(0.0, 0.0)).unwrap();
+        let adjustment = scrolled.vadjustment();
+        adjustment.set_value(adjustment.value() + point.y() as f64 - 12.0);
+    }
+    settle(0.4);
+    let path = screenshot(name);
+    // A second argument keeps a copy outside the run's scratch tree.
+    if let Some(proof) = std::env::args().nth(2).map(PathBuf::from) {
+        std::fs::create_dir_all(&proof).unwrap();
+        std::fs::copy(&path, proof.join(format!("{name}.png"))).unwrap();
+    }
+    println!("screenshot {}", path.display());
+    path
+}
+
+/// Moves labwc's control socket aside for a fake one; puts it back when dropped.
+struct FakeSocket {
+    path: PathBuf,
+    aside: PathBuf,
+    stop: Arc<std::sync::atomic::AtomicBool>,
+    thread: Option<std::thread::JoinHandle<usize>>,
+}
+
+impl FakeSocket {
+    fn start(reply: Value) -> Self {
+        let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap();
+        assert!(runtime != "/run/user/1000" && runtime.starts_with(root().to_str().unwrap()), "private session only");
+        let display = std::env::var("WAYLAND_DISPLAY").unwrap();
+        let path = Path::new(&runtime).join(format!("tessel-tiling-{display}.sock"));
+        let aside = Path::new(&runtime).join("tiling-aside.sock");
+        if path.exists() {
+            std::fs::rename(&path, &aside).unwrap();
+        }
+        let server = std::os::unix::net::UnixDatagram::bind(&path).unwrap();
+        server.set_read_timeout(Some(Duration::from_millis(50))).unwrap();
+        let stop: Arc<std::sync::atomic::AtomicBool> = Arc::default();
+        let flag = stop.clone();
+        let thread = std::thread::spawn(move || {
+            let (mut buffer, mut answered) = ([0u8; 512], 0);
+            while !flag.load(std::sync::atomic::Ordering::SeqCst) {
+                let Ok((length, peer)) = server.recv_from(&mut buffer) else { continue };
+                assert_eq!(&buffer[..length], b"windows");
+                if let Some(peer) = peer.as_pathname() {
+                    let _ = server.send_to(reply.to_string().as_bytes(), peer);
+                    answered += 1;
+                }
+            }
+            answered
+        });
+        Self { path, aside, stop, thread: Some(thread) }
+    }
+
+    fn answered(mut self) -> usize {
+        self.stop.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.thread.take().unwrap().join().unwrap()
+    }
+}
+
+impl Drop for FakeSocket {
+    fn drop(&mut self) {
+        self.stop.store(true, std::sync::atomic::Ordering::SeqCst);
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+        let _ = std::fs::remove_file(&self.path);
+        if self.aside.exists() {
+            let _ = std::fs::rename(&self.aside, &self.path);
+        }
+    }
+}
+
+fn position_tests(app: &gtk::Application) {
+    run("window_positions_group_follows_snap_layouts_and_starts_empty", || {
+        let fx = dock_fx(app, "desktop", None);
+        let extra = fx.dock.extra_controls().unwrap();
+        let group = extra.window_positions.clone();
+        assert!(group.widget.is_visible());
+        assert_eq!(extra.snap_layouts.widget.next_sibling().as_ref(), Some(group.widget.upcast_ref::<gtk::Widget>()));
+        assert!(group.empty.is_visible() && group.rows().is_empty() && !group.picker_open());
+        assert_eq!(group.add.label().as_deref(), Some("Add a window…"));
+        assert!(fx.page.search_targets.borrow().contains_key("window_positions"));
+        assert!(!group.status.is_visible() && !group.error.is_visible());
+        assert!(!fx.positions_config.exists());
+        // An empty answer is no windows to add.
+        group.add.emit_clicked();
+        assert!(group.picker_open() && group.choices().is_empty() && !group.add.is_sensitive());
+        assert_eq!(group.status.text(), "No open windows to add. Open the app and place its window first.");
+        group.cancel.emit_clicked();
+        assert!(!group.picker_open() && !group.status.is_visible() && group.add.is_sensitive());
+        assert_eq!(fx.positions_reloads.get(), 0);
+        fx.done();
+    });
+    run("window_positions_add_replace_update_and_remove", || {
+        let fx = dock_fx(app, "desktop", None);
+        let group = fx.dock.extra_controls().unwrap().window_positions.clone();
+        let outputs = connectors();
+        let second = outputs[1].clone();
+        set_windows(&fx, vec![open_window("discord", &second, (620, 40, 900, 1300), false),
+                              open_window("org.tessel.GlobalSettings.DesktopTests", &second, (0, 0, 1100, 800), false),
+                              open_window("org.tessel.GlobalSettings", &second, (0, 0, 1100, 800), false),
+                              open_window("firefox", &outputs[0], (0, 0, 1280, 1000), true)]);
+        group.open_picker();
+        // Global Settings' own windows are not offered.
+        assert_eq!(group.choices().iter().map(|(w, _)| w.app_id.clone()).collect::<Vec<_>>(), ["discord", "firefox"]);
+        assert!(!group.status.is_visible());
+        choose(&group, "discord");
+        assert!(!group.picker_open());
+        assert_eq!(fx.positions_reloads.get(), 1);
+        assert_eq!(saved_positions(&fx.positions_config), json!([{"app_id": "discord", "name": "Discord", "output": second,
+            "x": 620, "y": 40, "width": 900, "height": 1300, "maximized": false}]));
+        let block = format!("<!-- tessel window positions begin -->\n<windowRules>\n  \
+            <windowRule identifier=\"discord\" type=\"normal\" matchOnce=\"true\">\n    \
+            <action name=\"PlaceOnOutput\" output=\"{second}\" x=\"620\" y=\"40\" width=\"900\" height=\"1300\" maximized=\"no\"/>\n  \
+            </windowRule>\n</windowRules>\n<!-- tessel window positions end -->");
+        assert_eq!(std::fs::read_to_string(&fx.rc).unwrap(), format!("<labwc_config><desktops number=\"4\"/>\n\n{block}\n</labwc_config>\n"));
+        let rows = group.rows();
+        assert_eq!(rows.len(), 1);
+        assert!(!group.empty.is_visible());
+        assert_eq!(rows[0].name.text(), "Discord");
+        let detail = rows[0].detail.text().to_string();
+        assert!(detail.starts_with(&second) && detail.ends_with(", 900 × 1300"), "{detail}");
+        assert!(!rows[0].note.is_visible() && rows[0].update.is_visible() && rows[0].remove.is_visible());
+        // A second add of the same app replaces its entry.
+        set_windows(&fx, vec![open_window("discord", &second, (10, 20, 800, 600), false),
+                              open_window("firefox", &outputs[0], (0, 0, 1280, 1000), true)]);
+        group.add.emit_clicked();
+        choose(&group, "discord");
+        assert_eq!(fx.positions_reloads.get(), 2);
+        let saved = saved_positions(&fx.positions_config);
+        assert_eq!(saved.as_array().unwrap().len(), 1);
+        assert_eq!((saved[0]["x"].clone(), saved[0]["width"].clone()), (json!(10), json!(800)));
+        // A maximized window; then Firefox's saved monitor goes away.
+        group.add.emit_clicked();
+        choose(&group, "firefox");
+        let saved = saved_positions(&fx.positions_config);
+        assert_eq!(saved[1], json!({"app_id": "firefox", "name": "Firefox", "output": outputs[0], "x": 0, "y": 0,
+                                    "width": 1280, "height": 1000, "maximized": true}));
+        assert!(std::fs::read_to_string(&fx.rc).unwrap().contains("width=\"1280\" height=\"1000\" maximized=\"yes\"/>"));
+        let mut edited = positions::WindowPositions::load(&fx.positions_config);
+        edited.positions[1].output = "DP-9".into();
+        edited.save(&fx.positions_config).unwrap();
+        set_windows(&fx, vec![open_window("discord", &second, (300, 400, 700, 500), false)]);
+        group.refresh();
+        let rows = group.rows();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[1].detail.text(), "DP-9, maximized");
+        assert!(rows[1].note.is_visible());
+        assert_eq!(rows[1].note.text(), "This screen is not connected now. The position is kept for when it is back.");
+        // Only an app with an open window can be updated.
+        assert!(rows[0].update.is_visible() && !rows[1].update.is_visible());
+        let reloads = fx.positions_reloads.get();
+        rows[0].update.emit_clicked();
+        assert_eq!(fx.positions_reloads.get(), reloads + 1);
+        let saved = saved_positions(&fx.positions_config);
+        assert_eq!((saved[0]["x"].clone(), saved[0]["y"].clone(), saved[0]["width"].clone()), (json!(300), json!(400), json!(700)));
+        assert_eq!(saved[1]["output"], json!("DP-9"));
+        // The window closed since the last read: Update says so and saves nothing.
+        set_windows(&fx, vec![]);
+        group.rows()[0].update.emit_clicked();
+        assert!(group.error.is_visible());
+        assert_eq!(group.error.text(), "Discord has no open window now.");
+        assert!(!group.rows()[0].update.is_visible());
+        assert_eq!(fx.positions_reloads.get(), reloads + 1);
+        // Remove both: the block goes, the rest of rc.xml stays.
+        group.rows()[0].remove.emit_clicked();
+        assert_eq!(saved_positions(&fx.positions_config).as_array().unwrap().len(), 1);
+        assert!(!group.error.is_visible());
+        group.rows()[0].remove.emit_clicked();
+        assert_eq!(saved_positions(&fx.positions_config), json!([]));
+        assert_eq!(std::fs::read_to_string(&fx.rc).unwrap(), "<labwc_config><desktops number=\"4\"/>\n</labwc_config>\n");
+        assert_eq!(fx.positions_reloads.get(), reloads + 3);
+        assert!(group.rows().is_empty() && group.empty.is_visible());
+        assert!(!group.remove("discord"));
+        fx.done();
+    });
+    run("window_positions_older_labwc_and_no_compositor", || {
+        let fx = dock_fx(app, "desktop", None);
+        let group = fx.dock.extra_controls().unwrap().window_positions.clone();
+        *fx.reply.lock().unwrap() = Ok(json!({"version": 1, "ready": true, "windows": [{"id": 1, "x": 0, "y": 0, "width": 9, "height": 9}]}));
+        group.refresh();
+        assert_eq!(group.windows(), Some(Windows::Unsupported));
+        assert!(group.status.is_visible());
+        assert_eq!(group.status.text(), "Window positions need a newer labwc; after updating it, sign out and back in.");
+        group.open_picker();
+        assert!(group.choices().is_empty() && group.status.is_visible());
+        group.close_picker();
+        assert!(group.status.is_visible());
+        *fx.reply.lock().unwrap() = Err("Tiling requires a labwc Wayland session.".into());
+        group.open_picker();
+        assert_eq!(group.status.text(), "Could not read the open windows: Tiling requires a labwc Wayland session.");
+        group.close_picker();
+        assert!(!group.status.is_visible());
+        assert!(!fx.positions_config.exists());
+        fx.done();
+    });
+    run("window_positions_failure_keeps_the_previous_state", || {
+        let fx = dock_fx(app, "desktop", None);
+        let group = fx.dock.extra_controls().unwrap().window_positions.clone();
+        let second = connectors()[1].clone();
+        set_windows(&fx, vec![open_window("discord", &second, (1, 2, 300, 400), false)]);
+        group.open_picker();
+        choose(&group, "discord");
+        let before = std::fs::read_to_string(&fx.positions_config).unwrap();
+        set_windows(&fx, vec![open_window("discord", &second, (5, 6, 700, 800), false),
+                              open_window("firefox", &second, (0, 0, 640, 480), false)]);
+        std::fs::remove_file(&fx.rc).unwrap();
+        std::fs::create_dir(&fx.rc).unwrap();
+        group.open_picker();
+        choose(&group, "firefox");
+        assert!(group.error.is_visible() && group.error.text().starts_with("Could not apply the window positions: "));
+        assert!(group.picker_open());
+        assert_eq!(std::fs::read_to_string(&fx.positions_config).unwrap(), before);
+        assert_eq!(group.rows().len(), 1);
+        assert!(!group.remove("discord"));
+        assert_eq!(std::fs::read_to_string(&fx.positions_config).unwrap(), before);
+        assert_eq!(group.saved().positions.len(), 1);
+        // A failed reload keeps the written change and says so.
+        std::fs::remove_dir(&fx.rc).unwrap();
+        std::fs::write(&fx.rc, "<labwc_config/>\n").unwrap();
+        fx.positions_fail.set(true);
+        choose(&group, "firefox");
+        assert!(group.error.is_visible() && group.error.text().contains("labwc did not reload rc.xml: no compositor"));
+        assert_eq!(group.saved().positions.len(), 2);
+        assert_eq!(saved_positions(&fx.positions_config).as_array().unwrap().len(), 2);
+        assert!(std::fs::read_to_string(&fx.rc).unwrap().contains("identifier=\"firefox\""));
+        fx.done();
+    });
+    run("window_positions_read_off_the_main_loop_from_a_fake_socket", || {
+        let fx = dock_fx_positions(app, "desktop", None, None,
+                                   PositionsSetup { windows: Some(positions::socket_source()), runner: Some(Runner::Thread), ..Default::default() });
+        let group = fx.dock.extra_controls().unwrap().window_positions.clone();
+        // The private labwc's own answer: an older labwc is unsupported; a newer one lists windows.
+        assert!(wait(|| group.windows().is_some() && !group.is_loading()), "no answer");
+        match group.windows().unwrap() {
+            Windows::Unsupported => assert!(group.status.is_visible()),
+            Windows::Open(open) => assert!(open.iter().all(|w| !w.app_id.starts_with("org.tessel.GlobalSettings"))),
+            Windows::Unavailable(error) => panic!("{error}"),
+        }
+        let socket = FakeSocket::start(json!({"version": 1, "ready": true, "compositor_pid": 1, "enabled": false,
+            "positions_supported": true, "error": "",
+            "windows": [open_window("discord", &connectors()[1], (1620, 40, 900, 1300), false)]}));
+        group.open_picker();
+        assert!(wait(|| group.choices().len() == 1), "{:?}", group.windows());
+        assert!(!group.status.is_visible());
+        choose(&group, "discord");
+        assert_eq!(saved_positions(&fx.positions_config)[0]["x"], json!(1620));
+        assert!(socket.answered() >= 1);
+        fx.done();
+    });
+    run("window_positions_screenshots", || {
+        let dark = std::env::var("SNAP_DARK").is_ok_and(|v| v == "1") || std::env::args().nth(3).as_deref() == Some("dark");
+        if let Some(settings) = gtk::Settings::default() {
+            settings.set_gtk_application_prefer_dark_theme(dark);
+        }
+        let suffix = if dark { "dark" } else { "light" };
+        let screens: snap::ScreenList = Rc::new(|| vec![
+            snap::Screen { connector: "DP-1".into(), label: "DP-1 · Dell U2723QE".into(), width: 3840, height: 2160 },
+            snap::Screen { connector: "DP-2".into(), label: "DP-2 · Rotated monitor".into(), width: 1440, height: 2560 }]);
+        let fx = dock_fx_positions(app, "desktop", None, None, PositionsSetup { screens: Some(screens), ..Default::default() });
+        let _style = gs_base::style::install(&fx.host.window);
+        fx.host.window.set_default_size(900, 760);
+        let group = fx.dock.extra_controls().unwrap().window_positions.clone();
+        set_windows(&fx, vec![open_window("discord", "DP-2", (620, 40, 900, 1300), false),
+                              open_window("firefox", "HDMI-A-1", (0, 0, 1280, 1000), true)]);
+        group.open_picker();
+        choose(&group, "discord");
+        group.open_picker();
+        choose(&group, "firefox");
+        let mut list = vec![open_window("discord", "DP-2", (620, 40, 900, 1300), false),
+                            open_window("firefox", "DP-1", (100, 80, 1600, 1000), false)];
+        list[1]["title"] = json!("Twitch – Mozilla Firefox");
+        list[0]["title"] = json!("#general | Friends – Discord");
+        set_windows(&fx, list);
+        group.refresh();
+        assert_eq!(group.rows().len(), 2);
+        positions_screenshot(&fx, &format!("window-positions-saved-{suffix}"));
+        group.open_picker();
+        assert_eq!(group.choices().len(), 2);
+        positions_screenshot(&fx, &format!("window-positions-picker-{suffix}"));
+        fx.done();
+    });
+}
+
 // ------------------------------------------------------------------ pointer
 
 struct FakeCursors {
@@ -2644,7 +3007,7 @@ fn main() {
     let only = std::env::args().nth(1);
     let groups: Vec<(&str, fn(&gtk::Application))> = vec![("theme", theme_tests), ("icons", icon_tests), ("displays", display_tests), ("dock", dock_tests),
         ("online", online_tests), ("layout", layout_tests), ("lock", lock_tests), ("build", build_page_tests), ("extra", extra_tests),
-        ("snap", snap_tests), ("pointer", pointer_tests), ("fonts", font_tests)];
+        ("snap", snap_tests), ("positions", position_tests), ("pointer", pointer_tests), ("fonts", font_tests)];
     for (name, group) in groups {
         if only.as_deref().is_none_or(|o| o == name) {
             group(&app);

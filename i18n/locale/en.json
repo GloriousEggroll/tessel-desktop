@@ -174,5 +174,21 @@
   "Use the built-in window background": "Use the built-in window background",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Choose the background color of windows, menus and title bars when Match wallpaper colors is off."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.",
+  "Window positions": "Window positions",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Save where an app's window is, and the app opens there the next time it starts.",
+  "No window positions saved yet.": "No window positions saved yet.",
+  "Add a window…": "Add a window…",
+  "Choose a window to save where it is now.": "Choose a window to save where it is now.",
+  "Save where its open window is now": "Save where its open window is now",
+  "{screen}, maximized": "{screen}, maximized",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "This screen is not connected now. The position is kept for when it is back.",
+  "Could not read the open windows: {error}": "Could not read the open windows: {error}",
+  "{app} has no open window now.": "{app} has no open window now.",
+  "Could not save the window positions: {error}": "Could not save the window positions: {error}",
+  "Could not apply the window positions: {error}": "Could not apply the window positions: {error}",
+  "Looking for open windows…": "Looking for open windows…",
+  "No open windows to add. Open the app and place its window first.": "No open windows to add. Open the app and place its window first.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Window positions need a newer labwc; after updating it, sign out and back in."
 }

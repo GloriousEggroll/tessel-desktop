@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Yerleşik pencere arka planını kullan",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Bu renkler Tessel uygulamalarına, diğer GTK 4 uygulamalarına, pencere başlık çubuklarına ve klasör simgelerine uygulanır. Pencere arka planı, geçerli stilde okunabilir kalacak kadar koyu ya da açık tutulur.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Duvar kâğıdı renklerine uyum kapalıyken anahtarların, kaydırıcıların, seçimlerin ve vurgulanan düğmelerin rengini seçin.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Duvar kâğıdı renklerine uyum kapalıyken pencerelerin, menülerin ve başlık çubuklarının arka plan rengini seçin."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Duvar kâğıdı renklerine uyum kapalıyken pencerelerin, menülerin ve başlık çubuklarının arka plan rengini seçin.",
+  "Window positions": "Pencere konumları",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Bir uygulamanın penceresinin yerini kaydedin; uygulama bir sonraki açılışında orada açılır.",
+  "No window positions saved yet.": "Henüz kaydedilmiş pencere konumu yok.",
+  "Add a window…": "Pencere ekle…",
+  "Choose a window to save where it is now.": "Şu anki yerini kaydetmek için bir pencere seçin.",
+  "Save where its open window is now": "Açık penceresinin şu anki yerini kaydet",
+  "{screen}, maximized": "{screen}, ekranı kaplıyor",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Bu ekran şu anda bağlı değil. Konum, ekran geri geldiğinde kullanılmak üzere saklanır.",
+  "Could not read the open windows: {error}": "Açık pencereler okunamadı: {error}",
+  "{app} has no open window now.": "{app} uygulamasının şu anda açık penceresi yok.",
+  "Could not save the window positions: {error}": "Pencere konumları kaydedilemedi: {error}",
+  "Could not apply the window positions: {error}": "Pencere konumları uygulanamadı: {error}",
+  "Looking for open windows…": "Açık pencereler aranıyor…",
+  "No open windows to add. Open the app and place its window first.": "Eklenecek açık pencere yok. Önce uygulamayı açıp penceresini yerleştirin.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Pencere konumları daha yeni bir labwc gerektirir; güncelledikten sonra oturumu kapatıp yeniden açın."
 }

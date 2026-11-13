@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Usar o fundo das janelas predefinido",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Estas cores aplicam-se às aplicações do Tessel, a outras aplicações GTK 4, às barras de título e aos ícones de pastas. O fundo das janelas mantém-se escuro ou claro o suficiente para continuar legível no estilo atual.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Escolha a cor dos interruptores, controlos de deslize, seleções e botões destacados quando a correspondência com as cores do papel de parede está desligada.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Escolha a cor de fundo das janelas, menus e barras de título quando a correspondência com as cores do papel de parede está desligada."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Escolha a cor de fundo das janelas, menus e barras de título quando a correspondência com as cores do papel de parede está desligada.",
+  "Window positions": "Posições das janelas",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Guarde onde está a janela de uma aplicação e a aplicação abrirá aí da próxima vez que iniciar.",
+  "No window positions saved yet.": "Ainda não há posições de janelas guardadas.",
+  "Add a window…": "Adicionar uma janela…",
+  "Choose a window to save where it is now.": "Escolha uma janela para guardar onde está agora.",
+  "Save where its open window is now": "Guardar onde está agora a janela aberta",
+  "{screen}, maximized": "{screen}, maximizada",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Este ecrã não está ligado agora. A posição fica guardada para quando voltar.",
+  "Could not read the open windows: {error}": "Não foi possível ler as janelas abertas: {error}",
+  "{app} has no open window now.": "{app} não tem nenhuma janela aberta agora.",
+  "Could not save the window positions: {error}": "Não foi possível guardar as posições das janelas: {error}",
+  "Could not apply the window positions: {error}": "Não foi possível aplicar as posições das janelas: {error}",
+  "Looking for open windows…": "A procurar janelas abertas…",
+  "No open windows to add. Open the app and place its window first.": "Não há janelas abertas para adicionar. Abra primeiro a aplicação e coloque a janela no lugar.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "As posições das janelas precisam de um labwc mais recente; depois de o atualizar, termine a sessão e volte a entrar."
 }

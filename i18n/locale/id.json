@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Gunakan latar jendela bawaan",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Warna ini berlaku untuk aplikasi Tessel, aplikasi GTK 4 lain, bilah judul jendela, dan ikon folder. Latar jendela dijaga cukup gelap atau terang agar tetap terbaca dalam gaya saat ini.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Pilih warna sakelar, penggeser, pilihan, dan tombol yang disorot saat pencocokan warna wallpaper dimatikan.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Pilih warna latar jendela, menu, dan bilah judul saat pencocokan warna wallpaper dimatikan."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Pilih warna latar jendela, menu, dan bilah judul saat pencocokan warna wallpaper dimatikan.",
+  "Window positions": "Posisi jendela",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Simpan letak jendela aplikasi, dan aplikasi akan terbuka di sana saat dijalankan berikutnya.",
+  "No window positions saved yet.": "Belum ada posisi jendela yang disimpan.",
+  "Add a window…": "Tambahkan jendela…",
+  "Choose a window to save where it is now.": "Pilih jendela untuk menyimpan letaknya saat ini.",
+  "Save where its open window is now": "Simpan letak jendelanya yang terbuka saat ini",
+  "{screen}, maximized": "{screen}, dimaksimalkan",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Layar ini sedang tidak tersambung. Posisinya tetap disimpan sampai layar kembali.",
+  "Could not read the open windows: {error}": "Tidak dapat membaca jendela yang terbuka: {error}",
+  "{app} has no open window now.": "{app} tidak memiliki jendela yang terbuka saat ini.",
+  "Could not save the window positions: {error}": "Tidak dapat menyimpan posisi jendela: {error}",
+  "Could not apply the window positions: {error}": "Tidak dapat menerapkan posisi jendela: {error}",
+  "Looking for open windows…": "Mencari jendela yang terbuka…",
+  "No open windows to add. Open the app and place its window first.": "Tidak ada jendela terbuka untuk ditambahkan. Buka aplikasinya dan atur letak jendelanya terlebih dahulu.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Posisi jendela memerlukan labwc yang lebih baru; setelah memperbaruinya, keluar lalu masuk kembali."
 }

@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Użyj wbudowanego tła okien",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Te kolory dotyczą aplikacji Tessel, innych aplikacji GTK 4, pasków tytułu okien i ikon folderów. Tło okien pozostaje na tyle ciemne lub jasne, by w bieżącym stylu było czytelne.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Wybierz kolor przełączników, suwaków, zaznaczeń i wyróżnionych przycisków, gdy dopasowanie do kolorów tapety jest wyłączone.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Wybierz kolor tła okien, menu i pasków tytułu, gdy dopasowanie do kolorów tapety jest wyłączone."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Wybierz kolor tła okien, menu i pasków tytułu, gdy dopasowanie do kolorów tapety jest wyłączone.",
+  "Window positions": "Położenia okien",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Zapisz, gdzie jest okno aplikacji, a przy następnym uruchomieniu aplikacja otworzy się w tym miejscu.",
+  "No window positions saved yet.": "Nie zapisano jeszcze żadnych położeń okien.",
+  "Add a window…": "Dodaj okno…",
+  "Choose a window to save where it is now.": "Wybierz okno, aby zapisać jego obecne położenie.",
+  "Save where its open window is now": "Zapisz obecne położenie otwartego okna",
+  "{screen}, maximized": "{screen}, zmaksymalizowane",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Ten ekran nie jest teraz podłączony. Położenie zostanie zachowane do jego powrotu.",
+  "Could not read the open windows: {error}": "Nie można odczytać otwartych okien: {error}",
+  "{app} has no open window now.": "{app} nie ma teraz otwartego okna.",
+  "Could not save the window positions: {error}": "Nie można zapisać położeń okien: {error}",
+  "Could not apply the window positions: {error}": "Nie można zastosować położeń okien: {error}",
+  "Looking for open windows…": "Wyszukiwanie otwartych okien…",
+  "No open windows to add. Open the app and place its window first.": "Brak otwartych okien do dodania. Najpierw otwórz aplikację i ustaw jej okno.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Położenia okien wymagają nowszego labwc; po jego aktualizacji wyloguj się i zaloguj ponownie."
 }

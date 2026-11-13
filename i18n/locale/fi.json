@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Käytä sisäänrakennettua ikkunoiden taustaa",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Nämä värit koskevat Tesselin sovelluksia, muita GTK 4 -sovelluksia, ikkunoiden otsikkopalkkeja ja kansiokuvakkeita. Ikkunoiden tausta pidetään niin tummana tai vaaleana, että se pysyy luettavana nykyisessä tyylissä.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Valitse kytkinten, liukusäätimien, valintojen ja korostettujen painikkeiden väri, kun taustakuvan värien mukailu on pois päältä.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Valitse ikkunoiden, valikoiden ja otsikkopalkkien taustaväri, kun taustakuvan värien mukailu on pois päältä."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Valitse ikkunoiden, valikoiden ja otsikkopalkkien taustaväri, kun taustakuvan värien mukailu on pois päältä.",
+  "Window positions": "Ikkunoiden sijainnit",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Tallenna sovelluksen ikkunan sijainti, niin sovellus avautuu siihen seuraavan kerran käynnistyessään.",
+  "No window positions saved yet.": "Ikkunoiden sijainteja ei ole vielä tallennettu.",
+  "Add a window…": "Lisää ikkuna…",
+  "Choose a window to save where it is now.": "Valitse ikkuna, jonka nykyinen sijainti tallennetaan.",
+  "Save where its open window is now": "Tallenna avoimen ikkunan nykyinen sijainti",
+  "{screen}, maximized": "{screen}, suurennettu",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Tämä näyttö ei ole nyt liitettynä. Sijainti säilytetään siihen asti, kun se palaa.",
+  "Could not read the open windows: {error}": "Avoimia ikkunoita ei voitu lukea: {error}",
+  "{app} has no open window now.": "Sovelluksella {app} ei ole nyt avointa ikkunaa.",
+  "Could not save the window positions: {error}": "Ikkunoiden sijainteja ei voitu tallentaa: {error}",
+  "Could not apply the window positions: {error}": "Ikkunoiden sijainteja ei voitu ottaa käyttöön: {error}",
+  "Looking for open windows…": "Etsitään avoimia ikkunoita…",
+  "No open windows to add. Open the app and place its window first.": "Lisättäviä avoimia ikkunoita ei ole. Avaa ensin sovellus ja aseta sen ikkuna paikalleen.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Ikkunoiden sijainnit vaativat uudemman labwc:n; päivityksen jälkeen kirjaudu ulos ja takaisin sisään."
 }

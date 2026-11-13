@@ -2357,5 +2357,21 @@
   "Use the built-in window background": "Den eingebauten Fensterhintergrund verwenden",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Diese Farben gelten für Tessels Apps, andere GTK-4-Apps, Fenstertitelleisten und Ordnersymbole. Ein Fensterhintergrund bleibt dunkel oder hell genug, um im aktuellen Stil lesbar zu sein.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Farbe von Schaltern, Schiebereglern, Auswahlen und hervorgehobenen Schaltflächen wählen, wenn die Anpassung an die Hintergrundbildfarben aus ist.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Hintergrundfarbe von Fenstern, Menüs und Titelleisten wählen, wenn die Anpassung an die Hintergrundbildfarben aus ist."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Hintergrundfarbe von Fenstern, Menüs und Titelleisten wählen, wenn die Anpassung an die Hintergrundbildfarben aus ist.",
+  "Window positions": "Fensterpositionen",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Speichern Sie, wo das Fenster einer App ist, und die App öffnet sich beim nächsten Start dort.",
+  "No window positions saved yet.": "Noch keine Fensterpositionen gespeichert.",
+  "Add a window…": "Fenster hinzufügen…",
+  "Choose a window to save where it is now.": "Wählen Sie ein Fenster, um seine aktuelle Position zu speichern.",
+  "Save where its open window is now": "Speichern, wo sein offenes Fenster jetzt ist",
+  "{screen}, maximized": "{screen}, maximiert",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Dieser Bildschirm ist gerade nicht angeschlossen. Die Position bleibt gespeichert, bis er wieder da ist.",
+  "Could not read the open windows: {error}": "Die offenen Fenster konnten nicht gelesen werden: {error}",
+  "{app} has no open window now.": "{app} hat gerade kein offenes Fenster.",
+  "Could not save the window positions: {error}": "Die Fensterpositionen konnten nicht gespeichert werden: {error}",
+  "Could not apply the window positions: {error}": "Die Fensterpositionen konnten nicht angewendet werden: {error}",
+  "Looking for open windows…": "Offene Fenster werden gesucht…",
+  "No open windows to add. Open the app and place its window first.": "Keine offenen Fenster zum Hinzufügen. Öffnen Sie zuerst die App und platzieren Sie ihr Fenster.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Fensterpositionen benötigen ein neueres labwc; melden Sie sich nach der Aktualisierung ab und wieder an."
 }

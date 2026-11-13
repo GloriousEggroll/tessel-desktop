@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Použiť vstavané pozadie okien",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Tieto farby platia pre aplikácie Tessel, ostatné aplikácie GTK 4, záhlavia okien a ikony priečinkov. Pozadie okien zostane dosť tmavé alebo svetlé, aby bolo v aktuálnom štýle čitateľné.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Vyberte farbu prepínačov, posuvníkov, výberov a zvýraznených tlačidiel, keď je prispôsobenie farbám tapety vypnuté.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Vyberte farbu pozadia okien, ponúk a záhlaví okien, keď je prispôsobenie farbám tapety vypnuté."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Vyberte farbu pozadia okien, ponúk a záhlaví okien, keď je prispôsobenie farbám tapety vypnuté.",
+  "Window positions": "Pozície okien",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Uložte, kde je okno aplikácie, a aplikácia sa tam otvorí pri ďalšom spustení.",
+  "No window positions saved yet.": "Zatiaľ nie sú uložené žiadne pozície okien.",
+  "Add a window…": "Pridať okno…",
+  "Choose a window to save where it is now.": "Vyberte okno, ktorého aktuálnu pozíciu chcete uložiť.",
+  "Save where its open window is now": "Uložiť, kde je teraz jeho otvorené okno",
+  "{screen}, maximized": "{screen}, maximalizované",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Táto obrazovka teraz nie je pripojená. Pozícia zostane uložená, kým sa vráti.",
+  "Could not read the open windows: {error}": "Otvorené okná sa nepodarilo načítať: {error}",
+  "{app} has no open window now.": "{app} teraz nemá žiadne otvorené okno.",
+  "Could not save the window positions: {error}": "Pozície okien sa nepodarilo uložiť: {error}",
+  "Could not apply the window positions: {error}": "Pozície okien sa nepodarilo použiť: {error}",
+  "Looking for open windows…": "Hľadajú sa otvorené okná…",
+  "No open windows to add. Open the app and place its window first.": "Nie sú otvorené žiadne okná na pridanie. Najprv otvorte aplikáciu a umiestnite jej okno.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Pozície okien vyžadujú novší labwc; po jeho aktualizácii sa odhláste a znova prihláste."
 }

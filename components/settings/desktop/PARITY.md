@@ -82,12 +82,26 @@ compares the written files (bytes + mode).
 | Appearance.from_dict messages, sessions() rules (TryExec, %-codes, Hidden, DesktopNames, first root wins) | yes | `login::model::tests::*` (3) |
 | Helper request `{"expected","appearance"}` on stdin of injectable `pkexec … login_settings_helper.py` | yes | `login_settings_send_the_validated_request_to_the_helper`, `parity_login_page_sends_identical_helper_request` (fake pkexec only) |
 
+## Window positions (gs_desktop::window_positions, Rust-only)
+| Item | Done | Test |
+|---|---|---|
+| JSON store: contract schema, replace in place, case-insensitive app, tolerant load, atomic 0600 | yes | `tests::window_positions::{json_round_trip_matches_the_contract_schema, loading_is_tolerant, json_is_saved_atomically_and_private}` |
+| rc.xml block = contract text; glob (`*?[]\`) + XML escaping; coexists with the snap block (either order) and user `<windowRules>`; reconfigure only on change | yes | `block_text_matches_the_contract_and_escapes`, `block_coexists_with_snap_layouts_and_user_rules`, `rc_writes_only_on_change_and_reconfigures_once` |
+| `windows` reply: `positions_supported` missing/false = unsupported; filter type_normal/app_id/output_name/own app; active window wins | yes | `windows_reply_is_parsed_and_filtered` |
+| App names from desktop entries (`AppCatalog::resolve`), app_id fallback | yes | `app_names_come_from_desktop_entries` |
+| Card after Snap layouts, empty state, search target `window_positions`, no-windows state | yes | `window_positions_group_follows_snap_layouts_and_starts_empty` |
+| Add (own window hidden), replace, maximized, not-connected note, Update (hidden without a window), Remove empties the block | yes | `window_positions_add_replace_update_and_remove` |
+| Older labwc and unavailable socket states | yes | `window_positions_older_labwc_and_no_compositor` |
+| Failed write keeps the previous JSON/rows; failed reload keeps the change and shows it | yes | `window_positions_failure_keeps_the_previous_state` |
+| Real client off the GTK thread: the private labwc's own answer, then a fake socket with positions | yes | `window_positions_read_off_the_main_loop_from_a_fake_socket` |
+| Screenshots (two entries, add-window list) | yes | `window_positions_screenshots` |
+
 ## Search targets (settings_search.py names)
 theme: match, dock_transparency, apps_transparency, frosted, apps_frosted, frost_strength, apps_frost_strength,
 apps_rounded_corners, accent_color, apps_background_color · dock: mode, monitor, size, float_mode, rounded_corners, auto_hide, fullscreen,
 application_display, separate_app_dock, background_color, bar_border_enabled, app_dock_layout_controls ·
 behavior: workspace_count, gapless_switch, tiling_switch, focus_outline_switch, authentication_status,
-hot_corner_delay, menu_hotkey_fullscreen · layout: presets, previous · lock/login: their `search_targets` keys.
+hot_corner_delay, menu_hotkey_fullscreen, snap_layouts, window_positions · layout: presets, previous · lock/login: their `search_targets` keys.
 Tests: `*_search_targets_*`, lock/login tests.
 
 ## Pub APIs added in other crates (additive; lib + headless suites re-run green)

@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "שימוש ברקע החלונות המובנה",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "הצבעים האלה חלים על היישומים של Tessel, על יישומי GTK 4 אחרים, על שורות הכותרת של החלונות ועל סמלי התיקיות. רקע החלונות נשמר כהה או בהיר מספיק כדי להישאר קריא בסגנון הנוכחי.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "בחירת צבע המתגים, המחוונים, הבחירות והכפתורים המודגשים כאשר התאמת הצבעים לתמונת הרקע כבויה.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "בחירת צבע הרקע של חלונות, תפריטים ושורות כותרת כאשר התאמת הצבעים לתמונת הרקע כבויה."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "בחירת צבע הרקע של חלונות, תפריטים ושורות כותרת כאשר התאמת הצבעים לתמונת הרקע כבויה.",
+  "Window positions": "מיקומי חלונות",
+  "Save where an app's window is, and the app opens there the next time it starts.": "שמרו את מיקום החלון של יישום, והיישום ייפתח שם בפעם הבאה שיופעל.",
+  "No window positions saved yet.": "עדיין לא נשמרו מיקומי חלונות.",
+  "Add a window…": "הוספת חלון…",
+  "Choose a window to save where it is now.": "בחרו חלון כדי לשמור את מיקומו הנוכחי.",
+  "Save where its open window is now": "שמירת המיקום הנוכחי של החלון הפתוח",
+  "{screen}, maximized": "{screen}, מוגדל",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "המסך הזה אינו מחובר כעת. המיקום נשמר לכשיחזור.",
+  "Could not read the open windows: {error}": "לא ניתן לקרוא את החלונות הפתוחים: {error}",
+  "{app} has no open window now.": "ל־{app} אין חלון פתוח כעת.",
+  "Could not save the window positions: {error}": "לא ניתן לשמור את מיקומי החלונות: {error}",
+  "Could not apply the window positions: {error}": "לא ניתן להחיל את מיקומי החלונות: {error}",
+  "Looking for open windows…": "מחפש חלונות פתוחים…",
+  "No open windows to add. Open the app and place its window first.": "אין חלונות פתוחים להוספה. פתחו קודם את היישום ומקמו את החלון שלו.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "מיקומי חלונות דורשים גרסה חדשה יותר של labwc; לאחר העדכון, התנתקו והתחברו מחדש."
 }

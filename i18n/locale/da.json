@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Brug den indbyggede vinduesbaggrund",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Farverne gælder for Tessels apps, andre GTK 4-apps, vinduers titellinjer og mappeikoner. En vinduesbaggrund holdes mørk eller lys nok til at være læsbar i den aktuelle stil.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Vælg farven på kontakter, skydere, markeringer og fremhævede knapper, når tilpasning til baggrundsbilledets farver er slået fra.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Vælg baggrundsfarven for vinduer, menuer og titellinjer, når tilpasning til baggrundsbilledets farver er slået fra."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Vælg baggrundsfarven for vinduer, menuer og titellinjer, når tilpasning til baggrundsbilledets farver er slået fra.",
+  "Window positions": "Vinduespositioner",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Gem, hvor et programs vindue er, så åbner programmet der, næste gang det starter.",
+  "No window positions saved yet.": "Ingen vinduespositioner er gemt endnu.",
+  "Add a window…": "Tilføj et vindue…",
+  "Choose a window to save where it is now.": "Vælg et vindue for at gemme, hvor det er nu.",
+  "Save where its open window is now": "Gem, hvor dets åbne vindue er nu",
+  "{screen}, maximized": "{screen}, maksimeret",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Denne skærm er ikke tilsluttet nu. Positionen gemmes, til den er tilbage.",
+  "Could not read the open windows: {error}": "De åbne vinduer kunne ikke læses: {error}",
+  "{app} has no open window now.": "{app} har intet åbent vindue nu.",
+  "Could not save the window positions: {error}": "Vinduespositionerne kunne ikke gemmes: {error}",
+  "Could not apply the window positions: {error}": "Vinduespositionerne kunne ikke anvendes: {error}",
+  "Looking for open windows…": "Søger efter åbne vinduer…",
+  "No open windows to add. Open the app and place its window first.": "Ingen åbne vinduer at tilføje. Åbn programmet, og placer dets vindue først.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vinduespositioner kræver en nyere labwc; log ud og ind igen, når den er opdateret."
 }

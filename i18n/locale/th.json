@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "ใช้พื้นหลังหน้าต่างในตัว",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "สีเหล่านี้ใช้กับแอปของ Tessel แอป GTK 4 อื่นๆ แถบชื่อเรื่องของหน้าต่าง และไอคอนโฟลเดอร์ พื้นหลังหน้าต่างจะคงความมืดหรือสว่างพอให้อ่านได้ในสไตล์ปัจจุบัน",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "เลือกสีของสวิตช์ แถบเลื่อน ส่วนที่เลือก และปุ่มที่เน้น เมื่อปิดการปรับสีตามวอลเปเปอร์",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "เลือกสีพื้นหลังของหน้าต่าง เมนู และแถบชื่อเรื่อง เมื่อปิดการปรับสีตามวอลเปเปอร์"
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "เลือกสีพื้นหลังของหน้าต่าง เมนู และแถบชื่อเรื่อง เมื่อปิดการปรับสีตามวอลเปเปอร์",
+  "Window positions": "ตำแหน่งหน้าต่าง",
+  "Save where an app's window is, and the app opens there the next time it starts.": "บันทึกตำแหน่งหน้าต่างของแอป แล้วแอปจะเปิดที่ตำแหน่งนั้นในครั้งถัดไปที่เริ่มทำงาน",
+  "No window positions saved yet.": "ยังไม่มีตำแหน่งหน้าต่างที่บันทึกไว้",
+  "Add a window…": "เพิ่มหน้าต่าง…",
+  "Choose a window to save where it is now.": "เลือกหน้าต่างเพื่อบันทึกตำแหน่งปัจจุบัน",
+  "Save where its open window is now": "บันทึกตำแหน่งปัจจุบันของหน้าต่างที่เปิดอยู่",
+  "{screen}, maximized": "{screen}, ขยายเต็มจอ",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "หน้าจอนี้ไม่ได้เชื่อมต่ออยู่ในขณะนี้ ตำแหน่งจะถูกเก็บไว้จนกว่าจะเชื่อมต่อกลับมา",
+  "Could not read the open windows: {error}": "ไม่สามารถอ่านหน้าต่างที่เปิดอยู่ได้: {error}",
+  "{app} has no open window now.": "{app} ไม่มีหน้าต่างที่เปิดอยู่ในขณะนี้",
+  "Could not save the window positions: {error}": "ไม่สามารถบันทึกตำแหน่งหน้าต่างได้: {error}",
+  "Could not apply the window positions: {error}": "ไม่สามารถใช้ตำแหน่งหน้าต่างได้: {error}",
+  "Looking for open windows…": "กำลังค้นหาหน้าต่างที่เปิดอยู่…",
+  "No open windows to add. Open the app and place its window first.": "ไม่มีหน้าต่างที่เปิดอยู่ให้เพิ่ม เปิดแอปและจัดวางหน้าต่างก่อน",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "ตำแหน่งหน้าต่างต้องใช้ labwc เวอร์ชันใหม่กว่า หลังจากอัปเดตแล้ว ให้ออกจากระบบแล้วเข้าสู่ระบบใหม่"
 }

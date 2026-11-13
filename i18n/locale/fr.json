@@ -2357,5 +2357,21 @@
   "Use the built-in window background": "Utiliser l’arrière-plan des fenêtres intégré",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Ces couleurs s’appliquent aux applications de Tessel, aux autres applications GTK 4, aux barres de titre et aux icônes de dossiers. L’arrière-plan des fenêtres reste assez sombre ou clair pour rester lisible dans le style actuel.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Choisissez la couleur des interrupteurs, curseurs, sélections et boutons mis en avant lorsque l’harmonisation avec le fond d’écran est désactivée.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Choisissez la couleur d’arrière-plan des fenêtres, des menus et des barres de titre lorsque l’harmonisation avec le fond d’écran est désactivée."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Choisissez la couleur d’arrière-plan des fenêtres, des menus et des barres de titre lorsque l’harmonisation avec le fond d’écran est désactivée.",
+  "Window positions": "Positions des fenêtres",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Enregistrez l’emplacement de la fenêtre d’une application : elle s’y ouvrira au prochain démarrage.",
+  "No window positions saved yet.": "Aucune position de fenêtre enregistrée pour l’instant.",
+  "Add a window…": "Ajouter une fenêtre…",
+  "Choose a window to save where it is now.": "Choisissez une fenêtre pour enregistrer son emplacement actuel.",
+  "Save where its open window is now": "Enregistrer l’emplacement actuel de sa fenêtre ouverte",
+  "{screen}, maximized": "{screen}, agrandie",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Cet écran n’est pas branché pour le moment. La position est conservée pour son retour.",
+  "Could not read the open windows: {error}": "Impossible de lire les fenêtres ouvertes : {error}",
+  "{app} has no open window now.": "{app} n’a aucune fenêtre ouverte pour le moment.",
+  "Could not save the window positions: {error}": "Impossible d’enregistrer les positions des fenêtres : {error}",
+  "Could not apply the window positions: {error}": "Impossible d’appliquer les positions des fenêtres : {error}",
+  "Looking for open windows…": "Recherche des fenêtres ouvertes…",
+  "No open windows to add. Open the app and place its window first.": "Aucune fenêtre ouverte à ajouter. Ouvrez d’abord l’application et placez sa fenêtre.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Les positions des fenêtres nécessitent un labwc plus récent ; après la mise à jour, déconnectez-vous puis reconnectez-vous."
 }

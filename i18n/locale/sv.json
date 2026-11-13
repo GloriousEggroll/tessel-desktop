@@ -2024,5 +2024,21 @@
   "Use the built-in window background": "Använd den inbyggda fönsterbakgrunden",
   "These colors apply to Tessel’s apps, other GTK 4 apps, window title bars and folder icons. A window background is kept dark or light enough to stay readable in the current style.": "Färgerna gäller Tessels appar, andra GTK 4-appar, fönstrens namnlister och mappikoner. En fönsterbakgrund hålls tillräckligt mörk eller ljus för att vara läsbar i den aktuella stilen.",
   "Choose the color of switches, sliders, selections and highlighted buttons when Match wallpaper colors is off.": "Välj färgen på reglage, skjutreglage, markeringar och framhävda knappar när anpassning till bakgrundsbildens färger är av.",
-  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Välj bakgrundsfärgen för fönster, menyer och namnlister när anpassning till bakgrundsbildens färger är av."
+  "Choose the background color of windows, menus and title bars when Match wallpaper colors is off.": "Välj bakgrundsfärgen för fönster, menyer och namnlister när anpassning till bakgrundsbildens färger är av.",
+  "Window positions": "Fönsterpositioner",
+  "Save where an app's window is, and the app opens there the next time it starts.": "Spara var ett programs fönster är, så öppnas programmet där nästa gång det startar.",
+  "No window positions saved yet.": "Inga fönsterpositioner har sparats än.",
+  "Add a window…": "Lägg till ett fönster…",
+  "Choose a window to save where it is now.": "Välj ett fönster för att spara var det är nu.",
+  "Save where its open window is now": "Spara var det öppna fönstret är nu",
+  "{screen}, maximized": "{screen}, maximerat",
+  "{screen}, {width} × {height}": "{screen}, {width} × {height}",
+  "This screen is not connected now. The position is kept for when it is back.": "Den här skärmen är inte ansluten nu. Positionen sparas tills den är tillbaka.",
+  "Could not read the open windows: {error}": "Det gick inte att läsa de öppna fönstren: {error}",
+  "{app} has no open window now.": "{app} har inget öppet fönster nu.",
+  "Could not save the window positions: {error}": "Det gick inte att spara fönsterpositionerna: {error}",
+  "Could not apply the window positions: {error}": "Det gick inte att tillämpa fönsterpositionerna: {error}",
+  "Looking for open windows…": "Letar efter öppna fönster…",
+  "No open windows to add. Open the app and place its window first.": "Inga öppna fönster att lägga till. Öppna programmet och placera dess fönster först.",
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Fönsterpositioner kräver en nyare labwc; logga ut och in igen när den har uppdaterats."
 }
