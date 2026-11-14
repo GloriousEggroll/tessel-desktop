@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit 0422110d4b0bf4f4acaccc0d754ca12355093a36}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-capture-picker
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel screen-share picker
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -77,6 +77,11 @@ install -Dm644 packaging/defaults/etc/xdg/xdg-desktop-portal-wlr/wlroots %{build
 %config(noreplace) %{_sysconfdir}/xdg/xdg-desktop-portal-wlr/wlroots
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Answer remote-control requests without the picker when Global Settings
+  allows it (Screenshots, Remote control), so the desktop can be reached
+  with nobody at the keyboard and while the screen is locked
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Window buttons are as far from the side of the window as from its top
 - Rounded corners are 8 px, as browsers' own windows have

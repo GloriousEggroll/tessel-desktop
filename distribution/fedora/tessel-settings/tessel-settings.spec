@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 183641a8bc0e7cd7a1626b3f180f5049e7120444}
+%{!?commit:%global commit 0422110d4b0bf4f4acaccc0d754ca12355093a36}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        26%{?dist}
+Release:        27%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -43,6 +43,8 @@ BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
 Requires:       labwc >= 0.20.2-29
+# The Remote control switch is read by the picker from this release on
+Conflicts:      tessel-capture-picker < 0.1.0-4
 Requires:       glib2
 Requires:       libinput
 Requires:       pciutils
@@ -111,6 +113,10 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-27
+- Screenshots: add Remote control, a switch to allow remote control without
+  asking and the screen to hand out
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-26
 - Desktop Behavior: Window positions saves where an app's window is, so the app opens there next time; needs labwc 0.20.2-29
 
