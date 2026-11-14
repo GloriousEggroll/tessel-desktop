@@ -2373,5 +2373,9 @@
   "Could not apply the window positions: {error}": "Impossible d’appliquer les positions des fenêtres : {error}",
   "Looking for open windows…": "Recherche des fenêtres ouvertes…",
   "No open windows to add. Open the app and place its window first.": "Aucune fenêtre ouverte à ajouter. Ouvrez d’abord l’application et placez sa fenêtre.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Les positions des fenêtres nécessitent un labwc plus récent ; après la mise à jour, déconnectez-vous puis reconnectez-vous."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Les positions des fenêtres nécessitent un labwc plus récent ; après la mise à jour, déconnectez-vous puis reconnectez-vous.",
+  "Remote control": "Contrôle à distance",
+  "Allow remote control without asking": "Autoriser le contrôle à distance sans demander",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Les applications qui demandent à contrôler cet ordinateur obtiennent l’écran ci-dessous sans passer par le sélecteur d’écran. N’importe quelle application de cet ordinateur peut alors voir l’écran et utiliser le clavier et le pointeur.",
+  "First available screen": "Premier écran disponible"
 }

@@ -2040,5 +2040,9 @@
   "Could not apply the window positions: {error}": "Vinduespositionerne kunne ikke anvendes: {error}",
   "Looking for open windows…": "Søger efter åbne vinduer…",
   "No open windows to add. Open the app and place its window first.": "Ingen åbne vinduer at tilføje. Åbn programmet, og placer dets vindue først.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vinduespositioner kræver en nyere labwc; log ud og ind igen, når den er opdateret."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vinduespositioner kræver en nyere labwc; log ud og ind igen, når den er opdateret.",
+  "Remote control": "Fjernstyring",
+  "Allow remote control without asking": "Tillad fjernstyring uden at spørge",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Apps, der beder om at styre denne computer, får skærmen nedenfor uden skærmvælgeren. Enhver app på denne computer kan så se skærmen og bruge tastaturet og markøren.",
+  "First available screen": "Første tilgængelige skærm"
 }

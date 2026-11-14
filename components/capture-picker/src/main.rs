@@ -3,7 +3,7 @@
 
 use std::io::Write;
 use std::process::ExitCode;
-use tessel_capture_picker::{entry, gui, output, selection};
+use tessel_capture_picker::{entry, gui, output, remote_control, selection};
 
 fn main() -> ExitCode {
     // Before anything can print, and before any thread or GTK exists.
@@ -15,11 +15,15 @@ fn main() -> ExitCode {
     let mut stdin = std::io::stdin().lock();
     let mut stderr = std::io::stderr();
     let mut requested = |session: &str, sources: &[_]| selection::requested_selection(session, sources);
+    let mut unattended = |sources: &[_]| {
+        use remote_control::Choose;
+        remote_control::RemoteControl::load(&remote_control::config_path()).choose(sources)
+    };
     let mut choose = |sources: &[_], remote: u8, _: &mut dyn Write| gui::choose(sources, remote);
     let mut report = |session: &str, outputs: &[String]| selection::report_selection(session, outputs);
     let mut outputs = |source: &_| output::selected_outputs(Some(source));
     let status = entry::run(argv_len, &mut stdin, &mut stdout, &mut stderr, &|name| std::env::var(name).ok(), entry::Hooks {
-        requested_selection: &mut requested, choose: &mut choose, report_selection: &mut report, selected_outputs: &mut outputs,
+        requested_selection: &mut requested, unattended: &mut unattended, choose: &mut choose, report_selection: &mut report, selected_outputs: &mut outputs,
     });
     ExitCode::from(status as u8)
 }

@@ -2040,5 +2040,9 @@
   "Could not apply the window positions: {error}": "Tidak dapat menerapkan posisi jendela: {error}",
   "Looking for open windows…": "Mencari jendela yang terbuka…",
   "No open windows to add. Open the app and place its window first.": "Tidak ada jendela terbuka untuk ditambahkan. Buka aplikasinya dan atur letak jendelanya terlebih dahulu.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Posisi jendela memerlukan labwc yang lebih baru; setelah memperbaruinya, keluar lalu masuk kembali."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Posisi jendela memerlukan labwc yang lebih baru; setelah memperbaruinya, keluar lalu masuk kembali.",
+  "Remote control": "Kendali jarak jauh",
+  "Allow remote control without asking": "Izinkan kendali jarak jauh tanpa bertanya",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Aplikasi yang meminta untuk mengendalikan komputer ini mendapatkan layar di bawah tanpa pemilih layar. Dengan begitu, aplikasi apa pun di komputer ini dapat melihat layar serta menggunakan keyboard dan penunjuk.",
+  "First available screen": "Layar pertama yang tersedia"
 }

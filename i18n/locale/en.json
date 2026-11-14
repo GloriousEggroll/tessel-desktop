@@ -190,5 +190,9 @@
   "Could not apply the window positions: {error}": "Could not apply the window positions: {error}",
   "Looking for open windows…": "Looking for open windows…",
   "No open windows to add. Open the app and place its window first.": "No open windows to add. Open the app and place its window first.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Window positions need a newer labwc; after updating it, sign out and back in."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Window positions need a newer labwc; after updating it, sign out and back in.",
+  "Remote control": "Remote control",
+  "Allow remote control without asking": "Allow remote control without asking",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.",
+  "First available screen": "First available screen"
 }

@@ -7,7 +7,8 @@ Source: `~/tessel-bluetooth/tessel-capture` (`capture.py` 129, `capture_ui.py` 9
 `shared/capture_selection.py` 84 (server side `SelectionBroker`; the client half is already in
 `components/capture-picker/src/selection.rs`). **Not ported:** `capture_pipewire.c`
 (`libcapture-pipewire.so`, stays C, loaded with dlopen), `portal/` (patched xdg-desktop-portal-wlr, C),
-- Screen-share portal: the distribution's `xdg-desktop-portal-wlr` (Nobara 0.8.4-4 or newer: colorimetry, RemoteDesktop and the chooser-session patch, which exports `XDPW_CHOOSER_SESSION` to the picker). The suite no longer builds its own portal; `tools/install.py` `retire-old` removes the old `tessel-capture-portal-wlr` override and binary once that package is installed.
+- Screen-share portal: the distribution's `xdg-desktop-portal-wlr` (Nobara 0.8.4-4 or newer: colorimetry, RemoteDesktop and the chooser-session patch, which exports `XDPW_CHOOSER_SESSION` to the picker; 0.8.4-5 adds 8-bit frames for HDR outputs, which RustDesk needs). The suite no longer builds its own portal; `tools/install.py` `retire-old` removes the old `tessel-capture-portal-wlr` override and binary once that package is installed.
+- Remote control without asking: the picker (`crates/core/src/remote_control.rs (setting) and components/capture-picker/src/remote_control.rs (choice)`) reads `~/.config/tessel/remote-control.json` (`{"version":1,"unattended":bool,"output":"DP-2"}`; Global Settings writes it). With `unattended` true it answers RemoteDesktop requests itself: the saved output, else the first monitor the portal offers. Screen sharing without input control is never answered this way. The file is absent by default (off).
 
 ## 1. Entry points and launchers
 

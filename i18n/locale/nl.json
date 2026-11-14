@@ -2040,5 +2040,9 @@
   "Could not apply the window positions: {error}": "De vensterposities konden niet worden toegepast: {error}",
   "Looking for open windows…": "Geopende vensters zoeken…",
   "No open windows to add. Open the app and place its window first.": "Geen geopende vensters om toe te voegen. Open eerst de app en zet het venster op zijn plek.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vensterposities hebben een nieuwere labwc nodig; meld je na het bijwerken af en weer aan."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Vensterposities hebben een nieuwere labwc nodig; meld je na het bijwerken af en weer aan.",
+  "Remote control": "Bediening op afstand",
+  "Allow remote control without asking": "Bediening op afstand toestaan zonder te vragen",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Apps die vragen om deze computer te bedienen, krijgen het scherm hieronder zonder schermkiezer. Elke app op deze computer kan dan het scherm zien en het toetsenbord en de aanwijzer gebruiken.",
+  "First available screen": "Eerste beschikbare scherm"
 }

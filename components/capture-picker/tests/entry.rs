@@ -5,6 +5,7 @@ use serde_json::{json, Map, Value};
 use std::io::Write;
 use tessel_capture_picker::entry::*;
 use tessel_capture_picker::output::{selected_outputs_with, tiling_outputs, Resolvers};
+use tessel_capture_picker::remote_control::{Choose, RemoteControl};
 use tessel_capture_picker::sources::{parse_sources, CaptureSource};
 
 #[test]
@@ -47,6 +48,12 @@ struct Outcome {
 
 fn run_entry(env: &[(&str, &str)], argv_len: usize, input: &[u8], preselect: Option<(bool, usize)>,
              choose: &mut dyn FnMut(&[CaptureSource], u8, &mut dyn Write) -> Result<Option<CaptureSource>, String>) -> Outcome {
+    run_entry_with(env, argv_len, input, preselect, &RemoteControl::default(), choose)
+}
+
+/// `run_entry` with the owner's remote-control setting from Global Settings.
+fn run_entry_with(env: &[(&str, &str)], argv_len: usize, input: &[u8], preselect: Option<(bool, usize)>, allowed: &RemoteControl,
+                  choose: &mut dyn FnMut(&[CaptureSource], u8, &mut dyn Write) -> Result<Option<CaptureSource>, String>) -> Outcome {
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
     let mut chosen_with = Vec::new();
@@ -61,6 +68,7 @@ fn run_entry(env: &[(&str, &str)], argv_len: usize, input: &[u8], preselect: Opt
             None => (false, None),
         }
     };
+    let mut unattended = |sources: &[CaptureSource]| allowed.choose(sources);
     let mut wrapped = |sources: &[CaptureSource], remote: u8, err: &mut dyn Write| {
         chosen_with.push(remote);
         choose(sources, remote, err)
@@ -68,7 +76,8 @@ fn run_entry(env: &[(&str, &str)], argv_len: usize, input: &[u8], preselect: Opt
     let mut report = |session: &str, outputs: &[String]| reports.push((session.to_owned(), outputs.to_vec()));
     let mut outputs = |source: &CaptureSource| vec![source.subtitle.clone()];
     let status = run(argv_len, &mut &input[..], &mut stdout, &mut stderr, &lookup, Hooks {
-        requested_selection: &mut requested, choose: &mut wrapped, report_selection: &mut report, selected_outputs: &mut outputs,
+        requested_selection: &mut requested, unattended: &mut unattended, choose: &mut wrapped, report_selection: &mut report,
+        selected_outputs: &mut outputs,
     });
     Outcome { status, stdout, stderr: String::from_utf8(stderr).unwrap(), chosen_with, preselect_calls, reports }
 }
@@ -100,7 +109,7 @@ fn cancel_and_gui_errors_cannot_grant_access() {
 }
 
 #[test]
-fn remote_control_always_shows_the_picker() {
+fn remote_control_shows_the_picker_unless_the_owner_allowed_it() {
     let session = "/org/freedesktop/portal/desktop/session/1_9/s1";
     for (value, expected) in [("3", 3), ("1", 1), ("2", 2), ("bogus", 3)] {
         let outcome = run_entry(&[("XDPW_CHOOSER_REMOTE_DESKTOP", value), ("XDPW_CHOOSER_SESSION", session)], 1, ORIGINAL,
@@ -108,6 +117,84 @@ fn remote_control_always_shows_the_picker() {
         assert_eq!(outcome.preselect_calls, 0, "requester answered for itself");
         assert_eq!((outcome.status, outcome.stdout.as_slice(), outcome.chosen_with.as_slice()), (0, ORIGINAL, &[expected][..]));
     }
+}
+
+const TWO: &[u8] = b"Window: Editor (w1)\nMonitor: DP-1 Test display\nMonitor: HDMI-A-1 Television\n";
+
+#[test]
+fn allowed_remote_control_answers_without_the_picker() {
+    let session = "/org/freedesktop/portal/desktop/session/1_9/s1";
+    let remote = [("XDPW_CHOOSER_REMOTE_DESKTOP", "3"), ("XDPW_CHOOSER_SESSION", session)];
+    let on = |output: &str| RemoteControl { unattended: true, output: output.to_owned() };
+    // The saved screen, the first screen without one, and the first screen
+    // when the saved one is gone: never the picker, never a window.
+    for (output, expected) in [("HDMI-A-1", "Monitor: HDMI-A-1 Television\n"), ("", "Monitor: DP-1 Test display\n"),
+                               ("DP-9", "Monitor: DP-1 Test display\n"), ("w1", "Monitor: DP-1 Test display\n")] {
+        let outcome = run_entry_with(&remote, 1, TWO, Some((true, 0)), &on(output), &mut |_, _, _| panic!("no UI"));
+        assert_eq!((outcome.status, String::from_utf8(outcome.stdout).unwrap().as_str()), (0, expected), "{output:?}");
+        assert_eq!(outcome.preselect_calls, 0, "requester answered for itself");
+        let name = expected.split(' ').nth(1).unwrap();
+        assert_eq!(outcome.reports, [(session.to_owned(), vec![name.to_owned()])]);
+        assert!(outcome.stderr.contains(&format!("remote control of {name} allowed without asking")), "{}", outcome.stderr);
+    }
+    // Keyboard-only and pointer-only requests are remote control too.
+    for devices in ["1", "2", "bogus"] {
+        let env = [("XDPW_CHOOSER_REMOTE_DESKTOP", devices), ("XDPW_CHOOSER_SESSION", session)];
+        let outcome = run_entry_with(&env, 1, TWO, None, &on(""), &mut |_, _, _| panic!("no UI"));
+        assert_eq!(outcome.stdout, b"Monitor: DP-1 Test display\n");
+    }
+    // No screen on offer: the picker decides, as before.
+    let outcome = run_entry_with(&remote, 1, b"Window: Editor (w1)\n", None, &on(""), &mut |_, _, _| Ok(None));
+    assert_eq!((outcome.chosen_with.as_slice(), outcome.stdout.as_slice()), (&[3u8][..], &b""[..]));
+    // Switched off, a saved screen means nothing.
+    let off = RemoteControl { unattended: false, output: "HDMI-A-1".into() };
+    let outcome = run_entry_with(&remote, 1, TWO, None, &off, &mut |_, _, _| Ok(None));
+    assert_eq!((outcome.chosen_with.as_slice(), outcome.stdout.as_slice()), (&[3u8][..], &b""[..]));
+}
+
+#[test]
+fn allowed_remote_control_does_not_cover_screen_sharing() {
+    let session = "/org/freedesktop/portal/desktop/session/1_9/capture_ab12";
+    let on = RemoteControl { unattended: true, output: String::new() };
+    // A plain screen share still goes to the requester's own answer or the picker.
+    let outcome = run_entry_with(&[("XDPW_CHOOSER_SESSION", session)], 1, TWO, Some((false, 0)), &on, &mut |_, _, _| Ok(None));
+    assert_eq!((outcome.preselect_calls, outcome.chosen_with.as_slice(), outcome.stdout.as_slice()), (1, &[0u8][..], &b""[..]));
+    assert!(!outcome.stderr.contains("without asking"));
+    let outcome = run_entry_with(&[("XDPW_CHOOSER_REMOTE_DESKTOP", "0"), ("XDPW_CHOOSER_SESSION", session)], 1, TWO,
+                                 Some((false, 0)), &on, &mut |_, _, _| Ok(None));
+    assert_eq!((outcome.preselect_calls, outcome.chosen_with.as_slice()), (1, &[0u8][..]));
+}
+
+#[test]
+fn remote_control_setting_reads_only_what_it_wrote() {
+    assert_eq!(RemoteControl::parse(br#"{"version":1,"unattended":true,"output":"DP-2"}"#),
+               RemoteControl { unattended: true, output: "DP-2".into() });
+    assert_eq!(RemoteControl::parse(br#"{"version":1,"unattended":true}"#), RemoteControl { unattended: true, output: String::new() });
+    assert_eq!(RemoteControl::parse(br#"{"version":1,"unattended":false,"output":"DP-2"}"#),
+               RemoteControl { unattended: false, output: "DP-2".into() });
+    // Anything else is off: nothing half-understood grants control.
+    for bad in [&b""[..], b"{", b"[]", b"true", br#"{"unattended":true}"#, br#"{"version":2,"unattended":true}"#,
+                br#"{"version":1,"unattended":"yes"}"#, br#"{"version":1,"unattended":1}"#, br#"{"version":"1","unattended":true}"#] {
+        assert_eq!(RemoteControl::parse(bad), RemoteControl::default(), "{:?}", String::from_utf8_lossy(bad));
+    }
+    // A screen name that is no string, or absurdly long, is "the first screen".
+    assert_eq!(RemoteControl::parse(br#"{"version":1,"unattended":true,"output":7}"#).output, "");
+    let long = format!(r#"{{"version":1,"unattended":true,"output":"{}"}}"#, "x".repeat(129));
+    assert_eq!(RemoteControl::parse(long.as_bytes()), RemoteControl { unattended: true, output: String::new() });
+
+    let dir = std::env::temp_dir().join(format!("tessel-remote-control-{}", std::process::id()));
+    let path = dir.join("nested").join("remote-control.json");
+    assert_eq!(RemoteControl::load(&path), RemoteControl::default(), "a missing file is off");
+    let saved = RemoteControl { unattended: true, output: "HDMI-A-1".into() };
+    saved.save(&path).unwrap();
+    assert_eq!(RemoteControl::load(&path), saved);
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), saved.to_json());
+    let names: Vec<_> = std::fs::read_dir(path.parent().unwrap()).unwrap().map(|e| e.unwrap().file_name()).collect();
+    assert_eq!(names, ["remote-control.json"], "no temporary file left behind");
+    // A target that cannot be written reports it and leaves nothing behind.
+    std::fs::write(dir.join("file"), b"").unwrap();
+    assert!(saved.save(&dir.join("file").join("remote-control.json")).is_err());
+    std::fs::remove_dir_all(&dir).unwrap();
 }
 
 #[test]

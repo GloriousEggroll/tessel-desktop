@@ -79,6 +79,9 @@ pub fn remote_control_devices() -> u8 {
 pub struct Hooks<'a> {
     /// `capture_selection.requested_selection(session, sources)`.
     pub requested_selection: &'a mut dyn FnMut(&str, &[CaptureSource]) -> (bool, Option<CaptureSource>),
+    /// The screen Global Settings allows remote control of without asking
+    /// (`remote_control::RemoteControl::choose`); `None` shows the picker.
+    pub unattended: &'a mut dyn FnMut(&[CaptureSource]) -> Option<CaptureSource>,
     /// The GUI: `Ok(None)` is cancel.
     pub choose: &'a mut dyn FnMut(&[CaptureSource], u8, &mut dyn Write) -> Result<Option<CaptureSource>, String>,
     /// `capture_selection.report_selection(session, outputs)`.
@@ -113,9 +116,14 @@ fn run_inner(argv_len: usize, stdin: &mut dyn Read, stdout: &mut dyn Write, stde
     let mut handled = false;
     let mut selected = None;
     // Any requester can answer CaptureSelection on its own bus name, so input
-    // control is never granted without the visible picker.
+    // control is never granted that way: only by the visible picker, or by
+    // the owner's standing permission in Global Settings.
     if remote_control == 0 {
         (handled, selected) = (hooks.requested_selection)(&session, &sources);
+    } else if let Some(source) = (hooks.unattended)(&sources) {
+        let _ = writeln!(stderr, "Tessel Shell capture picker: remote control of {} allowed without asking (Global Settings)",
+                         source.subtitle);
+        (handled, selected) = (true, Some(source));
     }
     if !handled {
         selected = (hooks.choose)(&sources, remote_control, stderr)?;

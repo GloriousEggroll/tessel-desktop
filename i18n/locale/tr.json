@@ -2040,5 +2040,9 @@
   "Could not apply the window positions: {error}": "Pencere konumları uygulanamadı: {error}",
   "Looking for open windows…": "Açık pencereler aranıyor…",
   "No open windows to add. Open the app and place its window first.": "Eklenecek açık pencere yok. Önce uygulamayı açıp penceresini yerleştirin.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Pencere konumları daha yeni bir labwc gerektirir; güncelledikten sonra oturumu kapatıp yeniden açın."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Pencere konumları daha yeni bir labwc gerektirir; güncelledikten sonra oturumu kapatıp yeniden açın.",
+  "Remote control": "Uzaktan denetim",
+  "Allow remote control without asking": "Sormadan uzaktan denetime izin ver",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Bu bilgisayarı denetlemek isteyen uygulamalar, ekran seçici gösterilmeden aşağıdaki ekranı alır. Bu durumda bu bilgisayardaki herhangi bir uygulama ekranı görebilir, klavyeyi ve işaretçiyi kullanabilir.",
+  "First available screen": "İlk kullanılabilir ekran"
 }

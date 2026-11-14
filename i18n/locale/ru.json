@@ -2040,5 +2040,9 @@
   "Could not apply the window positions: {error}": "Не удалось применить положение окон: {error}",
   "Looking for open windows…": "Поиск открытых окон…",
   "No open windows to add. Open the app and place its window first.": "Нет открытых окон для добавления. Сначала откройте приложение и расположите его окно.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "Для положения окон нужен более новый labwc; после обновления выйдите из системы и войдите снова."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "Для положения окон нужен более новый labwc; после обновления выйдите из системы и войдите снова.",
+  "Remote control": "Удалённое управление",
+  "Allow remote control without asking": "Разрешать удалённое управление без запроса",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "Приложения, которые просят управлять этим компьютером, получают выбранный ниже экран без окна выбора экрана. Тогда любое приложение на этом компьютере сможет видеть экран и пользоваться клавиатурой и указателем.",
+  "First available screen": "Первый доступный экран"
 }

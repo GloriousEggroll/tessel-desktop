@@ -10,6 +10,7 @@ pub mod install;
 pub mod output;
 pub mod portal_config;
 mod printable_table;
+pub mod remote_control;
 pub mod selection;
 pub mod sources;
 pub mod ui;

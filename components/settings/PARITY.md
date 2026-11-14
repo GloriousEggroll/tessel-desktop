@@ -42,3 +42,9 @@ Legend: ✅ implemented + tested · ☑ implemented, not directly tested · ⚠ 
 2. `search_result_activated` and the spotlight use `SettingsPage::search_targets` (one map) instead of Python's
    `getattr` over four candidate controller objects; pages register every widget Python exposed under the key or
    `target` name.
+3. Rust-only: the Screenshots (`capture`) page has a second group, "Remote control", below Capture's card: a switch
+   "Allow remote control without asking" and a "Screen" dropdown (first available screen, then each connected screen;
+   a saved screen that is not connected stays listed). Each change saves `~/.config/tessel/remote-control.json`
+   (`tessel_core::remote_control::RemoteControl`) at once; a failed save shows "Could not save settings: …"
+   and the controls return to the stored value. Search targets `remote_unattended`, `remote_screen`. Tested by
+   `applets_headless` `capture_remote_control_group_saves_the_picker_file`.

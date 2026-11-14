@@ -2040,5 +2040,9 @@
   "Could not apply the window positions: {error}": "לא ניתן להחיל את מיקומי החלונות: {error}",
   "Looking for open windows…": "מחפש חלונות פתוחים…",
   "No open windows to add. Open the app and place its window first.": "אין חלונות פתוחים להוספה. פתחו קודם את היישום ומקמו את החלון שלו.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "מיקומי חלונות דורשים גרסה חדשה יותר של labwc; לאחר העדכון, התנתקו והתחברו מחדש."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "מיקומי חלונות דורשים גרסה חדשה יותר של labwc; לאחר העדכון, התנתקו והתחברו מחדש.",
+  "Remote control": "שליטה מרחוק",
+  "Allow remote control without asking": "לאפשר שליטה מרחוק בלי לשאול",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "אפליקציות שמבקשות לשלוט במחשב הזה יקבלו את המסך שלמטה בלי בוחר המסכים. כך כל אפליקציה במחשב הזה תוכל לראות את המסך ולהשתמש במקלדת ובסמן.",
+  "First available screen": "המסך הזמין הראשון"
 }

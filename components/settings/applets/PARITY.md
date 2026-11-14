@@ -39,6 +39,7 @@ scenarios), run with
 | weather: scroller, close/activate/deactivate, `search_targets` | yes | weather_and_capture_…, parity_weather |
 | language: `EmbeddedWizard.close` (back to choose, reload after result), content `.languagemanager`, cancel hidden, transient host, close releases workers/style, `can_close` = not `_close_requested` | yes | language_wizard_…, multiple_embedded_… |
 | capture: `_shared_card` (page margins, `gs-card`, `gs-row`, `gs-row-title`, `gs-row-subtitle`), search targets | yes | weather_and_capture_…, parity_capture |
+| capture: "Remote control" group (Rust only): switch + screen dropdown writing the picker's `~/.config/tessel/remote-control.json`, search targets `remote_unattended` / `remote_screen` | new | capture_remote_control_group_saves_the_picker_file |
 | spotlight targets (`settings_search.py` `target=` names for these sections) | yes | search_targets_match_settings_search |
 | switching pages preserves controls and resident state | yes | switching_pages_… |
 | config files byte-identical to Python (clock.json + calendar.json, desktop-capture/config.json, tessel-weather/config.json, tessel-bluetooth/settings.ini, waybar/network-notifications.json) | yes | parity_clock/capture/weather/bluetooth/network |

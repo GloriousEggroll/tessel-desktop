@@ -94,6 +94,10 @@ pub struct Factories {
     pub language: Option<Box<dyn Fn() -> Arc<dyn tessel_language::ui::WizardBackend>>>,
     /// `capture_page.build_page(section, host, path)`.
     pub capture_path: Option<PathBuf>,
+    /// The screen picker's remote-control file (default `~/.config/tessel/remote-control.json`).
+    pub remote_control_path: Option<PathBuf>,
+    /// (connector, label) of the connected screens (default GDK's monitors).
+    pub remote_control_screens: Option<capture::ScreenSource>,
     /// The Archive Manager settings file (default `~/.config/tessel/archive-manager.json`).
     pub archive_path: Option<PathBuf>,
     /// The clipboard settings file (default `~/.config/tessel/clipboard.json`).

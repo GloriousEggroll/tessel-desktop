@@ -2220,5 +2220,9 @@
   "Could not apply the window positions: {error}": "창 위치를 적용할 수 없습니다: {error}",
   "Looking for open windows…": "열린 창을 찾는 중…",
   "No open windows to add. Open the app and place its window first.": "추가할 열린 창이 없습니다. 먼저 앱을 열고 창을 원하는 곳에 놓으세요.",
-  "Window positions need a newer labwc; after updating it, sign out and back in.": "창 위치에는 최신 labwc가 필요합니다. 업데이트한 후 로그아웃했다가 다시 로그인하세요."
+  "Window positions need a newer labwc; after updating it, sign out and back in.": "창 위치에는 최신 labwc가 필요합니다. 업데이트한 후 로그아웃했다가 다시 로그인하세요.",
+  "Remote control": "원격 제어",
+  "Allow remote control without asking": "묻지 않고 원격 제어 허용",
+  "Apps that ask to control this computer get the screen below without the screen picker. Any app on this computer can then see the screen and use the keyboard and pointer.": "이 컴퓨터를 제어하겠다고 요청하는 앱은 화면 선택 창 없이 아래 화면을 받습니다. 그러면 이 컴퓨터의 어떤 앱이든 화면을 보고 키보드와 포인터를 사용할 수 있습니다.",
+  "First available screen": "사용 가능한 첫 번째 화면"
 }

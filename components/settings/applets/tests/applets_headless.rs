@@ -334,6 +334,7 @@ pub fn factories(fakes: &Rc<Fakes>, scratch: &Path) -> Factories {
         ..Default::default()
     });
     f.capture_path = Some(scratch.join("capture/config.json"));
+    f.remote_control_path = Some(scratch.join("remote/remote-control.json"));
     f.archive_path = Some(scratch.join("archive/archive-manager.json"));
     f.clipboard_path = Some(scratch.join("clipboard/clipboard.json"));
     f.system_root = Some(scratch.join("system-root"));
@@ -746,6 +747,107 @@ fn test_weather_and_capture_register_search_targets(fx: &Fx) {
     check!(controls.controls.page.margin_top() == 24);
 }
 
+/// The "Remote control" group below Capture's card: one switch and the
+/// screen it hands out, saved at once to the screen picker's file.
+fn test_capture_remote_control_group_saves_the_picker_file(fx: &Fx) {
+    use tessel_core::remote_control::RemoteControl;
+    let dir = fx.factories.remote_control_path.clone().unwrap().parent().unwrap().join("group");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("remote-control.json");
+    let screens: Rc<dyn Fn() -> Vec<(String, String)>> =
+        Rc::new(|| vec![("DP-1".into(), "DP-1 · Left".into()), ("DP-2".into(), "DP-2 · Right".into())]);
+    let build = |path: &Path| {
+        let factories = Factories { capture_path: fx.factories.capture_path.clone(), remote_control_path: Some(path.into()),
+                                    remote_control_screens: Some(screens.clone()), ..Default::default() };
+        let page = Rc::new(build_page_with("capture", &fx.dyn_host, &factories).unwrap());
+        fx.pages.borrow_mut().push(page.clone());
+        fx.host.window.set_child(Some(&page.widget));
+        fx.host.window.present();
+        page.activate();
+        settle(0.05);
+        page
+    };
+    let labels = |dropdown: &gtk::DropDown| -> Vec<String> {
+        let model = dropdown.model().and_downcast::<gtk::StringList>().unwrap();
+        (0..model.n_items()).map(|i| model.string(i).unwrap().to_string()).collect()
+    };
+
+    // No file: off, the screen row insensitive, below the screenshot card.
+    let page = build(&path);
+    let controls = controller::<CapturePage>(&page);
+    let remote = controls.remote.clone();
+    check!(remote.heading.label() == "Remote control" && remote.heading.has_css_class("gs-section-title"));
+    check!(remote.card.has_css_class("gs-card"));
+    let card = controls.card.clone().unwrap();
+    check!(remote.heading.prev_sibling() == Some(card.upcast()));
+    check!(remote.card.prev_sibling() == Some(remote.heading.clone().upcast()));
+    check!(remote.switch.parent().unwrap().parent() == Some(remote.card.clone().upcast()));
+    check!(!remote.switch.is_active());
+    check!(!remote.screen.is_sensitive());
+    check!(labels(&remote.screen) == ["First available screen", "DP-1 · Left", "DP-2 · Right"], "{:?}", labels(&remote.screen));
+    check!(remote.connectors() == ["", "DP-1", "DP-2"]);
+    check!(remote.screen.selected() == 0);
+    check!(!path.exists());
+    check!(page.search_targets.borrow().get("remote_unattended") == Some(&remote.switch.clone().upcast()));
+    check!(page.search_targets.borrow().get("remote_screen") == Some(&remote.screen.clone().upcast()));
+
+    // On: written at once, first screen.
+    remote.switch.set_active(true);
+    check!(RemoteControl::load(&path) == RemoteControl { unattended: true, output: String::new() });
+    let written: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    check!(written == json!({"version": 1, "unattended": true, "output": ""}), "{written}");
+    check!(remote.screen.is_sensitive());
+    check!(!remote.error.is_visible());
+
+    // A screen stores its connector.
+    remote.screen.set_selected(2);
+    check!(RemoteControl::load(&path) == RemoteControl { unattended: true, output: "DP-2".into() });
+    settle(0.3);
+    if let Some(path) = screenshot("remote-control") {
+        println!("     screenshot: {}", path.display());
+    }
+
+    // Off keeps the screen.
+    remote.switch.set_active(false);
+    check!(RemoteControl::load(&path) == RemoteControl { unattended: false, output: "DP-2".into() });
+    check!(!remote.screen.is_sensitive());
+    check!(remote.screen.selected() == 2);
+
+    // A saved screen that is not connected is listed and kept.
+    RemoteControl { unattended: true, output: "HDMI-A-9".into() }.save(&path).unwrap();
+    let page = build(&path);
+    let remote = controller::<CapturePage>(&page).remote.clone();
+    check!(remote.switch.is_active() && remote.screen.is_sensitive());
+    check!(remote.connectors() == ["", "DP-1", "DP-2", "HDMI-A-9"]);
+    check!(labels(&remote.screen).last().map(String::as_str) == Some("HDMI-A-9"));
+    check!(remote.screen.selected() == 3);
+    remote.switch.set_active(false);
+    remote.switch.set_active(true);
+    check!(RemoteControl::load(&path) == RemoteControl { unattended: true, output: "HDMI-A-9".into() });
+    remote.refresh();
+    check!(remote.connectors() == ["", "DP-1", "DP-2", "HDMI-A-9"] && remote.screen.selected() == 3);
+
+    // A failed save reports it and shows the stored value again.
+    let blocker = dir.join("blocker");
+    std::fs::write(&blocker, "not a directory").unwrap();
+    let broken = blocker.join("remote-control.json");
+    let page = build(&broken);
+    let remote = controller::<CapturePage>(&page).remote.clone();
+    check!(!remote.switch.is_active() && !remote.error.is_visible());
+    remote.switch.set_active(true);
+    check!(!remote.switch.is_active(), "the switch went back to the stored value");
+    check!(!remote.screen.is_sensitive());
+    check!(remote.error.is_visible() && remote.error.has_css_class("error"));
+    check!(remote.error.label().starts_with("Could not save settings: "), "{}", remote.error.label());
+    check!(!broken.exists());
+    // The default screen source lists the compositor's outputs.
+    let page = fx.page("capture");
+    let remote = controller::<CapturePage>(&page).remote.clone();
+    check!(remote.connectors().len() == 3 && remote.connectors().iter().skip(1).all(|c| !c.is_empty()),
+           "{:?}", remote.connectors());
+}
+
 fn test_archive_page_edits_the_archive_manager_settings_file(fx: &Fx) {
     let page = fx.page("archive");
     let controls = controller::<gs_applets::ArchivePage>(&page).controls.clone();
@@ -1104,6 +1206,7 @@ const TESTS: &[Test] = &[
     ("language_wizard_is_embedded_with_close_and_can_close", test_language_wizard_is_embedded_with_close_and_can_close),
     ("weather_and_capture_register_search_targets", test_weather_and_capture_register_search_targets),
     ("search_targets_match_settings_search", test_search_targets_match_settings_search),
+    ("capture_remote_control_group_saves_the_picker_file", test_capture_remote_control_group_saves_the_picker_file),
     ("archive_page_edits_the_archive_manager_settings_file", test_archive_page_edits_the_archive_manager_settings_file),
     ("clipboard_page_edits_the_clipboard_settings_file", test_clipboard_page_edits_the_clipboard_settings_file),
     ("passwords_page_lists_copies_and_deletes_tessel_keyring_entries",
