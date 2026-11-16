@@ -389,6 +389,17 @@ impl Gui {
             if mode == "hotspot" {
                 wizard.set_action_label(&tr!("Create network"));
             }
+            // The dialog's buttons only hold weak references: without an owner
+            // the wizard is dropped here and Connect and Cancel do nothing. It is
+            // forgotten once its window closes: the wizard owns the window, so
+            // GTK's destroy signal alone would never come.
+            let key = format!("wifi-dialog:{:p}", Rc::as_ptr(&wizard));
+            self.editors.borrow_mut().insert(key.clone(), wizard.clone());
+            let weak = self.weak();
+            wizard.window.connect_unrealize(move |_| {
+                let (weak, key) = (weak.clone(), key.clone());
+                glib::idle_add_local_once(move || if let Some(gui) = weak.upgrade() { gui.editors.borrow_mut().remove(&key); });
+            });
             self.prepare_dialog(Some(&wizard.window));
             Ok(())
         })();

@@ -120,6 +120,23 @@ fn main() {
     pump(Duration::from_millis(200));
     results.push(("scan is busy-guarded", backend.state().busy.is_empty() || backend.state().busy.contains("scan:/org/freedesktop/NetworkManager/Devices/11")));
 
+    // The Wi-Fi connect form stays alive after it opens: its buttons act.
+    {
+        let id = backend.state().networks.keys().next().cloned().unwrap_or_default();
+        gui.show_wifi_dialog("network", Some(&id));
+        pump(Duration::from_millis(400));
+        let find = || gtk::Window::list_toplevels().into_iter().filter_map(|w| w.downcast::<gtk::Window>().ok())
+            .find(|w| w.title().as_deref() == Some("Connect to Wi-Fi") && w.get_visible());
+        let opened = find();
+        let cancel = opened.as_ref().and_then(|w| find_button(w.upcast_ref(), "Cancel"));
+        let connect = opened.as_ref().and_then(|w| find_button(w.upcast_ref(), "Connect"));
+        results.push(("Wi-Fi connect form opens with Connect and Cancel", cancel.is_some() && connect.is_some_and(|b| b.is_sensitive())));
+        if let Some(cancel) = cancel { cancel.emit_clicked(); }
+        pump(Duration::from_millis(300));
+        results.push(("Cancel closes the Wi-Fi connect form", opened.is_some() && find().is_none()));
+        results.push(("the closed Wi-Fi connect form is forgotten", gui.editors().is_empty()));
+    }
+
     // Settings: rows, count, search filter, type filter, confirm dialog.
     gui.show_settings();
     pump(Duration::from_millis(600));
