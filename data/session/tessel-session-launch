@@ -11,6 +11,14 @@ if [ ! -x "$HOME/.local/lib/tessel/tessel-configure-session" ] &&
         "$libdir/tessel-xdg-autostart" --apply >/dev/null 2>&1 &&
         mkdir -p "$state" && printf '%s\n' "$version" > "$state/session-version"
 fi
+# Tessel's own defaults for other desktops' programs come before /etc/xdg; see
+# packaging/defaults/usr/share/tessel/xdg. The session passes this on to
+# everything it starts, D-Bus activated services included.
+xdg=/usr/share/tessel/xdg
+case ":${XDG_CONFIG_DIRS:-/etc/xdg}:" in
+    *":$xdg:"*) ;;
+    *) XDG_CONFIG_DIRS="$xdg:${XDG_CONFIG_DIRS:-/etc/xdg}"; export XDG_CONFIG_DIRS ;;
+esac
 # For a bug report: `touch ~/.config/tessel/compositor-debug` makes the
 # compositor log everything it does (labwc -d) from the next login on, to the
 # journal with the rest of the session (journalctl -b -t tessel-session).

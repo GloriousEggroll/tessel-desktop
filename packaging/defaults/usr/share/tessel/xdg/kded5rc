@@ -1,0 +1,6 @@
+# Read by KDE's kded6 in a Tessel session only (tessel-session-launch puts this
+# directory first in XDG_CONFIG_DIRS). kded6 starts whenever a KDE app such as
+# Dolphin opens; its GTK settings module would then write KDE's icon theme,
+# cursor, font and window buttons over the ones chosen in Global Settings.
+[Module-gtkconfig]
+autoload=false
