@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 8e01ca67e6d346b1695e3c123cc94587e560506c}
+%{!?commit:%global commit 504f11aa51bd1d595ae2b6cc87283540ec21a666}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
 Version:        0.1.0
-Release:        10%{?dist}
+Release:        11%{?dist}
 Summary:        Tessel session: labwc configuration, autostart and login entry
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -88,6 +88,7 @@ echo '%{version}-%{release}' > %{buildroot}%{tessel_libdir}/session-version
 sed 's|^Exec=labwc$|Exec=%{tessel_libdir}/tessel-session-launch|' data/wayland-sessions/tessel.desktop > tessel.desktop
 grep -q '^Exec=%{tessel_libdir}/tessel-session-launch$' tessel.desktop
 install -Dm644 tessel.desktop %{buildroot}%{_datadir}/wayland-sessions/tessel.desktop
+install -Dm644 packaging/defaults/usr/share/tessel/xdg/kded5rc %{buildroot}%{_datadir}/tessel/xdg/kded5rc
 install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{buildroot}%{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %files
@@ -110,9 +111,14 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %{tessel_libdir}/tessel-session-launch
 %{tessel_libdir}/session-version
 %{_datadir}/wayland-sessions/tessel.desktop
+%dir %{_datadir}/tessel/xdg
+%{_datadir}/tessel/xdg/kded5rc
 %config(noreplace) %{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %changelog
+* Sun Nov 15 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
+- Opening a KDE app such as Dolphin no longer replaces the icon theme, cursor, font and window buttons with KDE's: the KDE settings service it starts no longer writes KDE's GTK settings in a Tessel session
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-10
 - Turn Num Lock on at sign-in unless rc.xml already says otherwise
 
