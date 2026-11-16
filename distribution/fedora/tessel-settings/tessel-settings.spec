@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 0422110d4b0bf4f4acaccc0d754ca12355093a36}
+%{!?commit:%global commit e0d27163ad0c94bf50297a4fa0b72e4bc55a46e0}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        27%{?dist}
+Release:        28%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -113,6 +113,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Mon Nov 16 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-28
+- Connect to Wi-Fi: the Connect and Cancel buttons work again, so a network that needs a password can be joined from the form
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-27
 - Screenshots: add Remote control, a switch to allow remote control without
   asking and the screen to hand out
