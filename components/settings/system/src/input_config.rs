@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use tessel_tiling::xml::{Element, Node};
 
 use crate::compat::{self, casefold, element_indices, local, tag_end, value, Error, Result};
+use crate::gesture_config::{self, GestureState, GestureUpdates};
 use crate::workspace_config::{parse_section, session_config, Parsed, Reload, WorkspaceConfig};
 
 pub const CHOICES: &[(&str, &[&str])] = &[
@@ -257,11 +258,26 @@ impl InputConfig {
     pub fn load(&self) -> Result<InputState> { read_state(&self.0.read()?) }
 
     pub fn save(&self, updates: &Updates, expected: &InputState) -> Result<InputState> {
+        self.save_all(updates, expected, &Vec::new(), &GestureState::default())
+    }
+
+    pub fn load_gestures(&self) -> Result<GestureState> { gesture_config::read_state(&self.0.read()?) }
+
+    /// Device settings and touchpad gestures in one write and one reload. The
+    /// gestures saved are read back with [`InputConfig::load_gestures`].
+    pub fn save_all(&self, updates: &Updates, expected: &InputState, gestures: &GestureUpdates,
+                    gestures_expected: &GestureState) -> Result<InputState> {
         let original = self.0.read()?;
-        if updates.is_empty() {
+        if updates.is_empty() && gestures.is_empty() {
             return read_state(&original);
         }
-        let updated = with_profiles(&original, updates, expected)?;
+        let mut updated = original.clone();
+        if !updates.is_empty() {
+            updated = with_profiles(&updated, updates, expected)?;
+        }
+        if !gestures.is_empty() {
+            updated = gesture_config::with_gestures(&updated, gestures, gestures_expected)?;
+        }
         self.0.commit(&original, &updated, "Could not reload labwc; the previous input settings were restored.")?;
         read_state(&updated)
     }
@@ -451,6 +467,34 @@ Tap-to-click:            n/a
         let error = config.save(&vec![update("touchpad", "touchpad", &[("tap", Some("yes"))])], &config.load().unwrap()).unwrap_err();
         assert!(error.message().contains("restored"));
         assert_eq!(std::fs::read(&path).unwrap(), original);
+    }
+
+    #[test]
+    fn device_settings_and_gestures_save_in_one_reload() {
+        let folder = scratch("input-gestures");
+        let path = folder.join("rc.xml");
+        std::fs::write(&path, CONFIG).unwrap();
+        let calls = Arc::new(Mutex::new(0));
+        let counter = calls.clone();
+        let config = InputConfig::at(&path, folder.join("backups"), Arc::new(move || {
+            *counter.lock().unwrap() += 1;
+            Ok(())
+        }));
+        let (state, gestures) = (config.load().unwrap(), config.load_gestures().unwrap());
+        assert!(!gestures.present);
+        config.save_all(&vec![update("touchpad", "touchpad", &[("tap", Some("no"))])], &state,
+                        &vec![("gesture-swipe-3-up".into(), "overview".into())], &gestures).unwrap();
+        assert_eq!(*calls.lock().unwrap(), 1);
+        assert_eq!(config.load().unwrap().match_profile("touchpad", "touchpad").get("tap"), Some("no"));
+        let saved = config.load_gestures().unwrap();
+        assert_eq!(saved.get("gesture-swipe-3-up"), crate::gesture_config::Binding::Choice("overview".into()));
+        // Gestures alone, with a conflict check of their own.
+        config.save_all(&vec![], &config.load().unwrap(), &vec![("gesture-swipe-3-up".into(), "none".into())], &saved).unwrap();
+        assert_eq!(*calls.lock().unwrap(), 2);
+        assert!(config.load_gestures().unwrap().present);
+        let error = config.save_all(&vec![], &config.load().unwrap(), &vec![("gesture-swipe-3-up".into(), "close".into())], &saved).unwrap_err();
+        assert!(error.is_runtime() && error.message().contains("changed elsewhere"));
+        assert_eq!(*calls.lock().unwrap(), 2);
     }
 
     #[test]

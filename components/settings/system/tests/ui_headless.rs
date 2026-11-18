@@ -1246,6 +1246,118 @@ fn input_remove_override_and_search_targets(app: &gtk::Application) -> Result<()
     Ok(())
 }
 
+const GESTURES: &str = r#"  <touchpad>
+    <gesture type="swipe" fingers="3" direction="left"><action name="GoToDesktop" to="right" wrap="no"/></gesture>
+    <gesture type="swipe" fingers="3" direction="up"><action name="Execute" command="/usr/bin/tessel-shell-cli show-activities"/></gesture>
+    <gesture type="pinch" fingers="4" direction="in"><action name="Execute" command="my-zoom --in"/></gesture>
+  </touchpad>
+"#;
+
+fn gesture_input() -> String { INPUT.replace("  <hdrOutputs>", &format!("{GESTURES}  <hdrOutputs>")) }
+
+fn choice_index(id: &str) -> u32 { gs_system::gesture_config::CHOICES.iter().position(|(c, _)| *c == id).unwrap() as u32 }
+
+fn gesture_dropdown(c: &InputControls, key: &str) -> Option<gtk::DropDown> { c.control(key).and_then(|c| c.dropdown().cloned()) }
+
+fn input_gesture_card_shows_rc_and_applies_with_the_page(app: &gtk::Application) -> Result<(), String> {
+    let f = InputFixture::new(app, "input-gestures");
+    let original = gesture_input();
+    std::fs::write(&f.path, &original).unwrap();
+    f.controller.reload();
+    settle(0.1);
+    f.select("non-touch");
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-3-left").is_none(), "no gestures for mice");
+    f.select(&parse_devices(LAPTOP)[0].name);
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-3-left").is_none(), "gestures are global, not per touchpad");
+    check!(texts(&f.controller.body).iter().any(|t| t.contains("Set them in Touchpad defaults")));
+    f.select("touchpad");
+    check!(f.controller.gesture_root.is_mapped());
+    let shown = texts(&f.controller.gesture_root);
+    check!(shown.iter().any(|t| t == "Swipe & pinch gestures") && shown.iter().any(|t| t == "Four-finger pinch out"), "{shown:?}");
+    check!(shown.iter().any(|t| t.contains("Two-finger pinch")), "{shown:?}");
+    check!(!texts(&f.controller.body).iter().any(|t| t.contains("Pinch-to-zoom and swipe gestures")));
+    let all = gs_system::gesture_config::slot_keys();
+    check!(all.iter().all(|k| gesture_dropdown(&f.controller, k).is_some()));
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-3-left").unwrap().selected() == choice_index("next-workspace"));
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-3-up").unwrap().selected() == choice_index("overview"));
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-4-down").unwrap().selected() == choice_index("none"));
+    let custom = gesture_dropdown(&f.controller, "gesture-pinch-4-in").unwrap();
+    let model = custom.model().unwrap();
+    check!(model.n_items() == 12 && custom.selected() == 11, "custom shown last and selected");
+    check!(model.item(11).and_downcast::<gtk::StringObject>().unwrap().string().as_str() == "Custom");
+    check!(!f.controller.apply_button.is_sensitive());
+    // Edit, discard: nothing written.
+    gesture_dropdown(&f.controller, "gesture-swipe-4-down").unwrap().set_selected(choice_index("close"));
+    check!(f.controller.has_pending() && f.controller.apply_button.is_sensitive());
+    f.controller.discard_button.emit_clicked();
+    settle(0.1);
+    check!(!f.controller.has_pending());
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-4-down").unwrap().selected() == choice_index("none"));
+    // Picking the value it had is no edit; picking Custom again keeps it.
+    gesture_dropdown(&f.controller, "gesture-pinch-4-in").unwrap().set_selected(choice_index("lock"));
+    gesture_dropdown(&f.controller, "gesture-pinch-4-in").unwrap().set_selected(11);
+    gesture_dropdown(&f.controller, "gesture-swipe-3-up").unwrap().set_selected(choice_index("none"));
+    gesture_dropdown(&f.controller, "gesture-swipe-3-up").unwrap().set_selected(choice_index("overview"));
+    check!(!f.controller.has_pending());
+    // A gesture edit and a device edit go out in one write and one reload.
+    gesture_dropdown(&f.controller, "gesture-swipe-3-down").unwrap().set_selected(choice_index("show-desktop"));
+    gesture_dropdown(&f.controller, "gesture-swipe-3-left").unwrap().set_selected(choice_index("none"));
+    f.select("non-touch");
+    f.controller.control("pointerSpeed").unwrap().scale().unwrap().set_value(0.5);
+    f.select("touchpad");
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-3-down").unwrap().selected() == choice_index("show-desktop"), "edits survive switching profile");
+    f.controller.apply_button.emit_clicked();
+    check!(wait(|| !f.controller.busy.get(), 2.0));
+    settle(0.1);
+    let text = read(&f.path);
+    check!(f.reload_count() == 1);
+    check!(!f.controller.has_pending());
+    check!(text.contains("<gesture type=\"swipe\" fingers=\"3\" direction=\"down\"><action name=\"ToggleShowDesktop\"/></gesture>"), "{text}");
+    check!(!text.contains("direction=\"left\""), "{text}");
+    check!(text.contains("my-zoom --in") && text.contains("show-activities"), "{text}");
+    check!(f.backend.load().unwrap().match_profile("mouse", "non-touch").get("pointerSpeed") == Some("0.50"), "{text}");
+    check!(text[..text.find("<libinput>").unwrap()] == original[..original.find("<libinput>").unwrap()]);
+    check!(text[text.find("</touchpad>").unwrap()..] == original[original.find("</touchpad>").unwrap()..]);
+    check!(gesture_dropdown(&f.controller, "gesture-swipe-3-down").unwrap().selected() == choice_index("show-desktop"), "the page shows what was saved");
+    Ok(())
+}
+
+fn input_gestures_without_a_section_and_search(app: &gtk::Application) -> Result<(), String> {
+    let f = InputFixture::new(app, "input-gestures-new");
+    check!(f.controller.gestures.borrow().as_ref().is_some_and(|g| !g.present));
+    f.controller.reveal_setting(&setting("touchpadGestures"));
+    settle(0.1);
+    check!(*f.controller.selected.borrow() == ("touchpad".to_string(), "touchpad".to_string()));
+    check!(f.controller.gesture_root.is_mapped());
+    check!(gs_system::gesture_config::slot_keys().iter().all(|k| gesture_dropdown(&f.controller, k).unwrap().selected() == 0));
+    f.select("non-touch");
+    f.controller.reveal_setting(&setting("gesture-pinch-4-out"));
+    settle(0.1);
+    check!(f.controller.row("gesture-pinch-4-out").unwrap().is_mapped());
+    gesture_dropdown(&f.controller, "gesture-pinch-4-out").unwrap().set_selected(choice_index("fullscreen"));
+    f.controller.apply_button.emit_clicked();
+    check!(wait(|| !f.controller.busy.get(), 2.0));
+    settle(0.1);
+    let text = read(&f.path);
+    check!(text.contains("  <touchpad>\n    <gesture type=\"pinch\" fingers=\"4\" direction=\"out\"><action name=\"ToggleFullscreen\"/></gesture>\n  </touchpad>\n</labwc_config>"), "{text}");
+    check!(text.starts_with(&INPUT[..INPUT.find("</labwc_config>").unwrap()]));
+    // Setting the only gesture back to Do nothing keeps an empty section (the user's choice).
+    gesture_dropdown(&f.controller, "gesture-pinch-4-out").unwrap().set_selected(0);
+    f.controller.apply_button.emit_clicked();
+    check!(wait(|| !f.controller.busy.get(), 2.0));
+    settle(0.1);
+    let text = read(&f.path);
+    check!(text.contains("  <touchpad/>\n</labwc_config>") && !text.contains("<gesture"), "{text}");
+    check!(f.reload_count() == 2);
+    // A broken section is reported in the card; device settings still work.
+    std::fs::write(&f.path, INPUT.replace("</labwc_config>", "<touchpad/><touchpad/></labwc_config>")).unwrap();
+    f.controller.reload();
+    settle(0.1);
+    check!(f.controller.gestures.borrow().is_none());
+    check!(texts(&f.controller.gesture_root).iter().any(|t| t.contains("at most one touchpad section")));
+    Ok(())
+}
+
 // ---- workspaces ------------------------------------------------------------
 
 fn workspace_controls_load_apply_and_report_errors(app: &gtk::Application) -> Result<(), String> {
@@ -1311,7 +1423,8 @@ fn every_section_builds_with_search_targets(app: &gtk::Application) -> Result<()
     let input = gs_system::input_page::build_page_with(&base.host, None, Some(Arc::new(|| (parse_devices(LAPTOP), String::new()))),
                                                         Some(FakePolling::new()));
     for key in ["pointerSpeed", "pollingRate", "accelProfile", "leftHanded", "middleEmulation", "naturalScroll", "scrollFactor",
-                "scrollMethod", "tap", "clickMethod", "tapAndDrag", "threeFingerDrag", "disableWhileTyping", "sendEventsMode"] {
+                "scrollMethod", "tap", "clickMethod", "tapAndDrag", "threeFingerDrag", "disableWhileTyping", "sendEventsMode",
+                "touchpadGestures", "gesture-swipe-3-left", "gesture-swipe-4-left", "gesture-pinch-4-in"] {
         check!(input.search_targets.borrow().contains_key(key), "input: missing {key}");
     }
     input.close();
@@ -1356,6 +1469,8 @@ fn main() {
         ("input_polling_refresh_and_search_do_not_write_or_reset_pending_rate", input_polling_refresh_and_search_do_not_write_or_reset_pending_rate),
         ("input_private_compositor_accepts_all_input_options", input_private_compositor_accepts_all_input_options),
         ("input_remove_override_and_search_targets", input_remove_override_and_search_targets),
+        ("input_gesture_card_shows_rc_and_applies_with_the_page", input_gesture_card_shows_rc_and_applies_with_the_page),
+        ("input_gestures_without_a_section_and_search", input_gestures_without_a_section_and_search),
         ("workspace_controls_load_apply_and_report_errors", workspace_controls_load_apply_and_report_errors),
         ("every_section_builds_with_search_targets", every_section_builds_with_search_targets),
     ];

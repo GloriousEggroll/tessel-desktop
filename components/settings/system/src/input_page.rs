@@ -12,6 +12,7 @@ use tessel_core::tr;
 use tessel_gtk::utils::{accessible, add_css, remove_children, set_margins, PRIORITY_APPLICATION};
 
 use crate::compat::casefold;
+use crate::gesture_config::{self, slot_keys, slot_title, Binding, GestureState, GestureUpdates};
 use crate::input_config::{keys, InputConfig, InputState, Updates};
 use crate::input_devices::{discover, InputDevice};
 use crate::mouse_polling::Polling;
@@ -119,7 +120,15 @@ pub struct InputControls {
     pub polling_card: RefCell<Option<Rc<PollingCard>>>,
     /// The stable box the polling card is built in (search target `pollingRate`).
     pub polling_root: gtk::Box,
+    /// The stable touchpad gesture card (search target `touchpadGestures`).
+    pub gesture_root: gtk::Box,
     pub state: RefCell<Option<InputState>>,
+    /// rc.xml's `<touchpad>` gestures; global, shown with Touchpad defaults.
+    pub gestures: RefCell<Option<GestureState>>,
+    /// Why the gestures could not be read.
+    pub gesture_error: RefCell<String>,
+    /// `(slot key, choice id)` edits not applied yet.
+    pub gesture_pending: RefCell<GestureUpdates>,
     pub devices: RefCell<Vec<InputDevice>>,
     /// `(name, kind, label)`.
     pub profiles: RefCell<Vec<(String, String, String)>>,
@@ -199,14 +208,17 @@ impl InputControls {
         widget.append(&footer);
         let polling_root = gtk::Box::new(gtk::Orientation::Vertical, 12);
         polling_root.add_css_class("gs-card");
-        let rows = keys().into_iter().map(|k| {
+        let gesture_root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        gesture_root.add_css_class("gs-card");
+        let rows = keys().into_iter().map(str::to_owned).chain(slot_keys()).map(|k| {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
             row.add_css_class("gs-row");
-            (k.to_owned(), row)
+            (k, row)
         }).collect();
         let this = Rc::new(InputControls {
             widget, backend: RefCell::new(backend), device_loader: device_loader.unwrap_or_else(|| Arc::new(discover)), polling_backend,
-            polling_card: RefCell::new(None), polling_root, state: RefCell::new(None), devices: Default::default(), profiles: Default::default(),
+            polling_card: RefCell::new(None), polling_root, gesture_root, state: RefCell::new(None), gestures: RefCell::new(None),
+            gesture_error: Default::default(), gesture_pending: Default::default(), devices: Default::default(), profiles: Default::default(),
             pending: Default::default(), selected: RefCell::new(("non-touch".into(), "non-touch".into())), controls: Default::default(), rows,
             closed: Rc::new(Cell::new(false)), busy: Cell::new(false), discovering: Cell::new(false), rendering: Cell::new(false), provider,
             selector, refresh_button, device_detail, body, scroll, status, shared_button, reset_button, discard_button, apply_button,
@@ -242,7 +254,7 @@ impl InputControls {
         self.pending.borrow().iter().find(|(p, _)| p == profile).map(|(_, c)| c.clone())
     }
 
-    pub fn has_pending(&self) -> bool { !self.pending.borrow().is_empty() }
+    pub fn has_pending(&self) -> bool { !self.pending.borrow().is_empty() || !self.gesture_pending.borrow().is_empty() }
 
     pub fn reload(self: &Rc<Self>) {
         if self.busy.get() || self.polling_busy() {
@@ -266,7 +278,110 @@ impl InputControls {
                 self.status.set_text(error.message());
             }
         }
+        self.load_gestures();
         self.profiles_changed();
+    }
+
+    /// Read the gestures again, dropping their unapplied edits.
+    fn load_gestures(&self) {
+        self.gesture_pending.borrow_mut().clear();
+        let result = self.backend.borrow().as_ref().map(|b| b.load_gestures());
+        match result {
+            Some(Ok(gestures)) => {
+                *self.gestures.borrow_mut() = Some(gestures);
+                self.gesture_error.borrow_mut().clear();
+            }
+            Some(Err(error)) => {
+                *self.gestures.borrow_mut() = None;
+                *self.gesture_error.borrow_mut() = error.message().to_owned();
+            }
+            None => *self.gestures.borrow_mut() = None,
+        }
+    }
+
+    /// A gesture's binding with unapplied edits.
+    pub fn gesture(&self, key: &str) -> Binding {
+        if let Some((_, id)) = self.gesture_pending.borrow().iter().find(|(k, _)| k == key) {
+            return Binding::Choice(id.clone());
+        }
+        self.gestures.borrow().as_ref().map(|g| g.get(key)).unwrap_or_else(|| Binding::Choice("none".into()))
+    }
+
+    /// `id` None keeps the custom gesture rc.xml has.
+    pub fn gesture_changed(&self, key: &str, id: Option<String>) {
+        if self.rendering.get() {
+            return;
+        }
+        let original = self.gestures.borrow().as_ref().map(|g| g.get(key));
+        let Some(original) = original else { return };
+        {
+            let mut pending = self.gesture_pending.borrow_mut();
+            pending.retain(|(k, _)| k != key);
+            if let Some(id) = id.filter(|id| Binding::Choice(id.clone()) != original) {
+                pending.push((key.to_owned(), id));
+            }
+        }
+        self.buttons();
+        self.status.set_text(&if self.has_pending() { tr!("Changes are not saved. Press Apply to use them.") } else { String::new() });
+    }
+
+    fn gesture_row(self: &Rc<Self>, key: &str) {
+        let row = self.rows[key].clone();
+        if let Some(parent) = row.parent().and_downcast::<gtk::Box>() {
+            parent.remove(&row);
+        }
+        remove_children(&row);
+        let title = slot_title(key);
+        let text = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(2).hexpand(true).valign(gtk::Align::Center).build();
+        let label = gtk::Label::builder().label(tr!(title)).xalign(0.0).wrap(true).max_width_chars(28).build();
+        label.add_css_class("gs-row-title");
+        text.append(&label);
+        let mut items: Vec<(Option<String>, String)> = gesture_config::CHOICES.iter().map(|(id, l)| (Some(id.to_string()), tr!(*l))).collect();
+        let current = self.gesture(key);
+        let selected = match &current {
+            Binding::Choice(id) => items.iter().position(|(v, _)| v.as_deref() == Some(id.as_str())).unwrap_or(0),
+            Binding::Custom(_) => {
+                items.push((None, tr!("Custom")));
+                text.append(&detail_label("Set by hand in rc.xml. Kept unless you choose another action."));
+                items.len() - 1
+            }
+        };
+        row.append(&text);
+        let names: Vec<&str> = items.iter().map(|(_, l)| l.as_str()).collect();
+        let control = gtk::DropDown::from_strings(&names);
+        control.set_selected(selected as u32);
+        control.set_valign(gtk::Align::Center);
+        accessible(&control, &tr!(title));
+        let (weak, owned) = (Rc::downgrade(self), key.to_owned());
+        control.connect_selected_notify(move |w| if let Some(t) = weak.upgrade() {
+            if let Some((v, _)) = items.get(w.selected() as usize) {
+                t.gesture_changed(&owned, v.clone());
+            }
+        });
+        row.append(&control);
+        self.gesture_root.append(&row);
+        self.controls.borrow_mut().insert(key.to_owned(), Control::Choice(control));
+    }
+
+    fn gesture_card(self: &Rc<Self>) {
+        remove_children(&self.gesture_root);
+        let label = gtk::Label::builder().label(tr!("Swipe & pinch gestures")).xalign(0.0).build();
+        label.add_css_class("gs-section-title");
+        self.gesture_root.append(&label);
+        self.gesture_root.append(&detail_label("Choose what three- and four-finger swipes and four-finger pinches do. These apply to every touchpad."));
+        if self.gestures.borrow().is_none() {
+            let error = detail_label("");
+            error.set_text(&self.gesture_error.borrow());
+            error.set_selectable(true);
+            self.gesture_root.append(&error);
+        } else {
+            for key in slot_keys() {
+                self.gesture_row(&key);
+            }
+        }
+        self.gesture_root.append(&detail_label("Two-finger pinch and scrolling, and gestures set to Do nothing, are passed to applications that support them."));
+        self.gesture_root.append(&detail_label("When Multi-finger drag uses three or four fingers, swipes with that many fingers drag instead."));
+        self.body.append(&self.gesture_root);
     }
 
     pub fn refresh_devices(self: &Rc<Self>) {
@@ -641,7 +756,11 @@ impl InputControls {
             self.choice(&gestures, "dragLock", "Drag lock", "Continue a tap-and-drag while repositioning your fingers.");
             self.choice(&gestures, "threeFingerDrag", "Multi-finger drag", "Drag with three or four fingers. Uses those fingers for dragging instead of swipe gestures; requires libinput 1.28 or newer.");
             self.choice(&gestures, "disableWhileTyping", "Disable while typing", "Ignore accidental touchpad movement while typing. Palm rejection is handled automatically.");
-            gestures.append(&detail_label("Pinch-to-zoom and swipe gestures are passed to applications that support them."));
+            if name == "touchpad" {
+                self.gesture_card();
+            } else {
+                gestures.append(&detail_label("Swipe and pinch gestures apply to every touchpad. Set them in Touchpad defaults."));
+            }
         }
         self.test_area();
         let detail = self.discovery_detail.borrow().clone();
@@ -763,12 +882,14 @@ impl InputControls {
         self.buttons();
         let updates: Updates = self.pending.borrow().clone();
         let expected = self.state.borrow().clone().unwrap();
+        let gestures: GestureUpdates = self.gesture_pending.borrow().clone();
+        let gestures_expected = self.gestures.borrow().clone().unwrap_or_default();
         self.status.set_text(&tr!("Applying input settings…"));
         let backend = self.backend.borrow().clone();
         let weak = Rc::downgrade(self);
         run_in_thread(self.closed.clone(), move || {
             let backend = backend.ok_or_else(|| "Input settings require a running labwc session.".to_string())?;
-            backend.save(&updates, &expected).map_err(|e| e.to_string())
+            backend.save_all(&updates, &expected, &gestures, &gestures_expected).map_err(|e| e.to_string())
         }, move |result| if let Some(t) = weak.upgrade() { t.applied(result) });
     }
 
@@ -787,6 +908,7 @@ impl InputControls {
             Ok(state) => {
                 *self.state.borrow_mut() = Some(state);
                 self.pending.borrow_mut().clear();
+                self.load_gestures();
                 self.render();
                 self.status.set_text(&tr!("Input settings applied and saved."));
             }
@@ -820,6 +942,11 @@ impl InputControls {
         if setting.target == "pollingRate" && (selected.0 == "non-touch" || selected.1 == "touchpad") {
             let index = self.profiles.borrow().iter().position(|(n, k, _)| k == "non-touch" && n != "non-touch").unwrap_or(0);
             self.selector.set_selected(index as u32);
+        }
+        if (setting.target == "touchpadGestures" || setting.target.starts_with("gesture-")) && selected.0 != "touchpad" {
+            if let Some(index) = self.profiles.borrow().iter().position(|(n, _, _)| n == "touchpad") {
+                self.selector.set_selected(index as u32);
+            }
         }
         let selected = self.selected();
         if ["tap", "tapButtonMap", "clickMethod", "tapAndDrag", "dragLock", "threeFingerDrag", "disableWhileTyping"].contains(&setting.target)
@@ -856,6 +983,7 @@ pub fn build_page_with(host: &Host, backend: Option<InputConfig>, loader: Option
         page.add_target(key, row);
     }
     page.add_target("pollingRate", &controller.polling_root);
+    page.add_target("touchpadGestures", &controller.gesture_root);
     page.set_controller(controller);
     page
 }

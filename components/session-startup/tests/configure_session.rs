@@ -308,6 +308,69 @@ fn theme_has_matching_title_fonts_the_desktops_corners_and_no_dead_colors() {
     });
 }
 
+// ---- touchpad gestures ----------------------------------------------------------
+
+/// (type, fingers, direction, action name, action attributes) of every gesture in rc.xml.
+fn gestures(text: &str) -> Vec<(String, String, String, String, Vec<(String, String)>)> {
+    let document = xml::parse(text).unwrap();
+    xml::findall(document.root_element(), "touchpad")
+        .flat_map(|section| xml::findall(section, "gesture").collect::<Vec<_>>())
+        .map(|gesture| {
+            let action = xml::findall(gesture, "action").next().unwrap();
+            let get = |key: &str| xml::get(gesture, key).unwrap_or("").to_owned();
+            let attributes = xml::sorted_attributes(action).into_iter().filter(|(k, _)| k != "name").collect();
+            (get("type"), get("fingers"), get("direction"), xml::get(action, "name").unwrap().to_owned(), attributes)
+        })
+        .collect()
+}
+
+#[test]
+fn a_config_without_gestures_gets_tessels_swipes_once() {
+    let (text, _) = edit(&rc(""));
+    let found = gestures(&text);
+    assert_eq!(found.len(), 8, "{text}");
+    let pairs = |items: &[(&str, &str)]| items.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect::<Vec<_>>();
+    for fingers in ["3", "4"] {
+        let of = |direction: &str| found.iter().find(|g| g.0 == "swipe" && g.1 == fingers && g.2 == direction).unwrap().clone();
+        assert_eq!((of("left").3, of("left").4), ("GoToDesktop".into(), pairs(&[("to", "right"), ("wrap", "no")])));
+        assert_eq!((of("right").3, of("right").4), ("GoToDesktop".into(), pairs(&[("to", "left"), ("wrap", "no")])));
+        assert_eq!((of("up").3, of("up").4), ("Execute".into(), pairs(&[("command", format!("{} show-activities", tessel_core::session_keys::SHELL_CLI).as_str())])));
+        assert_eq!((of("down").3, of("down").4), ("ToggleShowDesktop".into(), vec![]));
+    }
+    assert!(found.iter().all(|g| g.0 == "swipe"), "pinches are left to applications");
+    assert!(text.contains("\n  <touchpad>\n    <gesture type=\"swipe\" fingers=\"3\" direction=\"left\"><action name=\"GoToDesktop\" to=\"right\" wrap=\"no\"/></gesture>\n"), "{text}");
+    assert!(text.contains("ToggleShowDesktop\"/></gesture>\n  </touchpad>\n"), "{text}");
+    assert_eq!(edit(&text).0, text, "a second sign-in changes nothing");
+    let (text, _) = edit("<labwc_config>\n</labwc_config>\n");
+    assert_eq!(gestures(&text).len(), 8);
+}
+
+#[test]
+fn gestures_chosen_in_global_settings_are_kept_also_when_none_are_left() {
+    // Global Settings writes an empty section when every gesture is set to Do nothing.
+    for section in ["<touchpad/>", "<touchpad></touchpad>", "<TouchPad />",
+                    "<touchpad>\n    <gesture type=\"pinch\" fingers=\"4\" direction=\"in\"><action name=\"Execute\" command=\"my-zoom\"/></gesture>\n  </touchpad>"] {
+        let text = format!("<labwc_config>\n  <keyboard>\n    <default/>\n  </keyboard>\n  {section}\n</labwc_config>\n");
+        let (result, _) = edit(&text);
+        assert!(result.contains(section), "{result}");
+        assert_eq!(result.to_lowercase().matches("<touchpad").count(), 1, "{result}");
+        assert_eq!(edit(&result).0, result);
+    }
+    // A commented-out section is not a choice.
+    let (result, _) = edit("<labwc_config>\n  <!-- <touchpad/> -->\n</labwc_config>\n");
+    assert_eq!(gestures(&result).len(), 8, "{result}");
+}
+
+#[test]
+fn a_new_users_rc_has_the_gestures() {
+    let home = scratch("gesture-new-user").join("home");
+    fs::create_dir_all(&home).unwrap();
+    let (files, _) = session::plan(&home).unwrap();
+    let (_, data, _) = files.iter().find(|(path, _, _)| path.ends_with(".config/labwc/rc.xml")).unwrap();
+    let text = String::from_utf8(data.clone()).unwrap();
+    assert_eq!(gestures(&text).len(), 8, "{text}");
+}
+
 #[test]
 fn statements_follow_shell_nesting_and_marked_blocks() {
     let script = "a \\\n  b\nif x; then\n  y\nfi\n# Begin Foo\nz\n# End Foo\necho 'if' \"fi\" # case\ncase $x in\n *) ;;\nesac\nmy-if-tool\n";

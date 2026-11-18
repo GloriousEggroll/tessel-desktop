@@ -40,6 +40,7 @@ regex!(DEFAULT, r"<default\s*/>");
 // labwc matches element and attribute names without regard to case.
 regex!(NUMLOCK_ELEMENT, r"(?i)<numlock[\s/>]");
 regex!(NUMLOCK_ATTRIBUTE, r"(?i)\snumlock\s*=");
+regex!(TOUCHPAD, r"(?i)<touchpad[\s/>]");
 regex!(COMMAND_DQ, r#"(\bcommand\s*=\s*")([^"]*)(")"#);
 regex!(COMMAND_SQ, r"(\bcommand\s*=\s*')([^']*)(')");
 regex!(COMMAND_ELEMENT, r"(?s)(<command\s*>)(.*?)(</command\s*>)");
@@ -341,7 +342,7 @@ pub fn edit_rc(text: &str, home: &Path) -> Result<(String, Vec<String>), Error> 
         Some((start, finish)) => edits.push((start, finish, content)),
         None => edits.push((insertion, insertion, format!("\n    {content}"))),
     }
-    let text = ensure_numlock(&apply_edits(text, edits))?;
+    let text = ensure_gestures(&ensure_numlock(&apply_edits(text, edits))?)?;
     let text = edit_theme(&portable_prompts(&portable_commands(&text, home), home))?;
     xml::parse(&text)?;
     Ok((text, skipped))
@@ -360,6 +361,25 @@ pub fn ensure_numlock(text: &str) -> Result<String, Error> {
     let insertion = DEFAULT.find_iter(&masked[open_end..close]).last().map_or(open_end, |m| open_end + m.end());
     let mut text = text.to_owned();
     text.insert_str(insertion, "\n    <numlock>on</numlock>");
+    Ok(text)
+}
+
+/// Tessel's touchpad gestures for an rc.xml without a `<touchpad>` section. Any
+/// section, also an empty `<touchpad/>` (Global Settings writes that when every
+/// gesture is set to Do nothing), is the user's and is never changed.
+pub fn ensure_gestures(text: &str) -> Result<String, Error> {
+    let masked = mask_comments(text);
+    if TOUCHPAD.is_match(&masked) {
+        return Ok(text.to_owned());
+    }
+    let end = rindex(&masked, "</labwc_config", 0, masked.len())?;
+    let mut lines = vec!["<touchpad>".to_owned()];
+    for (kind, fingers, direction, id) in tessel_core::session_keys::default_gestures() {
+        lines.push(format!("  {}", tessel_core::session_keys::gesture_xml(kind, fingers, direction, id).ok_or("unknown gesture action")?));
+    }
+    lines.push("</touchpad>".to_owned());
+    let mut text = text.to_owned();
+    text.insert_str(end, &format!("  {}\n", lines.join("\n  ")));
     Ok(text)
 }
 

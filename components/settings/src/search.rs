@@ -43,6 +43,10 @@ pub static SETTINGS: &[Setting] = &[
     Setting { section: "input", key: "areas", title: "Physical click method", detail: "Use clickpad button areas or finger-count clicks.", keywords: "touchpad clickpad area click bottom left right finger", labels: &[], target: "clickMethod", subpage: "" },
     Setting { section: "input", key: "drag", title: "Tap and drag", detail: "Configure tap-and-drag and drag lock.", keywords: "touchpad tap drag lock gesture", labels: &[], target: "tapAndDrag", subpage: "" },
     Setting { section: "input", key: "gesture", title: "Multi-finger drag", detail: "Drag using three or four fingers on supported touchpads.", keywords: "touchpad gestures swipe three four finger drag", labels: &[], target: "threeFingerDrag", subpage: "" },
+    Setting { section: "input", key: "touchpad_gestures", title: "Touchpad gestures", detail: "Choose what three- and four-finger swipes and four-finger pinches do.", keywords: "touchpad trackpad gestures swipe pinch three four finger workspace overview desktop", labels: &["Swipe & pinch gestures"], target: "touchpadGestures", subpage: "" },
+    Setting { section: "input", key: "swipe_three", title: "Three-finger swipe", detail: "Swipe with three fingers to switch workspaces, open the window overview or show the desktop.", keywords: "touchpad trackpad gesture swipe three 3 finger workspace overview activities desktop left right up down", labels: &[], target: "gesture-swipe-3-left", subpage: "" },
+    Setting { section: "input", key: "swipe_four", title: "Four-finger swipe", detail: "Swipe with four fingers to switch workspaces, open the window overview or show the desktop.", keywords: "touchpad trackpad gesture swipe four 4 finger workspace overview activities desktop left right up down", labels: &[], target: "gesture-swipe-4-left", subpage: "" },
+    Setting { section: "input", key: "pinch_four", title: "Four-finger pinch", detail: "Pinch in or out with four fingers to run an action.", keywords: "touchpad trackpad gesture pinch zoom four 4 finger in out spread", labels: &[], target: "gesture-pinch-4-in", subpage: "" },
     Setting { section: "input", key: "typing", title: "Disable while typing", detail: "Prevent accidental touchpad movement while typing.", keywords: "touchpad palm rejection typing keyboard", labels: &[], target: "disableWhileTyping", subpage: "" },
     Setting { section: "input", key: "state", title: "Device state", detail: "Enable input or disable a touchpad while an external mouse is connected.", keywords: "mouse touchpad enable disable external connected", labels: &[], target: "sendEventsMode", subpage: "" },
     Setting { section: "lock", key: "wallpaper", title: "Lock screen wallpaper", detail: "Use the desktop wallpaper, a picture, slideshow, or solid color.", keywords: "lock screen background photo picture slideshow", labels: &[], target: "", subpage: "" },
@@ -375,6 +379,10 @@ mod tests {
         ] {
             assert!(keys(&index, query).contains(&(section, key)), "{query}");
         }
+        for query in ["gestures", "three finger swipe", "pinch", "swipe workspace"] {
+            assert!(keys(&index, query).iter().any(|(section, _)| *section == "input"), "{query}");
+        }
+        assert_eq!(keys(&index, "Touchpad gestures")[0], ("input", "touchpad_gestures"));
         for query in ["vrr", "adaptive sync", "freesync", "g-sync", "gsync", "variable refresh"] {
             assert!(keys(&index, query).contains(&("displays", "vrr")), "{query}");
         }
