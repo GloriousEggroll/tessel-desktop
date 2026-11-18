@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit e0d27163ad0c94bf50297a4fa0b72e4bc55a46e0}
+%{!?commit:%global commit 1969199e99bf090b6d57d18016def466e6360e52}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        28%{?dist}
+Release:        29%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -42,7 +42,7 @@ BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
-Requires:       labwc >= 0.20.2-29
+Requires:       labwc >= 0.20.2-31
 # The Remote control switch is read by the picker from this release on
 Conflicts:      tessel-capture-picker < 0.1.0-4
 Requires:       glib2
@@ -113,6 +113,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-29
+- Mouse & Touchpad: Touchpad defaults gets a Swipe & pinch gestures card to choose what three- and four-finger swipes and four-finger pinches do; needs labwc 0.20.2-31
+
 * Mon Nov 16 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-28
 - Connect to Wi-Fi: the Connect and Cancel buttons work again, so a network that needs a password can be joined from the form
 

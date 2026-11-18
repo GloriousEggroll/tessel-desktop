@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 504f11aa51bd1d595ae2b6cc87283540ec21a666}
+%{!?commit:%global commit 1969199e99bf090b6d57d18016def466e6360e52}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
 Version:        0.1.0
-Release:        11%{?dist}
+Release:        12%{?dist}
 Summary:        Tessel session: labwc configuration, autostart and login entry
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -28,7 +28,7 @@ BuildRequires:  rust
 BuildRequires:  systemd-rpm-macros
 
 Requires:       tessel-common >= %{version}
-Requires:       labwc >= 0.20.2-17
+Requires:       labwc >= 0.20.2-31
 Requires:       xdg-desktop-portal
 Requires:       xdg-desktop-portal-wlr >= 0.8.4-4
 Requires:       ptyxis
@@ -116,6 +116,9 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %config(noreplace) %{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %changelog
+* Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
+- Touchpad gestures by default: three- and four-finger swipes left and right switch workspace, up opens the window overview, down shows the desktop; added at sign-in to a labwc configuration that has no touchpad section; needs labwc 0.20.2-31
+
 * Sun Nov 15 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
 - Opening a KDE app such as Dolphin no longer replaces the icon theme, cursor, font and window buttons with KDE's: the KDE settings service it starts no longer writes KDE's GTK settings in a Tessel session
 
