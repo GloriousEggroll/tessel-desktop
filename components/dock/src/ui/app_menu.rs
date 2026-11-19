@@ -295,7 +295,8 @@ impl AppMenu {
         header.append(&settings);
         pack(&content, &header, false);
         let search = gtk::SearchEntry::builder().placeholder_text(tr!("Search all applications")).build();
-        let search_at_bottom = host.edge() == "bottom";
+        // The search field sits on the side of the menu nearer the screen edge.
+        let search_at_bottom = host.popup_placement(&PopupAnchor::Menu).edge == "bottom";
         let scroll = gtk::ScrolledWindow::new();
         scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
         // Leave space for the dock, header and search on smaller screens.

@@ -14,8 +14,8 @@ use super::logic::{popup_margins, PopupPlacement};
 /// Which popup `position_popup` places (the host resolves the anchor).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PopupAnchor {
-    /// The application menu (`position_popup(menu_window)`; a separate app
-    /// dock anchors it at its visible menu button with "start" alignment).
+    /// The application menu (`position_popup(menu_window)`): centred across
+    /// the monitor at the top or bottom of the screen, wherever its button is.
     Menu,
     /// A window preview over the item's button (`item_anchor(item_id)`).
     Item(String),
@@ -221,10 +221,17 @@ pub fn position_popup(host: &dyn PopupHost, popup: &gtk::Window, anchor: &PopupA
     let orientation = if horizontal { gtk::Orientation::Horizontal } else { gtk::Orientation::Vertical };
     let length = popup.measure(orientation, -1).1;
     let (edge_margin, side_margin) = popup_margins(&placement, length);
+    let side = if horizontal { Edge::Left } else { Edge::Top };
+    // A popup that is placed again may have moved to another edge.
+    for other in [Edge::Top, Edge::Bottom, Edge::Left, Edge::Right] {
+        if other != edge && other != side {
+            popup.set_anchor(other, false);
+            popup.set_margin(other, 0);
+        }
+    }
     popup.set_anchor(edge, true);
     // Popups clear the magnified icons as well as the panel.
     popup.set_margin(edge, edge_margin);
-    let side = if horizontal { Edge::Left } else { Edge::Top };
     popup.set_anchor(side, true);
     popup.set_margin(side, side_margin);
 }

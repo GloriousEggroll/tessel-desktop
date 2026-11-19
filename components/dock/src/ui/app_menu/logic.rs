@@ -44,7 +44,9 @@ pub fn available_width(metrics: &MenuMetrics) -> i32 {
     if metrics.horizontal {
         metrics.monitor_width - 32
     } else {
-        metrics.monitor_width - metrics.dock_window_width - metrics.edge_gap - 7 - 16
+        // The menu is centred on the screen: keep it clear of a side dock
+        // by leaving the dock's span free on both sides.
+        metrics.monitor_width - 2 * (metrics.dock_window_width + metrics.edge_gap + 7) - 16
     }
 }
 
@@ -334,7 +336,7 @@ mod tests {
     fn available_width_vertical_subtracts_dock() {
         assert_eq!(available_width(&metrics(1920, 1080)), 1888);
         let m = MenuMetrics { horizontal: false, dock_window_width: 64, edge_gap: 8, ..metrics(1920, 1080) };
-        assert_eq!(available_width(&m), 1920 - 64 - 8 - 7 - 16);
+        assert_eq!(available_width(&m), 1920 - 2 * (64 + 8 + 7) - 16);
     }
 
     #[test]
@@ -390,6 +392,11 @@ mod tests {
                                    minimum: 40.0, edge: "left".into(), ..base.clone() };
         assert_eq!(popup_margins(&app, 500), (71, 40));
         assert!(!app.horizontal());
+        // The application menu: the whole monitor stands in for the dock, so
+        // the popup is centred on the screen whatever the dock's alignment.
+        let menu = PopupPlacement { dock_length: 1920, ..base.clone() };
+        assert_eq!(popup_margins(&menu, 900), (71, 510));
+        assert_eq!(popup_margins(&PopupPlacement { edge: "top".into(), edge_gap: 33, thickness: 0, ..menu }, 2000), (40, 8));
         // Headroom clears magnified icons.
         assert_eq!(popup_margins(&PopupPlacement { headroom: 30, ..base }, 10).0, 101);
     }

@@ -471,6 +471,38 @@ impl DockSurface {
         layout.map(|layout| to_zones(&layout))
     }
 
+    /// Where the application menu opens: centred across the monitor, at the
+    /// top or the bottom of the screen. A top or bottom dock opens it on its
+    /// own edge, clear of the panel; a left or right dock opens it at the end
+    /// of the screen its menu button is nearer to.
+    fn menu_placement(&self) -> PopupPlacement {
+        let geometry = self.monitor.geometry();
+        let height = self.dock_dimensions().1;
+        let (edge, edge_gap, thickness, headroom) = if self.horizontal {
+            (self.config.edge.clone(), self.edge_gap(), height, self.headroom)
+        } else {
+            let button = self.widgets.get().map(|groups| groups.menu_button.clone()).filter(|button| button.get_visible());
+            let lower_half = button.and_then(|button| button.compute_bounds(&self.panel))
+                .is_some_and(|bounds| bounds.y() + bounds.height() / 2.0 > self.panel.height() as f32 / 2.0);
+            // `popup_margins` adds 7 to the gap: 8 px from the screen edge,
+            // below a separate top bar when there is one.
+            if lower_half { ("bottom".to_owned(), 1, 0, 0) } else { ("top".to_owned(), self.top_bar_span() + 1, 0, 0) }
+        };
+        PopupPlacement {
+            edge,
+            edge_gap,
+            thickness,
+            headroom,
+            total: geometry.width(),
+            dock_length: geometry.width(),
+            dock_alignment: "center".into(),
+            app_dock_origin: None,
+            anchor: None,
+            alignment: "center".into(),
+            minimum: 8.0,
+        }
+    }
+
     fn top_bar(&self) -> Option<Rc<DockSurface>> { self.top_bar.as_ref().and_then(Weak::upgrade).filter(|bar| !bar.destroyed.get()) }
 
     fn top_bar_span(&self) -> i32 { self.top_bar().map(|bar| bar.sensor.exclusive_zone().max(0)).unwrap_or(0) }
@@ -850,28 +882,12 @@ impl PopupHost for DockSurface {
     fn popup_placement(&self, anchor: &PopupAnchor) -> PopupPlacement {
         let (width, height) = self.dock_dimensions();
         let geometry = self.monitor.geometry();
-        let mut alignment = "center".to_owned();
-        let mut widget: Option<gtk::Widget> = match anchor {
-            PopupAnchor::Menu => None,
+        let widget: Option<gtk::Widget> = match anchor {
+            // The application menu ignores where its button is.
+            PopupAnchor::Menu => return self.menu_placement(),
             PopupAnchor::Item(id) => self.item_anchor(id).map(|button| button.upcast()),
         };
-        if self.is_app_dock && *anchor == PopupAnchor::Menu {
-            if let Some(groups) = self.widgets.get().filter(|g| g.menu_button.get_visible()) {
-                widget = Some(groups.menu_button.clone().upcast());
-                alignment = "start".into();
-            }
-        }
-        // The menu of a bar split into islands opens under its own island.
-        if self.islands_active() && *anchor == PopupAnchor::Menu {
-            if let Some(groups) = self.widgets.get().filter(|g| g.menu_button.get_visible()) {
-                if let Some(island) = self.islands().into_iter().find(|island| groups.menu_button.is_ancestor(island)) {
-                    if self.start_scroll().is_some_and(|start| start.upcast_ref::<gtk::Widget>() == &island) {
-                        alignment = "start".into();
-                    }
-                    widget = Some(island);
-                }
-            }
-        }
+        let alignment = "center".to_owned();
         // An island is anchored by its outline (its origin is inside its padding).
         let outline = widget.as_ref().filter(|widget| widget.has_css_class("tessel-dock-island") && self.islands_active())
             .and_then(|island| island.compute_bounds(&self.panel))

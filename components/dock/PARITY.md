@@ -29,6 +29,7 @@ The detailed contract item → status → test tables are in `notes/` (one file 
 | App launch argv (systemd-run transient unit → Python `app_catalog.py` helper) | done | `core::app_catalog` tests vs Python, fake systemd-run |
 | Running badge only when count > 1 | done | e_headless |
 | Pin stars on hover, bottom menus A→Z from the top | done | f1_ui_headless |
+| Application menu centred across the monitor at the top or bottom of the screen, wherever its button is (a deliberate change from Python, which opened it at the button) | done | `popup_margins_follow_position_popup`; screenshots in a nested compositor for bottom, top and left docks |
 | Previews SCALE_DOWN | n/a | Tessel Dock previews show an icon and a title, with no image. `SCALE_DOWN` exists only in tessel-shell's switcher (`tessel-shell_switcher_ui.py:312`). |
 | `--check` JSON identical; IS_LAUNCHER flags never start a dock | done | `app::check`, e_headless |
 | Screens identical to Python | done | `tests/compare`: 12/12 screenshots (dock and bar: panel, menu, after-menu, context, applets, preview) differ by 0 px |
