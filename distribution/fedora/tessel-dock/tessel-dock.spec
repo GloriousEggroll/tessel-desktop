@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9455a1f3556e03865540361d80572826ea18593d}
+%{!?commit:%global commit d691688d9f59df2d65893258e9643698696da19c}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        11%{?dist}
+Release:        12%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -100,6 +100,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
+- Open the application menu centred at the top or bottom of the screen instead of at the menu button
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
 - Apply a chosen accent color and window background while Match wallpaper colors is off
 
