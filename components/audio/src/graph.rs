@@ -295,6 +295,11 @@ pub fn merge_update(graph: &mut Graph, objects: &Value) -> (IndexSet<i64>, Index
         }
         let current = current.as_object_mut().expect("graph objects are JSON objects");
         for (key, value) in obj {
+            // A Metadata update lists only the entries that changed.
+            if let ("metadata", Value::Array(update), Some(Value::Array(entries))) = (key.as_str(), value, current.get_mut("metadata")) {
+                merge_metadata(entries, update);
+                continue;
+            }
             match (key.as_str(), value, current.get_mut("info")) {
                 ("info", Value::Object(update), Some(Value::Object(merged))) => {
                     for (field, item) in update {
@@ -318,6 +323,26 @@ pub fn merge_update(graph: &mut Graph, objects: &Value) -> (IndexSet<i64>, Index
         changed.insert(object_id);
     }
     (changed, props_only)
+}
+
+/// Merge the entries of a Metadata update into the known ones. `pw-dump
+/// --monitor` prints the whole list once and afterwards only the entries that
+/// changed, so replacing the list would forget every other entry: with the
+/// default microphone set after the default output (as WirePlumber does when
+/// it starts) there would be no default output any more. An entry replaces
+/// the one with its subject and key; a null value removes it.
+fn merge_metadata(entries: &mut Vec<Value>, update: &[Value]) {
+    for item in update {
+        let identity = |entry: &Value| (entry.get("subject").cloned(), entry.get("key").cloned());
+        let place = entries.iter().position(|entry| identity(entry) == identity(item));
+        let removed = matches!(item.get("value"), None | Some(Value::Null));
+        match (place, removed) {
+            (Some(index), true) => { entries.remove(index); }
+            (Some(index), false) => entries[index] = item.clone(),
+            (None, false) => entries.push(item.clone()),
+            (None, true) => {}
+        }
+    }
 }
 
 /// Split complete top-level monitor arrays from a byte buffer. With the
@@ -372,6 +397,31 @@ pub(crate) mod tests {
                 {"subject": 0, "key": "default.audio.sink", "value": {"name": "speakers"}},
                 {"subject": 0, "key": "default.audio.source", "value": "{\"name\":\"mic\"}"}]}),
         ]
+    }
+
+    /// What `pw-dump --monitor` printed on a real restart: the whole "default"
+    /// metadata once, then one entry per change.
+    #[test]
+    fn metadata_updates_keep_the_entries_they_do_not_name() {
+        let entry = |key: &str, name: &str| json!({"subject": 0, "key": key, "type": "Spa:String:JSON", "value": {"name": name}});
+        let metadata = |entries: Vec<Value>| json!([{"id": 35, "type": "PipeWire:Interface:Metadata", "version": 3,
+                                                     "props": {"metadata.name": "default"}, "metadata": entries}]);
+        let mut graph = Graph::new();
+        merge_update(&mut graph, &metadata(vec![entry("default.configured.audio.sink", "speaker"), entry("default.audio.sink", "speaker")]));
+        let (changed, _) = merge_update(&mut graph, &metadata(vec![entry("default.audio.source", "mic")]));
+        assert!(changed.contains(&35));
+        let keys = |graph: &Graph| -> Vec<(String, String)> {
+            graph[&35]["metadata"].as_array().unwrap().iter()
+                .map(|e| (e["key"].as_str().unwrap().to_owned(), e["value"]["name"].as_str().unwrap().to_owned())).collect()
+        };
+        assert_eq!(keys(&graph), [("default.configured.audio.sink".into(), "speaker".into()), ("default.audio.sink".into(), "speaker".into()),
+                                  ("default.audio.source".into(), "mic".into())]);
+        // A changed entry replaces its own; a null value removes it; another subject is another entry.
+        merge_update(&mut graph, &metadata(vec![entry("default.audio.sink", "headset"),
+                                                json!({"subject": 0, "key": "default.audio.source", "type": "", "value": null}),
+                                                json!({"subject": 7, "key": "default.audio.sink", "type": "Spa:String:JSON", "value": {"name": "other"}})]));
+        assert_eq!(keys(&graph), [("default.configured.audio.sink".into(), "speaker".into()), ("default.audio.sink".into(), "headset".into()),
+                                  ("default.audio.sink".into(), "other".into())]);
     }
 
     #[test]
