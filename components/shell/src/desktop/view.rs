@@ -732,19 +732,21 @@ impl DesktopView {
         click.set_button(1);
         click.set_exclusive(false);
         click.set_propagation_phase(gtk::PropagationPhase::Bubble);
-        let (w, display_name) = (Rc::downgrade(self), display.to_owned());
-        click.connect_pressed(move |g, n, _, _| if let Some(v) = w.upgrade() { v.on_file_press(g, n, &display_name) });
+        // Handlers find their item by its file name, which is unique. The shown
+        // name is not: two launchers can share one, and one can begin with another's.
+        let (w, key) = (Rc::downgrade(self), name.to_owned());
+        click.connect_pressed(move |g, n, _, _| if let Some(v) = w.upgrade() { v.on_file_press(g, n, &key) });
         let (w, path) = (Rc::downgrade(self), fullpath.to_owned());
         click.connect_released(move |g, _, x, y| if let Some(v) = w.upgrade() { v.on_file_release(g.current_event_state(), x, y, &path) });
         widget.add_controller(click.clone());
 
         let right = gtk::GestureClick::new();
         right.set_button(3);
-        let (w, display_name, path) = (Rc::downgrade(self), display.to_owned(), fullpath.to_owned());
+        let (w, key, path) = (Rc::downgrade(self), name.to_owned(), fullpath.to_owned());
         right.connect_pressed(move |g, _, _, _| {
             g.set_state(gtk::EventSequenceState::Claimed);
             if let Some(v) = w.upgrade() {
-                v.on_right_click(&display_name, &path)
+                v.on_right_click(&key, &path)
             }
         });
         widget.add_controller(right);
@@ -1034,7 +1036,10 @@ impl DesktopView {
         self.apply_selection_visuals();
     }
 
-    /// `get_item_by_display_name`.
+    /// `get_item_by_display_name`: the first item whose file name, file name
+    /// without extension or shown name is `display_name`. Python also took an
+    /// item whose stem the name merely began with, so "Portal 2" found
+    /// "Portal"; clicks do not come through here any more (see `make_item`).
     pub fn item_by_display_name(&self, display_name: &str) -> Option<Rc<Item>> {
         let lower = display_name.to_lowercase();
         self.items
@@ -1043,19 +1048,19 @@ impl DesktopView {
             .find(|item| {
                 let base = item.name.to_lowercase();
                 let (stem, _) = fileops::splitext(&base);
-                lower == base || lower == stem || lower.starts_with(stem) || item.display_name.to_lowercase() == lower
+                lower == base || lower == stem || item.display_name.to_lowercase() == lower
             })
             .cloned()
     }
 
-    fn on_file_press(&self, gesture: &gtk::GestureClick, n_press: i32, display_name: &str) {
+    fn on_file_press(&self, gesture: &gtk::GestureClick, n_press: i32, name: &str) {
         self.state.borrow_mut().suppress_bg_clear = true;
         self.window.grab_focus();
         let state = gesture.current_event_state();
         let shift = state.contains(gdk::ModifierType::SHIFT_MASK);
         let ctrl = state.contains(gdk::ModifierType::CONTROL_MASK);
         if !shift && !ctrl && n_press >= 2 {
-            let item = self.item_by_display_name(display_name);
+            let item = self.item(name);
             if let Some(item) = &item {
                 self.clear_selection();
                 self.state.borrow_mut().selected_names = [item.name.clone()].into();
@@ -1071,7 +1076,7 @@ impl DesktopView {
             }
             return;
         }
-        let Some(item) = self.item_by_display_name(display_name) else { return };
+        let Some(item) = self.item(name) else { return };
         let key = item.name.clone();
         if shift {
             self.state.borrow_mut().selected_names.insert(key);
@@ -2183,14 +2188,14 @@ impl DesktopView {
         super::menus::background_menu(self);
     }
 
-    fn on_right_click(self: &Rc<Self>, display_name: &str, fullpath: &str) {
+    fn on_right_click(self: &Rc<Self>, name: &str, fullpath: &str) {
         self.state.borrow_mut().context_item = Some(fullpath.to_owned());
         if self.state.borrow().selected_names.len() > 1 {
             return super::menus::multi_menu(self);
         }
-        if !self.state.borrow().selected_names.contains(display_name) {
+        if !self.state.borrow().selected_names.contains(name) {
             self.clear_selection();
-            if let Some(item) = self.item_by_display_name(display_name) {
+            if let Some(item) = self.item(name) {
                 self.state.borrow_mut().selected_names.insert(item.name.clone());
                 self.apply_selection_visuals();
             }

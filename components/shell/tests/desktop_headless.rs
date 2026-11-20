@@ -835,6 +835,38 @@ fn interaction(env: &Env, app: &gtk::Application) {
     inner.shutdown();
 }
 
+/// Issue #23: a click on "Portal 2" went to "Portal", whose name it begins with.
+fn similar_names(app: &gtk::Application) {
+    reset_desktop(&[]);
+    for (file, name) in [("Portal.desktop", "Portal"), ("Portal 2.desktop", "Portal 2"), ("Portal 3.desktop", "Portal 3"),
+                         ("first.desktop", "Twin"), ("second.desktop", "Twin")] {
+        std::fs::write(desktop().join(file), format!("[Desktop Entry]\nType=Application\nName={name}\nExec=true\n")).unwrap();
+    }
+    let inner = DesktopsInner::new(app);
+    let monitor = monitors_sorted()[0].clone();
+    let g = geometry(&monitor);
+    let view = inner.make_view(&monitor, (g.0, g.1), false);
+    view.is_grid.set(true);
+    inner.register_grid(&monitor.connector().unwrap(), &view);
+    view.load_icons();
+    assert_eq!(view.item_names().len(), 5);
+    let gestures = |name: &str| -> Vec<gtk::GestureClick> {
+        let item = view.item(name).unwrap();
+        let controllers = item.widget.observe_controllers();
+        (0..controllers.n_items()).filter_map(|i| controllers.item(i).and_then(|c| c.downcast::<gtk::GestureClick>().ok())).collect()
+    };
+    for name in ["Portal 3.desktop", "Portal 2.desktop", "Portal.desktop", "second.desktop", "first.desktop"] {
+        for button in [1, 3] {
+            view.clear_selection();
+            let gesture = gestures(name).into_iter().find(|g| g.button() == button).expect("click gesture");
+            gesture.emit_by_name::<()>("pressed", &[&1i32, &5.0f64, &5.0f64]);
+            settle(0.05);
+            assert_eq!(view.selected_names(), [name.to_string()].into(), "button {button} on {name}");
+        }
+    }
+    inner.shutdown();
+}
+
 #[test]
 fn desktop_headless() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
@@ -866,6 +898,7 @@ fn desktop_headless() {
     visibility(&app);
     efficiency(&env, &app);
     interaction(&env, &app);
+    similar_names(&app);
     println!("desktop_headless: all scenarios passed");
     let _ = std::fs::remove_dir_all(&root);
 }
