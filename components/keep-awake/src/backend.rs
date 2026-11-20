@@ -126,7 +126,10 @@ impl InhibitorBackend {
             }
         };
         match &self.0.source {
-            BusSource::System => gio::bus_get(gio::BusType::System, Some(&self.0.bus_cancel), ready),
+            BusSource::System => gio::bus_get(gio::BusType::System, Some(&self.0.bus_cancel), move |result| {
+                // Losing the system bus must not end the service (tessel_core::bus::shared_sync).
+                ready(result.inspect(|connection| connection.set_exit_on_close(false)))
+            }),
             BusSource::Address(address) => gio::DBusConnection::for_address(
                 address, gio::DBusConnectionFlags::AUTHENTICATION_CLIENT | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION,
                 None::<&gio::DBusAuthObserver>, Some(&self.0.bus_cancel), ready),

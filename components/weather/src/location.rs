@@ -18,7 +18,7 @@ const DBUS: &str = "org.freedesktop.DBus";
 /// Worker-only, bounded read-only checks of the service and its provider.
 pub fn available() -> (bool, String) {
     let check = || -> Result<bool, glib::Error> {
-        let system = gio::bus_get_sync(gio::BusType::System, gio::Cancellable::NONE)?;
+        let system = tessel_core::bus::shared_sync(gio::BusType::System)?;
         let mut names: Vec<String> = Vec::new();
         for method in ["ListNames", "ListActivatableNames"] {
             let reply = system.call_sync(Some(DBUS), "/org/freedesktop/DBus", DBUS, method, None,

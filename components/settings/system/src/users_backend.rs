@@ -81,7 +81,7 @@ impl AccountsService {
     fn bus(&self) -> Result<gio::DBusConnection> {
         let mut slot = self.bus.lock().unwrap();
         if slot.is_none() {
-            *slot = Some(gio::bus_get_sync(gio::BusType::System, gio::Cancellable::NONE)?);
+            *slot = Some(tessel_core::bus::shared_sync(gio::BusType::System)?);
         }
         Ok(slot.clone().unwrap())
     }

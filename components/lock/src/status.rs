@@ -129,7 +129,10 @@ impl LockStatus {
             gio::DBusProxy::for_bus(gio::BusType::System, gio::DBusProxyFlags::DO_NOT_AUTO_START, None, UPOWER,
                 DISPLAY_DEVICE, UPOWER_DEVICE, Some(&self.0.cancel), move |result| {
                     this.0.upower_pending.set(false);
-                    if let Ok(proxy) = result { this.upower_ready(proxy) }
+                    if let Ok(proxy) = result {
+                        proxy.connection().set_exit_on_close(false);
+                        this.upower_ready(proxy)
+                    }
                 });
         }
         if notifications && self.0.notify.borrow().is_none() && !self.0.notify_pending.get() {

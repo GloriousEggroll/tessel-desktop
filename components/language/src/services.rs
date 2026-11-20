@@ -36,7 +36,7 @@ impl LocaleServices {
         if let Some(bus) = bus.as_ref() {
             return Ok(bus.clone());
         }
-        let connection = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>)?;
+        let connection = tessel_core::bus::shared_sync(gio::BusType::System)?;
         *bus = Some(connection.clone());
         Ok(connection)
     }

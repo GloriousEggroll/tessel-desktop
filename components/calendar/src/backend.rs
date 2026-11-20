@@ -271,7 +271,10 @@ pub fn system_connector() -> Connector {
     Rc::new(|cancellable: &gio::Cancellable, done: Box<dyn FnOnce(ProxyResult)>| {
         gio::DBusProxy::for_bus(gio::BusType::System, gio::DBusProxyFlags::GET_INVALIDATED_PROPERTIES, None,
                                     BUS_NAME, OBJECT_PATH, INTERFACE, Some(cancellable), move |result| {
-            done(result.map(|p| Rc::new(GioProxy::new(p)) as Rc<dyn Proxy>).map_err(|e| BusError::from_glib(&e)))
+            done(result.map(|p| {
+                p.connection().set_exit_on_close(false);
+                Rc::new(GioProxy::new(p)) as Rc<dyn Proxy>
+            }).map_err(|e| BusError::from_glib(&e)))
         });
     })
 }

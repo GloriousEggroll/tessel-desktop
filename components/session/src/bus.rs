@@ -49,7 +49,7 @@ impl GioSystemBus {
 
     /// `Gio.bus_get_sync(SYSTEM)` (honours `DBUS_SYSTEM_BUS_ADDRESS`).
     pub fn system_sync() -> Option<Rc<dyn SystemBus>> {
-        gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>).ok().map(|c| Self::new(c) as Rc<dyn SystemBus>)
+        tessel_core::bus::shared_sync(gio::BusType::System).ok().map(|c| Self::new(c) as Rc<dyn SystemBus>)
     }
 }
 

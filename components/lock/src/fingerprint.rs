@@ -70,6 +70,7 @@ impl FingerprintDetector {
         let this = self.clone();
         gio::bus_get(gio::BusType::System, Some(&self.0.cancel), move |result| {
             let Ok(bus) = result else { return };
+            bus.set_exit_on_close(false);
             *this.0.bus.borrow_mut() = Some(Rc::new(bus));
             if !this.0.closed.get() {
                 this.manager();

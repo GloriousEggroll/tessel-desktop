@@ -19,7 +19,7 @@ pub struct BluetoothPage {
 
 /// `ObservedBluetooth()`: BlueZ on the system bus.
 fn system_bluez() -> Result<Rc<Bt>, String> {
-    let connection = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>).map_err(|e| e.message().to_owned())?;
+    let connection = tessel_core::bus::shared_sync(gio::BusType::System).map_err(|e| e.message().to_owned())?;
     Ok(Bt::new(GioConn::new(connection) as Rc<dyn Conn>))
 }
 

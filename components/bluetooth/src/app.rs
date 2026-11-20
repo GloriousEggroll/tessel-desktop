@@ -32,7 +32,7 @@ pub struct Hooks {
 impl Default for Hooks {
     fn default() -> Self {
         Self {
-            bluez: Rc::new(|| gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>)
+            bluez: Rc::new(|| tessel_core::bus::shared_sync(gio::BusType::System)
                 .map(|c| GioConn::new(c) as Rc<dyn Conn>).map_err(|e| e.message().to_owned())),
             services: Services::default(),
             sender_factory: obex_sender_factory(),

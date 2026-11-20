@@ -157,7 +157,7 @@ impl BluetoothAgent {
     pub fn start(&self) -> Result<(), glib::Error> {
         let bus = match self.inner.bus.borrow().clone() {
             Some(bus) => bus,
-            None => gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>)?,
+            None => tessel_core::bus::shared_sync(gio::BusType::System)?,
         };
         self.inner.bus.replace(Some(bus.clone()));
         if self.inner.names.borrow().is_none() {

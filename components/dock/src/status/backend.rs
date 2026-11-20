@@ -291,7 +291,9 @@ impl SystemBluetooth {
 
 impl BluetoothReader for SystemBluetooth {
     fn read(&self, done: Box<dyn FnOnce(Result<Value, String>)>) {
-        if let Some(bus) = self.bus.borrow().clone() {
+        // A connection the bus closed is replaced by a new one.
+        let open = self.bus.borrow().clone().filter(|bus| !bus.is_closed());
+        if let Some(bus) = open {
             Self::call(&bus, &self.cancel, done);
             return;
         }
@@ -299,6 +301,8 @@ impl BluetoothReader for SystemBluetooth {
         let cancel = self.cancel.clone();
         gio::bus_get(gio::BusType::System, Some(&self.cancel), move |result| match result {
             Ok(bus) => {
+                // Losing the system bus must not end the dock (tessel_core::bus::shared_sync).
+                bus.set_exit_on_close(false);
                 slot.replace(Some(bus.clone()));
                 Self::call(&bus, &cancel, done);
             }

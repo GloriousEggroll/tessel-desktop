@@ -631,7 +631,7 @@ impl App {
     // ----- system actions ----------------------------------------------
 
     fn load_actions(self: &Rc<Self>) {
-        let Ok(bus) = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>) else { return };
+        let Ok(bus) = tessel_core::bus::shared_sync(gio::BusType::System) else { return };
         *self.system_bus.borrow_mut() = Some(bus.clone());
         let weak = Rc::downgrade(self);
         bus.call(Some("org.freedesktop.login1"), "/org/freedesktop/login1", "org.freedesktop.login1.Manager", "CanSuspend", None,

@@ -516,7 +516,10 @@ impl AgentService {
         gio::bus_get(gio::BusType::System, None::<&gio::Cancellable>, move |result| {
             let Some(service) = weak.upgrade() else { return };
             match result {
-                Ok(connection) => service.attach(connection),
+                Ok(connection) => {
+                    connection.set_exit_on_close(false);
+                    service.attach(connection)
+                }
                 Err(_) => service.core.report("Network authentication could not start. Restart Network Settings to retry."),
             }
         });

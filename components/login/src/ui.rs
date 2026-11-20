@@ -1224,6 +1224,7 @@ impl App {
         let weak = Rc::downgrade(&self.0);
         glib::spawn_future_local(async move {
             let Ok(bus) = gio::bus_get_future(gio::BusType::System).await else { return };
+            bus.set_exit_on_close(false);
             if let Some(inner) = weak.upgrade() {
                 *inner.bus.borrow_mut() = Some(bus.clone());
             }

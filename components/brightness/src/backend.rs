@@ -177,7 +177,7 @@ impl System for RealSystem {
     fn set_backlight(&self, name: &str, raw: u32, guard: &dyn Fn() -> Result<(), String>) -> Result<(), String> {
 
         let message = |e: glib::Error| e.message().to_owned();
-        let connection = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>).map_err(message)?;
+        let connection = tessel_core::bus::shared_sync(gio::BusType::System).map_err(message)?;
         let session_id = std::env::var("XDG_SESSION_ID").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "auto".into());
         let reply = connection.call_sync(Some(LOGIN_NAME), LOGIN_PATH, LOGIN_MANAGER, "GetSession",
             Some(&(session_id,).into()), Some(glib::VariantTy::new("(o)").unwrap()), gio::DBusCallFlags::NONE, 5000,

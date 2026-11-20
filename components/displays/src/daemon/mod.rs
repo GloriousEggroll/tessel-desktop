@@ -850,7 +850,7 @@ pub fn run() -> i32 {
         }
     };
     let (cfg, file_text) = read_config();
-    let bus = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>).ok();
+    let bus = tessel_core::bus::shared_sync(gio::BusType::System).ok();
     let mut daemon = Daemon::new(cfg, file_text);
     daemon.lid = read_lid(bus.as_ref(), daemon.cfg.lid_monitor);
 

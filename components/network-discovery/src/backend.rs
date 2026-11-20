@@ -223,7 +223,10 @@ impl DiscoveryBackend {
             let Some(this) = Self::upgrade(&weak) else { return };
             match result {
                 Err(error) => this.failed_error(&error),
-                Ok(manager) => this.manager_ready(manager),
+                Ok(manager) => {
+                    manager.connection().set_exit_on_close(false);
+                    this.manager_ready(manager)
+                }
             }
         });
     }

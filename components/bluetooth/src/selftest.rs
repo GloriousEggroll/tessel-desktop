@@ -49,7 +49,7 @@ fn repr(value: &Value) -> String {
 
 pub fn run() -> i32 {
     let mut checks = Checks { ok: true, out: String::new() };
-    let conn = match gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>) {
+    let conn = match tessel_core::bus::shared_sync(gio::BusType::System) {
         Ok(conn) => {
             checks.check("system bus", true, "");
             conn

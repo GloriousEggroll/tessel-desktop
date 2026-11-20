@@ -97,6 +97,22 @@ pub struct GioBus {
     closed: RefCell<Option<glib::SignalHandlerId>>,
 }
 
+/// The process's shared connection to a message bus, set not to end the
+/// process when the bus closes it.
+///
+/// GLib's shared connections have `exit-on-close` set: when the bus drops the
+/// connection, GLib raises SIGTERM in the process. dbus-broker drops a peer
+/// whose user has used up its quota on that bus, and it is another program
+/// of the user that uses it up. A service ended that way exits cleanly, so
+/// systemd does not restart it (issue #24: the dock, about a minute after
+/// Steam started). Every use of a shared system bus connection goes through
+/// here or calls `set_exit_on_close(false)` itself.
+pub fn shared_sync(kind: gio::BusType) -> Result<gio::DBusConnection, glib::Error> {
+    let connection = gio::bus_get_sync(kind, None::<&gio::Cancellable>)?;
+    connection.set_exit_on_close(false);
+    Ok(connection)
+}
+
 impl GioBus {
     pub fn new(connection: gio::DBusConnection) -> Rc<Self> {
         connection.set_exit_on_close(false);

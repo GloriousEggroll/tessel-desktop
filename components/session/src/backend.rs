@@ -96,7 +96,10 @@ pub type Connector = Box<dyn Fn(&gio::Cancellable, Box<dyn FnOnce(Result<Rc<dyn 
 pub fn system_connector() -> Connector {
     Box::new(|cancel, done| {
         gio::bus_get(gio::BusType::System, Some(cancel), move |result| {
-            done(result.map(|c| GioSystemBus::new(c) as Rc<dyn SystemBus>).map_err(|e| e.message().to_owned()))
+            done(result.map(|c| {
+                c.set_exit_on_close(false);
+                GioSystemBus::new(c) as Rc<dyn SystemBus>
+            }).map_err(|e| e.message().to_owned()))
         })
     })
 }

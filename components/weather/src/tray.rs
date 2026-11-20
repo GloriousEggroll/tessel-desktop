@@ -134,6 +134,7 @@ impl WeatherTray {
         let weak = Rc::downgrade(&tray.0);
         gio::bus_get(gio::BusType::System, Some(&tray.0.cancel), move |result| {
             let (Some(tray), Ok(system)) = (up(&weak), result) else { return };
+            system.set_exit_on_close(false);
             if tray.0.closed.get() {
                 return;
             }
