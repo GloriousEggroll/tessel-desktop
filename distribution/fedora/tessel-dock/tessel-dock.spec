@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d9045793147414369c5aaaacca11d8002fbbbadc}
+%{!?commit:%global commit c296359ae27b885bc5d069cfbe14926473f3f329}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -100,6 +100,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Fri Nov 20 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-14
+- On a MacBook with a camera notch, a top bar shows its middle items (time/date, weather) after More apps and before the session buttons
+
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-13
 - Keep running when the system bus drops the connection: the dock stopped, and could not restart, after another program used up the user's bus quota
 

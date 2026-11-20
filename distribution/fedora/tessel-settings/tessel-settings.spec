@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d9045793147414369c5aaaacca11d8002fbbbadc}
+%{!?commit:%global commit c296359ae27b885bc5d069cfbe14926473f3f329}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
@@ -116,6 +116,7 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %changelog
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-30
 - Keep running when the system bus drops the connection
+- Dock/Panel > Appearance: Avoid the camera notch (Automatic, Always, Never)
 
 * Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-29
 - Mouse & Touchpad: Touchpad defaults gets a Swipe & pinch gestures card to choose what three- and four-finger swipes and four-finger pinches do; needs labwc 0.20.2-31
