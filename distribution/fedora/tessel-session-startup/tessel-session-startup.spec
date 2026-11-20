@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 4c25c60a15b6aa6da96616eef58229122201fa78}
+%{!?commit:%global commit 1d301dd2828056fabca773b14e03bc8eabf3c690}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
@@ -118,6 +118,7 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %changelog
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-13
 - Start tessel-keyring at login, before the portal and applications, so it works with gnome-keyring installed too
+- A desktop name left by another desktop (KDE, GNOME) no longer sends screenshots and screen sharing to that desktop's portal backend
 
 * Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
 - Touchpad gestures by default: three- and four-finger swipes left and right switch workspace, up opens the window overview, down shows the desktop; added at sign-in to a labwc configuration that has no touchpad section; needs labwc 0.20.2-31
