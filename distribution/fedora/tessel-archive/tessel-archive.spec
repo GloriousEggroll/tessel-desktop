@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit 08fdc7e177f423507285598f7edaaa1879392a13}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-archive
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel archive manager
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -35,7 +35,7 @@ BuildRequires:  pkgconfig(pango)
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  rust
 
-Requires:       tessel-common >= %{version}
+Requires:       tessel-common >= 0.1.0-19
 Requires:       tar
 Requires:       gzip
 Recommends:     7zip
@@ -84,6 +84,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.ArchiveManager.desktop
 %{_datadir}/applications/org.tessel.ArchiveManager.desktop
 
 %changelog
+* Fri Nov 20 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Extracting, creating or changing an archive on a USB device or network share finishes when the data is on the device
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Window buttons are as far from the side of the window as from its top
 - Rounded corners are 8 px, as browsers' own windows have

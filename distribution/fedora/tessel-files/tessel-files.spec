@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d474d36f26c5da826b52d724925fce09d24c7594}
+%{!?commit:%global commit 08fdc7e177f423507285598f7edaaa1879392a13}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-files
@@ -89,6 +89,7 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Files.desktop
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
 - Opening a program or AppImage runs it; an AppImage that may not run yet asks first, and an executable script asks whether to run or open it
 - Copies and moves to USB devices and network shares finish when the data is on the device; moves keep their sources until then
+- Extracting or creating an archive on a USB device or network share finishes when the data is on the device
 
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
 - Previewing a video no longer makes GTK copy each frame at full size; that copy crashed Files on NVIDIA (issue 17)
