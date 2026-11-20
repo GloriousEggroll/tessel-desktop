@@ -2092,5 +2092,7 @@
   "Run": "चलाएँ",
   "Writing the copied data to the device…": "कॉपी किया गया डेटा डिवाइस पर लिखा जा रहा है…",
   "The copied data could not be written to the device: {error}": "कॉपी किया गया डेटा डिवाइस पर नहीं लिखा जा सका: {error}",
-  "The original was kept because its copy could not be written to the device.": "मूल को रखा गया क्योंकि उसकी प्रति डिवाइस पर नहीं लिखी जा सकी।"
+  "The original was kept because its copy could not be written to the device.": "मूल को रखा गया क्योंकि उसकी प्रति डिवाइस पर नहीं लिखी जा सकी।",
+  "Writing the data to the device…": "डेटा डिवाइस पर लिखा जा रहा है…",
+  "The data could not be written to the device: {error}": "डेटा डिवाइस पर नहीं लिखा जा सका: {error}"
 }

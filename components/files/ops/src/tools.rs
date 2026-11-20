@@ -56,6 +56,40 @@ fn io_error(error: std::io::Error) -> Error {
     Error::from_io(&error, None)
 }
 
+#[cfg(test)]
+thread_local! {
+    /// `(slow, flush fails)`: replaces device detection and the flush on this thread.
+    pub(crate) static TEST_DEVICE: std::cell::Cell<Option<(bool, bool)>> = const { std::cell::Cell::new(None) };
+    /// How many flushes [`TEST_DEVICE`] replaced.
+    pub(crate) static TEST_FLUSHES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Whether `directory` is on a removable device or a network share, where
+/// written data sits in memory long after `write()` returned
+/// (`tessel_core::device_copy`).
+fn slow_device(directory: &Path) -> bool {
+    #[cfg(test)]
+    if let Some((slow, _)) = TEST_DEVICE.get() {
+        return slow;
+    }
+    tessel_core::device_copy::slow_destination(directory).is_some()
+}
+
+/// Wait until the device holding `directory` has everything written to it.
+fn flush_device(directory: &Path) -> Result<()> {
+    #[cfg(test)]
+    let outcome = match TEST_DEVICE.get() {
+        Some((_, fails)) => {
+            TEST_FLUSHES.set(TEST_FLUSHES.get() + 1);
+            if fails { Err(std::io::Error::from_raw_os_error(libc::EIO)) } else { Ok(()) }
+        }
+        None => tessel_core::device_copy::flush_filesystem(directory),
+    };
+    #[cfg(not(test))]
+    let outcome = tessel_core::device_copy::flush_filesystem(directory);
+    outcome.map_err(|error| Error::runtime(tr!("The data could not be written to the device: {error}", error = error.to_string())))
+}
+
 fn copy_stream(source: &mut dyn Read, destination: &mut dyn Write, cancel: Option<&dyn Cancel>,
                progress: &mut Option<ProgressFn<'_>>, total: u64) -> Result<()> {
     let mut buffer = vec![0u8; CHUNK];
@@ -412,6 +446,11 @@ pub fn create_archive(sources: &[PathBuf], destination: &Path, cancel: Option<&d
     } else {
         write_tar(File::from(output), &destination, mode.unwrap_or(Compression::None), &entries, cancel, &mut progress)
     };
+    // An archive on a removable device or a share is done when it is there.
+    let outcome = outcome.and_then(|()| match destination.parent() {
+        Some(parent) if slow_device(parent) => flush_device(parent),
+        _ => Ok(()),
+    });
     match outcome {
         Ok(()) => Ok(destination),
         Err(error) => {
@@ -641,7 +680,7 @@ fn directory_fd(root: &OwnedFd, parts: &[Vec<u8>], created: &mut Created) -> Res
 }
 
 fn write_member(root: &OwnedFd, member: &Member, source: &mut dyn Read, created: &mut Created,
-                cancel: Option<&dyn Cancel>, progress: &mut Option<ProgressFn<'_>>) -> Result<()> {
+                cancel: Option<&dyn Cancel>, progress: &mut Option<ProgressFn<'_>>, slow: bool) -> Result<()> {
     let fd = directory_fd(root, &member.parts[..member.parts.len() - 1], created)?;
     let last = member.parts.last().expect("non-empty member");
     let name = cstr(last)?;
@@ -653,7 +692,19 @@ fn write_member(root: &OwnedFd, member: &Member, source: &mut dyn Read, created:
         return Err(Error::last_os(Some(Path::new(OsStr::from_bytes(last)))));
     }
     created.push((member.parts.clone(), false));
-    let mut stream = unsafe { File::from_raw_fd(output) };
+    let stream = unsafe { File::from_raw_fd(output) };
+    if slow {
+        // In writeback windows: the device keeps up with the extraction
+        // instead of receiving everything after it.
+        let mut stream = tessel_core::device_copy::WindowedWriter::new(stream);
+        copy_stream(source, &mut stream, cancel, progress, member.size)?;
+        if unsafe { libc::fchmod(stream.file().as_raw_fd(), member.mode as libc::mode_t) } != 0 {
+            return Err(Error::last_os(None));
+        }
+        stream.finish().map_err(io_error)?;
+        return Ok(());
+    }
+    let mut stream = stream;
     copy_stream(source, &mut stream, cancel, progress, member.size)?;
     // Retain ordinary read/write/execute bits, never setuid/setgid/sticky.
     if unsafe { libc::fchmod(stream.as_raw_fd(), member.mode as libc::mode_t) } != 0 {
@@ -717,6 +768,7 @@ pub fn extract_archive(archive: &Path, destination: &Path, cancel: Option<&dyn C
     let mut created: Created = Vec::new();
     let mut root_created = false;
     let mut root_fd: Option<OwnedFd> = None;
+    let slow = slow_device(if destination.exists() { &destination } else { destination.parent().unwrap_or(&destination) });
     let outcome = (|| -> Result<()> {
         if !destination.exists() {
             // The parent is chosen by the user, never recursively created.
@@ -734,7 +786,7 @@ pub fn extract_archive(archive: &Path, destination: &Path, cancel: Option<&dyn C
                         continue;
                     }
                     let mut source = archive.by_index(member.position).map_err(zip_error)?;
-                    write_member(root, member, &mut source, &mut created, cancel, &mut progress)?;
+                    write_member(root, member, &mut source, &mut created, cancel, &mut progress, slow)?;
                 }
             }
             Container::Tar(file, compression) => {
@@ -760,14 +812,16 @@ pub fn extract_archive(archive: &Path, destination: &Path, cancel: Option<&dyn C
                         directory_fd(root, &member.parts, &mut created)?;
                         continue;
                     }
-                    write_member(root, member, &mut entry, &mut created, cancel, &mut progress)?;
+                    write_member(root, member, &mut entry, &mut created, cancel, &mut progress, slow)?;
                 }
                 if wanted.next().is_some() {
                     return Err(Error::value(tr!("The archive changed while it was extracted")));
                 }
             }
         }
-        check(cancel)
+        check(cancel)?;
+        // Extracted onto a removable device or a share: done when it is there.
+        if slow { flush_device(&destination) } else { Ok(()) }
     })();
     match outcome {
         Ok(()) => Ok(created.iter().map(|(parts, _)| join_parts(&destination, parts)).collect()),

@@ -248,5 +248,7 @@
   "Run": "Run",
   "Writing the copied data to the device…": "Writing the copied data to the device…",
   "The copied data could not be written to the device: {error}": "The copied data could not be written to the device: {error}",
-  "The original was kept because its copy could not be written to the device.": "The original was kept because its copy could not be written to the device."
+  "The original was kept because its copy could not be written to the device.": "The original was kept because its copy could not be written to the device.",
+  "Writing the data to the device…": "Writing the data to the device…",
+  "The data could not be written to the device: {error}": "The data could not be written to the device: {error}"
 }

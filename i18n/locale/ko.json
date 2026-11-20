@@ -2271,5 +2271,7 @@
   "Run": "실행",
   "Writing the copied data to the device…": "복사한 데이터를 장치에 쓰는 중…",
   "The copied data could not be written to the device: {error}": "복사한 데이터를 장치에 쓸 수 없습니다: {error}",
-  "The original was kept because its copy could not be written to the device.": "복사본을 장치에 쓸 수 없어 원본을 유지했습니다."
+  "The original was kept because its copy could not be written to the device.": "복사본을 장치에 쓸 수 없어 원본을 유지했습니다.",
+  "Writing the data to the device…": "데이터를 장치에 쓰는 중…",
+  "The data could not be written to the device: {error}": "데이터를 장치에 쓸 수 없습니다: {error}"
 }

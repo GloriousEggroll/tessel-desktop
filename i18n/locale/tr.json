@@ -2092,5 +2092,7 @@
   "Run": "Çalıştır",
   "Writing the copied data to the device…": "Kopyalanan veriler aygıta yazılıyor…",
   "The copied data could not be written to the device: {error}": "Kopyalanan veriler aygıta yazılamadı: {error}",
-  "The original was kept because its copy could not be written to the device.": "Kopyası aygıta yazılamadığı için özgün öge korundu."
+  "The original was kept because its copy could not be written to the device.": "Kopyası aygıta yazılamadığı için özgün öge korundu.",
+  "Writing the data to the device…": "Veriler aygıta yazılıyor…",
+  "The data could not be written to the device: {error}": "Veriler aygıta yazılamadı: {error}"
 }

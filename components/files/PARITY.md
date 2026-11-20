@@ -228,8 +228,10 @@ Gaps (app crate):
   destination on a USB disk, memory card, NFS/CIFS or FUSE mount is written by `tessel_core::device_copy` in writeback
   windows instead of `Gio.File.copy`, so the progress follows the device and not the page cache; the job ends with one
   `syncfs` of the destination ("Writing the copied data to the device…") and fails when that fails; a move keeps its
-  sources until the flush has succeeded. Fixed local disks and GVfs URIs keep `Gio.File.copy`. Not covered: archive
-  extraction/creation onto such a device, and Tessel Shell's desktop transfers (their destination is the Desktop folder).
+  sources until the flush has succeeded. Fixed local disks and GVfs URIs keep `Gio.File.copy`. Extracting an
+  archive there writes its members through `device_copy::WindowedWriter`, and extracting or creating one ends with the
+  same flush (a failed flush fails the job and removes what it made). Not covered: Tessel Shell's desktop transfers
+  (their destination is the Desktop folder).
 
 ## Swap notes (not installed; do this with the user present)
 Python today: `desktop-apps/install.py --apply` (root, pkexec) copies `tessel-files/*.py` + shared/tessel-dock modules to

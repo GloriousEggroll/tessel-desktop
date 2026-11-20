@@ -2424,5 +2424,7 @@
   "Run": "Ausführen",
   "Writing the copied data to the device…": "Kopierte Daten werden auf das Gerät geschrieben …",
   "The copied data could not be written to the device: {error}": "Die kopierten Daten konnten nicht auf das Gerät geschrieben werden: {error}",
-  "The original was kept because its copy could not be written to the device.": "Das Original wurde behalten, weil seine Kopie nicht auf das Gerät geschrieben werden konnte."
+  "The original was kept because its copy could not be written to the device.": "Das Original wurde behalten, weil seine Kopie nicht auf das Gerät geschrieben werden konnte.",
+  "Writing the data to the device…": "Daten werden auf das Gerät geschrieben …",
+  "The data could not be written to the device: {error}": "Die Daten konnten nicht auf das Gerät geschrieben werden: {error}"
 }

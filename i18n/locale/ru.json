@@ -2092,5 +2092,7 @@
   "Run": "Запустить",
   "Writing the copied data to the device…": "Запись скопированных данных на устройство…",
   "The copied data could not be written to the device: {error}": "Не удалось записать скопированные данные на устройство: {error}",
-  "The original was kept because its copy could not be written to the device.": "Оригинал сохранён, так как его копию не удалось записать на устройство."
+  "The original was kept because its copy could not be written to the device.": "Оригинал сохранён, так как его копию не удалось записать на устройство.",
+  "Writing the data to the device…": "Запись данных на устройство…",
+  "The data could not be written to the device: {error}": "Не удалось записать данные на устройство: {error}"
 }

@@ -2271,5 +2271,7 @@
   "Run": "執行",
   "Writing the copied data to the device…": "正在將複製的資料寫入裝置…",
   "The copied data could not be written to the device: {error}": "無法將複製的資料寫入裝置：{error}",
-  "The original was kept because its copy could not be written to the device.": "由於副本無法寫入裝置，已保留原始項目。"
+  "The original was kept because its copy could not be written to the device.": "由於副本無法寫入裝置，已保留原始項目。",
+  "Writing the data to the device…": "正在將資料寫入裝置…",
+  "The data could not be written to the device: {error}": "無法將資料寫入裝置：{error}"
 }

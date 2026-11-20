@@ -2092,5 +2092,7 @@
   "Run": "Suorita",
   "Writing the copied data to the device…": "Kirjoitetaan kopioituja tietoja laitteelle…",
   "The copied data could not be written to the device: {error}": "Kopioituja tietoja ei voitu kirjoittaa laitteelle: {error}",
-  "The original was kept because its copy could not be written to the device.": "Alkuperäinen säilytettiin, koska sen kopiota ei voitu kirjoittaa laitteelle."
+  "The original was kept because its copy could not be written to the device.": "Alkuperäinen säilytettiin, koska sen kopiota ei voitu kirjoittaa laitteelle.",
+  "Writing the data to the device…": "Kirjoitetaan tietoja laitteelle…",
+  "The data could not be written to the device: {error}": "Tietoja ei voitu kirjoittaa laitteelle: {error}"
 }

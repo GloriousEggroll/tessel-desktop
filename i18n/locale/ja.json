@@ -2271,5 +2271,7 @@
   "Run": "実行",
   "Writing the copied data to the device…": "コピーしたデータをデバイスに書き込んでいます…",
   "The copied data could not be written to the device: {error}": "コピーしたデータをデバイスに書き込めませんでした: {error}",
-  "The original was kept because its copy could not be written to the device.": "コピーをデバイスに書き込めなかったため、元の項目は残されました。"
+  "The original was kept because its copy could not be written to the device.": "コピーをデバイスに書き込めなかったため、元の項目は残されました。",
+  "Writing the data to the device…": "データをデバイスに書き込んでいます…",
+  "The data could not be written to the device: {error}": "データをデバイスに書き込めませんでした: {error}"
 }

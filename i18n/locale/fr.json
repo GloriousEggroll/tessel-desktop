@@ -2424,5 +2424,7 @@
   "Run": "Exécuter",
   "Writing the copied data to the device…": "Écriture des données copiées sur le périphérique…",
   "The copied data could not be written to the device: {error}": "Les données copiées n’ont pas pu être écrites sur le périphérique : {error}",
-  "The original was kept because its copy could not be written to the device.": "L’original a été conservé, car sa copie n’a pas pu être écrite sur le périphérique."
+  "The original was kept because its copy could not be written to the device.": "L’original a été conservé, car sa copie n’a pas pu être écrite sur le périphérique.",
+  "Writing the data to the device…": "Écriture des données sur le périphérique…",
+  "The data could not be written to the device: {error}": "Les données n’ont pas pu être écrites sur le périphérique : {error}"
 }

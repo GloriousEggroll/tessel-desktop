@@ -2092,5 +2092,7 @@
   "Run": "เรียกใช้",
   "Writing the copied data to the device…": "กำลังเขียนข้อมูลที่คัดลอกลงในอุปกรณ์…",
   "The copied data could not be written to the device: {error}": "ไม่สามารถเขียนข้อมูลที่คัดลอกลงในอุปกรณ์ได้: {error}",
-  "The original was kept because its copy could not be written to the device.": "ต้นฉบับถูกเก็บไว้เนื่องจากไม่สามารถเขียนสำเนาลงในอุปกรณ์ได้"
+  "The original was kept because its copy could not be written to the device.": "ต้นฉบับถูกเก็บไว้เนื่องจากไม่สามารถเขียนสำเนาลงในอุปกรณ์ได้",
+  "Writing the data to the device…": "กำลังเขียนข้อมูลลงในอุปกรณ์…",
+  "The data could not be written to the device: {error}": "ไม่สามารถเขียนข้อมูลลงในอุปกรณ์ได้: {error}"
 }

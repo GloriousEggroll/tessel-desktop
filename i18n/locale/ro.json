@@ -2092,5 +2092,7 @@
   "Run": "Rulează",
   "Writing the copied data to the device…": "Se scriu datele copiate pe dispozitiv…",
   "The copied data could not be written to the device: {error}": "Datele copiate nu au putut fi scrise pe dispozitiv: {error}",
-  "The original was kept because its copy could not be written to the device.": "Originalul a fost păstrat deoarece copia sa nu a putut fi scrisă pe dispozitiv."
+  "The original was kept because its copy could not be written to the device.": "Originalul a fost păstrat deoarece copia sa nu a putut fi scrisă pe dispozitiv.",
+  "Writing the data to the device…": "Se scriu datele pe dispozitiv…",
+  "The data could not be written to the device: {error}": "Datele nu au putut fi scrise pe dispozitiv: {error}"
 }

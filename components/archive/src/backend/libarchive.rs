@@ -508,6 +508,7 @@ impl Backend for LibArchive {
         let raw_name = raw.then(|| single_file_name(archive));
         let size = volumes.iter().filter_map(|v| std::fs::metadata(v).ok()).map(|m| m.len()).sum::<u64>();
         let mut disk = DiskWriter::new(dest);
+        let slow = tessel_core::device_copy::slow_destination(dest).is_some();
         while let Some(e) = reader.next()? {
             ctx.check()?;
             let Some(entry) = entry_of(e, raw_name.as_deref()) else { continue };
@@ -523,12 +524,18 @@ impl Backend for LibArchive {
             } else if let Some(hard) = hard {
                 disk.hardlink(&entry, &hard)?;
             } else {
-                let mut file = disk.file(&entry)?;
-                reader.data(ctx, |bytes| {
-                    use std::io::Write;
-                    file.write_all(bytes).map_err(Error::from)
-                })?;
-                drop(file);
+                use std::io::Write;
+                let file = disk.file(&entry)?;
+                if slow {
+                    // In writeback windows, so the device keeps up with the
+                    // extraction instead of receiving it all at the end.
+                    let mut file = tessel_core::device_copy::WindowedWriter::new(file);
+                    reader.data(ctx, |bytes| file.write_all(bytes).map_err(Error::from))?;
+                    file.finish()?;
+                } else {
+                    let mut file = file;
+                    reader.data(ctx, |bytes| file.write_all(bytes).map_err(Error::from))?;
+                }
                 disk.finish_file(&entry);
             }
         }

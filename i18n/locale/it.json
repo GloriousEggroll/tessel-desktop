@@ -2092,5 +2092,7 @@
   "Run": "Esegui",
   "Writing the copied data to the device…": "Scrittura dei dati copiati sul dispositivo…",
   "The copied data could not be written to the device: {error}": "Impossibile scrivere i dati copiati sul dispositivo: {error}",
-  "The original was kept because its copy could not be written to the device.": "L'originale è stato mantenuto perché la sua copia non è stata scritta sul dispositivo."
+  "The original was kept because its copy could not be written to the device.": "L'originale è stato mantenuto perché la sua copia non è stata scritta sul dispositivo.",
+  "Writing the data to the device…": "Scrittura dei dati sul dispositivo…",
+  "The data could not be written to the device: {error}": "Impossibile scrivere i dati sul dispositivo: {error}"
 }

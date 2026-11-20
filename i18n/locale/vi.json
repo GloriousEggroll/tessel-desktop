@@ -2092,5 +2092,7 @@
   "Run": "Chạy",
   "Writing the copied data to the device…": "Đang ghi dữ liệu đã sao chép vào thiết bị…",
   "The copied data could not be written to the device: {error}": "Không thể ghi dữ liệu đã sao chép vào thiết bị: {error}",
-  "The original was kept because its copy could not be written to the device.": "Bản gốc được giữ lại vì không thể ghi bản sao của nó vào thiết bị."
+  "The original was kept because its copy could not be written to the device.": "Bản gốc được giữ lại vì không thể ghi bản sao của nó vào thiết bị.",
+  "Writing the data to the device…": "Đang ghi dữ liệu vào thiết bị…",
+  "The data could not be written to the device: {error}": "Không thể ghi dữ liệu vào thiết bị: {error}"
 }

@@ -228,16 +228,11 @@ pub fn copy_file(source: &Path, destination: &Path, cancelled: &dyn Fn() -> bool
     outcome
 }
 
-fn copy_data(input: &mut File, mut output: File, total: u64, cancelled: &dyn Fn() -> bool, progress: &mut dyn FnMut(u64, u64)) -> Result<()> {
+fn copy_data(input: &mut File, output: File, total: u64, cancelled: &dyn Fn() -> bool, progress: &mut dyn FnMut(u64, u64)) -> Result<()> {
     let stop = || Error::new(ErrorKind::Interrupted, "cancelled");
+    let mut output = WindowedWriter::new(output);
     let mut buffer = vec![0u8; CHUNK];
-    let mut written = 0u64;
-    // The window being filled starts at `start`; `previous` is the one
-    // handed to the kernel and not yet known to be on the device.
-    let mut start = 0u64;
-    let mut size = WINDOW_MIN;
-    let mut previous: Option<(u64, u64, Instant)> = None;
-    let mut windows = true;
+    let mut reported = 0u64;
     loop {
         if cancelled() {
             return Err(stop());
@@ -249,47 +244,106 @@ fn copy_data(input: &mut File, mut output: File, total: u64, cancelled: &dyn Fn(
             Err(error) => return Err(error),
         };
         output.write_all(&buffer[..count])?;
-        written += count as u64;
-        if !windows {
-            progress(written, total.max(written));
-            continue;
+        if output.on_device() != reported {
+            reported = output.on_device();
+            progress(reported, total.max(output.written()));
         }
-        if written - start < size {
-            continue;
-        }
-        let length = written - start;
-        match sync_range(&output, start, length, libc::SYNC_FILE_RANGE_WRITE) {
-            Ok(()) => {}
-            Err(error) if unsupported(&error) => {
-                windows = false;
-                continue;
-            }
-            Err(error) => return Err(error),
-        }
-        if let Some((offset, length, began)) = previous.take() {
-            sync_range(&output, offset, length, libc::SYNC_FILE_RANGE_WAIT_BEFORE | libc::SYNC_FILE_RANGE_WRITE | libc::SYNC_FILE_RANGE_WAIT_AFTER)?;
-            size = next_window(size, length, began.elapsed());
-            progress(offset + length, total.max(written));
-        }
-        previous = Some((start, length, Instant::now()));
-        start = written;
     }
     if cancelled() {
         return Err(stop());
     }
-    if written > WINDOW_MAX {
-        output.sync_all()?;
-    }
-    // Close by hand: NFS reports write errors here, and `drop` hides them.
-    let descriptor = std::os::fd::IntoRawFd::into_raw_fd(output);
-    if unsafe { libc::close(descriptor) } != 0 {
-        let error = Error::last_os_error();
-        if error.kind() != ErrorKind::Interrupted {
-            return Err(error);
-        }
-    }
+    let written = output.finish()?;
     progress(written, total.max(written));
     Ok(())
+}
+
+/// A new file on a [`slow_destination`], written from its start to its end
+/// in writeback windows (see [`copy_file`]): for data that does not come
+/// from another file, such as an archive member being extracted.
+pub struct WindowedWriter {
+    file: File,
+    written: u64,
+    /// Where the window being filled starts, and its size.
+    start: u64,
+    size: u64,
+    /// The window handed to the kernel and not yet known to be on the device.
+    previous: Option<(u64, u64, Instant)>,
+    on_device: u64,
+    /// False once the filesystem turned out not to write back parts of files.
+    windows: bool,
+}
+
+impl WindowedWriter {
+    /// `file` must be empty and positioned at its start.
+    pub fn new(file: File) -> Self {
+        WindowedWriter { file, written: 0, start: 0, size: WINDOW_MIN, previous: None, on_device: 0, windows: true }
+    }
+
+    pub fn file(&self) -> &File {
+        &self.file
+    }
+
+    pub fn written(&self) -> u64 {
+        self.written
+    }
+
+    /// How many bytes the device is known to hold. At most two windows
+    /// behind [`written`](Self::written).
+    pub fn on_device(&self) -> u64 {
+        if self.windows { self.on_device } else { self.written }
+    }
+
+    fn window_filled(&mut self) -> Result<()> {
+        let length = self.written - self.start;
+        match sync_range(&self.file, self.start, length, libc::SYNC_FILE_RANGE_WRITE) {
+            Ok(()) => {}
+            Err(error) if unsupported(&error) => {
+                self.windows = false;
+                return Ok(());
+            }
+            Err(error) => return Err(error),
+        }
+        if let Some((offset, length, began)) = self.previous.take() {
+            sync_range(&self.file, offset, length, libc::SYNC_FILE_RANGE_WAIT_BEFORE | libc::SYNC_FILE_RANGE_WRITE | libc::SYNC_FILE_RANGE_WAIT_AFTER)?;
+            self.size = next_window(self.size, length, began.elapsed());
+            self.on_device = offset + length;
+        }
+        self.previous = Some((self.start, length, Instant::now()));
+        self.start = self.written;
+        Ok(())
+    }
+
+    /// End the file: one larger than [`WINDOW_MAX`] is fsynced, and close
+    /// errors are returned (NFS reports failed writes there, and dropping a
+    /// file hides them). Returns the bytes written.
+    pub fn finish(self) -> Result<u64> {
+        if self.written > WINDOW_MAX {
+            self.file.sync_all()?;
+        }
+        let descriptor = std::os::fd::IntoRawFd::into_raw_fd(self.file);
+        if unsafe { libc::close(descriptor) } != 0 {
+            let error = Error::last_os_error();
+            if error.kind() != ErrorKind::Interrupted {
+                return Err(error);
+            }
+        }
+        Ok(self.written)
+    }
+}
+
+impl Write for WindowedWriter {
+    fn write(&mut self, buffer: &[u8]) -> Result<usize> {
+        let count = self.file.write(buffer)?;
+        self.written += count as u64;
+        if self.windows && self.written - self.start >= self.size {
+            self.window_filled()?;
+        }
+        Ok(count)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -464,6 +518,25 @@ mod tests {
             }
             std::fs::remove_file(&destination).unwrap();
         }
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn the_windowed_writer_takes_writes_of_any_size() {
+        let dir = scratch("writer");
+        let data = pattern(20 * MIB as usize + 3);
+        let mut writer = WindowedWriter::new(File::create(dir.join("out")).unwrap());
+        let mut last = 0;
+        for piece in data.chunks(70_001) {
+            writer.write_all(piece).unwrap();
+            assert!(writer.on_device() >= last && writer.on_device() <= writer.written());
+            last = writer.on_device();
+        }
+        assert!(last > 0, "windows were written back along the way");
+        assert_eq!(writer.finish().unwrap(), data.len() as u64);
+        assert_eq!(std::fs::read(dir.join("out")).unwrap(), data);
+        let empty = WindowedWriter::new(File::create(dir.join("empty")).unwrap());
+        assert_eq!(empty.finish().unwrap(), 0);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

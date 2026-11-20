@@ -2092,5 +2092,7 @@
   "Run": "Jalankan",
   "Writing the copied data to the device…": "Menulis data yang disalin ke perangkat…",
   "The copied data could not be written to the device: {error}": "Data yang disalin tidak dapat ditulis ke perangkat: {error}",
-  "The original was kept because its copy could not be written to the device.": "Berkas asli dipertahankan karena salinannya tidak dapat ditulis ke perangkat."
+  "The original was kept because its copy could not be written to the device.": "Berkas asli dipertahankan karena salinannya tidak dapat ditulis ke perangkat.",
+  "Writing the data to the device…": "Menulis data ke perangkat…",
+  "The data could not be written to the device: {error}": "Data tidak dapat ditulis ke perangkat: {error}"
 }

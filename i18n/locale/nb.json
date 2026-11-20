@@ -2092,5 +2092,7 @@
   "Run": "Kjør",
   "Writing the copied data to the device…": "Skriver de kopierte dataene til enheten…",
   "The copied data could not be written to the device: {error}": "De kopierte dataene kunne ikke skrives til enheten: {error}",
-  "The original was kept because its copy could not be written to the device.": "Originalen ble beholdt fordi kopien ikke kunne skrives til enheten."
+  "The original was kept because its copy could not be written to the device.": "Originalen ble beholdt fordi kopien ikke kunne skrives til enheten.",
+  "Writing the data to the device…": "Skriver dataene til enheten…",
+  "The data could not be written to the device: {error}": "Dataene kunne ikke skrives til enheten: {error}"
 }

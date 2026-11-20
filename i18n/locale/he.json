@@ -2092,5 +2092,7 @@
   "Run": "הרצה",
   "Writing the copied data to the device…": "הנתונים שהועתקו נכתבים להתקן…",
   "The copied data could not be written to the device: {error}": "לא ניתן היה לכתוב את הנתונים שהועתקו להתקן: {error}",
-  "The original was kept because its copy could not be written to the device.": "המקור נשמר כי לא ניתן היה לכתוב את העותק שלו להתקן."
+  "The original was kept because its copy could not be written to the device.": "המקור נשמר כי לא ניתן היה לכתוב את העותק שלו להתקן.",
+  "Writing the data to the device…": "הנתונים נכתבים להתקן…",
+  "The data could not be written to the device: {error}": "לא ניתן היה לכתוב את הנתונים להתקן: {error}"
 }

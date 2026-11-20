@@ -98,6 +98,14 @@ on change by every window and page). Keys: `show_info_panel`, `open_destination`
 | Store semantics | unit (tessel-archive-settings)::tests::store_merges_and_keeps_unknown_keys, lenient_parsing_and_round_trip |
 | Global Settings "Archive Manager" section embedding the same page + search entries | gs::archive_page_edits_the_archive_manager_settings_file, tessel-settings shell every_real_section_builds_in_one_window |
 
+## Removable devices and network shares
+
+Work that ends on a USB disk, memory card or network/FUSE mount (`tessel_core::device_copy::slow_destination`) is done
+when the device has the data, not when it is in the page cache: extraction, creation and every change of an archive
+end with one `syncfs` of the destination ("Writing the data to the device…"), and a failed flush fails the job. The
+libarchive plugin also writes extracted files in writeback windows, so the device keeps up during the extraction; the
+7-Zip, Info-ZIP and unar plugins write through their own tools and only get the final flush. Fixed disks are untouched.
+
 ## i18n, RTL
 
 All strings through `tr!`; 252 new strings × 30 languages in `i18n/new-strings.json` (to merge

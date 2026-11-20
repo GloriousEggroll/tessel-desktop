@@ -2092,5 +2092,7 @@
   "Run": "Uitvoeren",
   "Writing the copied data to the device…": "Gekopieerde gegevens naar het apparaat schrijven…",
   "The copied data could not be written to the device: {error}": "De gekopieerde gegevens konden niet naar het apparaat worden geschreven: {error}",
-  "The original was kept because its copy could not be written to the device.": "Het origineel is bewaard omdat de kopie niet naar het apparaat kon worden geschreven."
+  "The original was kept because its copy could not be written to the device.": "Het origineel is bewaard omdat de kopie niet naar het apparaat kon worden geschreven.",
+  "Writing the data to the device…": "Gegevens naar het apparaat schrijven…",
+  "The data could not be written to the device: {error}": "De gegevens konden niet naar het apparaat worden geschreven: {error}"
 }

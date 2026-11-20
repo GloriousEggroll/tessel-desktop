@@ -2092,5 +2092,7 @@
   "Run": "Spustit",
   "Writing the copied data to the device…": "Zapisování zkopírovaných dat na zařízení…",
   "The copied data could not be written to the device: {error}": "Zkopírovaná data se nepodařilo zapsat na zařízení: {error}",
-  "The original was kept because its copy could not be written to the device.": "Originál byl ponechán, protože jeho kopii se nepodařilo zapsat na zařízení."
+  "The original was kept because its copy could not be written to the device.": "Originál byl ponechán, protože jeho kopii se nepodařilo zapsat na zařízení.",
+  "Writing the data to the device…": "Zapisování dat na zařízení…",
+  "The data could not be written to the device: {error}": "Data se nepodařilo zapsat na zařízení: {error}"
 }

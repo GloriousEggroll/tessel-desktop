@@ -2092,5 +2092,7 @@
   "Run": "Εκτέλεση",
   "Writing the copied data to the device…": "Εγγραφή των αντιγραμμένων δεδομένων στη συσκευή…",
   "The copied data could not be written to the device: {error}": "Δεν ήταν δυνατή η εγγραφή των αντιγραμμένων δεδομένων στη συσκευή: {error}",
-  "The original was kept because its copy could not be written to the device.": "Το πρωτότυπο διατηρήθηκε, επειδή το αντίγραφό του δεν ήταν δυνατό να εγγραφεί στη συσκευή."
+  "The original was kept because its copy could not be written to the device.": "Το πρωτότυπο διατηρήθηκε, επειδή το αντίγραφό του δεν ήταν δυνατό να εγγραφεί στη συσκευή.",
+  "Writing the data to the device…": "Εγγραφή των δεδομένων στη συσκευή…",
+  "The data could not be written to the device: {error}": "Δεν ήταν δυνατή η εγγραφή των δεδομένων στη συσκευή: {error}"
 }

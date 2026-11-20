@@ -2092,5 +2092,7 @@
   "Run": "تشغيل",
   "Writing the copied data to the device…": "جارٍ كتابة البيانات المنسوخة على الجهاز…",
   "The copied data could not be written to the device: {error}": "تعذّرت كتابة البيانات المنسوخة على الجهاز: {error}",
-  "The original was kept because its copy could not be written to the device.": "تم الاحتفاظ بالأصل لأن نسخته لم تُكتب على الجهاز."
+  "The original was kept because its copy could not be written to the device.": "تم الاحتفاظ بالأصل لأن نسخته لم تُكتب على الجهاز.",
+  "Writing the data to the device…": "جارٍ كتابة البيانات على الجهاز…",
+  "The data could not be written to the device: {error}": "تعذّرت كتابة البيانات على الجهاز: {error}"
 }

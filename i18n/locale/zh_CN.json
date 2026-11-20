@@ -2271,5 +2271,7 @@
   "Run": "运行",
   "Writing the copied data to the device…": "正在将复制的数据写入设备…",
   "The copied data could not be written to the device: {error}": "无法将复制的数据写入设备：{error}",
-  "The original was kept because its copy could not be written to the device.": "由于副本无法写入设备，原始项目已保留。"
+  "The original was kept because its copy could not be written to the device.": "由于副本无法写入设备，原始项目已保留。",
+  "Writing the data to the device…": "正在将数据写入设备…",
+  "The data could not be written to the device: {error}": "无法将数据写入设备：{error}"
 }

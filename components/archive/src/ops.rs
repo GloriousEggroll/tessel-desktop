@@ -427,8 +427,33 @@ pub fn extract(archive: &Archive, selection: Option<&[String]>, destination: &Pa
             merger.place(&file, &folder.join(name), true)?;
         }
     }
+    flush_slow_device(&folder, &ctx)?;
     ctx.report(1.0, "");
     Ok(merger.report)
+}
+
+/// When `directory` is on a removable device or a network share, wait until
+/// the device holds what was written: until then the data is in memory and a
+/// finished job would be a promise the stick may not keep
+/// (`tessel_core::device_copy`). Nothing happens for fixed disks.
+pub fn flush_slow_device(directory: &Path, ctx: &Ctx) -> Result<()> {
+    if tessel_core::device_copy::slow_destination(directory).is_none() {
+        return Ok(());
+    }
+    // Progress is throttled to one update per 33 ms; let this one through.
+    std::thread::sleep(std::time::Duration::from_millis(40));
+    ctx.report(-1.0, &tr!("Writing the data to the device…"));
+    tessel_core::device_copy::flush_filesystem(directory)
+        .map_err(|error| Error::Failed(tr!("The data could not be written to the device: {error}", error = error.to_string())))
+}
+
+/// [`flush_slow_device`] for the folder of a changed archive, after `result`.
+fn archive_written(archive: &Path, ctx: &Ctx, result: Result<()>) -> Result<()> {
+    result?;
+    match archive.parent() {
+        Some(parent) => flush_slow_device(parent, ctx),
+        None => Ok(()),
+    }
 }
 
 fn writer_backend(archive: &Archive) -> Result<&'static dyn backend::Backend> {
@@ -447,7 +472,7 @@ pub fn add(archive: &Archive, sources: &[PathBuf], folder: &str, options: &Creat
         options.password = archive.password.clone();
         options.encrypt_header = archive.listing.header_encrypted;
     }
-    writer_backend(archive)?.add(&archive.path, archive.kind, &items, &options, &ctx)
+    archive_written(&archive.path, &ctx, writer_backend(archive)?.add(&archive.path, archive.kind, &items, &options, &ctx))
 }
 
 /// Add explicit (file, archive path) items.
@@ -458,7 +483,7 @@ pub fn add_items(archive: &Archive, items: &[AddItem], options: &CreateOptions, 
         options.password = archive.password.clone();
         options.encrypt_header = archive.listing.header_encrypted;
     }
-    writer_backend(archive)?.add(&archive.path, archive.kind, items, &options, &ctx)
+    archive_written(&archive.path, &ctx, writer_backend(archive)?.add(&archive.path, archive.kind, items, &options, &ctx))
 }
 
 pub fn items_for(sources: &[PathBuf], folder: &str) -> Vec<AddItem> {
@@ -472,7 +497,7 @@ pub fn items_for(sources: &[PathBuf], folder: &str) -> Vec<AddItem> {
 pub fn delete(archive: &Archive, entries: &[String], ctx: &Ctx) -> Result<()> {
     let ctx = archive.ctx(ctx);
     let expanded = archive.listing.expand(entries);
-    writer_backend(archive)?.delete(&archive.path, archive.kind, &expanded, &ctx)
+    archive_written(&archive.path, &ctx, writer_backend(archive)?.delete(&archive.path, archive.kind, &expanded, &ctx))
 }
 
 /// Rename one entry (a new name in the same folder).
@@ -499,7 +524,7 @@ pub fn move_entries(archive: &Archive, pairs: &[(String, String)], ctx: &Ctx) ->
     }
     let b = writer_backend(archive)?;
     if b.id() == "cli7z" || b.id() == "libarchive" {
-        return b.rename(&archive.path, archive.kind, pairs, &ctx);
+        return archive_written(&archive.path, &ctx, b.rename(&archive.path, archive.kind, pairs, &ctx));
     }
     // Info-ZIP renames each stored name.
     let mut expanded = Vec::new();
@@ -508,7 +533,7 @@ pub fn move_entries(archive: &Archive, pairs: &[(String, String)], ctx: &Ctx) ->
             expanded.push((path.clone(), backend::apply_renames(&path, std::slice::from_ref(&(old.clone(), new.clone())))));
         }
     }
-    b.rename(&archive.path, archive.kind, &expanded, &ctx)
+    archive_written(&archive.path, &ctx, b.rename(&archive.path, archive.kind, &expanded, &ctx))
 }
 
 /// Paste moved entries into `folder` ("" = root).
@@ -556,7 +581,7 @@ pub fn copy_into_folder(archive: &Archive, entries: &[String], folder: &str, ctx
         options.password = archive.password.clone();
         options.encrypt_header = archive.listing.header_encrypted;
     }
-    writer_backend(archive)?.add(&archive.path, archive.kind, &items, &options, &ctx)
+    archive_written(&archive.path, &ctx, writer_backend(archive)?.add(&archive.path, archive.kind, &items, &options, &ctx))
 }
 
 pub fn create_folder(archive: &Archive, parent: &str, name: &str, ctx: &Ctx) -> Result<()> {
@@ -573,7 +598,7 @@ pub fn create_folder(archive: &Archive, parent: &str, name: &str, ctx: &Ctx) -> 
     let folder = scratch.path().join(name);
     std::fs::create_dir(&folder)?;
     let ctx = archive.ctx(ctx);
-    writer_backend(archive)?.add(&archive.path, archive.kind, &[AddItem { source: folder, dest: path }], &CreateOptions::default(), &ctx)
+    archive_written(&archive.path, &ctx, writer_backend(archive)?.add(&archive.path, archive.kind, &[AddItem { source: folder, dest: path }], &CreateOptions::default(), &ctx))
 }
 
 /// Create a new archive at `path` from `sources` (relative to their folders).
@@ -604,7 +629,11 @@ pub fn create_items(path: &Path, kind: Kind, items: &[AddItem], options: &Create
             backend::zipcomment::write(path, comment)?;
         }
     }
-    Ok(())
+    let flushed = archive_written(path, ctx, Ok(()));
+    if flushed.is_err() {
+        let _ = std::fs::remove_file(path);
+    }
+    flushed
 }
 
 pub fn test(archive: &Archive, ctx: &Ctx) -> Result<()> {

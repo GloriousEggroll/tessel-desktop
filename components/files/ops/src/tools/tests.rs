@@ -347,3 +347,49 @@ fn test_acl_roundtrip_and_invalid_input() {
     assert_eq!(mode(&path), 0o640);
     assert_eq!(write_acl(&path, "  \n").unwrap_err().to_string(), "Enter a valid access control list");
 }
+
+/// Restores normal device handling when a test ends, even by a panic.
+struct DeviceReset;
+impl Drop for DeviceReset {
+    fn drop(&mut self) {
+        TEST_DEVICE.set(None);
+    }
+}
+
+#[test]
+fn test_archives_on_a_removable_device_are_flushed() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = fixture();
+    let _reset = DeviceReset;
+    // A member larger than several writeback windows, with a mode to keep.
+    let big: Vec<u8> = (0..5 * 1024 * 1024 + 11).map(|i| (i % 249) as u8).collect();
+    std::fs::write(f.source.join("big.bin"), &big).unwrap();
+    std::fs::set_permissions(f.source.join("big.bin"), std::fs::Permissions::from_mode(0o750)).unwrap();
+    TEST_DEVICE.set(Some((true, false)));
+    TEST_FLUSHES.set(0);
+    for extension in ["zip", "tar.gz"] {
+        let archive = f.root.join(format!("device.{extension}"));
+        create_archive(&[f.source.clone()], &archive, None, None).unwrap();
+        assert_eq!(TEST_FLUSHES.replace(0), 1, "one flush after creating {extension}");
+        let destination = f.root.join(format!("device-out-{extension}"));
+        extract_archive(&archive, &destination, None, None).unwrap();
+        assert_eq!(TEST_FLUSHES.replace(0), 1, "one flush after extracting {extension}");
+        assert_eq!(std::fs::read(destination.join("source/big.bin")).unwrap(), big);
+        assert_eq!(std::fs::metadata(destination.join("source/big.bin")).unwrap().permissions().mode() & 0o777, 0o750);
+        assert_eq!(read(&destination.join("source/document.txt")), "hello\n");
+    }
+    // A failed flush fails the job and leaves nothing half-done behind.
+    TEST_DEVICE.set(Some((true, true)));
+    let error = create_archive(&[f.source.clone()], &f.root.join("lost.zip"), None, None).unwrap_err();
+    assert!(error.to_string().contains("could not be written to the device"), "{error}");
+    assert!(!f.root.join("lost.zip").exists());
+    let error = extract_archive(&f.root.join("device.zip"), &f.root.join("lost-out"), None, None).unwrap_err();
+    assert!(error.to_string().contains("could not be written to the device"), "{error}");
+    assert!(!f.root.join("lost-out").exists());
+    // Fixed disks are not flushed.
+    TEST_DEVICE.set(Some((false, true)));
+    TEST_FLUSHES.set(0);
+    create_archive(&[f.source.clone()], &f.root.join("fixed.zip"), None, None).unwrap();
+    extract_archive(&f.root.join("fixed.zip"), &f.root.join("fixed-out"), None, None).unwrap();
+    assert_eq!(TEST_FLUSHES.get(), 0);
+}
