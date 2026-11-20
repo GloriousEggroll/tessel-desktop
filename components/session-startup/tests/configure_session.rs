@@ -435,6 +435,31 @@ fn failed_marks_from_a_crashed_session_are_cleared_before_services_start() {
     assert_eq!(additions, "");
 }
 
+/// Tessel's keyring has no D-Bus activation file of its own (gnome-keyring
+/// owns that path), so the session starts it, and before the portal and
+/// every application.
+#[test]
+fn the_keyring_is_started_before_the_portal_and_applications() {
+    let template = session::AUTOSTART_TEMPLATE.as_str();
+    let start = template.find("# Saved passwords (org.freedesktop.secrets)").expect("keyring block");
+    let end = template.find("# A portal that was already running").unwrap();
+    assert!(start < end);
+    let block = &template[start..end];
+    let stop = block.find("systemctl --user stop gnome-keyring-daemon.service").expect("gnome-keyring stop");
+    let keyring = block.find("systemctl --user start tessel-keyring.service").expect("keyring start");
+    assert!(stop < keyring);
+    // Waited for, so the name is owned before anything below runs.
+    assert!(!block[keyring..].lines().next().unwrap().ends_with('&'));
+    let reset = template.find("systemctl --user reset-failed 'tessel-*.service'").unwrap();
+    assert!(reset < start);
+    assert_eq!(template.find("systemctl --user start").unwrap(), start + keyring);
+    // An autostart generated before the block existed has nothing personal.
+    let before = format!("{}{}", &template[..start], &template[end..]);
+    let (generic, additions) = session::split_autostart(&before, "");
+    assert_eq!(generic, template);
+    assert_eq!(additions, "");
+}
+
 #[test]
 fn an_autostart_from_before_the_portal_check_has_nothing_personal() {
     let template = session::AUTOSTART_TEMPLATE.as_str();

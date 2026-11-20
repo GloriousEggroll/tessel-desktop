@@ -563,6 +563,18 @@ systemd-run --user --quiet --collect \
 # below, leaving a screen with only a pointer.
 systemctl --user reset-failed 'tessel-*.service' >/dev/null 2>&1
 
+# Saved passwords (org.freedesktop.secrets). Tessel's keyring is started here,
+# before anything can ask for a password, so that it serves this session when
+# gnome-keyring is installed as well: whichever starts first keeps the name,
+# and the other steps aside. A gnome-keyring service another session left
+# running is stopped first; it serves again in the next GNOME session.
+if systemctl --user cat tessel-keyring.service >/dev/null 2>&1; then
+    if ! systemctl --user --quiet is-active tessel-keyring.service; then
+        systemctl --user stop gnome-keyring-daemon.service >/dev/null 2>&1
+    fi
+    timeout 10 systemctl --user start tessel-keyring.service >/dev/null 2>&1
+fi
+
 # A portal that was already running chose its backends for the desktop it was
 # started in: another desktop's session, or none when an app started it before
 # the environment above was imported. It then has no screen capture here.
