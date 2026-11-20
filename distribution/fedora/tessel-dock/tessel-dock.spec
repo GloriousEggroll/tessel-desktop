@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d691688d9f59df2d65893258e9643698696da19c}
+%{!?commit:%global commit 456b48d6b27784037c7b0155445e4f40f800fca5}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
@@ -102,6 +102,7 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %changelog
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
 - Open the application menu centred at the top or bottom of the screen instead of at the menu button
+- Restart the dock after any exit that was not requested, and log what stopped it
 
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-11
 - Apply a chosen accent color and window background while Match wallpaper colors is off
