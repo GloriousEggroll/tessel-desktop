@@ -250,5 +250,8 @@
   "The copied data could not be written to the device: {error}": "The copied data could not be written to the device: {error}",
   "The original was kept because its copy could not be written to the device.": "The original was kept because its copy could not be written to the device.",
   "Writing the data to the device…": "Writing the data to the device…",
-  "The data could not be written to the device: {error}": "The data could not be written to the device: {error}"
+  "The data could not be written to the device: {error}": "The data could not be written to the device: {error}",
+  "Avoid the camera notch": "Avoid the camera notch",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.",
+  "Never": "Never"
 }

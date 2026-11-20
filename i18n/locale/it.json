@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Impossibile scrivere i dati copiati sul dispositivo: {error}",
   "The original was kept because its copy could not be written to the device.": "L'originale è stato mantenuto perché la sua copia non è stata scritta sul dispositivo.",
   "Writing the data to the device…": "Scrittura dei dati sul dispositivo…",
-  "The data could not be written to the device: {error}": "Impossibile scrivere i dati sul dispositivo: {error}"
+  "The data could not be written to the device: {error}": "Impossibile scrivere i dati sul dispositivo: {error}",
+  "Avoid the camera notch": "Evita la tacca della fotocamera",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Su un MacBook la cui fotocamera sporge nella parte alta dello schermo, sposta a destra ciò che una barra superiore mostra al centro, tra l'area di notifica e i pulsanti di sessione. «Automatico» lo fa solo su uno schermo di questo tipo.",
+  "Never": "Mai"
 }

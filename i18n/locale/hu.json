@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "A másolt adatokat nem sikerült az eszközre írni: {error}",
   "The original was kept because its copy could not be written to the device.": "Az eredeti megmaradt, mert a másolatát nem sikerült az eszközre írni.",
   "Writing the data to the device…": "Adatok írása az eszközre…",
-  "The data could not be written to the device: {error}": "Az adatokat nem sikerült az eszközre írni: {error}"
+  "The data could not be written to the device: {error}": "Az adatokat nem sikerült az eszközre írni: {error}",
+  "Avoid the camera notch": "Kamerakivágás elkerülése",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Olyan MacBookon, amelynek kamerája belelóg a képernyő tetejébe, a felső sáv közepén lévő tartalom jobbra kerül, a rendszertálca és a munkamenetgombok közé. Az „Automatikus” ezt csak ilyen képernyőn teszi meg.",
+  "Never": "Soha"
 }

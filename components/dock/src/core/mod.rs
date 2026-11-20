@@ -34,6 +34,7 @@ pub mod focused_title;
 pub mod group_layout;
 pub mod model;
 pub mod monitors;
+pub mod notch;
 pub mod ordered;
 pub mod panel_actions;
 pub mod pyjson_loads;

@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Δεν ήταν δυνατή η εγγραφή των αντιγραμμένων δεδομένων στη συσκευή: {error}",
   "The original was kept because its copy could not be written to the device.": "Το πρωτότυπο διατηρήθηκε, επειδή το αντίγραφό του δεν ήταν δυνατό να εγγραφεί στη συσκευή.",
   "Writing the data to the device…": "Εγγραφή των δεδομένων στη συσκευή…",
-  "The data could not be written to the device: {error}": "Δεν ήταν δυνατή η εγγραφή των δεδομένων στη συσκευή: {error}"
+  "The data could not be written to the device: {error}": "Δεν ήταν δυνατή η εγγραφή των δεδομένων στη συσκευή: {error}",
+  "Avoid the camera notch": "Αποφυγή της εγκοπής της κάμερας",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Σε MacBook του οποίου η κάμερα εισχωρεί στο πάνω μέρος της οθόνης, μετακινεί δεξιά ό,τι εμφανίζει μια επάνω γραμμή στο κέντρο της, ανάμεσα στην περιοχή ειδοποιήσεων και στα κουμπιά συνεδρίας. Το «Αυτόματα» το κάνει μόνο σε τέτοια οθόνη.",
+  "Never": "Ποτέ"
 }

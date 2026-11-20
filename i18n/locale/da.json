@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "De kopierede data kunne ikke skrives til enheden: {error}",
   "The original was kept because its copy could not be written to the device.": "Originalen blev beholdt, fordi kopien ikke kunne skrives til enheden.",
   "Writing the data to the device…": "Skriver data til enheden…",
-  "The data could not be written to the device: {error}": "Dataene kunne ikke skrives til enheden: {error}"
+  "The data could not be written to the device: {error}": "Dataene kunne ikke skrives til enheden: {error}",
+  "Avoid the camera notch": "Undgå kameraets udskæring",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "På en MacBook, hvor kameraet skærer ind i toppen af skærmen, flyttes det, en øverste bjælke viser i midten, til højre, mellem statusområdet og sessionsknapperne. »Automatisk« gør kun dette på sådan en skærm.",
+  "Never": "Aldrig"
 }

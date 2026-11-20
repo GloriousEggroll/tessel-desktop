@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "De gekopieerde gegevens konden niet naar het apparaat worden geschreven: {error}",
   "The original was kept because its copy could not be written to the device.": "Het origineel is bewaard omdat de kopie niet naar het apparaat kon worden geschreven.",
   "Writing the data to the device…": "Gegevens naar het apparaat schrijven…",
-  "The data could not be written to the device: {error}": "De gegevens konden niet naar het apparaat worden geschreven: {error}"
+  "The data could not be written to the device: {error}": "De gegevens konden niet naar het apparaat worden geschreven: {error}",
+  "Avoid the camera notch": "Camera-inkeping vermijden",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Op een MacBook waarvan de camera in de bovenkant van het scherm steekt, wordt wat een bovenbalk in het midden toont naar rechts verplaatst, tussen het systeemvak en de sessieknoppen. ‘Automatisch’ doet dit alleen op zo’n scherm.",
+  "Never": "Nooit"
 }

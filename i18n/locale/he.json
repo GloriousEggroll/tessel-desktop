@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "לא ניתן היה לכתוב את הנתונים שהועתקו להתקן: {error}",
   "The original was kept because its copy could not be written to the device.": "המקור נשמר כי לא ניתן היה לכתוב את העותק שלו להתקן.",
   "Writing the data to the device…": "הנתונים נכתבים להתקן…",
-  "The data could not be written to the device: {error}": "לא ניתן היה לכתוב את הנתונים להתקן: {error}"
+  "The data could not be written to the device: {error}": "לא ניתן היה לכתוב את הנתונים להתקן: {error}",
+  "Avoid the camera notch": "הימנעות ממגרעת המצלמה",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "ב־MacBook שהמצלמה שלו חודרת לחלק העליון של המסך, מעביר את מה שסרגל עליון מציג במרכזו ימינה, בין מגש המערכת לכפתורי ההפעלה. ״אוטומטי״ עושה זאת רק במסך כזה.",
+  "Never": "לעולם לא"
 }

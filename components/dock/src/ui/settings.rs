@@ -323,6 +323,7 @@ pub struct SettingsControls {
     pub size: gtk::SpinButton,
     pub compact_bar: gtk::Switch,
     pub bar_islands: gtk::Switch,
+    pub notch_avoidance: gtk::ComboBoxText,
     pub rounded_corners: gtk::Switch,
     pub float_mode: gtk::Switch,
     pub gap: gtk::SpinButton,
@@ -666,6 +667,13 @@ impl SettingsWindow {
         b.row(&tr!("Split bar into islands"), &bar_islands,
               Some(&tr!("Draw the start, center and end of the bar as separate pieces with the wallpaper showing between them. Applies to bars, not docks.")));
         bar_islands.set_sensitive(config.mode == "bar");
+        let notch_choices: Vec<(String, String)> =
+            crate::core::notch::CHOICES.iter().map(|(name, title)| (name.to_string(), tr!(title))).collect();
+        let notch_avoidance = combo(&notch_choices, &config.notch_avoidance);
+        accessible_name(&notch_avoidance, &tr!("Avoid the camera notch"));
+        b.row(&tr!("Avoid the camera notch"), &notch_avoidance,
+              Some(&tr!("On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.")));
+        notch_avoidance.set_sensitive(config.mode == "bar");
         let rounded_corners = switch(config.effective_rounded_corners());
         accessible_name(&rounded_corners, &tr!("Rounded corners"));
         b.row(&tr!("Rounded corners"), &rounded_corners, Some(&tr!("Round the dock outline.")));
@@ -933,6 +941,7 @@ impl SettingsWindow {
             size,
             compact_bar,
             bar_islands,
+            notch_avoidance,
             rounded_corners,
             float_mode,
             gap,
@@ -1273,6 +1282,7 @@ impl Inner {
         config.magnification = c.magnification.is_active();
         config.compact_bar = c.compact_bar.is_active();
         config.bar_islands = c.bar_islands.is_active();
+        config.notch_avoidance = active_id(&c.notch_avoidance);
         // Keep the saved size unless magnification is in use.
         if c.magnification.is_active() {
             config.hover_scale = py_round(c.magnification_size.value()) as f64 / 100.0;
@@ -1460,6 +1470,7 @@ impl Inner {
         let bar = self.mode_id() == "bar";
         c.bar_border_enabled.set_sensitive(bar);
         c.bar_islands.set_sensitive(bar);
+        c.notch_avoidance.set_sensitive(bar);
         let enabled = bar && c.bar_border_enabled.is_active();
         for toggle in c.bar_border_switches.values() {
             toggle.set_sensitive(enabled);

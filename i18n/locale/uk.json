@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Не вдалося записати скопійовані дані на пристрій: {error}",
   "The original was kept because its copy could not be written to the device.": "Оригінал збережено, оскільки його копію не вдалося записати на пристрій.",
   "Writing the data to the device…": "Запис даних на пристрій…",
-  "The data could not be written to the device: {error}": "Не вдалося записати дані на пристрій: {error}"
+  "The data could not be written to the device: {error}": "Не вдалося записати дані на пристрій: {error}",
+  "Avoid the camera notch": "Оминати виріз камери",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "На MacBook, камера якого заходить у верхню частину екрана, переносить те, що верхня панель показує посередині, праворуч — між системним лотком і кнопками сеансу. «Автоматично» робить це лише на такому екрані.",
+  "Never": "Ніколи"
 }

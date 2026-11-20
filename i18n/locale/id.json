@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Data yang disalin tidak dapat ditulis ke perangkat: {error}",
   "The original was kept because its copy could not be written to the device.": "Berkas asli dipertahankan karena salinannya tidak dapat ditulis ke perangkat.",
   "Writing the data to the device…": "Menulis data ke perangkat…",
-  "The data could not be written to the device: {error}": "Data tidak dapat ditulis ke perangkat: {error}"
+  "The data could not be written to the device: {error}": "Data tidak dapat ditulis ke perangkat: {error}",
+  "Avoid the camera notch": "Hindari takik kamera",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Pada MacBook yang kameranya menjorok ke bagian atas layar, pindahkan apa yang ditampilkan bilah atas di tengahnya ke kanan, di antara baki sistem dan tombol sesi. Otomatis melakukan ini hanya pada layar seperti itu.",
+  "Never": "Tidak pernah"
 }

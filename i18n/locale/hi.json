@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "कॉपी किया गया डेटा डिवाइस पर नहीं लिखा जा सका: {error}",
   "The original was kept because its copy could not be written to the device.": "मूल को रखा गया क्योंकि उसकी प्रति डिवाइस पर नहीं लिखी जा सकी।",
   "Writing the data to the device…": "डेटा डिवाइस पर लिखा जा रहा है…",
-  "The data could not be written to the device: {error}": "डेटा डिवाइस पर नहीं लिखा जा सका: {error}"
+  "The data could not be written to the device: {error}": "डेटा डिवाइस पर नहीं लिखा जा सका: {error}",
+  "Avoid the camera notch": "कैमरा नॉच से बचें",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "जिस MacBook का कैमरा स्क्रीन के ऊपरी हिस्से में आता है, उस पर ऊपरी पट्टी के बीच में दिखने वाली चीज़ें दाईं ओर, सिस्टम ट्रे और सत्र बटनों के बीच ले जाई जाती हैं। स्वचालित ऐसा केवल ऐसी स्क्रीन पर करता है।",
+  "Never": "कभी नहीं"
 }

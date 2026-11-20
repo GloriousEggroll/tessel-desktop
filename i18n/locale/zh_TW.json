@@ -2273,5 +2273,8 @@
   "The copied data could not be written to the device: {error}": "無法將複製的資料寫入裝置：{error}",
   "The original was kept because its copy could not be written to the device.": "由於副本無法寫入裝置，已保留原始項目。",
   "Writing the data to the device…": "正在將資料寫入裝置…",
-  "The data could not be written to the device: {error}": "無法將資料寫入裝置：{error}"
+  "The data could not be written to the device: {error}": "無法將資料寫入裝置：{error}",
+  "Avoid the camera notch": "避開相機瀏海",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "在相機伸入螢幕頂端的 MacBook 上，將頂端列中間顯示的內容移到右側，位於系統匣與工作階段按鈕之間。「自動」僅在這類螢幕上這樣做。",
+  "Never": "永不"
 }

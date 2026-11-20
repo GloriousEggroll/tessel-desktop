@@ -146,6 +146,9 @@ pub struct DockConfig {
     pub compact_bar: bool,
     /// Draw the bar's start, center and end as separate islands.
     pub bar_islands: bool,
+    /// Keep the middle of a top bar clear of a MacBook's camera notch:
+    /// `auto`, `always` or `never` (see `core::notch`).
+    pub notch_avoidance: String,
     pub transparency: i64,
     pub transparency_enabled: bool,
     pub frosted: bool,
@@ -190,7 +193,7 @@ const FIELD_NAMES: &[&str] = &[
     "app_dock_frosted", "app_dock_frost_strength", "app_dock_match_wallpaper", "app_dock_background_color",
     "app_dock_auto_hide", "app_dock_shine", "app_dock_shadow", "app_dock_group_layout", "application_display", "always_show_tray",
     "always_visible_apps", "tray_icon_size", "group_layouts", "edge", "alignment", "monitor", "monitor_overrides", "icon_size", "gap",
-    "hover_scale", "magnification", "compact_bar", "bar_islands", "transparency", "transparency_enabled", "frosted", "frost_strength",
+    "hover_scale", "magnification", "compact_bar", "bar_islands", "notch_avoidance", "transparency", "transparency_enabled", "frosted", "frost_strength",
     "apps_transparency", "apps_transparency_enabled", "apps_frosted", "apps_frost_strength", "apps_rounded_corners",
     "window_buttons_left", "colored_window_buttons", "window_shadows", "match_wallpaper", "background_color",
     "accent_color", "apps_background_color", "rounded_corners", "float_mode", "bar_rounded_corners", "bar_float_mode", "bar_border_enabled", "bar_border_sides",
@@ -245,6 +248,7 @@ impl Default for DockConfig {
             magnification: false,
             compact_bar: false,
             bar_islands: false,
+            notch_avoidance: super::notch::DEFAULT.into(),
             transparency: 5,
             transparency_enabled: true,
             frosted: false,
@@ -471,6 +475,7 @@ impl DockConfig {
         put("magnification", Value::from(self.magnification));
         put("compact_bar", Value::from(self.compact_bar));
         put("bar_islands", Value::from(self.bar_islands));
+        put("notch_avoidance", Value::from(self.notch_avoidance.clone()));
         put("transparency", Value::from(self.transparency));
         put("transparency_enabled", Value::from(self.transparency_enabled));
         put("frosted", Value::from(self.frosted));
@@ -749,6 +754,10 @@ impl DockConfig {
         if !str_in(&c["tray_icon_size"], &tray_sizes) {
             return Err("Choose a small, medium or large system tray icon size.".into());
         }
+        let notch_choices: Vec<&str> = super::notch::CHOICES.iter().map(|(name, _)| *name).collect();
+        if !str_in(&c["notch_avoidance"], &notch_choices) {
+            return Err("Choose Automatic, Always or Never for avoiding the camera notch.".into());
+        }
         let flag = |name: &str| c[name].as_bool().unwrap_or_default();
         let int = |name: &str| c[name].as_i64().unwrap_or_default();
         Ok(DockConfig {
@@ -787,6 +796,7 @@ impl DockConfig {
             magnification: flag("magnification"),
             compact_bar: flag("compact_bar"),
             bar_islands: flag("bar_islands"),
+            notch_avoidance: text(&c["notch_avoidance"]),
             transparency: int("transparency"),
             transparency_enabled: flag("transparency_enabled"),
             frosted: flag("frosted"),

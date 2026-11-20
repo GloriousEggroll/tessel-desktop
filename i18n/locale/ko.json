@@ -2273,5 +2273,8 @@
   "The copied data could not be written to the device: {error}": "복사한 데이터를 장치에 쓸 수 없습니다: {error}",
   "The original was kept because its copy could not be written to the device.": "복사본을 장치에 쓸 수 없어 원본을 유지했습니다.",
   "Writing the data to the device…": "데이터를 장치에 쓰는 중…",
-  "The data could not be written to the device: {error}": "데이터를 장치에 쓸 수 없습니다: {error}"
+  "The data could not be written to the device: {error}": "데이터를 장치에 쓸 수 없습니다: {error}",
+  "Avoid the camera notch": "카메라 노치 피하기",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "카메라가 화면 위쪽을 파고드는 MacBook에서, 상단 막대 가운데에 표시되는 항목을 오른쪽의 시스템 트레이와 세션 버튼 사이로 옮깁니다. 자동은 그런 화면에서만 적용합니다.",
+  "Never": "안 함"
 }

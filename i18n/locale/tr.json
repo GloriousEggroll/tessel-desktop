@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Kopyalanan veriler aygıta yazılamadı: {error}",
   "The original was kept because its copy could not be written to the device.": "Kopyası aygıta yazılamadığı için özgün öge korundu.",
   "Writing the data to the device…": "Veriler aygıta yazılıyor…",
-  "The data could not be written to the device: {error}": "Veriler aygıta yazılamadı: {error}"
+  "The data could not be written to the device: {error}": "Veriler aygıta yazılamadı: {error}",
+  "Avoid the camera notch": "Kamera çentiğinden kaçın",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Kamerası ekranın üst kısmına giren bir MacBook'ta, üst çubuğun ortasında gösterdiklerini sağa, sistem tepsisi ile oturum düğmelerinin arasına taşır. Otomatik, bunu yalnızca böyle bir ekranda yapar.",
+  "Never": "Asla"
 }

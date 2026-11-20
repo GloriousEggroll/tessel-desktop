@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Datele copiate nu au putut fi scrise pe dispozitiv: {error}",
   "The original was kept because its copy could not be written to the device.": "Originalul a fost păstrat deoarece copia sa nu a putut fi scrisă pe dispozitiv.",
   "Writing the data to the device…": "Se scriu datele pe dispozitiv…",
-  "The data could not be written to the device: {error}": "Datele nu au putut fi scrise pe dispozitiv: {error}"
+  "The data could not be written to the device: {error}": "Datele nu au putut fi scrise pe dispozitiv: {error}",
+  "Avoid the camera notch": "Evită decupajul camerei",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Pe un MacBook a cărui cameră intră în partea de sus a ecranului, mută la dreapta ceea ce o bară superioară afișează la mijloc, între zona de notificare și butoanele de sesiune. „Automat” face acest lucru numai pe un astfel de ecran.",
+  "Never": "Niciodată"
 }

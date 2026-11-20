@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Không thể ghi dữ liệu đã sao chép vào thiết bị: {error}",
   "The original was kept because its copy could not be written to the device.": "Bản gốc được giữ lại vì không thể ghi bản sao của nó vào thiết bị.",
   "Writing the data to the device…": "Đang ghi dữ liệu vào thiết bị…",
-  "The data could not be written to the device: {error}": "Không thể ghi dữ liệu vào thiết bị: {error}"
+  "The data could not be written to the device: {error}": "Không thể ghi dữ liệu vào thiết bị: {error}",
+  "Avoid the camera notch": "Tránh phần khuyết camera",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Trên MacBook có camera lấn vào phần trên màn hình, chuyển những gì thanh trên cùng hiển thị ở giữa sang phải, giữa khay hệ thống và các nút phiên. Tự động chỉ làm việc này trên màn hình như vậy.",
+  "Never": "Không bao giờ"
 }

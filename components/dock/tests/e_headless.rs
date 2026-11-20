@@ -451,6 +451,49 @@ fn maximized_window_drops_float_gap_per_monitor() -> Result<(), String> {
     Ok(())
 }
 
+/// A top bar that avoids a camera notch has nothing in its middle: the
+/// clock moves to the end of the bar, between the system tray and the
+/// session buttons, and the center island is gone.
+fn a_bar_avoiding_the_camera_notch_keeps_its_middle_clear() -> Result<(), String> {
+    let bar = |p: [u8; 3]| p[1] > 100 && p[1] as i32 > p[0] as i32 + 60 && p[1] as i32 > p[2] as i32 + 60;
+    // How many bar-coloured pixels the top bar has left and right of the middle of the first screen.
+    let measure = |setting: &str| -> Result<(usize, usize, usize), String> {
+        let dock = Dock::start(&format!("notch-{setting}"), serde_json::json!({
+            "mode": "bar", "edge": "top", "bar_float_mode": true, "bar_rounded_corners": false, "gap": 8, "bar_islands": true,
+            "match_wallpaper": false, "background_color": "#00aa00", "transparency_enabled": false, "frosted": false,
+            "notch_avoidance": setting,
+            "group_layouts": {"bar": {"start": ["app_menu"], "center": ["clock"],
+                "end": ["service_apps", "session", "pinned", "running", "files", "workspaces", "media", "weather",
+                        "activities", "focused_title"]}},
+            "group_visibility": {"pinned": false, "running": false, "files": false, "workspaces": false, "media": false,
+                "weather": false}}))?;
+        pointer(400, 400);
+        settle(0.5);
+        // One row of the first screen through the islands' padding (as the islands test samples it).
+        let row = frame(&format!("0,12 {H1}x1"));
+        ensure!(row.len() >= 3 * H1 as usize, "no screenshot");
+        let pixels = &row[row.len() - 3 * H1 as usize..];
+        let count = |from: i32, to: i32| (from..to).filter(|x| {
+            let at = 3 * *x as usize;
+            bar([pixels[at], pixels[at + 1], pixels[at + 2]])
+        }).count();
+        let (middle, left, right) = (count(H1 / 2 - 40, H1 / 2 + 40), count(0, H1 / 2 - 40), count(H1 / 2 + 40, H1));
+        drop(dock);
+        settle(0.3);
+        Ok((middle, left, right))
+    };
+    let (middle, _, right) = measure("never")?;
+    ensure!(middle > 20, "the clock island is in the middle without the setting: {middle}");
+    let (clear, left, wider) = measure("always")?;
+    ensure!(clear == 0, "the middle of the bar is clear of the notch: {clear} bar pixels");
+    ensure!(left > 0, "the start island stays");
+    ensure!(wider > right + 20, "the clock joined the end island: {right} -> {wider} px");
+    // Automatic leaves this (not Apple, not built in) screen alone.
+    let (auto, _, _) = measure("auto")?;
+    ensure!(auto > 20, "automatic changes nothing on an ordinary screen: {auto}");
+    Ok(())
+}
+
 /// A bar split into islands shows the desktop between its start, center and
 /// end; a maximized window joins them into one bar, as it also stops floating.
 fn bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window() -> Result<(), String> {
@@ -1160,6 +1203,7 @@ fn main() {
         ("maximized_window_drops_float_gap_per_monitor", maximized_window_drops_float_gap_per_monitor),
         ("bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window",
          bar_islands_show_the_desktop_between_them_and_join_under_a_maximized_window),
+        ("a_bar_avoiding_the_camera_notch_keeps_its_middle_clear", a_bar_avoiding_the_camera_notch_keeps_its_middle_clear),
         ("workareas_changed_is_emitted_only_on_change", workareas_changed_is_emitted_only_on_change),
         ("hot_corner_dwell_latch_and_reentry", hot_corner_dwell_latch_and_reentry),
         ("menu_targets_pointer_output_and_toggles", menu_targets_pointer_output_and_toggles),

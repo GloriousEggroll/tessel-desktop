@@ -75,6 +75,12 @@ LOW-priority idle chunks after 200 ms. RSS per 10 menus: before 162/179/186/194/
 `E_CHURN_BATCHES=N` runs more batches.
 
 ## Tessel additions (not in the Python dock)
+- `notch_avoidance` ("Avoid the camera notch": `auto`, `always`, `never`; `core::notch`): on a MacBook whose camera
+  cuts into the top of the screen, a top bar's center groups (the Tessel layout's time/date and weather) are placed
+  in the end zone, after the system tray (More apps is its last button) and before the session buttons, so nothing
+  sits under the camera and the center island is gone. Automatic recognizes the built-in (`eDP`) panel of an Apple
+  machine that is taller than 16:10; Asahi Linux hides the notch strip by default and then reports 16:10, which
+  changes nothing. Only bars on the top edge; the saved `group_layouts` are not rewritten.
 - `bar_islands` ("Split bar into islands"): the bar's start, center and end sections each take the panel's
   material (`.tessel-dock-island`), the panel itself turns transparent (`.tessel-dock-islands`) and the blur
   region is the union of the islands (`tessel_wayland::blur` now takes every widget with the target class).

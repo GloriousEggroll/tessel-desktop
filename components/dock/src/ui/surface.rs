@@ -119,6 +119,8 @@ pub struct DockSurface {
     pub is_app_dock: bool,
     top_bar: Option<Weak<DockSurface>>,
     pub bar_mode: bool,
+    /// A top bar whose middle stays clear of a camera notch (`core::notch`).
+    pub avoids_notch: bool,
     pub positioned_layout: bool,
     pub horizontal: bool,
     pub orientation: gtk::Orientation,
@@ -186,6 +188,11 @@ impl DockSurface {
         let bar_mode = config.mode == "bar" || (app_dock && config.app_dock_expand);
         let positioned_layout = bar_mode || app_dock || config.group_layouts.get(&config.mode).is_some_and(|layout| !layout.is_empty());
         let horizontal = matches!(config.edge.as_str(), "top" | "bottom");
+        let avoids_notch = !app_dock && config.mode == "bar" && config.edge == "top" && {
+            let geometry = monitor.geometry();
+            crate::core::notch::applies(&config.notch_avoidance, crate::core::notch::apple_machine(),
+                                        monitor.connector().as_deref().unwrap_or(""), geometry.width(), geometry.height())
+        };
         let orientation = if horizontal { gtk::Orientation::Horizontal } else { gtk::Orientation::Vertical };
         let edge = edge_of(&config.edge);
         let float = config.effective_float_mode();
@@ -260,7 +267,7 @@ impl DockSurface {
             panel.add_css_class(&popup_class);
             DockSurface {
                 app: Rc::downgrade(app), this: this.clone(), monitor: monitor.clone(), monitor_name: monitor_name.to_owned(),
-                config: config.clone(), is_app_dock: app_dock, top_bar: top_bar.map(Rc::downgrade), bar_mode,
+                config: config.clone(), is_app_dock: app_dock, top_bar: top_bar.map(Rc::downgrade), bar_mode, avoids_notch,
                 positioned_layout, horizontal, orientation, edge, requested_float_mode: Cell::new(float),
                 float_mode: Cell::new(float), has_maximized: Cell::new(false), hover: RefCell::new(hover),
                 preview: OnceCell::new(), menu: OnceCell::new(), context_menu: RefCell::new(None),
@@ -462,6 +469,16 @@ impl DockSurface {
             return Some(to_zones(&layout));
         }
         let layout = self.config.group_layouts.get(&self.config.mode).filter(|l| !l.is_empty()).cloned();
+        if self.avoids_notch {
+            // The camera covers the middle of this bar: what the layout puts
+            // there goes after the system tray, before the session buttons.
+            let layout = layout.unwrap_or_else(|| default_layout(&self.config.mode, &self.config.application_display));
+            let separate = self.config.uses_separate_app_dock();
+            let zones = to_zones(&layout).into_iter()
+                .map(|zone| zone.into_iter().filter(|name| !separate || !APP_DOCK_GROUPS.contains(&name.as_str())).collect())
+                .collect();
+            return Some(crate::core::notch::clear_center(zones));
+        }
         if self.config.uses_separate_app_dock() {
             let layout = layout.unwrap_or_else(|| default_layout(&self.config.mode, &self.config.application_display));
             return Some(to_zones(&layout).into_iter()

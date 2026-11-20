@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "ไม่สามารถเขียนข้อมูลที่คัดลอกลงในอุปกรณ์ได้: {error}",
   "The original was kept because its copy could not be written to the device.": "ต้นฉบับถูกเก็บไว้เนื่องจากไม่สามารถเขียนสำเนาลงในอุปกรณ์ได้",
   "Writing the data to the device…": "กำลังเขียนข้อมูลลงในอุปกรณ์…",
-  "The data could not be written to the device: {error}": "ไม่สามารถเขียนข้อมูลลงในอุปกรณ์ได้: {error}"
+  "The data could not be written to the device: {error}": "ไม่สามารถเขียนข้อมูลลงในอุปกรณ์ได้: {error}",
+  "Avoid the camera notch": "หลีกเลี่ยงรอยบากกล้อง",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "บน MacBook ที่กล้องยื่นเข้ามาในส่วนบนของหน้าจอ จะย้ายสิ่งที่แถบด้านบนแสดงตรงกลางไปทางขวา ระหว่างถาดระบบกับปุ่มเซสชัน อัตโนมัติจะทำเช่นนี้เฉพาะบนหน้าจอดังกล่าว",
+  "Never": "ไม่เลย"
 }

@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Skopírované údaje sa nepodarilo zapísať na zariadenie: {error}",
   "The original was kept because its copy could not be written to the device.": "Originál bol ponechaný, pretože jeho kópiu sa nepodarilo zapísať na zariadenie.",
   "Writing the data to the device…": "Zapisujú sa údaje na zariadenie…",
-  "The data could not be written to the device: {error}": "Údaje sa nepodarilo zapísať na zariadenie: {error}"
+  "The data could not be written to the device: {error}": "Údaje sa nepodarilo zapísať na zariadenie: {error}",
+  "Avoid the camera notch": "Vyhnúť sa výrezu kamery",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "Na MacBooku, ktorého kamera zasahuje do hornej časti obrazovky, presunie to, čo horná lišta zobrazuje v strede, doprava, medzi systémovú oblasť a tlačidlá relácie. „Automaticky“ to robí len na takejto obrazovke.",
+  "Never": "Nikdy"
 }

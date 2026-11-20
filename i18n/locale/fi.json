@@ -2094,5 +2094,8 @@
   "The copied data could not be written to the device: {error}": "Kopioituja tietoja ei voitu kirjoittaa laitteelle: {error}",
   "The original was kept because its copy could not be written to the device.": "Alkuperäinen säilytettiin, koska sen kopiota ei voitu kirjoittaa laitteelle.",
   "Writing the data to the device…": "Kirjoitetaan tietoja laitteelle…",
-  "The data could not be written to the device: {error}": "Tietoja ei voitu kirjoittaa laitteelle: {error}"
+  "The data could not be written to the device: {error}": "Tietoja ei voitu kirjoittaa laitteelle: {error}",
+  "Avoid the camera notch": "Vältä kameran lovea",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "MacBookissa, jonka kamera työntyy näytön yläreunaan, yläpalkin keskellä näkyvä sisältö siirretään oikealle, ilmoitusalueen ja istuntopainikkeiden väliin. Automaattinen tekee tämän vain sellaisella näytöllä.",
+  "Never": "Ei koskaan"
 }

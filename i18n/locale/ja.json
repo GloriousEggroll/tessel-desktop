@@ -2273,5 +2273,8 @@
   "The copied data could not be written to the device: {error}": "コピーしたデータをデバイスに書き込めませんでした: {error}",
   "The original was kept because its copy could not be written to the device.": "コピーをデバイスに書き込めなかったため、元の項目は残されました。",
   "Writing the data to the device…": "データをデバイスに書き込んでいます…",
-  "The data could not be written to the device: {error}": "データをデバイスに書き込めませんでした: {error}"
+  "The data could not be written to the device: {error}": "データをデバイスに書き込めませんでした: {error}",
+  "Avoid the camera notch": "カメラのノッチを避ける",
+  "On a MacBook whose camera cuts into the top of the screen, move what a top bar shows in its middle to the right, between the system tray and the session buttons. Automatic does this only on such a screen.": "カメラが画面上部に食い込んでいる MacBook で、上部バーの中央に表示されるものを右側、システムトレイとセッションボタンの間に移動します。「自動」はそのような画面でのみ行います。",
+  "Never": "しない"
 }
