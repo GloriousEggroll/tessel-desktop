@@ -410,6 +410,9 @@ pub struct StatusButton {
     pub visual: gtk::Box,
     pub vpn_badge: Option<gtk::Image>,
     panel_classes: RefCell<BTreeSet<String>>,
+    /// What `icon` shows: an icon name, or the file that replaces a theme icon
+    /// GTK would draw off-centre (`tessel_gtk::utils::set_theme_icon`).
+    shown_icon: RefCell<String>,
     /// Sized by a Medium or Large system tray ([`system_tray_layout`]): the
     /// VPN badge sits on the icon's corner instead of 4 px beside it, and a
     /// glyph fallback is drawn at 80 % (never below Small's size, `glyph_floor`)
@@ -422,6 +425,8 @@ pub struct StatusButton {
 
 impl StatusButton {
     pub fn panel_classes(&self) -> BTreeSet<String> { self.panel_classes.borrow().clone() }
+    /// The icon name `icon` was given (themed icons only; empty for a glyph).
+    pub fn shown_icon(&self) -> String { self.shown_icon.borrow().split('@').next().unwrap_or_default().to_owned() }
 }
 
 fn glyph_button(text: &str, tooltip: &str, name: &str, size: i32) -> Rc<StatusButton> {
@@ -460,7 +465,7 @@ fn glyph_button(text: &str, tooltip: &str, name: &str, size: i32) -> Rc<StatusBu
         button.set_child(Some(&visual));
     }
     let status = Rc::new(StatusButton { button, name: name.into(), label, icon, visual, vpn_badge,
-                                        panel_classes: RefCell::default(), tray_sized: Cell::new(false),
+                                        panel_classes: RefCell::default(), shown_icon: RefCell::default(), tray_sized: Cell::new(false),
                                         glyph_floor: Cell::new(0), state_icon: RefCell::default() });
     set_status_visual(&status, text, &BTreeSet::new(), size);
     status.button.set_tooltip_text(Some(tooltip));
@@ -485,8 +490,11 @@ pub fn set_status_visual(status: &StatusButton, text: &str, classes: &BTreeSet<S
             .find(|candidate| theme.has_icon(candidate))
     });
     if let Some(icon) = icon {
-        if status.icon.icon_name().as_deref() != Some(icon) {
-            status.icon.set_icon_name(Some(icon));
+        // The theme, the name, the size and the scale decide which file is shown.
+        let key = format!("{icon}@{size}x{} {}", status.icon.scale_factor(), theme.theme_name());
+        if *status.shown_icon.borrow() != key {
+            tessel_gtk::utils::set_theme_icon(&status.icon, icon, size);
+            status.shown_icon.replace(key);
         }
         status.icon.set_pixel_size(size);
     } else if !TEXT_INDICATORS.contains(&status.name.as_str()) {
@@ -1041,6 +1049,7 @@ impl DockIndicators {
             tray.widget().set_spacing(spacing);
         }
         if let Some(image) = inner.apps_toggle.child().and_downcast::<gtk::Image>() {
+            tessel_gtk::utils::set_theme_icon(&image, "view-more-symbolic", sizing.toggle.unwrap_or(16));
             image.set_pixel_size(sizing.toggle.unwrap_or(-1));
         }
         let buttons: Vec<Rc<StatusButton>> = INDICATORS.iter().filter_map(|name| self.status_button(name)).collect();

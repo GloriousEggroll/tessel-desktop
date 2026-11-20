@@ -141,6 +141,64 @@ pub const ICON_FALLBACKS: &[(&str, &[&str])] = &[
 ];
 
 /// `ICON_FALLBACKS.get(name, ())`.
+/// Whether an SVG puts a `transform` on a `<g>` element.
+///
+/// GTK 4.22 draws a symbolic icon of the icon theme without its groups'
+/// transforms (a transform on a path is honoured). Papirus draws most of its
+/// 22 px action icons as 16 px art inside `<g transform="translate(3,3)">`:
+/// GTK shows those 3/22 of the icon's size up and left of where they belong.
+pub fn svg_has_group_transform(svg: &str) -> bool {
+    static GROUP: std::sync::LazyLock<regex::Regex> =
+        std::sync::LazyLock::new(|| regex::Regex::new(r"<g\b[^>]*\btransform\s*=").unwrap());
+    GROUP.is_match(svg)
+}
+
+thread_local!(static MISDRAWN: RefCell<HashMap<(String, String, i32, i32), Option<String>>> = RefCell::new(HashMap::new()));
+
+/// A file to show instead of the theme's symbolic icon `name` when GTK would
+/// draw that one off-centre ([`svg_has_group_transform`]): Adwaita's glyph
+/// of the same name. `None` when the theme's icon is drawn correctly, or when
+/// Adwaita has no such glyph. Results are remembered per theme, size and scale.
+pub fn misdrawn_symbolic_replacement(theme: &gtk::IconTheme, name: &str, size: i32, scale: i32) -> Option<String> {
+    let key = (theme.theme_name().to_string(), name.to_owned(), size, scale);
+    if let Some(known) = MISDRAWN.with(|cache| cache.borrow().get(&key).cloned()) {
+        return known;
+    }
+    let paintable = theme.lookup_icon(name, &[], size, scale.max(1), gtk::TextDirection::Ltr, gtk::IconLookupFlags::empty());
+    // Only what GTK takes for a symbolic icon goes through its own SVG drawing.
+    let path = paintable.file().and_then(|file| file.path())
+        .filter(|path| path.file_name().is_some_and(|file| file.to_string_lossy().ends_with("-symbolic.svg")));
+    let replacement = path.and_then(|path| {
+        // Icons are a few kilobytes; a huge file is not one GTK's symbolic path handles anyway.
+        let text = std::fs::read_to_string(&path).ok().filter(|text| text.len() <= 256 * 1024)?;
+        if !svg_has_group_transform(&text) {
+            return None;
+        }
+        crate::popup::adwaita_symbolic(name).filter(|adwaita| std::path::Path::new(adwaita) != path)
+    });
+    MISDRAWN.with(|cache| cache.borrow_mut().insert(key, replacement.clone()));
+    replacement
+}
+
+/// Show the theme's icon `name` in `image`, or its replacement when GTK
+/// would misdraw it ([`misdrawn_symbolic_replacement`]). Returns what is shown:
+/// the icon name, or the replacement's path.
+pub fn set_theme_icon(image: &gtk::Image, name: &str, size: i32) -> String {
+    let theme = gtk::IconTheme::for_display(&image.display());
+    match misdrawn_symbolic_replacement(&theme, name, size, image.scale_factor()) {
+        Some(path) => {
+            image.set_from_gicon(&gio::FileIcon::new(&gio::File::for_path(&path)));
+            path
+        }
+        None => {
+            if image.icon_name().as_deref() != Some(name) {
+                image.set_icon_name(Some(name));
+            }
+            name.to_owned()
+        }
+    }
+}
+
 pub fn icon_fallbacks(name: &str) -> &'static [&'static str] {
     ICON_FALLBACKS.iter().find(|(key, _)| *key == name).map_or(&[], |entry| entry.1)
 }
@@ -313,6 +371,16 @@ fn raise_attempt(id: String, window: glib::WeakRef<gtk::Window>, valid: std::rc:
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn group_transforms_are_recognised() {
+        use super::svg_has_group_transform as has;
+        assert!(has("<svg width=\"22\"><g transform=\"translate(3,3)\"><path d=\"M0,0\"/></g></svg>"));
+        assert!(has("<svg>\n <g\n   id=\"a\" transform = 'scale(2)'>\n </g></svg>"));
+        // GTK honours a transform on the path itself.
+        assert!(!has("<svg><path transform=\"translate(3,3)\" d=\"M0,0\"/></svg>"));
+        assert!(!has("<svg><g id=\"transform\"><path d=\"M0,0\"/></g><glyph transform=\"x\"/></svg>"));
+    }
+
     use super::*;
     use std::collections::HashSet;
     use std::path::Path;

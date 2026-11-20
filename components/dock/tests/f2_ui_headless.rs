@@ -1763,7 +1763,7 @@ fn status_visuals_and_vpn_badge() -> TestResult {
     ensure!(network.vpn_badge.as_ref().unwrap().get_visible(), "classes {:?} status {:?}", network.panel_classes(), app.status.borrow().get("network"));
     let theme = gtk::IconTheme::for_display(&gdk::Display::default().unwrap());
     if theme.has_icon("network-wireless-signal-excellent-symbolic") {
-        ensure!(network.icon.icon_name().as_deref() == Some("network-wireless-signal-excellent-symbolic"));
+        ensure!(network.shown_icon() == "network-wireless-signal-excellent-symbolic");
         ensure!(network.icon.pixel_size() == 24 && network.icon.get_visible() && !network.label.get_visible());
     }
     let weather = panel.status_button("weather").unwrap();
@@ -1771,7 +1771,7 @@ fn status_visuals_and_vpn_badge() -> TestResult {
     // `icon`) and the temperature without its leading symbol.
     ensure!(weather.label.get_visible() && weather.label.text() == "72°", "weather label {:?}", weather.label.text());
     if theme.has_icon("weather-few-clouds-symbolic") {
-        ensure!(weather.icon.get_visible() && weather.icon.icon_name().as_deref() == Some("weather-few-clouds-symbolic"));
+        ensure!(weather.icon.get_visible() && weather.shown_icon() == "weather-few-clouds-symbolic");
         ensure!(weather.icon.pixel_size() == 24, "weather icon {}", weather.icon.pixel_size());
     }
     app.status_set("network", "classes", json!(["wifi"]));
@@ -2284,7 +2284,7 @@ fn themed_weather_and_keep_awake_need_no_icon_font() -> TestResult {
                         keep_awake_status(&app, active);
                         panel.refresh();
                         let status = panel.status_button("idle_inhibitor").unwrap();
-                        let name = status.icon.icon_name().map(|n| n.to_string()).unwrap_or_default();
+                        let name = status.shown_icon();
                         ensure!(status.icon.get_visible() && !status.label.get_visible(), "{label}: Keep Awake active={active} shows its glyph");
                         ensure!(names.contains(&name.as_str()) || name.starts_with("caffeine-cup-"), "{label}: Keep Awake active={active}: {name}");
                         ensure!(status.icon.pixel_size() == panel.applet_icon_size(), "{label}: Keep Awake {}", status.icon.pixel_size());
@@ -2301,7 +2301,7 @@ fn themed_weather_and_keep_awake_need_no_icon_font() -> TestResult {
                         let weather = panel.status_button("weather").unwrap();
                         let case = format!("{label}: weather {text:?}");
                         ensure!(weather.icon.get_visible(), "{case}: no icon");
-                        ensure!(weather.icon.icon_name().as_deref() == Some(want_icon), "{case}: {:?}", weather.icon.icon_name());
+                        ensure!(weather.shown_icon() == want_icon, "{case}: {:?}", weather.shown_icon());
                         ensure!(weather.icon.pixel_size() == tessel_dock::ui::indicators::status_icon_size(&config), "{case}: {}", weather.icon.pixel_size());
                         ensure!(weather.label.get_visible() == !want_text.is_empty(), "{case}: label visible {}", weather.label.get_visible());
                         if !want_text.is_empty() {
