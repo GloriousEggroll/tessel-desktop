@@ -565,3 +565,189 @@ fn test_unique_names_and_as_file() {
         assert_eq!(names(&f.source), [".hidden", ".hidden (copy 2)", ".hidden (copy)"]);
     });
 }
+
+/// Hooks for a destination treated as a removable device: `flush` runs in
+/// place of the real flush and its calls are counted.
+fn slow_device(f: &Fixture, flush: impl Fn(&Path) -> std::io::Result<()> + Send + Sync + 'static) -> Arc<std::sync::atomic::AtomicUsize> {
+    let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let count = calls.clone();
+    f.operations.set_hooks(TestHooks {
+        slow: Some(tessel_core::device_copy::Slow::Removable),
+        no_rename: true,
+        flush: Some(Arc::new(move |directory: &Path| {
+            count.fetch_add(1, Ordering::SeqCst);
+            flush(directory)
+        })),
+        ..Default::default()
+    });
+    calls
+}
+
+#[test]
+fn test_copy_to_a_removable_device_is_flushed_before_it_is_done() {
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let tree = f.source.join("tree");
+        std::fs::create_dir_all(tree.join("nested")).unwrap();
+        let big: Vec<u8> = (0..3 * 1024 * 1024 + 17).map(|i| (i % 253) as u8).collect();
+        std::fs::write(tree.join("nested/big"), &big).unwrap();
+        write(&tree.join("small"), "small");
+        std::fs::set_permissions(tree.join("small"), std::fs::Permissions::from_mode(0o750)).unwrap();
+        std::fs::File::open(tree.join("small")).unwrap()
+            .set_modified(std::time::UNIX_EPOCH + Duration::from_secs(1_000_000_000)).unwrap();
+        symlink("small", tree.join("link")).unwrap();
+        let target = f.target.clone();
+        let flushes = slow_device(&f, move |directory| {
+            // Everything is already in place when the device is flushed.
+            assert!(directory.starts_with(&target), "{directory:?}");
+            assert_eq!(read(&target.join("tree/small")), "small");
+            Ok(())
+        });
+        let seen: Rc<RefCell<Vec<Progress>>> = Rc::default();
+        let record = seen.clone();
+        let result = run(ctx, &f.operations, "copy", &[&tree], Some(&f.target),
+                         Callbacks::new().on_progress(move |p| record.borrow_mut().push(p.clone())));
+        assert_success(&result);
+        assert_eq!(flushes.load(Ordering::SeqCst), 1, "one flush for the whole copy");
+        let copied = f.target.join("tree");
+        assert_eq!(std::fs::read(copied.join("nested/big")).unwrap(), big);
+        let small = std::fs::metadata(copied.join("small")).unwrap();
+        assert_eq!(small.permissions().mode() & 0o777, 0o750);
+        assert_eq!(small.mtime(), 1_000_000_000, "metadata is copied as before");
+        assert_eq!(std::fs::read_link(copied.join("link")).unwrap(), Path::new("small"));
+        let seen = seen.borrow();
+        let flushing: Vec<&Progress> = seen.iter().filter(|p| p.flushing).collect();
+        assert_eq!(flushing.len(), 1, "{seen:?}");
+        assert_eq!(flushing[0].kind, "copy");
+        assert!(seen.last().unwrap().flushing, "the flush is the last thing reported");
+        assert!(tree.exists());
+        assert_success(&undo(ctx, &f.operations));
+        assert!(!copied.exists());
+    });
+}
+
+#[test]
+fn test_move_to_a_removable_device_keeps_sources_until_the_flush() {
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let folder = f.source.join("folder");
+        std::fs::create_dir(&folder).unwrap();
+        write(&folder.join("child"), "content");
+        let single = f.source.join("single");
+        write(&single, "one");
+        let (kept_folder, kept_single) = (folder.clone(), single.clone());
+        let flushes = slow_device(&f, move |_| {
+            assert!(kept_folder.join("child").exists() && kept_single.exists(), "sources are removed after the flush");
+            Ok(())
+        });
+        let result = run(ctx, &f.operations, "move", &[&folder, &single], Some(&f.target), Callbacks::new());
+        assert_success(&result);
+        assert_eq!(flushes.load(Ordering::SeqCst), 1);
+        assert!(!folder.exists() && !single.exists());
+        assert_eq!(read(&f.target.join("folder/child")), "content");
+        assert_eq!(read(&f.target.join("single")), "one");
+        assert_eq!(result.completed.len(), 2);
+        assert_success(&undo(ctx, &f.operations));
+        assert_eq!(read(&folder.join("child")), "content");
+        assert_eq!(read(&single), "one");
+    });
+}
+
+#[test]
+fn test_failed_flush_fails_the_job_and_keeps_every_source() {
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let (first, second) = (f.source.join("first"), f.source.join("second"));
+        write(&first, "1");
+        write(&second, "2");
+        let flushes = slow_device(&f, |_| Err(std::io::Error::from_raw_os_error(libc::EIO)));
+        let result = run(ctx, &f.operations, "move", &[&first, &second], Some(&f.target), Callbacks::new());
+        assert!(!result.success());
+        assert_eq!(flushes.load(Ordering::SeqCst), 1);
+        assert_eq!((read(&first).as_str(), read(&second).as_str()), ("1", "2"), "no source is lost");
+        assert_eq!(result.failures.len(), 3, "{:?}", result.failures);
+        assert_eq!(result.failures[0].source, file(&f.target).uri().as_str());
+        assert!(result.failures[0].message.contains("could not be written to the device"), "{:?}", result.failures[0]);
+        assert_eq!(result.failures[1].source, file(&first).uri().as_str());
+        // A failed copy reports the same way.
+        std::fs::remove_file(f.target.join("first")).unwrap();
+        let result = run(ctx, &f.operations, "copy", &[&first], Some(&f.target), Callbacks::new());
+        assert!(!result.success());
+        assert_eq!(result.failures.len(), 1);
+    });
+}
+
+#[test]
+fn test_source_changed_during_the_flush_is_kept() {
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let (changed, plain) = (f.source.join("changed"), f.source.join("plain"));
+        write(&changed, "before");
+        write(&plain, "plain");
+        let edit = changed.clone();
+        slow_device(&f, move |_| std::fs::write(&edit, "written again, and longer"));
+        let result = run(ctx, &f.operations, "move", &[&changed, &plain], Some(&f.target), Callbacks::new());
+        assert_eq!(result.failures.len(), 1, "{:?}", result.failures);
+        assert_eq!(result.failures[0].source, file(&changed).uri().as_str());
+        assert_eq!(read(&changed), "written again, and longer");
+        assert_eq!(read(&f.target.join("changed")), "before");
+        assert!(!plain.exists());
+    });
+}
+
+#[test]
+fn test_move_merge_and_cancel_on_a_removable_device() {
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let folder = f.source.join("folder");
+        std::fs::create_dir(&folder).unwrap();
+        write(&folder.join("child"), "content");
+        std::fs::create_dir(f.target.join("folder")).unwrap();
+        write(&f.target.join("folder/existing"), "keep");
+        let flushes = slow_device(&f, |_| Ok(()));
+        let result = run(ctx, &f.operations, "move", &[&folder], Some(&f.target), resolving("merge"));
+        assert_success(&result);
+        assert!(!folder.exists(), "the emptied folder is removed once its children are");
+        assert_eq!(read(&f.target.join("folder/child")), "content");
+        assert_eq!(read(&f.target.join("folder/existing")), "keep");
+        assert!(flushes.load(Ordering::SeqCst) >= 1);
+        // A job cancelled at its second item still flushes the first and removes its source.
+        let (first, second) = (f.source.join("first"), f.source.join("second"));
+        write(&first, "1");
+        write(&second, "2");
+        std::fs::create_dir(f.target.join("second")).unwrap();
+        flushes.store(0, Ordering::SeqCst);
+        let result = run(ctx, &f.operations, "move", &[&first, &second], Some(&f.target), resolving("cancel"));
+        assert!(result.cancelled);
+        assert_eq!(flushes.load(Ordering::SeqCst), 1);
+        assert!(!first.exists() && second.exists());
+        assert_eq!(read(&f.target.join("first")), "1");
+    });
+}
+
+#[test]
+fn test_fixed_disks_are_not_flushed() {
+    let f = Fixture::new();
+    in_context(|ctx| {
+        let item = f.source.join("item");
+        write(&item, "data");
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count = calls.clone();
+        f.operations.set_hooks(TestHooks {
+            no_rename: true,
+            flush: Some(Arc::new(move |_: &Path| {
+                count.fetch_add(1, Ordering::SeqCst);
+                Ok(())
+            })),
+            ..Default::default()
+        });
+        let seen: Rc<RefCell<Vec<Progress>>> = Rc::default();
+        let record = seen.clone();
+        let result = run(ctx, &f.operations, "move", &[&item], Some(&f.target),
+                         Callbacks::new().on_progress(move |p| record.borrow_mut().push(p.clone())));
+        assert_success(&result);
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert!(!item.exists() && seen.borrow().iter().all(|p| !p.flushing));
+    });
+}

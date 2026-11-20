@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Kjøre eller åpne skriptet?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} er et kjørbart skript. Vil du kjøre det eller åpne det for å se innholdet?",
   "Run in Terminal": "Kjør i terminal",
-  "Run": "Kjør"
+  "Run": "Kjør",
+  "Writing the copied data to the device…": "Skriver de kopierte dataene til enheten…",
+  "The copied data could not be written to the device: {error}": "De kopierte dataene kunne ikke skrives til enheten: {error}",
+  "The original was kept because its copy could not be written to the device.": "Originalen ble beholdt fordi kopien ikke kunne skrives til enheten."
 }

@@ -2268,5 +2268,8 @@
   "Run or Open Script?": "執行還是開啟指令稿？",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} 是可執行的指令稿。要執行它，還是開啟它以檢視內容？",
   "Run in Terminal": "在終端機中執行",
-  "Run": "執行"
+  "Run": "執行",
+  "Writing the copied data to the device…": "正在將複製的資料寫入裝置…",
+  "The copied data could not be written to the device: {error}": "無法將複製的資料寫入裝置：{error}",
+  "The original was kept because its copy could not be written to the device.": "由於副本無法寫入裝置，已保留原始項目。"
 }

@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Suoritetaanko vai avataanko skripti?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} on suoritettava skripti. Haluatko suorittaa sen vai avata sen nähdäksesi sisällön?",
   "Run in Terminal": "Suorita päätteessä",
-  "Run": "Suorita"
+  "Run": "Suorita",
+  "Writing the copied data to the device…": "Kirjoitetaan kopioituja tietoja laitteelle…",
+  "The copied data could not be written to the device: {error}": "Kopioituja tietoja ei voitu kirjoittaa laitteelle: {error}",
+  "The original was kept because its copy could not be written to the device.": "Alkuperäinen säilytettiin, koska sen kopiota ei voitu kirjoittaa laitteelle."
 }

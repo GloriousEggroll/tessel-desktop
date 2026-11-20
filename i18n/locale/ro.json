@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Rulați sau deschideți scriptul?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} este un script executabil. Doriți să-l rulați sau să-l deschideți pentru a-i vedea conținutul?",
   "Run in Terminal": "Rulează în terminal",
-  "Run": "Rulează"
+  "Run": "Rulează",
+  "Writing the copied data to the device…": "Se scriu datele copiate pe dispozitiv…",
+  "The copied data could not be written to the device: {error}": "Datele copiate nu au putut fi scrise pe dispozitiv: {error}",
+  "The original was kept because its copy could not be written to the device.": "Originalul a fost păstrat deoarece copia sa nu a putut fi scrisă pe dispozitiv."
 }

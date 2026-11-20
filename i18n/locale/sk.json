@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Spustiť, alebo otvoriť skript?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} je spustiteľný skript. Chcete ho spustiť, alebo otvoriť a zobraziť jeho obsah?",
   "Run in Terminal": "Spustiť v termináli",
-  "Run": "Spustiť"
+  "Run": "Spustiť",
+  "Writing the copied data to the device…": "Zapisujú sa skopírované údaje na zariadenie…",
+  "The copied data could not be written to the device: {error}": "Skopírované údaje sa nepodarilo zapísať na zariadenie: {error}",
+  "The original was kept because its copy could not be written to the device.": "Originál bol ponechaný, pretože jeho kópiu sa nepodarilo zapísať na zariadenie."
 }

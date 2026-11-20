@@ -224,6 +224,13 @@ Gaps (app crate):
 - GTK's `GtkGizmo (progress) reported min width -2` for the DiskUsage bars (the theme's -1 px progress margin) is gone:
   `.files-disk-usage progress` has `margin: 0`.
 
+- Copies and moves to removable devices and network filesystems (issue seen in most desktops, KDE bug 281270): a local
+  destination on a USB disk, memory card, NFS/CIFS or FUSE mount is written by `tessel_core::device_copy` in writeback
+  windows instead of `Gio.File.copy`, so the progress follows the device and not the page cache; the job ends with one
+  `syncfs` of the destination ("Writing the copied data to the device…") and fails when that fails; a move keeps its
+  sources until the flush has succeeded. Fixed local disks and GVfs URIs keep `Gio.File.copy`. Not covered: archive
+  extraction/creation onto such a device, and Tessel Shell's desktop transfers (their destination is the Desktop folder).
+
 ## Swap notes (not installed; do this with the user present)
 Python today: `desktop-apps/install.py --apply` (root, pkexec) copies `tessel-files/*.py` + shared/tessel-dock modules to
 `/usr/local/lib/tessel/tessel-files/` and writes the marker launcher `/usr/local/bin/tessel-files`

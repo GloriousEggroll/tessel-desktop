@@ -2421,5 +2421,8 @@
   "Run or Open Script?": "Exécuter ou ouvrir le script ?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} est un script exécutable. Voulez-vous l’exécuter ou l’ouvrir pour voir son contenu ?",
   "Run in Terminal": "Exécuter dans un terminal",
-  "Run": "Exécuter"
+  "Run": "Exécuter",
+  "Writing the copied data to the device…": "Écriture des données copiées sur le périphérique…",
+  "The copied data could not be written to the device: {error}": "Les données copiées n’ont pas pu être écrites sur le périphérique : {error}",
+  "The original was kept because its copy could not be written to the device.": "L’original a été conservé, car sa copie n’a pas pu être écrite sur le périphérique."
 }

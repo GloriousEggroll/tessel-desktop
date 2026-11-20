@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Jalankan atau buka skrip?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} adalah skrip yang dapat dieksekusi. Anda ingin menjalankannya, atau membukanya untuk melihat isinya?",
   "Run in Terminal": "Jalankan di Terminal",
-  "Run": "Jalankan"
+  "Run": "Jalankan",
+  "Writing the copied data to the device…": "Menulis data yang disalin ke perangkat…",
+  "The copied data could not be written to the device: {error}": "Data yang disalin tidak dapat ditulis ke perangkat: {error}",
+  "The original was kept because its copy could not be written to the device.": "Berkas asli dipertahankan karena salinannya tidak dapat ditulis ke perangkat."
 }

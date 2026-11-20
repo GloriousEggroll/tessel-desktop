@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "تشغيل البرنامج النصي أم فتحه؟",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} برنامج نصي قابل للتنفيذ. هل تريد تشغيله أم فتحه لعرض محتواه؟",
   "Run in Terminal": "التشغيل في الطرفية",
-  "Run": "تشغيل"
+  "Run": "تشغيل",
+  "Writing the copied data to the device…": "جارٍ كتابة البيانات المنسوخة على الجهاز…",
+  "The copied data could not be written to the device: {error}": "تعذّرت كتابة البيانات المنسوخة على الجهاز: {error}",
+  "The original was kept because its copy could not be written to the device.": "تم الاحتفاظ بالأصل لأن نسخته لم تُكتب على الجهاز."
 }

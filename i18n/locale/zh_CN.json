@@ -2268,5 +2268,8 @@
   "Run or Open Script?": "运行还是打开脚本？",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} 是一个可执行脚本。要运行它，还是打开它查看内容？",
   "Run in Terminal": "在终端中运行",
-  "Run": "运行"
+  "Run": "运行",
+  "Writing the copied data to the device…": "正在将复制的数据写入设备…",
+  "The copied data could not be written to the device: {error}": "无法将复制的数据写入设备：{error}",
+  "The original was kept because its copy could not be written to the device.": "由于副本无法写入设备，原始项目已保留。"
 }

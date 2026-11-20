@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "להריץ או לפתוח את הסקריפט?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} הוא סקריפט בר־הרצה. להריץ אותו, או לפתוח אותו כדי לראות את תוכנו?",
   "Run in Terminal": "הרצה במסוף",
-  "Run": "הרצה"
+  "Run": "הרצה",
+  "Writing the copied data to the device…": "הנתונים שהועתקו נכתבים להתקן…",
+  "The copied data could not be written to the device: {error}": "לא ניתן היה לכתוב את הנתונים שהועתקו להתקן: {error}",
+  "The original was kept because its copy could not be written to the device.": "המקור נשמר כי לא ניתן היה לכתוב את העותק שלו להתקן."
 }

@@ -245,5 +245,8 @@
   "Run or Open Script?": "Run or Open Script?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} is an executable script. Do you want to run it, or open it to see its contents?",
   "Run in Terminal": "Run in Terminal",
-  "Run": "Run"
+  "Run": "Run",
+  "Writing the copied data to the device…": "Writing the copied data to the device…",
+  "The copied data could not be written to the device: {error}": "The copied data could not be written to the device: {error}",
+  "The original was kept because its copy could not be written to the device.": "The original was kept because its copy could not be written to the device."
 }

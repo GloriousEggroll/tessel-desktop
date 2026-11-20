@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Εκτέλεση ή άνοιγμα του σεναρίου;",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "Το {name} είναι ένα εκτελέσιμο σενάριο. Θέλετε να το εκτελέσετε ή να το ανοίξετε για να δείτε το περιεχόμενό του;",
   "Run in Terminal": "Εκτέλεση σε τερματικό",
-  "Run": "Εκτέλεση"
+  "Run": "Εκτέλεση",
+  "Writing the copied data to the device…": "Εγγραφή των αντιγραμμένων δεδομένων στη συσκευή…",
+  "The copied data could not be written to the device: {error}": "Δεν ήταν δυνατή η εγγραφή των αντιγραμμένων δεδομένων στη συσκευή: {error}",
+  "The original was kept because its copy could not be written to the device.": "Το πρωτότυπο διατηρήθηκε, επειδή το αντίγραφό του δεν ήταν δυνατό να εγγραφεί στη συσκευή."
 }

@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "เรียกใช้หรือเปิดสคริปต์",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} เป็นสคริปต์ที่เรียกใช้ได้ คุณต้องการเรียกใช้ หรือเปิดเพื่อดูเนื้อหา",
   "Run in Terminal": "เรียกใช้ในเทอร์มินัล",
-  "Run": "เรียกใช้"
+  "Run": "เรียกใช้",
+  "Writing the copied data to the device…": "กำลังเขียนข้อมูลที่คัดลอกลงในอุปกรณ์…",
+  "The copied data could not be written to the device: {error}": "ไม่สามารถเขียนข้อมูลที่คัดลอกลงในอุปกรณ์ได้: {error}",
+  "The original was kept because its copy could not be written to the device.": "ต้นฉบับถูกเก็บไว้เนื่องจากไม่สามารถเขียนสำเนาลงในอุปกรณ์ได้"
 }

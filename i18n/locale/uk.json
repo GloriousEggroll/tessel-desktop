@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Запустити чи відкрити сценарій?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} — виконуваний сценарій. Запустити його чи відкрити, щоб переглянути вміст?",
   "Run in Terminal": "Запустити в терміналі",
-  "Run": "Запустити"
+  "Run": "Запустити",
+  "Writing the copied data to the device…": "Запис скопійованих даних на пристрій…",
+  "The copied data could not be written to the device: {error}": "Не вдалося записати скопійовані дані на пристрій: {error}",
+  "The original was kept because its copy could not be written to the device.": "Оригінал збережено, оскільки його копію не вдалося записати на пристрій."
 }

@@ -1920,6 +1920,10 @@ pub fn job_title(kind: &str) -> String {
 }
 
 fn progress_update(app: &FilesApplication, entry: &Rc<JobEntry>, progress: &Progress) {
+    if progress.flushing {
+        // The files are copied; the device is still writing them.
+        return app.jobs.update(entry, Some(&tr!("Writing the copied data to the device…")), None);
+    }
     let name = if progress.source.is_empty() { String::new() } else { file_label(&as_file(&progress.source)) };
     let mut fraction = if progress.total_bytes > 0 { Some((progress.current_bytes as f64 / progress.total_bytes as f64).min(1.)) } else { None };
     if fraction.is_none() && progress.total_items > 1 {

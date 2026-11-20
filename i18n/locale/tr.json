@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Betik çalıştırılsın mı, açılsın mı?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} çalıştırılabilir bir betik. Çalıştırmak mı yoksa içeriğini görmek için açmak mı istiyorsunuz?",
   "Run in Terminal": "Uçbirimde çalıştır",
-  "Run": "Çalıştır"
+  "Run": "Çalıştır",
+  "Writing the copied data to the device…": "Kopyalanan veriler aygıta yazılıyor…",
+  "The copied data could not be written to the device: {error}": "Kopyalanan veriler aygıta yazılamadı: {error}",
+  "The original was kept because its copy could not be written to the device.": "Kopyası aygıta yazılamadığı için özgün öge korundu."
 }

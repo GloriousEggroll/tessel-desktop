@@ -2268,5 +2268,8 @@
   "Run or Open Script?": "スクリプトを実行しますか、それとも開きますか？",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} は実行可能なスクリプトです。実行しますか？それとも開いて内容を表示しますか？",
   "Run in Terminal": "端末で実行",
-  "Run": "実行"
+  "Run": "実行",
+  "Writing the copied data to the device…": "コピーしたデータをデバイスに書き込んでいます…",
+  "The copied data could not be written to the device: {error}": "コピーしたデータをデバイスに書き込めませんでした: {error}",
+  "The original was kept because its copy could not be written to the device.": "コピーをデバイスに書き込めなかったため、元の項目は残されました。"
 }

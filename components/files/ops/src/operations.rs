@@ -241,6 +241,9 @@ pub struct Progress {
     pub total_bytes: i64,
     pub completed_items: usize,
     pub total_items: usize,
+    /// The files are copied and the job is waiting for a removable device or
+    /// a network share to finish writing them.
+    pub flushing: bool,
 }
 
 /// A destination that already exists. `choices` are the accepted answers.
@@ -453,6 +456,12 @@ pub(crate) struct TestHooks {
     pub notify: Option<Arc<dyn Fn(&Job) + Send + Sync>>,
     /// Set when `Job._delete` runs.
     pub delete_called: Arc<std::sync::atomic::AtomicBool>,
+    /// Treat every local destination as this kind of slow device.
+    pub slow: Option<tessel_core::device_copy::Slow>,
+    /// Moves copy and remove, as between two filesystems, and never rename.
+    pub no_rename: bool,
+    /// Replaces the flush of a destination's filesystem.
+    pub flush: Option<Arc<dyn Fn(&Path) -> std::io::Result<()> + Send + Sync>>,
 }
 
 struct OpsInner {
@@ -580,6 +589,7 @@ impl Operations {
             result: OperationResult::new(kind), undo: Vec::new(),
             undo_remaining: undo_records.clone(), undo_records, rename_pairs,
             replaced: false, last_progress: None,
+            slow: Default::default(), unflushed: Vec::new(), kept_sources: Vec::new(),
             #[cfg(test)]
             hooks: self.inner.hooks.lock().unwrap().clone(),
         };
@@ -604,6 +614,13 @@ struct Worker {
     rename_pairs: Vec<(gio::File, gio::File)>,
     replaced: bool,
     last_progress: Option<Instant>,
+    /// Whether a filesystem (by device number) needs windowed copies and a flush.
+    slow: std::collections::HashMap<u64, bool>,
+    /// A folder on each slow filesystem that received data not yet flushed.
+    unflushed: Vec<(u64, PathBuf)>,
+    /// Sources of moves to those filesystems, with their state when they
+    /// were copied: removed only once the flush has succeeded.
+    kept_sources: Vec<(gio::File, Fingerprint)>,
     #[cfg(test)]
     hooks: TestHooks,
 }
@@ -642,6 +659,7 @@ impl Worker {
                 total_bytes: total,
                 completed_items: self.result.completed.len(),
                 total_items: self.job.shared.sources.len(),
+                flushing: false,
             };
             let _ = self.sender.try_send(Event::Progress(state));
         }
@@ -773,12 +791,113 @@ impl Worker {
                     return Err(error.into());
                 }
             }
+        } else if info.file_type() == gio::FileType::Regular && self.slow_target(destination).is_some() {
+            self.copy_to_slow_device(source, destination)?;
         } else {
             let (src, dst) = (source.clone(), destination.clone());
             source.copy(destination, COPY_FLAGS, Some(&cancellable),
                         Some(&mut |current, total| self.notify(Some(&src), Some(&dst), current, total, false)))?;
         }
         Ok(())
+    }
+
+    /// The local folder `destination` is created in and its filesystem, when
+    /// that is a removable device or a network share (see
+    /// `tessel_core::device_copy`). Only local sources and destinations
+    /// qualify; GVfs locations are written by their own backends.
+    fn slow_target(&mut self, destination: &gio::File) -> Option<(u64, PathBuf)> {
+        use std::os::unix::fs::MetadataExt;
+        let parent = destination.path()?.parent()?.to_path_buf();
+        let device = std::fs::metadata(&parent).ok()?.dev();
+        let slow = match self.slow.get(&device) {
+            Some(slow) => *slow,
+            None => {
+                #[cfg(test)]
+                let slow = self.hooks.slow.is_some();
+                #[cfg(not(test))]
+                let slow = tessel_core::device_copy::slow_destination(&parent).is_some();
+                self.slow.insert(device, slow);
+                slow
+            }
+        };
+        slow.then_some((device, parent))
+    }
+
+    /// Copy one regular file so that its progress follows the device and
+    /// not the memory it is first written to, then its metadata.
+    fn copy_to_slow_device(&mut self, source: &gio::File, destination: &gio::File) -> Result<()> {
+        let cancellable = self.cancellable();
+        let (src, dst) = (source.clone(), destination.clone());
+        let (Some(from), Some(to), Some((device, parent))) = (source.path(), destination.path(), self.slow_target(destination)) else {
+            source.copy(destination, COPY_FLAGS, Some(&cancellable),
+                        Some(&mut |current, total| self.notify(Some(&src), Some(&dst), current, total, false)))?;
+            return Ok(());
+        };
+        if !self.unflushed.iter().any(|(known, _)| *known == device) {
+            self.unflushed.push((device, parent));
+        }
+        let stop = cancellable.clone();
+        let copied = tessel_core::device_copy::copy_file(&from, &to, &|| stop.is_cancelled(), &mut |current, total| {
+            self.notify(Some(&src), Some(&dst), current as i64, total as i64, false)
+        });
+        if let Err(error) = copied {
+            self.check()?;
+            return Err(Error::from_io(&error, Some(&to)));
+        }
+        // As Gio.File.copy does: metadata a filesystem cannot hold is not an error.
+        if let Err(error) = source.copy_attributes(destination, COPY_FLAGS, Some(&cancellable)) {
+            if error.matches(gio::IOErrorEnum::Cancelled) {
+                return Err(error.into());
+            }
+        }
+        Ok(())
+    }
+
+    /// Wait until the devices written to hold the data, then remove the
+    /// sources of the moves that went to them. A failed flush keeps every
+    /// source: its copy may not exist outside of memory.
+    fn flush_devices(&mut self) {
+        let unflushed = std::mem::take(&mut self.unflushed);
+        let kept = std::mem::take(&mut self.kept_sources);
+        if unflushed.is_empty() {
+            return;
+        }
+        if self.has_progress {
+            let state = Progress { kind: self.kind().to_string(), completed_items: self.result.completed.len(),
+                                   total_items: self.job.shared.sources.len(), flushing: true, ..Default::default() };
+            let _ = self.sender.try_send(Event::Progress(state));
+        }
+        let mut failed = false;
+        for (_, directory) in &unflushed {
+            #[cfg(test)]
+            let outcome = match self.hooks.flush.clone() {
+                Some(hook) => hook(directory),
+                None => tessel_core::device_copy::flush_filesystem(directory),
+            };
+            #[cfg(not(test))]
+            let outcome = tessel_core::device_copy::flush_filesystem(directory);
+            if let Err(error) = outcome {
+                failed = true;
+                self.result.failures.push(Failure {
+                    source: gio::File::for_path(directory).uri().to_string(),
+                    message: tr!("The copied data could not be written to the device: {error}", error = error.to_string()),
+                });
+            }
+        }
+        for (source, before) in kept {
+            let outcome = if failed {
+                Err(Error::runtime(tr!("The original was kept because its copy could not be written to the device.")))
+            } else {
+                match fingerprint(&source) {
+                    Ok(now) if now == before => remove_owned(&source),
+                    Ok(_) => Err(Error::runtime(tr!("The source changed while moving; both copies were kept."))),
+                    Err(error) => Err(error),
+                }
+            };
+            if let Err(error) = outcome {
+                self.result.failures.push(Failure { source: uri(&source), message: error.to_string() });
+            }
+        }
     }
 
     fn atomic_copy(&mut self, source: &gio::File, destination: &gio::File) -> Result<()> {
@@ -798,8 +917,15 @@ impl Worker {
 
     fn move_item(&mut self, source: &gio::File, destination: &gio::File) -> Result<()> {
         let cancellable = self.cancellable();
-        if let Err(error) = source.move_(destination, COPY_FLAGS | gio::FileCopyFlags::NO_FALLBACK_FOR_MOVE,
-                                        Some(&cancellable), None) {
+        #[cfg(test)]
+        let renamed = if self.hooks.no_rename {
+            Err(glib::Error::new(gio::IOErrorEnum::NotSupported, "no rename"))
+        } else {
+            source.move_(destination, COPY_FLAGS | gio::FileCopyFlags::NO_FALLBACK_FOR_MOVE, Some(&cancellable), None)
+        };
+        #[cfg(not(test))]
+        let renamed = source.move_(destination, COPY_FLAGS | gio::FileCopyFlags::NO_FALLBACK_FOR_MOVE, Some(&cancellable), None);
+        if let Err(error) = renamed {
             if !(error.matches(gio::IOErrorEnum::NotSupported) || error.matches(gio::IOErrorEnum::WouldRecurse)) {
                 return Err(error.into());
             }
@@ -815,7 +941,14 @@ impl Worker {
                 remove_owned(destination)?;
                 self.check()?;
             }
-            remove_owned(source)?;
+            // The copy on a removable device or a share may still be in
+            // memory only: its source stays until the device has it.
+            let device = self.slow_target(destination).map(|(device, _)| device);
+            if device.is_some_and(|device| self.unflushed.iter().any(|(known, _)| *known == device)) {
+                self.kept_sources.push((source.clone(), before));
+            } else {
+                remove_owned(source)?;
+            }
         }
         Ok(())
     }
@@ -852,6 +985,8 @@ impl Worker {
                         successful = self.transfer(&child, &destination.child(info.name()), moving, link)? && successful;
                     }
                     if moving && successful {
+                        // The folder is only empty once its moved children are removed.
+                        self.flush_devices();
                         source.delete(Some(&cancellable))?;
                         // An emptied merge source directory must be restored before
                         // reverse child moves. See the undo directory record.
@@ -1186,6 +1321,9 @@ impl Worker {
             Err(error) if is_cancelled(&error) => self.result.cancelled = true,
             Err(error) => self.result.failures.push(Failure { source: String::new(), message: error.to_string() }),
         }
+        // Also after an error or a cancellation: what was copied is flushed,
+        // and the moves that completed lose their sources.
+        self.flush_devices();
         self.result.cancelled |= self.job.shared.cancellable.is_cancelled();
         // Replacements deliberately have no undo: removing a successful
         // new copy cannot recover an overwritten original.

@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Futtatja vagy megnyitja a parancsfájlt?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "A(z) {name} egy futtatható parancsfájl. Futtatni szeretné, vagy megnyitni a tartalma megtekintéséhez?",
   "Run in Terminal": "Futtatás terminálban",
-  "Run": "Futtatás"
+  "Run": "Futtatás",
+  "Writing the copied data to the device…": "A másolt adatok írása az eszközre…",
+  "The copied data could not be written to the device: {error}": "A másolt adatokat nem sikerült az eszközre írni: {error}",
+  "The original was kept because its copy could not be written to the device.": "Az eredeti megmaradt, mert a másolatát nem sikerült az eszközre írni."
 }

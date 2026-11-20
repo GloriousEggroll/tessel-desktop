@@ -2089,5 +2089,8 @@
   "Run or Open Script?": "Chạy hay mở tập lệnh?",
   "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} là tập lệnh thực thi được. Bạn muốn chạy nó hay mở để xem nội dung?",
   "Run in Terminal": "Chạy trong Terminal",
-  "Run": "Chạy"
+  "Run": "Chạy",
+  "Writing the copied data to the device…": "Đang ghi dữ liệu đã sao chép vào thiết bị…",
+  "The copied data could not be written to the device: {error}": "Không thể ghi dữ liệu đã sao chép vào thiết bị: {error}",
+  "The original was kept because its copy could not be written to the device.": "Bản gốc được giữ lại vì không thể ghi bản sao của nó vào thiết bị."
 }
