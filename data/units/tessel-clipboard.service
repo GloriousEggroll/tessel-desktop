@@ -8,6 +8,11 @@ OnFailure=tessel-failed@%n.service
 
 [Service]
 Type=simple
+# Enabled for every user and wanted by graphical-session.target, which other
+# desktops reach too. They have a clipboard manager of their own, and two of
+# them fight over each copy (Spectacle crashed copying a screenshot in
+# Plasma): run in the labwc session only. A failed condition is a skip, not a failure.
+ExecCondition=/bin/sh -c 'case ":$$XDG_CURRENT_DESKTOP:" in *:labwc:*) exit 0 ;; esac; exit 1'
 EnvironmentFile=-%h/.config/labwc/environment
 EnvironmentFile=-%h/.config/labwc/environment.d/90-local.env
 ExecStart=%h/.local/lib/tessel/tessel-clipboard
