@@ -10,7 +10,7 @@
 
 Name:           tessel-common
 Version:        0.1.0
-Release:        18%{?dist}
+Release:        19%{?dist}
 Summary:        Tessel desktop: translations, logo and system defaults
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -62,10 +62,12 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %config(noreplace) %{_sysconfdir}/security/tessel-login-faillock.conf
 
 %changelog
+* Fri Nov 20 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-19
+- Translations for running programs from Files and the desktop
+
 * Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-18
 - Translations for the touchpad gesture settings
 - Translations for the window dragging setting
-- Translations for running programs from Files and the desktop
 
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-17
 - Translations for the remote control settings
