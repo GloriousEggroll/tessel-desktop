@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit e0d27163ad0c94bf50297a4fa0b72e4bc55a46e0}
+%{!?commit:%global commit d9045793147414369c5aaaacca11d8002fbbbadc}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-network
 Version:        0.1.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Tessel network manager
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -86,6 +86,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.NetworkManager.desktop
 %{_datadir}/applications/org.tessel.NetworkManager.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
+- Keep running when the system bus drops the connection
+
 * Mon Nov 16 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
 - Connect to Wi-Fi: the Connect and Cancel buttons work again, so a network that needs a password can be joined from the form
 

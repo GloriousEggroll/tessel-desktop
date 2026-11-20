@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d432ab473a217819dbf36c33c51a02d17bd80452}
+%{!?commit:%global commit d9045793147414369c5aaaacca11d8002fbbbadc}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-settings
 Version:        0.1.0
-Release:        29%{?dist}
+Release:        30%{?dist}
 Summary:        Tessel Global Settings and night light
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -114,6 +114,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DefaultApps.desktop
 %{_datadir}/applications/org.tessel.DefaultApps.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-30
+- Keep running when the system bus drops the connection
+
 * Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-29
 - Mouse & Touchpad: Touchpad defaults gets a Swipe & pinch gestures card to choose what three- and four-finger swipes and four-finger pinches do; needs labwc 0.20.2-31
 - Mouse & Touchpad: choose whether Super, Alt or both drag windows

@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit fb549f9befe69c62532280a827af0edded0608ae}
+%{!?commit:%global commit d9045793147414369c5aaaacca11d8002fbbbadc}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-dock
 Version:        0.1.0
-Release:        12%{?dist}
+Release:        13%{?dist}
 Summary:        Tessel Dock: application dock, panel and system tray
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -100,6 +100,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.DockSettings.desktop
 %{_datadir}/applications/org.tessel.DockSettings.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-13
+- Keep running when the system bus drops the connection: the dock stopped, and could not restart, after another program used up the user's bus quota
+
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
 - Open the application menu centred at the top or bottom of the screen instead of at the menu button
 - Restart the dock after any exit that was not requested, and log what stopped it

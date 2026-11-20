@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 839b47aed1e9549cd97437533b9965d6cb657d81}
+%{!?commit:%global commit d9045793147414369c5aaaacca11d8002fbbbadc}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-brightness
 Version:        0.1.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Tessel monitor brightness and automatic dimming
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -85,6 +85,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.BrightnessManager.desk
 %{_datadir}/applications/org.tessel.BrightnessManager.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
+- Keep running when the system bus drops the connection
+
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
 - The brightness and contrast sliders no longer jump back or stall while they are dragged
 - Only the newest slider value waits for the monitor, so a drag does not queue every step
