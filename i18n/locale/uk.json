@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Щипок чотирма пальцями",
   "Pinch in or out with four fingers to run an action.": "Зведіть або розведіть чотири пальці, щоб виконати дію.",
   "Touchpad defaults": "Типові для сенсорних панелей",
-  "Multi-finger drag": "Перетягування кількома пальцями"
+  "Multi-finger drag": "Перетягування кількома пальцями",
+  "Window dragging": "Перетягування вікон",
+  "Hold this key and drag to move a window": "Утримуйте цю клавішу й перетягуйте, щоб перемістити вікно",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Перетягування правою кнопкою змінює розмір. Виберіть Super, якщо перетягування з Alt заважає в іграх. Це стосується всіх мишей і сенсорних панелей.",
+  "Super or Alt": "Super або Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Виберіть, яка клавіша переміщує вікна та змінює їхній розмір під час перетягування: Super, Alt або будь-яка з них."
 }

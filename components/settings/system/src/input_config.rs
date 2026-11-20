@@ -7,6 +7,7 @@ use tessel_tiling::xml::{Element, Node};
 
 use crate::compat::{self, casefold, element_indices, local, tag_end, value, Error, Result};
 use crate::gesture_config::{self, GestureState, GestureUpdates};
+use crate::window_drag_config;
 use crate::workspace_config::{parse_section, session_config, Parsed, Reload, WorkspaceConfig};
 
 pub const CHOICES: &[(&str, &[&str])] = &[
@@ -258,17 +259,22 @@ impl InputConfig {
     pub fn load(&self) -> Result<InputState> { read_state(&self.0.read()?) }
 
     pub fn save(&self, updates: &Updates, expected: &InputState) -> Result<InputState> {
-        self.save_all(updates, expected, &Vec::new(), &GestureState::default())
+        self.save_all(updates, expected, &Vec::new(), &GestureState::default(), None, "both")
     }
 
     pub fn load_gestures(&self) -> Result<GestureState> { gesture_config::read_state(&self.0.read()?) }
 
-    /// Device settings and touchpad gestures in one write and one reload. The
-    /// gestures saved are read back with [`InputConfig::load_gestures`].
+    /// The window drag mode (see [`window_drag_config`]).
+    pub fn load_window_drag(&self) -> Result<String> { window_drag_config::read_mode(&self.0.read()?) }
+
+    /// Device settings, touchpad gestures and the window drag mode (None keeps
+    /// it) in one write and one reload. The gestures and mode saved are read back
+    /// with [`InputConfig::load_gestures`] and [`InputConfig::load_window_drag`].
+    #[allow(clippy::too_many_arguments)]
     pub fn save_all(&self, updates: &Updates, expected: &InputState, gestures: &GestureUpdates,
-                    gestures_expected: &GestureState) -> Result<InputState> {
+                    gestures_expected: &GestureState, window_drag: Option<&str>, window_drag_expected: &str) -> Result<InputState> {
         let original = self.0.read()?;
-        if updates.is_empty() && gestures.is_empty() {
+        if updates.is_empty() && gestures.is_empty() && window_drag.is_none() {
             return read_state(&original);
         }
         let mut updated = original.clone();
@@ -277,6 +283,9 @@ impl InputConfig {
         }
         if !gestures.is_empty() {
             updated = gesture_config::with_gestures(&updated, gestures, gestures_expected)?;
+        }
+        if let Some(mode) = window_drag {
+            updated = window_drag_config::with_mode(&updated, mode, window_drag_expected)?;
         }
         self.0.commit(&original, &updated, "Could not reload labwc; the previous input settings were restored.")?;
         read_state(&updated)
@@ -483,18 +492,43 @@ Tap-to-click:            n/a
         let (state, gestures) = (config.load().unwrap(), config.load_gestures().unwrap());
         assert!(!gestures.present);
         config.save_all(&vec![update("touchpad", "touchpad", &[("tap", Some("no"))])], &state,
-                        &vec![("gesture-swipe-3-up".into(), "overview".into())], &gestures).unwrap();
+                        &vec![("gesture-swipe-3-up".into(), "overview".into())], &gestures, None, "both").unwrap();
         assert_eq!(*calls.lock().unwrap(), 1);
         assert_eq!(config.load().unwrap().match_profile("touchpad", "touchpad").get("tap"), Some("no"));
         let saved = config.load_gestures().unwrap();
         assert_eq!(saved.get("gesture-swipe-3-up"), crate::gesture_config::Binding::Choice("overview".into()));
         // Gestures alone, with a conflict check of their own.
-        config.save_all(&vec![], &config.load().unwrap(), &vec![("gesture-swipe-3-up".into(), "none".into())], &saved).unwrap();
+        config.save_all(&vec![], &config.load().unwrap(), &vec![("gesture-swipe-3-up".into(), "none".into())], &saved, None, "both").unwrap();
         assert_eq!(*calls.lock().unwrap(), 2);
         assert!(config.load_gestures().unwrap().present);
-        let error = config.save_all(&vec![], &config.load().unwrap(), &vec![("gesture-swipe-3-up".into(), "close".into())], &saved).unwrap_err();
+        let error = config.save_all(&vec![], &config.load().unwrap(), &vec![("gesture-swipe-3-up".into(), "close".into())], &saved, None, "both").unwrap_err();
         assert!(error.is_runtime() && error.message().contains("changed elsewhere"));
         assert_eq!(*calls.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn window_drag_saves_with_device_settings_in_one_reload() {
+        let folder = scratch("input-window-drag");
+        let path = folder.join("rc.xml");
+        std::fs::write(&path, CONFIG).unwrap();
+        let calls = Arc::new(Mutex::new(0));
+        let counter = calls.clone();
+        let config = InputConfig::at(&path, folder.join("backups"), Arc::new(move || {
+            *counter.lock().unwrap() += 1;
+            Ok(())
+        }));
+        assert_eq!(config.load_window_drag().unwrap(), "both");
+        config.save_all(&vec![update("touchpad", "touchpad", &[("tap", Some("no"))])], &config.load().unwrap(),
+                        &vec![], &GestureState::default(), Some("super"), "both").unwrap();
+        assert_eq!(*calls.lock().unwrap(), 1);
+        assert_eq!(config.load_window_drag().unwrap(), "super");
+        assert_eq!(config.load().unwrap().match_profile("touchpad", "touchpad").get("tap"), Some("no"));
+        let error = config.save_all(&vec![], &config.load().unwrap(), &vec![], &GestureState::default(), Some("alt"), "both").unwrap_err();
+        assert!(error.is_runtime() && error.message().contains("changed elsewhere"));
+        config.save_all(&vec![], &config.load().unwrap(), &vec![], &GestureState::default(), Some("both"), "super").unwrap();
+        assert_eq!(*calls.lock().unwrap(), 2);
+        assert_eq!(config.load_window_drag().unwrap(), "both");
+        assert!(!std::fs::read_to_string(&path).unwrap().contains("window drag"));
     }
 
     #[test]

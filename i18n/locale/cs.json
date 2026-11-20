@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Sevření čtyřmi prsty",
   "Pinch in or out with four fingers to run an action.": "Sevřením nebo roztažením čtyř prstů spustíte akci.",
   "Touchpad defaults": "Výchozí nastavení touchpadu",
-  "Multi-finger drag": "Tažení více prsty"
+  "Multi-finger drag": "Tažení více prsty",
+  "Window dragging": "Přetahování oken",
+  "Hold this key and drag to move a window": "Podržte tuto klávesu a tažením přesuňte okno",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Tažením pravým tlačítkem změníte velikost. Pokud vám tažení s Alt překáží ve hrách, zvolte Super. Platí pro všechny myši a touchpady.",
+  "Super or Alt": "Super nebo Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Zvolte, zda okna při tažení přesouvá a mění jejich velikost klávesa Super, Alt nebo kterákoli z nich."
 }

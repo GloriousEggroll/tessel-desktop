@@ -231,5 +231,10 @@
   "Four-finger pinch": "Four-finger pinch",
   "Pinch in or out with four fingers to run an action.": "Pinch in or out with four fingers to run an action.",
   "Touchpad defaults": "Touchpad defaults",
-  "Multi-finger drag": "Multi-finger drag"
+  "Multi-finger drag": "Multi-finger drag",
+  "Window dragging": "Window dragging",
+  "Hold this key and drag to move a window": "Hold this key and drag to move a window",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.",
+  "Super or Alt": "Super or Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Choose whether Super, Alt or either key moves and resizes windows when you drag."
 }

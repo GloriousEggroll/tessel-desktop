@@ -2407,5 +2407,10 @@
   "Four-finger pinch": "Pincement à quatre doigts",
   "Pinch in or out with four fingers to run an action.": "Rapprochez ou écartez quatre doigts pour exécuter une action.",
   "Touchpad defaults": "Réglages par défaut du pavé tactile",
-  "Multi-finger drag": "Glisser à plusieurs doigts"
+  "Multi-finger drag": "Glisser à plusieurs doigts",
+  "Window dragging": "Déplacement des fenêtres",
+  "Hold this key and drag to move a window": "Maintenez cette touche et faites glisser pour déplacer une fenêtre",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Faites glisser avec le bouton droit pour redimensionner. Choisissez Super si le glisser avec Alt vous gêne dans les jeux. Ce réglage s’applique à toutes les souris et à tous les pavés tactiles.",
+  "Super or Alt": "Super ou Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Choisissez si Super, Alt ou l’une ou l’autre de ces touches déplace et redimensionne les fenêtres lorsque vous faites glisser."
 }

@@ -47,6 +47,7 @@ pub static SETTINGS: &[Setting] = &[
     Setting { section: "input", key: "swipe_three", title: "Three-finger swipe", detail: "Swipe with three fingers to switch workspaces, open the window overview or show the desktop.", keywords: "touchpad trackpad gesture swipe three 3 finger workspace overview activities desktop left right up down", labels: &[], target: "gesture-swipe-3-left", subpage: "" },
     Setting { section: "input", key: "swipe_four", title: "Four-finger swipe", detail: "Swipe with four fingers to switch workspaces, open the window overview or show the desktop.", keywords: "touchpad trackpad gesture swipe four 4 finger workspace overview activities desktop left right up down", labels: &[], target: "gesture-swipe-4-left", subpage: "" },
     Setting { section: "input", key: "pinch_four", title: "Four-finger pinch", detail: "Pinch in or out with four fingers to run an action.", keywords: "touchpad trackpad gesture pinch zoom four 4 finger in out spread", labels: &[], target: "gesture-pinch-4-in", subpage: "" },
+    Setting { section: "input", key: "window_drag", title: "Window dragging", detail: "Choose whether Super, Alt or either key moves and resizes windows when you drag.", keywords: "window move resize drag mouse super alt meta windows logo modifier key game games", labels: &["Hold this key and drag to move a window"], target: "windowDrag", subpage: "" },
     Setting { section: "input", key: "typing", title: "Disable while typing", detail: "Prevent accidental touchpad movement while typing.", keywords: "touchpad palm rejection typing keyboard", labels: &[], target: "disableWhileTyping", subpage: "" },
     Setting { section: "input", key: "state", title: "Device state", detail: "Enable input or disable a touchpad while an external mouse is connected.", keywords: "mouse touchpad enable disable external connected", labels: &[], target: "sendEventsMode", subpage: "" },
     Setting { section: "lock", key: "wallpaper", title: "Lock screen wallpaper", detail: "Use the desktop wallpaper, a picture, slideshow, or solid color.", keywords: "lock screen background photo picture slideshow", labels: &[], target: "", subpage: "" },
@@ -383,6 +384,10 @@ mod tests {
             assert!(keys(&index, query).iter().any(|(section, _)| *section == "input"), "{query}");
         }
         assert_eq!(keys(&index, "Touchpad gestures")[0], ("input", "touchpad_gestures"));
+        for query in ["alt drag", "move window", "super drag", "resize window"] {
+            assert!(keys(&index, query).contains(&("input", "window_drag")), "{query}");
+        }
+        assert_eq!(keys(&index, "Window dragging")[0], ("input", "window_drag"));
         for query in ["vrr", "adaptive sync", "freesync", "g-sync", "gsync", "variable refresh"] {
             assert!(keys(&index, query).contains(&("displays", "vrr")), "{query}");
         }

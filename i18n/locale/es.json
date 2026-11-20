@@ -2407,5 +2407,10 @@
   "Four-finger pinch": "Pellizcar con cuatro dedos",
   "Pinch in or out with four fingers to run an action.": "Junte o separe cuatro dedos para ejecutar una acción.",
   "Touchpad defaults": "Valores predeterminados del panel táctil",
-  "Multi-finger drag": "Arrastre con varios dedos"
+  "Multi-finger drag": "Arrastre con varios dedos",
+  "Window dragging": "Arrastre de ventanas",
+  "Hold this key and drag to move a window": "Mantenga pulsada esta tecla y arrastre para mover una ventana",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Arrastre con el botón derecho para cambiar el tamaño. Elija Super si arrastrar con Alt le molesta en los juegos. Se aplica a todos los ratones y paneles táctiles.",
+  "Super or Alt": "Super o Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Elija si Super, Alt o cualquiera de las dos teclas mueve y redimensiona las ventanas al arrastrar."
 }

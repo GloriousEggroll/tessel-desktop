@@ -112,7 +112,14 @@ pub fn edit_bindings(data: &[u8], enabled: bool, launcher: &Path) -> Result<Vec<
         }
         if let Some(found) = matches.first().filter(|m| !m.as_str().ends_with("/>")) {
             let closing = format!("</{section}");
-            let position = found.start() + masked[found.start()..found.end()].rfind(&closing).unwrap();
+            // Global Settings' window drag block stays the last thing in
+            // <mouse>, so the modifier it chose wins over the block added here.
+            let drag = if section == "mouse" {
+                tessel_core::session_keys::window_drag_block(&text[found.start()..found.end()]).ok().flatten().map(|(start, _, _)| start)
+            } else {
+                None
+            };
+            let position = found.start() + drag.unwrap_or_else(|| masked[found.start()..found.end()].rfind(&closing).unwrap());
             text.insert_str(position, &block);
         } else {
             let (start, finish) = match matches.first() {
@@ -551,6 +558,21 @@ mod tests {
         assert!(contains(&on, b"existing-lock"));
         assert_eq!(edit_bindings(&on, false, launcher()).unwrap(), CONFIG);
         assert_eq!(edit_bindings(&on, true, launcher()).unwrap(), on);
+    }
+
+    #[test]
+    fn mouse_block_goes_before_the_window_drag_block() {
+        let drag = tessel_core::session_keys::window_drag_xml("alt").unwrap();
+        let data = format!("<labwc_config><keyboard><default/></keyboard><mouse>\n    <default/>\n    {drag}\n  </mouse></labwc_config>");
+        let on = String::from_utf8(edit_bindings(data.as_bytes(), true, launcher()).unwrap()).unwrap();
+        let (tiling, block) = (on.find("<!-- Tessel Tiling mouse end -->").unwrap(), on.find(&drag).unwrap());
+        assert!(tiling < block, "{on}");
+        assert!(on.contains(&format!("<!-- Tessel Tiling mouse end -->{drag}\n  </mouse>")), "{on}");
+        assert_eq!(edit_bindings(on.as_bytes(), true, launcher()).unwrap(), on.as_bytes());
+        assert_eq!(edit_bindings(on.as_bytes(), false, launcher()).unwrap(), data.as_bytes());
+        // Without the block, the tiling block still goes last.
+        let on = String::from_utf8(edit_bindings(CONFIG, true, launcher()).unwrap()).unwrap();
+        assert!(on.contains("<!-- Tessel Tiling mouse end --></mouse>"), "{on}");
     }
 
     #[test]

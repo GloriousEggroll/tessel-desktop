@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "บีบสี่นิ้ว",
   "Pinch in or out with four fingers to run an action.": "บีบเข้าหรือกางออกด้วยสี่นิ้วเพื่อเรียกใช้การทำงาน",
   "Touchpad defaults": "ค่าเริ่มต้นของทัชแพด",
-  "Multi-finger drag": "ลากด้วยหลายนิ้ว"
+  "Multi-finger drag": "ลากด้วยหลายนิ้ว",
+  "Window dragging": "การลากหน้าต่าง",
+  "Hold this key and drag to move a window": "กดปุ่มนี้ค้างไว้แล้วลากเพื่อย้ายหน้าต่าง",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "ลากด้วยปุ่มขวาเพื่อปรับขนาด เลือก Super หากการลากด้วย Alt รบกวนการเล่นเกม การตั้งค่านี้ใช้กับเมาส์และทัชแพดทุกตัว",
+  "Super or Alt": "Super หรือ Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "เลือกว่าจะให้ Super, Alt หรือปุ่มใดก็ได้ย้ายและปรับขนาดหน้าต่างเมื่อคุณลาก"
 }

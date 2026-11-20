@@ -2254,5 +2254,10 @@
   "Four-finger pinch": "4本指ピンチ",
   "Pinch in or out with four fingers to run an action.": "4本指でピンチインまたはピンチアウトして操作を実行します。",
   "Touchpad defaults": "タッチパッドの既定値",
-  "Multi-finger drag": "複数本指ドラッグ"
+  "Multi-finger drag": "複数本指ドラッグ",
+  "Window dragging": "ウィンドウのドラッグ",
+  "Hold this key and drag to move a window": "このキーを押しながらドラッグしてウィンドウを移動",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "右ボタンでドラッグするとサイズを変更します。ゲームで Alt キーでのドラッグが邪魔になる場合は Super を選択してください。すべてのマウスとタッチパッドに適用されます。",
+  "Super or Alt": "Super または Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "ドラッグでウィンドウを移動・サイズ変更するキーを Super、Alt、またはどちらでもよいかから選択します。"
 }

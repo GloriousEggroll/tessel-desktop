@@ -1,7 +1,8 @@
 //! Global Settings system pages (Python: input_page, keyboard_page,
 //! shortcuts_page, accessibility_page, default_apps_page, night_light_page,
 //! users_page, about_page) and the shared labwc configuration editors
-//! (labwc_settings, workspace_config, input_config, gesture_config, keyboard_config).
+//! (labwc_settings, workspace_config, input_config, gesture_config, window_drag_config,
+//! keyboard_config).
 use gs_base::{Host, SettingsPage};
 
 pub mod compat;
@@ -10,6 +11,7 @@ pub mod workspace_config;
 pub mod workspace_settings;
 pub mod input_config;
 pub mod gesture_config;
+pub mod window_drag_config;
 pub mod input_devices;
 pub mod mouse_polling;
 pub mod keyboard_config;

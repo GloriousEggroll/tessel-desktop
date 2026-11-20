@@ -1,6 +1,7 @@
 //! The keybindings `tessel-configure-session` ships in rc.xml, as data, so the
 //! session generator and Settings (reset to default) share one table. The
-//! touchpad gestures it ships, and the gesture actions Settings offers, too.
+//! touchpad gestures it ships, and the gesture actions Settings offers, too,
+//! and the window drag block Settings and tiling both keep last in `<mouse>`.
 
 use crate::paths::PACKAGED;
 
@@ -109,6 +110,105 @@ pub fn gesture_xml(kind: &str, fingers: u32, direction: &str, id: &str) -> Optio
     let (name, attributes) = gesture_action(id)?;
     let attributes: String = attributes.iter().map(|(key, value)| format!(" {key}=\"{}\"", escape_attribute(value))).collect();
     Some(format!("<gesture type=\"{kind}\" fingers=\"{fingers}\" direction=\"{direction}\"><action name=\"{name}\"{attributes}/></gesture>"))
+}
+
+/// Which modifier moves (left drag) and resizes (right drag) windows, as Global
+/// Settings offers it: "both" is labwc's Super plus the rc.xml template's Alt.
+pub const WINDOW_DRAG_MODES: [&str; 3] = ["both", "super", "alt"];
+/// The managed block's markers in rc.xml's `<mouse>`; the begin marker carries
+/// the mode: `<!-- Tessel window drag begin: super -->`.
+pub const WINDOW_DRAG_BEGIN: &str = "<!-- Tessel window drag begin";
+pub const WINDOW_DRAG_END: &str = "<!-- Tessel window drag end -->";
+const WINDOW_DRAG_BROKEN: &str = "The window drag block in rc.xml was edited; repair its markers first.";
+
+/// The managed block for `mode` (None for "both", which has no block, and for
+/// an unknown mode). labwc lets a later mousebind with the same context, button
+/// and event replace an earlier one, and one without actions remove it, so the
+/// block clears the other modifier and binds the chosen one; it must stay the
+/// last thing in `<mouse>`. Rows are indented for a `<mouse>` at two spaces.
+pub fn window_drag_xml(mode: &str) -> Option<String> {
+    let (keep, clear) = match mode {
+        "super" => ("W", "A"),
+        "alt" => ("A", "W"),
+        _ => return None,
+    };
+    let mut rows = vec![format!("{WINDOW_DRAG_BEGIN}: {mode} -->"), "    <context name=\"Frame\">".to_owned()];
+    for button in ["Left", "Right"] {
+        for event in ["Press", "Drag"] {
+            rows.push(format!("      <mousebind button=\"{clear}-{button}\" action=\"{event}\"/>"));
+        }
+    }
+    for (button, drag) in [("Left", "Move"), ("Right", "Resize")] {
+        rows.push(format!("      <mousebind button=\"{keep}-{button}\" action=\"Press\"><action name=\"Focus\"/><action name=\"Raise\"/></mousebind>"));
+        rows.push(format!("      <mousebind button=\"{keep}-{button}\" action=\"Drag\"><action name=\"{drag}\"/></mousebind>"));
+    }
+    rows.push("    </context>".to_owned());
+    rows.push(format!("    {WINDOW_DRAG_END}"));
+    Some(rows.join("\n"))
+}
+
+/// The window drag block in `text` (rc.xml's `<mouse>` section, or the whole
+/// file): `(start, end, mode)` with `end` just past the end marker, or None when
+/// there is none (mode "both"). Unpaired, repeated or unknown markers are an error.
+pub fn window_drag_block(text: &str) -> Result<Option<(usize, usize, &'static str)>, &'static str> {
+    let begins: Vec<usize> = text.match_indices(WINDOW_DRAG_BEGIN).map(|(at, _)| at).collect();
+    let ends: Vec<usize> = text.match_indices(WINDOW_DRAG_END).map(|(at, _)| at).collect();
+    match (begins.as_slice(), ends.as_slice()) {
+        ([], []) => Ok(None),
+        ([begin], [end]) if begin < end => {
+            let rest = &text[begin + WINDOW_DRAG_BEGIN.len()..];
+            let mode = rest.strip_prefix(':').and_then(|r| r.split_once("-->")).map(|(m, _)| m.trim()).unwrap_or_default();
+            let mode = WINDOW_DRAG_MODES.iter().copied().find(|m| *m == mode).ok_or(WINDOW_DRAG_BROKEN)?;
+            Ok(Some((*begin, end + WINDOW_DRAG_END.len(), mode)))
+        }
+        _ => Err(WINDOW_DRAG_BROKEN),
+    }
+}
+
+#[cfg(test)]
+mod window_drag_tests {
+    use super::*;
+
+    #[test]
+    fn blocks_clear_the_other_modifier_then_bind_the_chosen_one() {
+        assert!(window_drag_xml("both").is_none() && window_drag_xml("ctrl").is_none());
+        let block = window_drag_xml("super").unwrap();
+        assert_eq!(block, r#"<!-- Tessel window drag begin: super -->
+    <context name="Frame">
+      <mousebind button="A-Left" action="Press"/>
+      <mousebind button="A-Left" action="Drag"/>
+      <mousebind button="A-Right" action="Press"/>
+      <mousebind button="A-Right" action="Drag"/>
+      <mousebind button="W-Left" action="Press"><action name="Focus"/><action name="Raise"/></mousebind>
+      <mousebind button="W-Left" action="Drag"><action name="Move"/></mousebind>
+      <mousebind button="W-Right" action="Press"><action name="Focus"/><action name="Raise"/></mousebind>
+      <mousebind button="W-Right" action="Drag"><action name="Resize"/></mousebind>
+    </context>
+    <!-- Tessel window drag end -->"#);
+        let alt = window_drag_xml("alt").unwrap();
+        assert!(alt.contains(r#"<mousebind button="W-Right" action="Drag"/>"#));
+        assert!(alt.contains(r#"<mousebind button="A-Left" action="Drag"><action name="Move"/></mousebind>"#));
+        assert!(alt.find(r#"button="W-Left" action="Press"/>"#).unwrap() < alt.find(r#"button="A-Left" action="Press">"#).unwrap());
+    }
+
+    #[test]
+    fn blocks_are_found_with_their_mode() {
+        for mode in ["super", "alt"] {
+            let block = window_drag_xml(mode).unwrap();
+            let text = format!("<mouse><default/>\n    {block}\n  </mouse>");
+            let (start, end, found) = window_drag_block(&text).unwrap().unwrap();
+            assert_eq!((&text[start..end], found), (block.as_str(), mode));
+        }
+        assert_eq!(window_drag_block("<mouse><default/></mouse>").unwrap(), None);
+        assert_eq!(window_drag_block("<!-- Tessel window drag begin: both --><!-- Tessel window drag end -->").unwrap().unwrap().2, "both");
+        assert_eq!(window_drag_block("<!-- Tessel window drag begin:alt--><!-- Tessel window drag end -->").unwrap().unwrap().2, "alt");
+        let block = window_drag_xml("super").unwrap();
+        for broken in [block.replace(WINDOW_DRAG_END, ""), block.replace("begin: super", "begin: ctrl"),
+                       format!("{block}{block}"), format!("{WINDOW_DRAG_END}{WINDOW_DRAG_BEGIN}: super -->"),
+                       block.replace("begin: super -->", "begin -->")] {
+            assert!(window_drag_block(&broken).is_err(), "{broken}");
+        }
+    }
 }
 
 #[cfg(test)]

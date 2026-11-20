@@ -17,6 +17,7 @@ use crate::input_config::{keys, InputConfig, InputState, Updates};
 use crate::input_devices::{discover, InputDevice};
 use crate::mouse_polling::Polling;
 use crate::mouse_polling_ui::PollingCard;
+use crate::window_drag_config;
 
 pub const SWITCHES: &[&str] = &["naturalScroll", "middleEmulation", "tap", "tapAndDrag", "disableWhileTyping"];
 const BOOL: &[(Option<&str>, &str)] = &[(None, "Default"), (Some("yes"), "On"), (Some("no"), "Off")];
@@ -129,6 +130,14 @@ pub struct InputControls {
     pub gesture_error: RefCell<String>,
     /// `(slot key, choice id)` edits not applied yet.
     pub gesture_pending: RefCell<GestureUpdates>,
+    /// The stable window dragging card (search target `windowDrag`).
+    pub window_drag_root: gtk::Box,
+    /// rc.xml's window drag mode; global, shown with Mouse defaults.
+    pub window_drag: RefCell<Option<String>>,
+    /// Why the window drag mode could not be read.
+    pub window_drag_error: RefCell<String>,
+    /// The mode chosen and not applied yet.
+    pub window_drag_pending: RefCell<Option<String>>,
     pub devices: RefCell<Vec<InputDevice>>,
     /// `(name, kind, label)`.
     pub profiles: RefCell<Vec<(String, String, String)>>,
@@ -210,6 +219,8 @@ impl InputControls {
         polling_root.add_css_class("gs-card");
         let gesture_root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         gesture_root.add_css_class("gs-card");
+        let window_drag_root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        window_drag_root.add_css_class("gs-card");
         let rows = keys().into_iter().map(str::to_owned).chain(slot_keys()).map(|k| {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
             row.add_css_class("gs-row");
@@ -218,7 +229,8 @@ impl InputControls {
         let this = Rc::new(InputControls {
             widget, backend: RefCell::new(backend), device_loader: device_loader.unwrap_or_else(|| Arc::new(discover)), polling_backend,
             polling_card: RefCell::new(None), polling_root, gesture_root, state: RefCell::new(None), gestures: RefCell::new(None),
-            gesture_error: Default::default(), gesture_pending: Default::default(), devices: Default::default(), profiles: Default::default(),
+            gesture_error: Default::default(), gesture_pending: Default::default(), window_drag_root, window_drag: RefCell::new(None),
+            window_drag_error: Default::default(), window_drag_pending: RefCell::new(None), devices: Default::default(), profiles: Default::default(),
             pending: Default::default(), selected: RefCell::new(("non-touch".into(), "non-touch".into())), controls: Default::default(), rows,
             closed: Rc::new(Cell::new(false)), busy: Cell::new(false), discovering: Cell::new(false), rendering: Cell::new(false), provider,
             selector, refresh_button, device_detail, body, scroll, status, shared_button, reset_button, discard_button, apply_button,
@@ -254,7 +266,9 @@ impl InputControls {
         self.pending.borrow().iter().find(|(p, _)| p == profile).map(|(_, c)| c.clone())
     }
 
-    pub fn has_pending(&self) -> bool { !self.pending.borrow().is_empty() || !self.gesture_pending.borrow().is_empty() }
+    pub fn has_pending(&self) -> bool {
+        !self.pending.borrow().is_empty() || !self.gesture_pending.borrow().is_empty() || self.window_drag_pending.borrow().is_some()
+    }
 
     pub fn reload(self: &Rc<Self>) {
         if self.busy.get() || self.polling_busy() {
@@ -279,7 +293,82 @@ impl InputControls {
             }
         }
         self.load_gestures();
+        self.load_window_drag();
         self.profiles_changed();
+    }
+
+    /// Read the window drag mode again, dropping its unapplied edit.
+    fn load_window_drag(&self) {
+        self.window_drag_pending.borrow_mut().take();
+        let result = self.backend.borrow().as_ref().map(|b| b.load_window_drag());
+        match result {
+            Some(Ok(mode)) => {
+                *self.window_drag.borrow_mut() = Some(mode);
+                self.window_drag_error.borrow_mut().clear();
+            }
+            Some(Err(error)) => {
+                *self.window_drag.borrow_mut() = None;
+                *self.window_drag_error.borrow_mut() = error.message().to_owned();
+            }
+            None => *self.window_drag.borrow_mut() = None,
+        }
+    }
+
+    /// The window drag mode with its unapplied edit.
+    pub fn window_drag_mode(&self) -> Option<String> {
+        self.window_drag_pending.borrow().clone().or_else(|| self.window_drag.borrow().clone())
+    }
+
+    pub fn window_drag_changed(&self, mode: &str) {
+        if self.rendering.get() {
+            return;
+        }
+        let Some(original) = self.window_drag.borrow().clone() else { return };
+        *self.window_drag_pending.borrow_mut() = (mode != original).then(|| mode.to_owned());
+        self.buttons();
+        self.status.set_text(&if self.has_pending() { tr!("Changes are not saved. Press Apply to use them.") } else { String::new() });
+    }
+
+    fn window_drag_card(self: &Rc<Self>) {
+        remove_children(&self.window_drag_root);
+        let label = gtk::Label::builder().label(tr!("Window dragging")).xalign(0.0).build();
+        label.add_css_class("gs-section-title");
+        self.window_drag_root.append(&label);
+        match self.window_drag_mode() {
+            None => {
+                let error = detail_label("");
+                error.set_text(&self.window_drag_error.borrow());
+                error.set_selectable(true);
+                self.window_drag_root.append(&error);
+            }
+            Some(mode) => {
+                let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
+                row.add_css_class("gs-row");
+                let title = "Hold this key and drag to move a window";
+                let text = gtk::Box::builder().orientation(gtk::Orientation::Vertical).spacing(2).hexpand(true).valign(gtk::Align::Center).build();
+                let label = gtk::Label::builder().label(tr!(title)).xalign(0.0).wrap(true).max_width_chars(28).build();
+                label.add_css_class("gs-row-title");
+                text.append(&label);
+                text.append(&detail_label("Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad."));
+                row.append(&text);
+                let names: Vec<String> = window_drag_config::CHOICES.iter().map(|(_, l)| tr!(*l)).collect();
+                let names: Vec<&str> = names.iter().map(String::as_str).collect();
+                let control = gtk::DropDown::from_strings(&names);
+                control.set_selected(window_drag_config::CHOICES.iter().position(|(id, _)| *id == mode).unwrap_or(0) as u32);
+                control.set_valign(gtk::Align::Center);
+                accessible(&control, &tr!(title));
+                let weak = Rc::downgrade(self);
+                control.connect_selected_notify(move |w| if let Some(t) = weak.upgrade() {
+                    if let Some((id, _)) = window_drag_config::CHOICES.get(w.selected() as usize) {
+                        t.window_drag_changed(id);
+                    }
+                });
+                row.append(&control);
+                self.window_drag_root.append(&row);
+                self.controls.borrow_mut().insert("windowDrag".to_owned(), Control::Choice(control));
+            }
+        }
+        self.body.append(&self.window_drag_root);
     }
 
     /// Read the gestures again, dropping their unapplied edits.
@@ -715,6 +804,9 @@ impl InputControls {
         let buttons = self.card("Buttons", "");
         self.choice(&buttons, "leftHanded", "Primary button", "Swap the primary and secondary buttons for left-handed use.");
         self.choice(&buttons, "middleEmulation", "Emulate middle click", "Press the left and right buttons together to middle-click.");
+        if name == "non-touch" {
+            self.window_drag_card();
+        }
         let scroll = self.card("Scrolling", "");
         self.choice(&scroll, "naturalScroll", "Natural scrolling", "Move content in the same direction as your fingers.");
         self.number(&scroll, "scrollFactor", "Scroll speed", "Multiplier for wheel and touchpad scrolling; 1 is normal.", 0.1, 5.0, 0.1, 1.0, 1);
@@ -884,12 +976,15 @@ impl InputControls {
         let expected = self.state.borrow().clone().unwrap();
         let gestures: GestureUpdates = self.gesture_pending.borrow().clone();
         let gestures_expected = self.gestures.borrow().clone().unwrap_or_default();
+        let window_drag = self.window_drag_pending.borrow().clone();
+        let window_drag_expected = self.window_drag.borrow().clone().unwrap_or_else(|| "both".into());
         self.status.set_text(&tr!("Applying input settings…"));
         let backend = self.backend.borrow().clone();
         let weak = Rc::downgrade(self);
         run_in_thread(self.closed.clone(), move || {
             let backend = backend.ok_or_else(|| "Input settings require a running labwc session.".to_string())?;
-            backend.save_all(&updates, &expected, &gestures, &gestures_expected).map_err(|e| e.to_string())
+            backend.save_all(&updates, &expected, &gestures, &gestures_expected, window_drag.as_deref(), &window_drag_expected)
+                .map_err(|e| e.to_string())
         }, move |result| if let Some(t) = weak.upgrade() { t.applied(result) });
     }
 
@@ -909,6 +1004,7 @@ impl InputControls {
                 *self.state.borrow_mut() = Some(state);
                 self.pending.borrow_mut().clear();
                 self.load_gestures();
+                self.load_window_drag();
                 self.render();
                 self.status.set_text(&tr!("Input settings applied and saved."));
             }
@@ -948,6 +1044,11 @@ impl InputControls {
                 self.selector.set_selected(index as u32);
             }
         }
+        if setting.target == "windowDrag" && selected.0 != "non-touch" {
+            if let Some(index) = self.profiles.borrow().iter().position(|(n, _, _)| n == "non-touch") {
+                self.selector.set_selected(index as u32);
+            }
+        }
         let selected = self.selected();
         if ["tap", "tapButtonMap", "clickMethod", "tapAndDrag", "dragLock", "threeFingerDrag", "disableWhileTyping"].contains(&setting.target)
             && selected.1 != "touchpad" {
@@ -984,6 +1085,7 @@ pub fn build_page_with(host: &Host, backend: Option<InputConfig>, loader: Option
     }
     page.add_target("pollingRate", &controller.polling_root);
     page.add_target("touchpadGestures", &controller.gesture_root);
+    page.add_target("windowDrag", &controller.window_drag_root);
     page.set_controller(controller);
     page
 }

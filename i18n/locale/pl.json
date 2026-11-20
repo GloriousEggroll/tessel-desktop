@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Szczypnięcie czterema palcami",
   "Pinch in or out with four fingers to run an action.": "Zsuń lub rozsuń cztery palce, aby wykonać akcję.",
   "Touchpad defaults": "Domyślne ustawienia panelu dotykowego",
-  "Multi-finger drag": "Przeciąganie wieloma palcami"
+  "Multi-finger drag": "Przeciąganie wieloma palcami",
+  "Window dragging": "Przeciąganie okien",
+  "Hold this key and drag to move a window": "Przytrzymaj ten klawisz i przeciągnij, aby przenieść okno",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Przeciągnij prawym przyciskiem, aby zmienić rozmiar. Wybierz Super, jeśli przeciąganie z Alt przeszkadza w grach. Dotyczy to wszystkich myszy i paneli dotykowych.",
+  "Super or Alt": "Super lub Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Wybierz, czy podczas przeciągania okna przenosi i zmienia ich rozmiar klawisz Super, Alt czy dowolny z nich."
 }

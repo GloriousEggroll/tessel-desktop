@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "צביטה בארבע אצבעות",
   "Pinch in or out with four fingers to run an action.": "צבטו פנימה או החוצה בארבע אצבעות כדי להפעיל פעולה.",
   "Touchpad defaults": "ברירות מחדל של משטח המגע",
-  "Multi-finger drag": "גרירה במספר אצבעות"
+  "Multi-finger drag": "גרירה במספר אצבעות",
+  "Window dragging": "גרירת חלונות",
+  "Hold this key and drag to move a window": "החזיקו מקש זה וגררו כדי להזיז חלון",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "גרירה בלחצן הימני משנה את הגודל. בחרו ב־Super אם גרירה עם Alt מפריעה במשחקים. ההגדרה חלה על כל העכברים ומשטחי המגע.",
+  "Super or Alt": "Super או Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "בחרו אם Super,‏ Alt או כל אחד מהם מזיז חלונות ומשנה את גודלם בזמן גרירה."
 }

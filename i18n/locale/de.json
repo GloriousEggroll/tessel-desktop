@@ -2407,5 +2407,10 @@
   "Four-finger pinch": "Pinch mit vier Fingern",
   "Pinch in or out with four fingers to run an action.": "Ziehen Sie vier Finger zusammen oder spreizen Sie sie, um eine Aktion auszuführen.",
   "Touchpad defaults": "Touchpad-Standardwerte",
-  "Multi-finger drag": "Ziehen mit mehreren Fingern"
+  "Multi-finger drag": "Ziehen mit mehreren Fingern",
+  "Window dragging": "Fenster ziehen",
+  "Hold this key and drag to move a window": "Diese Taste gedrückt halten und ziehen, um ein Fenster zu verschieben",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Ziehen mit der rechten Taste ändert die Größe. Wählen Sie Super, wenn Ziehen mit Alt in Spielen stört. Dies gilt für alle Mäuse und Touchpads.",
+  "Super or Alt": "Super oder Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Legen Sie fest, ob Super, Alt oder beide Tasten Fenster beim Ziehen verschieben und ihre Größe ändern."
 }

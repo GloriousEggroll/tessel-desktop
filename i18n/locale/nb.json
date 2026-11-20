@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Kniping med fire fingre",
   "Pinch in or out with four fingers to run an action.": "Knip inn eller ut med fire fingre for å kjøre en handling.",
   "Touchpad defaults": "Standarder for styreplate",
-  "Multi-finger drag": "Dra med flere fingre"
+  "Multi-finger drag": "Dra med flere fingre",
+  "Window dragging": "Dra vinduer",
+  "Hold this key and drag to move a window": "Hold inne denne tasten og dra for å flytte et vindu",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Dra med høyre knapp for å endre størrelse. Velg Super hvis draing med Alt er i veien i spill. Dette gjelder alle mus og styreplater.",
+  "Super or Alt": "Super eller Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Velg om Super, Alt eller begge tastene flytter og endrer størrelse på vinduer når du drar."
 }

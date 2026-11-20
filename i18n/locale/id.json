@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Cubit empat jari",
   "Pinch in or out with four fingers to run an action.": "Cubit ke dalam atau ke luar dengan empat jari untuk menjalankan aksi.",
   "Touchpad defaults": "Bawaan panel sentuh",
-  "Multi-finger drag": "Seret multi-jari"
+  "Multi-finger drag": "Seret multi-jari",
+  "Window dragging": "Menyeret jendela",
+  "Hold this key and drag to move a window": "Tahan tombol ini dan seret untuk memindahkan jendela",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Seret dengan tombol kanan untuk mengubah ukuran. Pilih Super jika menyeret dengan Alt mengganggu saat bermain game. Ini berlaku untuk semua mouse dan panel sentuh.",
+  "Super or Alt": "Super atau Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Pilih apakah Super, Alt, atau salah satunya memindahkan dan mengubah ukuran jendela saat Anda menyeret."
 }

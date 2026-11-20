@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Nyp med fyra fingrar",
   "Pinch in or out with four fingers to run an action.": "Nyp ihop eller isär med fyra fingrar för att utföra en åtgärd.",
   "Touchpad defaults": "Standard för pekplattor",
-  "Multi-finger drag": "Dra med flera fingrar"
+  "Multi-finger drag": "Dra med flera fingrar",
+  "Window dragging": "Dra fönster",
+  "Hold this key and drag to move a window": "Håll ned den här tangenten och dra för att flytta ett fönster",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Dra med höger knapp för att ändra storlek. Välj Super om dragning med Alt är i vägen i spel. Detta gäller alla möss och pekplattor.",
+  "Super or Alt": "Super eller Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Välj om Super, Alt eller valfri av dem flyttar och ändrar storlek på fönster när du drar."
 }

@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "चार उंगलियों से पिंच",
   "Pinch in or out with four fingers to run an action.": "कोई क्रिया चलाने के लिए चार उंगलियों से अंदर या बाहर की ओर पिंच करें।",
   "Touchpad defaults": "टचपैड डिफ़ॉल्ट",
-  "Multi-finger drag": "कई उंगलियों से खींचना"
+  "Multi-finger drag": "कई उंगलियों से खींचना",
+  "Window dragging": "विंडो खींचना",
+  "Hold this key and drag to move a window": "विंडो को हिलाने के लिए यह कुंजी दबाए रखें और खींचें",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "आकार बदलने के लिए दाएँ बटन से खींचें। अगर Alt के साथ खींचना गेम में बाधा डालता है, तो Super चुनें। यह हर माउस और टचपैड पर लागू होता है।",
+  "Super or Alt": "Super या Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "चुनें कि खींचते समय Super, Alt या दोनों में से कोई भी कुंजी विंडो को हिलाए और उनका आकार बदले।"
 }

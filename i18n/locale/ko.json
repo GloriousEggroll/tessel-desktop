@@ -2254,5 +2254,10 @@
   "Four-finger pinch": "네 손가락 핀치",
   "Pinch in or out with four fingers to run an action.": "네 손가락을 오므리거나 벌려 동작을 실행합니다.",
   "Touchpad defaults": "터치패드 기본값",
-  "Multi-finger drag": "다중 손가락 끌기"
+  "Multi-finger drag": "다중 손가락 끌기",
+  "Window dragging": "창 끌기",
+  "Hold this key and drag to move a window": "이 키를 누른 채 끌어서 창 이동",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "오른쪽 버튼으로 끌면 크기가 조절됩니다. 게임에서 Alt 키로 끌기가 방해가 되면 Super를 선택하세요. 모든 마우스와 터치패드에 적용됩니다.",
+  "Super or Alt": "Super 또는 Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "끌어서 창을 이동하고 크기를 조절할 때 Super, Alt 또는 둘 중 아무 키나 사용할지 선택합니다."
 }

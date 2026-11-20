@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Knib med fire fingre",
   "Pinch in or out with four fingers to run an action.": "Knib fire fingre sammen eller spred dem for at udføre en handling.",
   "Touchpad defaults": "Standarder for touchpad",
-  "Multi-finger drag": "Træk med flere fingre"
+  "Multi-finger drag": "Træk med flere fingre",
+  "Window dragging": "Trækning af vinduer",
+  "Hold this key and drag to move a window": "Hold denne tast nede, og træk for at flytte et vindue",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Træk med højre knap for at ændre størrelsen. Vælg Super, hvis træk med Alt er i vejen i spil. Det gælder for alle mus og touchpads.",
+  "Super or Alt": "Super eller Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Vælg, om Super, Alt eller begge taster flytter og ændrer størrelse på vinduer, når du trækker."
 }

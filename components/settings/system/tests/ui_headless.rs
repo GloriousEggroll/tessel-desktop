@@ -1358,6 +1358,67 @@ fn input_gestures_without_a_section_and_search(app: &gtk::Application) -> Result
     Ok(())
 }
 
+fn input_window_drag_card_applies_with_the_page(app: &gtk::Application) -> Result<(), String> {
+    let f = InputFixture::new(app, "input-window-drag");
+    let drag = |c: &InputControls| c.control("windowDrag").and_then(|c| c.dropdown().cloned());
+    f.select("touchpad");
+    check!(drag(&f.controller).is_none(), "window dragging is shown with Mouse defaults");
+    f.controller.reveal_setting(&setting("windowDrag"));
+    settle(0.1);
+    check!(f.controller.selected.borrow().0 == "non-touch");
+    check!(f.controller.window_drag_root.is_mapped());
+    let shown = texts(&f.controller.window_drag_root);
+    check!(shown.iter().any(|t| t == "Window dragging") && shown.iter().any(|t| t == "Hold this key and drag to move a window"), "{shown:?}");
+    let control = drag(&f.controller).ok_or("no window drag control")?;
+    let model = control.model().unwrap();
+    let names: Vec<String> = (0..model.n_items()).map(|i| model.item(i).and_downcast::<gtk::StringObject>().unwrap().string().to_string()).collect();
+    check!(names == ["Super or Alt", "Super", "Alt"], "{names:?}");
+    check!(control.selected() == 0 && !f.controller.apply_button.is_sensitive());
+    // Edit, discard: nothing written.
+    control.set_selected(1);
+    check!(f.controller.has_pending() && f.controller.apply_button.is_sensitive());
+    control.set_selected(0);
+    check!(!f.controller.has_pending(), "picking the value it had is no edit");
+    control.set_selected(1);
+    f.controller.discard_button.emit_clicked();
+    settle(0.1);
+    check!(!f.controller.has_pending() && f.unchanged());
+    check!(drag(&f.controller).unwrap().selected() == 0);
+    // Alt only, together with a device edit: one write, one reload.
+    drag(&f.controller).unwrap().set_selected(2);
+    f.controller.control("pointerSpeed").unwrap().scale().unwrap().set_value(0.5);
+    f.select("touchpad");
+    f.select("non-touch");
+    check!(drag(&f.controller).unwrap().selected() == 2, "the edit survives switching profile");
+    f.controller.apply_button.emit_clicked();
+    check!(wait(|| !f.controller.busy.get(), 2.0));
+    settle(0.1);
+    let text = read(&f.path);
+    check!(f.reload_count() == 1 && !f.controller.has_pending());
+    let block = tessel_core::session_keys::window_drag_xml("alt").unwrap();
+    check!(text.contains(&format!("</context>\n    {block}</mouse>")), "{text}");
+    check!(f.backend.load_window_drag().unwrap() == "alt");
+    check!(f.backend.load().unwrap().match_profile("mouse", "non-touch").get("pointerSpeed") == Some("0.50"), "{text}");
+    check!(text[..text.find("<mouse>").unwrap()] == INPUT[..INPUT.find("<mouse>").unwrap()]);
+    check!(drag(&f.controller).unwrap().selected() == 2, "the page shows what was saved");
+    // Back to Super or Alt removes the block again.
+    drag(&f.controller).unwrap().set_selected(0);
+    f.controller.apply_button.emit_clicked();
+    check!(wait(|| !f.controller.busy.get(), 2.0));
+    settle(0.1);
+    let text = read(&f.path);
+    check!(!text.contains("window drag") && text.contains("<mouse><default/><context name=\"Root\"><mousebind button=\"Right\" action=\"Press\"/></context></mouse>"), "{text}");
+    check!(f.reload_count() == 2);
+    // A broken block is reported in the card; device settings still work.
+    std::fs::write(&f.path, INPUT.replace("</mouse>", "<!-- Tessel window drag begin: alt --></mouse>")).unwrap();
+    f.controller.reload();
+    settle(0.1);
+    check!(f.controller.window_drag.borrow().is_none() && drag(&f.controller).is_none());
+    check!(texts(&f.controller.window_drag_root).iter().any(|t| t.contains("repair its markers")));
+    check!(f.controller.state.borrow().is_some());
+    Ok(())
+}
+
 // ---- workspaces ------------------------------------------------------------
 
 fn workspace_controls_load_apply_and_report_errors(app: &gtk::Application) -> Result<(), String> {
@@ -1424,7 +1485,7 @@ fn every_section_builds_with_search_targets(app: &gtk::Application) -> Result<()
                                                         Some(FakePolling::new()));
     for key in ["pointerSpeed", "pollingRate", "accelProfile", "leftHanded", "middleEmulation", "naturalScroll", "scrollFactor",
                 "scrollMethod", "tap", "clickMethod", "tapAndDrag", "threeFingerDrag", "disableWhileTyping", "sendEventsMode",
-                "touchpadGestures", "gesture-swipe-3-left", "gesture-swipe-4-left", "gesture-pinch-4-in"] {
+                "touchpadGestures", "gesture-swipe-3-left", "gesture-swipe-4-left", "gesture-pinch-4-in", "windowDrag"] {
         check!(input.search_targets.borrow().contains_key(key), "input: missing {key}");
     }
     input.close();
@@ -1471,6 +1532,7 @@ fn main() {
         ("input_remove_override_and_search_targets", input_remove_override_and_search_targets),
         ("input_gesture_card_shows_rc_and_applies_with_the_page", input_gesture_card_shows_rc_and_applies_with_the_page),
         ("input_gestures_without_a_section_and_search", input_gestures_without_a_section_and_search),
+        ("input_window_drag_card_applies_with_the_page", input_window_drag_card_applies_with_the_page),
         ("workspace_controls_load_apply_and_report_errors", workspace_controls_load_apply_and_report_errors),
         ("every_section_builds_with_search_targets", every_section_builds_with_search_targets),
     ];

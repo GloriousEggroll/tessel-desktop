@@ -2075,5 +2075,10 @@
   "Four-finger pinch": "Ciupire cu patru degete",
   "Pinch in or out with four fingers to run an action.": "Apropie sau depărtează patru degete pentru a executa o acțiune.",
   "Touchpad defaults": "Setări implicite touchpad",
-  "Multi-finger drag": "Tragere cu mai multe degete"
+  "Multi-finger drag": "Tragere cu mai multe degete",
+  "Window dragging": "Tragerea ferestrelor",
+  "Hold this key and drag to move a window": "Ține apăsată această tastă și trage pentru a muta o fereastră",
+  "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Trage cu butonul drept pentru a redimensiona. Alege Super dacă tragerea cu Alt te încurcă în jocuri. Se aplică tuturor mouse-urilor și touchpadurilor.",
+  "Super or Alt": "Super sau Alt",
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Alege dacă Super, Alt sau oricare dintre ele mută și redimensionează ferestrele când tragi."
 }
