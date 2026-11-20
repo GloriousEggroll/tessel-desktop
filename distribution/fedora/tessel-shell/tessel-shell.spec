@@ -7,7 +7,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 1e5fec2ccba3a988dd8502b3e02d25efcf4ddcae}
+%{!?commit:%global commit 64b558ec2cea9de87539359abb346968f1bfade4}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-shell
@@ -92,6 +92,7 @@ chmod 644 %{buildroot}%{_userunitdir}/tessel-shell.service
 * Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-6
 - Desktop icons and Open File Manager use the XDG desktop folder and create it when missing
 - A click on a desktop icon no longer goes to another icon with a similar or identical name
+- Desktop icons: opening a program or AppImage runs it; executable scripts ask whether to run or open
 
 * Thu Nov 12 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-5
 - Open terminal accepts a chosen terminal with arguments and Flatpak terminals

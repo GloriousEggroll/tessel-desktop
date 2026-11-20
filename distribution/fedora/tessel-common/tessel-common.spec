@@ -5,7 +5,7 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit d432ab473a217819dbf36c33c51a02d17bd80452}
+%{!?commit:%global commit 64b558ec2cea9de87539359abb346968f1bfade4}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-common
@@ -65,6 +65,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 * Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-18
 - Translations for the touchpad gesture settings
 - Translations for the window dragging setting
+- Translations for running programs from Files and the desktop
 
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-17
 - Translations for the remote control settings

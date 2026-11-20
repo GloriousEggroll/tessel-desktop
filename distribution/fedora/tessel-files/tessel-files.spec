@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 50c5cb449e68572c65d21b53ca8f5cbb766174f4}
+%{!?commit:%global commit 64b558ec2cea9de87539359abb346968f1bfade4}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-files
 Version:        0.1.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Tessel file manager
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -86,6 +86,9 @@ chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Files.desktop
 %{_datadir}/applications/org.tessel.Files.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-8
+- Opening a program or AppImage runs it; an AppImage that may not run yet asks first, and an executable script asks whether to run or open it
+
 * Fri Nov 13 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-7
 - Previewing a video no longer makes GTK copy each frame at full size; that copy crashed Files on NVIDIA (issue 17)
 
