@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "החזיקו מקש זה וגררו כדי להזיז חלון",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "גרירה בלחצן הימני משנה את הגודל. בחרו ב־Super אם גרירה עם Alt מפריעה במשחקים. ההגדרה חלה על כל העכברים ומשטחי המגע.",
   "Super or Alt": "Super או Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "בחרו אם Super,‏ Alt או כל אחד מהם מזיז חלונות ומשנה את גודלם בזמן גרירה."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "בחרו אם Super,‏ Alt או כל אחד מהם מזיז חלונות ומשנה את גודלם בזמן גרירה.",
+  "Allow Program to Run?": "לאפשר לתוכנה לפעול?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} היא תוכנה שעדיין אינה מורשית לפעול. לאפשר לה לפעול ולהפעיל אותה?",
+  "Allow and Run": "לאפשר ולהפעיל",
+  "Could not allow {name} to run: {error}": "לא ניתן היה לאפשר ל־{name} לפעול: {error}",
+  "Could not allow {name} to run": "לא ניתן היה לאפשר ל־{name} לפעול",
+  "Run or Open Script?": "להריץ או לפתוח את הסקריפט?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} הוא סקריפט בר־הרצה. להריץ אותו, או לפתוח אותו כדי לראות את תוכנו?",
+  "Run in Terminal": "הרצה במסוף",
+  "Run": "הרצה"
 }

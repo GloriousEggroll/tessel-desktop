@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Segure esta tecla e arraste para mover uma janela",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Arraste com o botão direito para redimensionar. Escolha Super se arrastar com Alt atrapalhar nos jogos. Isso vale para todos os mouses e touchpads.",
   "Super or Alt": "Super ou Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Escolha se Super, Alt ou qualquer uma das teclas move e redimensiona as janelas quando você arrasta."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Escolha se Super, Alt ou qualquer uma das teclas move e redimensiona as janelas quando você arrasta.",
+  "Allow Program to Run?": "Permitir a execução do programa?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} é um programa que ainda não tem permissão para ser executado. Permitir a execução e iniciá-lo?",
+  "Allow and Run": "Permitir e executar",
+  "Could not allow {name} to run: {error}": "Não foi possível permitir a execução de {name}: {error}",
+  "Could not allow {name} to run": "Não foi possível permitir a execução de {name}",
+  "Run or Open Script?": "Executar ou abrir o script?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} é um script executável. Você quer executá-lo ou abri-lo para ver o conteúdo?",
+  "Run in Terminal": "Executar no terminal",
+  "Run": "Executar"
 }

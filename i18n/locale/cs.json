@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Podržte tuto klávesu a tažením přesuňte okno",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Tažením pravým tlačítkem změníte velikost. Pokud vám tažení s Alt překáží ve hrách, zvolte Super. Platí pro všechny myši a touchpady.",
   "Super or Alt": "Super nebo Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Zvolte, zda okna při tažení přesouvá a mění jejich velikost klávesa Super, Alt nebo kterákoli z nich."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Zvolte, zda okna při tažení přesouvá a mění jejich velikost klávesa Super, Alt nebo kterákoli z nich.",
+  "Allow Program to Run?": "Povolit spuštění programu?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} je program, který zatím nemá povoleno se spustit. Povolit spuštění a spustit ho?",
+  "Allow and Run": "Povolit a spustit",
+  "Could not allow {name} to run: {error}": "Nelze povolit spuštění {name}: {error}",
+  "Could not allow {name} to run": "Nelze povolit spuštění {name}",
+  "Run or Open Script?": "Spustit, nebo otevřít skript?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} je spustitelný skript. Chcete ho spustit, nebo otevřít a zobrazit jeho obsah?",
+  "Run in Terminal": "Spustit v terminálu",
+  "Run": "Spustit"
 }

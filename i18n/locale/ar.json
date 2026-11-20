@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "اضغط مع الاستمرار على هذا المفتاح واسحب لنقل نافذة",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "اسحب بالزر الأيمن لتغيير الحجم. اختر Super إذا كان السحب مع Alt يعيقك في الألعاب. ينطبق هذا على كل فأرة ولوحة لمس.",
   "Super or Alt": "Super أو Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "اختر ما إذا كان Super أو Alt أو أيٌّ منهما ينقل النوافذ ويغيّر حجمها عند السحب."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "اختر ما إذا كان Super أو Alt أو أيٌّ منهما ينقل النوافذ ويغيّر حجمها عند السحب.",
+  "Allow Program to Run?": "السماح بتشغيل البرنامج؟",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} برنامج غير مسموح بتشغيله بعد. هل تريد السماح بتشغيله وبدئه؟",
+  "Allow and Run": "السماح والتشغيل",
+  "Could not allow {name} to run: {error}": "تعذّر السماح بتشغيل {name}: {error}",
+  "Could not allow {name} to run": "تعذّر السماح بتشغيل {name}",
+  "Run or Open Script?": "تشغيل البرنامج النصي أم فتحه؟",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} برنامج نصي قابل للتنفيذ. هل تريد تشغيله أم فتحه لعرض محتواه؟",
+  "Run in Terminal": "التشغيل في الطرفية",
+  "Run": "تشغيل"
 }

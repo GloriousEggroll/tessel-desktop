@@ -2259,5 +2259,14 @@
   "Hold this key and drag to move a window": "이 키를 누른 채 끌어서 창 이동",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "오른쪽 버튼으로 끌면 크기가 조절됩니다. 게임에서 Alt 키로 끌기가 방해가 되면 Super를 선택하세요. 모든 마우스와 터치패드에 적용됩니다.",
   "Super or Alt": "Super 또는 Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "끌어서 창을 이동하고 크기를 조절할 때 Super, Alt 또는 둘 중 아무 키나 사용할지 선택합니다."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "끌어서 창을 이동하고 크기를 조절할 때 Super, Alt 또는 둘 중 아무 키나 사용할지 선택합니다.",
+  "Allow Program to Run?": "프로그램 실행을 허용할까요?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name}은(는) 아직 실행이 허용되지 않은 프로그램입니다. 실행을 허용하고 시작할까요?",
+  "Allow and Run": "허용 후 실행",
+  "Could not allow {name} to run: {error}": "{name}의 실행을 허용할 수 없습니다: {error}",
+  "Could not allow {name} to run": "{name}의 실행을 허용할 수 없습니다",
+  "Run or Open Script?": "스크립트를 실행하거나 열까요?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name}은(는) 실행 가능한 스크립트입니다. 실행할까요, 아니면 열어서 내용을 볼까요?",
+  "Run in Terminal": "터미널에서 실행",
+  "Run": "실행"
 }

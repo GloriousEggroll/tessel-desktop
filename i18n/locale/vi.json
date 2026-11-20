@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Giữ phím này và kéo để di chuyển cửa sổ",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Kéo bằng nút phải để đổi kích thước. Chọn Super nếu việc kéo bằng Alt gây vướng khi chơi game. Cài đặt này áp dụng cho mọi chuột và bàn di chuột.",
   "Super or Alt": "Super hoặc Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Chọn Super, Alt hoặc phím nào cũng được để di chuyển và đổi kích thước cửa sổ khi bạn kéo."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Chọn Super, Alt hoặc phím nào cũng được để di chuyển và đổi kích thước cửa sổ khi bạn kéo.",
+  "Allow Program to Run?": "Cho phép chương trình chạy?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} là chương trình chưa được phép chạy. Cho phép chạy và khởi động nó?",
+  "Allow and Run": "Cho phép và chạy",
+  "Could not allow {name} to run: {error}": "Không thể cho phép {name} chạy: {error}",
+  "Could not allow {name} to run": "Không thể cho phép {name} chạy",
+  "Run or Open Script?": "Chạy hay mở tập lệnh?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} là tập lệnh thực thi được. Bạn muốn chạy nó hay mở để xem nội dung?",
+  "Run in Terminal": "Chạy trong Terminal",
+  "Run": "Chạy"
 }

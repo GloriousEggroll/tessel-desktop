@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Håll ned den här tangenten och dra för att flytta ett fönster",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Dra med höger knapp för att ändra storlek. Välj Super om dragning med Alt är i vägen i spel. Detta gäller alla möss och pekplattor.",
   "Super or Alt": "Super eller Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Välj om Super, Alt eller valfri av dem flyttar och ändrar storlek på fönster när du drar."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Välj om Super, Alt eller valfri av dem flyttar och ändrar storlek på fönster när du drar.",
+  "Allow Program to Run?": "Tillåt programmet att köras?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} är ett program som inte får köras ännu. Tillåta att det körs och starta det?",
+  "Allow and Run": "Tillåt och kör",
+  "Could not allow {name} to run: {error}": "Kunde inte tillåta att {name} körs: {error}",
+  "Could not allow {name} to run": "Kunde inte tillåta att {name} körs",
+  "Run or Open Script?": "Kör eller öppna skriptet?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} är ett körbart skript. Vill du köra det eller öppna det för att se innehållet?",
+  "Run in Terminal": "Kör i terminal",
+  "Run": "Kör"
 }

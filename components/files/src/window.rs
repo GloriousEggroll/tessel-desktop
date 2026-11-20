@@ -1325,28 +1325,108 @@ impl FilesWindow {
         }
     }
 
+    /// Open files with their default applications, except local programs
+    /// (issue #25): a native program or AppImage that may run is started, an
+    /// AppImage that may not offers to allow it, and an executable script asks
+    /// whether to run it (in a terminal) or open it. One question at a time.
     pub fn open_files(&self, files: Vec<gio::File>) {
-        let app = self.app();
+        use tessel_core::executable::Kind;
+        let mut questions = std::collections::VecDeque::new();
         for file in files {
-            if let Some(hook) = app.hooks.open_files.borrow().clone() {
-                hook(&file);
-                continue;
-            }
-            let weak = self.downgrade();
-            let context = WidgetExt::display(&self.window).app_launch_context();
-            let mut launcher = tessel_dock::core::app_catalog::Launcher::default();
-            launcher.helper = vec![crate::app::helper_program().to_string_lossy().into_owned(), "--launch-helper".into(), "--app-catalog".into()];
-            let context: Rc<dyn tessel_dock::core::app_catalog::LaunchContext> = Rc::new(context.upcast::<gio::AppLaunchContext>());
-            let result = launcher.launch_uri(file.uri().as_str(), Some(context),
-                Some(Box::new(move |error: Option<String>| {
-                    if let (Some(error), Some(window)) = (error, weak.upgrade()) {
-                        FilesWindow(window).message(&error);
-                    }
-                })));
-            if let Err(error) = result {
-                self.message(&error.to_string());
+            let local = if file.has_uri_scheme("file") { file.path() } else { None };
+            let kind = local.as_deref().map_or(Kind::Other, tessel_core::executable::classify);
+            match (kind, local) {
+                (Kind::Program, Some(path)) => self.run_local_program(&path, false),
+                (Kind::AppImageNotExecutable | Kind::Script, Some(path)) => questions.push_back((file, path, kind)),
+                _ => self.open_with_default(file),
             }
         }
+        self.ask_about_programs(questions);
+    }
+
+    fn open_with_default(&self, file: gio::File) {
+        let app = self.app();
+        if let Some(hook) = app.hooks.open_files.borrow().clone() {
+            hook(&file);
+            return;
+        }
+        let weak = self.downgrade();
+        let context = WidgetExt::display(&self.window).app_launch_context();
+        let mut launcher = tessel_dock::core::app_catalog::Launcher::default();
+        launcher.helper = vec![crate::app::helper_program().to_string_lossy().into_owned(), "--launch-helper".into(), "--app-catalog".into()];
+        let context: Rc<dyn tessel_dock::core::app_catalog::LaunchContext> = Rc::new(context.upcast::<gio::AppLaunchContext>());
+        let result = launcher.launch_uri(file.uri().as_str(), Some(context),
+            Some(Box::new(move |error: Option<String>| {
+                if let (Some(error), Some(window)) = (error, weak.upgrade()) {
+                    FilesWindow(window).message(&error);
+                }
+            })));
+        if let Err(error) = result {
+            self.message(&error.to_string());
+        }
+    }
+
+    /// Ask about the first program in `questions`, then about the rest in turn.
+    fn ask_about_programs(&self, mut questions: std::collections::VecDeque<(gio::File, PathBuf, tessel_core::executable::Kind)>) {
+        use tessel_core::executable::Kind;
+        let Some((file, path, kind)) = questions.pop_front() else { return };
+        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_string_lossy().into_owned());
+        let weak = self.downgrade();
+        if kind == Kind::AppImageNotExecutable {
+            let message = tr!("{name} is a program that is not allowed to run yet. Allow it to run and start it?", name = name.as_str());
+            self.choose(&tr!("Allow Program to Run?"), &message, &[tr!("Cancel"), tr!("Allow and Run")], Box::new(move |answer| {
+                let Some(window) = weak.upgrade().map(FilesWindow) else { return };
+                if answer == Some(1) {
+                    match tessel_core::executable::allow_execution(&path) {
+                        Ok(()) => window.run_local_program(&path, false),
+                        Err(error) => window.message(&tr!("Could not allow {name} to run: {error}", name = name.as_str(), error = error.as_str())),
+                    }
+                }
+                window.ask_about_programs(questions);
+            }));
+            return;
+        }
+        let message = tr!("{name} is an executable script. Do you want to run it, or open it to see its contents?", name = name.as_str());
+        let buttons = [tr!("Cancel"), tr!("Open"), tr!("Run in Terminal"), tr!("Run")];
+        self.choose(&tr!("Run or Open Script?"), &message, &buttons, Box::new(move |answer| {
+            let Some(window) = weak.upgrade().map(FilesWindow) else { return };
+            match answer {
+                Some(1) => window.open_with_default(file),
+                Some(2) => window.run_local_program(&path, true),
+                Some(3) => window.run_local_program(&path, false),
+                _ => {}
+            }
+            window.ask_about_programs(questions);
+        }));
+    }
+
+    /// Run a local program by its absolute path in its folder, as its own app
+    /// service; `terminal` runs it inside the default terminal instead.
+    fn run_local_program(&self, path: &Path, terminal: bool) {
+        let directory = path.parent().unwrap_or(Path::new("/"));
+        let argv = vec![path.to_string_lossy().into_owned()];
+        if !terminal {
+            return self.launch_program(directory, &argv);
+        }
+        let weak = self.downgrade();
+        let context = WidgetExt::display(&self.window).app_launch_context();
+        let result = self.file_launcher().launch_command_in_terminal(directory, &argv, Some(Rc::new(context.upcast::<gio::AppLaunchContext>()) as Rc<dyn tessel_dock::core::app_catalog::LaunchContext>), Some(Box::new(move |error: Option<String>| {
+            if let (Some(error), Some(window)) = (error, weak.upgrade()) {
+                FilesWindow(window).message(&error);
+            }
+        })));
+        if let Err(error) = result {
+            self.message(&error.to_string());
+        }
+    }
+
+    /// `dialogs::choose(...)` through the test hook when set.
+    pub fn choose(&self, title: &str, message: &str, buttons: &[String], callback: Box<dyn FnOnce(Option<usize>)>) {
+        if let Some(hook) = self.app().hooks.choose.borrow().clone() {
+            hook(title, message, buttons, callback);
+            return;
+        }
+        dialogs::choose(Some(self.window.upcast_ref()), title, message, buttons, callback);
     }
 
     fn open_with(&self) {
@@ -1742,10 +1822,7 @@ impl FilesWindow {
     /// `systemd-run --user` path as terminals); the folder monitor shows
     /// whatever it creates.
     fn launch_program(&self, directory: &Path, argv: &[String]) {
-        let mut launcher = tessel_files_model::launch::FileLauncher::default();
-        if let Some(spawner) = self.app().hooks.spawner.borrow().clone() {
-            launcher.spawner = spawner;
-        }
+        let launcher = self.file_launcher();
         let weak = self.downgrade();
         let context = WidgetExt::display(&self.window).app_launch_context();
         let result = launcher.launch_program(directory, argv, Some(Rc::new(context.upcast::<gio::AppLaunchContext>()) as Rc<dyn tessel_dock::core::app_catalog::LaunchContext>), Some(Box::new(move |error: Option<String>| {
@@ -1756,6 +1833,15 @@ impl FilesWindow {
         if let Err(error) = result {
             self.message(&error.to_string());
         }
+    }
+
+    /// The program launcher, with the test hook's spawner when set.
+    fn file_launcher(&self) -> tessel_files_model::launch::FileLauncher {
+        let mut launcher = tessel_files_model::launch::FileLauncher::default();
+        if let Some(spawner) = self.app().hooks.spawner.borrow().clone() {
+            launcher.spawner = spawner;
+        }
+        launcher
     }
 
     fn from_template(&self) {

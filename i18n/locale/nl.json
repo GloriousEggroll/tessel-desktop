@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Houd deze toets ingedrukt en sleep om een venster te verplaatsen",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Sleep met de rechterknop om het formaat te wijzigen. Kies Super als slepen met Alt in games in de weg zit. Dit geldt voor elke muis en touchpad.",
   "Super or Alt": "Super of Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Kies of Super, Alt of een van beide vensters verplaatst en van formaat verandert wanneer je sleept."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Kies of Super, Alt of een van beide vensters verplaatst en van formaat verandert wanneer je sleept.",
+  "Allow Program to Run?": "Programma laten uitvoeren?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} is een programma dat nog niet mag worden uitgevoerd. Uitvoeren toestaan en het starten?",
+  "Allow and Run": "Toestaan en uitvoeren",
+  "Could not allow {name} to run: {error}": "Kan {name} niet laten uitvoeren: {error}",
+  "Could not allow {name} to run": "Kan {name} niet laten uitvoeren",
+  "Run or Open Script?": "Script uitvoeren of openen?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} is een uitvoerbaar script. Wilt u het uitvoeren, of openen om de inhoud te bekijken?",
+  "Run in Terminal": "Uitvoeren in terminal",
+  "Run": "Uitvoeren"
 }

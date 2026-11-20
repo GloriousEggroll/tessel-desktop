@@ -867,6 +867,109 @@ fn similar_names(app: &gtk::Application) {
     inner.shutdown();
 }
 
+/// Issue #25: a program runs instead of opening in an archive manager, an
+/// AppImage that may not run yet asks first, and an executable script asks
+/// Run / Run in Terminal / Open. systemd-run and the terminal are logging fakes.
+fn programs(env: &Env, app: &gtk::Application) {
+    reset_desktop(&["notes.txt"]);
+    let make = |name: &str, content: &[u8], mode: u32| -> String {
+        let path = desktop().join(name);
+        std::fs::write(&path, content).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(mode)).unwrap();
+        path.to_string_lossy().into_owned()
+    };
+    let mode = |path: &str| std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
+    let mut elf = b"\x7fELF\x02\x01\x01\x00".to_vec();
+    elf.resize(256, 0);
+    let mut appimage = elf.clone();
+    appimage[8..11].copy_from_slice(b"AI\x02");
+    let tool = make("tool", &elf, 0o755);
+    let game = make("Game.AppImage", &appimage, 0o644);
+    let script = make("run me.sh", b"#!/bin/sh\nexit 0\n", 0o755);
+    let plain = make("plain.sh", b"#!/bin/sh\nexit 0\n", 0o644);
+    let entry = make("app.desktop", b"#!/usr/bin/env xdg-open\n[Desktop Entry]\nType=Application\nName=App\nExec=true\n", 0o755);
+    let notes = desktop().join("notes.txt").to_string_lossy().into_owned();
+    let log = env.root.join("systemd-run.log");
+    let _ = std::fs::remove_file(&log);
+    fake(&env.bin, "systemd-run", &format!("printf '%s|' \"$@\" >> '{}'; echo >> '{}'", log.display(), log.display()));
+    fake(&env.bin, "foot", "exit 0");
+    std::env::set_var("TERMINAL", "foot");
+    let services = || -> Vec<Vec<String>> {
+        std::fs::read_to_string(&log).unwrap_or_default().lines().map(|l| l.trim_end_matches('|').split('|').map(str::to_owned).collect()).collect()
+    };
+    let wait_services = |count: usize| {
+        assert!(wait_until(|| services().len() >= count, 5.0), "{:?}", services());
+        settle(0.05);
+        assert_eq!(services().len(), count, "{:?}", services());
+        services().pop().unwrap()
+    };
+    let inner = DesktopsInner::new(app);
+    let monitor = monitors_sorted()[0].clone();
+    let g = geometry(&monitor);
+    let view = inner.make_view(&monitor, (g.0, g.1), false);
+    let opened: Rc<RefCell<Vec<String>>> = Rc::default();
+    let o = opened.clone();
+    view.launch_hook.replace(Some(Rc::new(move |p| o.borrow_mut().push(p.to_owned()))));
+    let asked: Rc<RefCell<Vec<ConfirmRequest>>> = Rc::default();
+    let a = asked.clone();
+    view.confirm_hook.replace(Some(Rc::new(move |r| a.borrow_mut().push(r))));
+    let next = || {
+        let mut list = asked.borrow_mut();
+        assert_eq!(list.len(), 1, "exactly one question");
+        list.remove(0)
+    };
+    let desktop_dir = desktop().to_string_lossy().into_owned();
+    let program_service = |argv: &[String], tail: &[String]| {
+        assert!(argv.iter().any(|a| a == "--user") && argv.iter().any(|a| a == "--service-type=exec"), "{argv:?}");
+        assert!(argv.contains(&format!("--working-directory={desktop_dir}")), "{argv:?}");
+        let start = argv.iter().position(|a| a == "--").unwrap() + 1;
+        assert_eq!(argv[start..], tail[..]);
+    };
+
+    // Programs run directly; other files, plain scripts and desktop entries open as before.
+    view.launch_path(&tool);
+    program_service(&wait_services(1), &[tool.clone()]);
+    for path in [&plain, &notes, &entry] {
+        view.launch_path(path);
+    }
+    assert_eq!(*opened.borrow(), [plain.clone(), notes.clone(), entry.clone()]);
+    assert!(asked.borrow().is_empty());
+
+    // AppImage without permission: Cancel keeps it, Allow and Run runs it.
+    view.launch_path(&game);
+    let request = next();
+    assert_eq!(request.body, "Game.AppImage is a program that is not allowed to run yet. Allow it to run and start it?");
+    assert_eq!(request.buttons, ["Cancel", "Allow and Run"]);
+    (request.callback)(Some(0), false);
+    assert_eq!(mode(&game), 0o644);
+    view.launch_path(&game);
+    (next().callback)(Some(1), false);
+    assert_eq!(mode(&game), 0o755);
+    program_service(&wait_services(2), &[game.clone()]);
+
+    // Executable script: Run, Run in Terminal, Open, Cancel.
+    view.launch_path(&script);
+    let request = next();
+    assert!(request.body.starts_with("run me.sh is an executable script."), "{}", request.body);
+    assert_eq!(request.buttons, ["Cancel", "Open", "Run in Terminal", "Run"]);
+    (request.callback)(Some(3), false);
+    program_service(&wait_services(3), &[script.clone()]);
+    view.launch_path(&script);
+    (next().callback)(Some(2), false);
+    program_service(&wait_services(4), &["foot".to_string(), script.clone()]);
+    view.launch_path(&script);
+    (next().callback)(Some(1), false);
+    assert_eq!(opened.borrow().last(), Some(&script));
+    view.launch_path(&script);
+    (next().callback)(Some(0), false);
+    settle(0.2);
+    assert_eq!(services().len(), 4);
+    assert_eq!(opened.borrow().len(), 4);
+    std::env::remove_var("TERMINAL");
+    fake(&env.bin, "systemd-run", "exit 0");
+    inner.shutdown();
+}
+
 #[test]
 fn desktop_headless() {
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_default();
@@ -899,6 +1002,7 @@ fn desktop_headless() {
     efficiency(&env, &app);
     interaction(&env, &app);
     similar_names(&app);
+    programs(&env, &app);
     println!("desktop_headless: all scenarios passed");
     let _ = std::fs::remove_dir_all(&root);
 }

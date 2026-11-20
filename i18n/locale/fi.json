@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Pidä tätä näppäintä painettuna ja vedä siirtääksesi ikkunaa",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Vetäminen oikealla painikkeella muuttaa kokoa. Valitse Super, jos Alt-vetäminen häiritsee peleissä. Asetus koskee kaikkia hiiriä ja kosketuslevyjä.",
   "Super or Alt": "Super tai Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Valitse, siirtääkö ja muuttaako ikkunoiden kokoa vedettäessä Super, Alt vai kumpi tahansa."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Valitse, siirtääkö ja muuttaako ikkunoiden kokoa vedettäessä Super, Alt vai kumpi tahansa.",
+  "Allow Program to Run?": "Sallitaanko ohjelman suoritus?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} on ohjelma, jonka suorittamista ei ole vielä sallittu. Sallitaanko suoritus ja käynnistetäänkö se?",
+  "Allow and Run": "Salli ja suorita",
+  "Could not allow {name} to run: {error}": "Kohteen {name} suorittamista ei voitu sallia: {error}",
+  "Could not allow {name} to run": "Kohteen {name} suorittamista ei voitu sallia",
+  "Run or Open Script?": "Suoritetaanko vai avataanko skripti?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} on suoritettava skripti. Haluatko suorittaa sen vai avata sen nähdäksesi sisällön?",
+  "Run in Terminal": "Suorita päätteessä",
+  "Run": "Suorita"
 }

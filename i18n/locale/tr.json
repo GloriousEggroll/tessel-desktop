@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Bir pencereyi taşımak için bu tuşu basılı tutup sürükleyin",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Yeniden boyutlandırmak için sağ düğmeyle sürükleyin. Alt ile sürükleme oyunlarda sorun çıkarıyorsa Super'i seçin. Bu ayar tüm fareler ve dokunmatik yüzeyler için geçerlidir.",
   "Super or Alt": "Super veya Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Sürüklerken pencereleri Super'in mi, Alt'ın mı yoksa ikisinden birinin mi taşıyıp yeniden boyutlandıracağını seçin."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Sürüklerken pencereleri Super'in mi, Alt'ın mı yoksa ikisinden birinin mi taşıyıp yeniden boyutlandıracağını seçin.",
+  "Allow Program to Run?": "Programın çalışmasına izin verilsin mi?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name}, henüz çalışmasına izin verilmeyen bir program. Çalışmasına izin verilip başlatılsın mı?",
+  "Allow and Run": "İzin ver ve çalıştır",
+  "Could not allow {name} to run: {error}": "{name} için çalıştırma izni verilemedi: {error}",
+  "Could not allow {name} to run": "{name} için çalıştırma izni verilemedi",
+  "Run or Open Script?": "Betik çalıştırılsın mı, açılsın mı?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} çalıştırılabilir bir betik. Çalıştırmak mı yoksa içeriğini görmek için açmak mı istiyorsunuz?",
+  "Run in Terminal": "Uçbirimde çalıştır",
+  "Run": "Çalıştır"
 }

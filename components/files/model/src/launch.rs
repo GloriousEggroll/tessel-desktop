@@ -175,6 +175,39 @@ impl FileLauncher {
         self.spawn_detached(helper, environment, context, token, on_done, "Could not open a terminal in this folder.")
     }
 
+    /// Open the default terminal in `directory` running `command` (no shell;
+    /// `command[0]` should be an absolute path), independently of Files like
+    /// [`Self::launch_terminal`]. The terminal closes when the command ends,
+    /// unless the terminal's own settings keep it open.
+    pub fn launch_command_in_terminal(
+        &self,
+        directory: &Path,
+        command: &[String],
+        context: Option<Rc<dyn LaunchContext>>,
+        on_done: Option<DoneFn>,
+    ) -> Result<(), LaunchError> {
+        if command.is_empty() {
+            return Err(LaunchError::Value("Nothing to launch.".into()));
+        }
+        let folder = gio::File::for_path(directory);
+        let path = directory.to_string_lossy().into_owned();
+        let (mut environment, token) = (self.environment)(context.as_deref(), None, std::slice::from_ref(&folder));
+        if let Some(terminal) = desktop_terminal(&environment) {
+            environment.insert("TERMINAL", terminal);
+        }
+        let terminal = self.terminal_command(&path, &environment).map_err(LaunchError::Value)?;
+        let resolved = std::fs::canonicalize(&terminal[0]).unwrap_or_else(|_| Path::new(&terminal[0]).to_path_buf());
+        let name = if Path::new(&terminal[0]).file_name().is_some_and(|n| n == "xdg-terminal-exec") {
+            "xdg-terminal-exec".to_owned()
+        } else {
+            resolved.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+        };
+        let mut helper = self.helper.clone();
+        helper.extend(["--terminal".to_owned(), path]);
+        helper.extend(tessel_core::executable::terminal_with_command(&name, &terminal, command));
+        self.spawn_detached(helper, environment, context, token, on_done, "Could not open a terminal in this folder.")
+    }
+
     /// Run `argv` (no shell; `argv[0]` should be an absolute path) in
     /// `directory`, in its own independent app service like a terminal.
     pub fn launch_program(

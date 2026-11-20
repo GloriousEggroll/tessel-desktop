@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Tartsa lenyomva ezt a billentyűt, és húzza az ablak áthelyezéséhez",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "A jobb gombbal húzva átméretezheti az ablakot. Válassza a Super lehetőséget, ha az Alt+húzás zavarja a játékokban. Ez minden egérre és érintőtáblára vonatkozik.",
   "Super or Alt": "Super vagy Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Válassza ki, hogy húzáskor a Super, az Alt vagy bármelyik billentyű mozgassa és méretezze át az ablakokat."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Válassza ki, hogy húzáskor a Super, az Alt vagy bármelyik billentyű mozgassa és méretezze át az ablakokat.",
+  "Allow Program to Run?": "Engedélyezi a program futtatását?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "A(z) {name} egy program, amelynek futtatása még nincs engedélyezve. Engedélyezi a futtatását és elindítja?",
+  "Allow and Run": "Engedélyezés és futtatás",
+  "Could not allow {name} to run: {error}": "Nem sikerült engedélyezni a(z) {name} futtatását: {error}",
+  "Could not allow {name} to run": "Nem sikerült engedélyezni a(z) {name} futtatását",
+  "Run or Open Script?": "Futtatja vagy megnyitja a parancsfájlt?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "A(z) {name} egy futtatható parancsfájl. Futtatni szeretné, vagy megnyitni a tartalma megtekintéséhez?",
+  "Run in Terminal": "Futtatás terminálban",
+  "Run": "Futtatás"
 }

@@ -306,6 +306,7 @@ fn teardown(fixture: &Fixture) {
     *hooks.launch_terminal.borrow_mut() = None;
     *hooks.open_files.borrow_mut() = None;
     *hooks.confirm.borrow_mut() = None;
+    *hooks.choose.borrow_mut() = None;
     *hooks.ask_keep_running.borrow_mut() = None;
     *hooks.action.borrow_mut() = None;
     *hooks.run_operation.borrow_mut() = None;
@@ -1344,6 +1345,7 @@ fn more_checks() -> Vec<(&'static str, Check)> {
         ("test_archive_service_submenus_screenshot", test_archive_service_submenus_screenshot),
         ("test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes",
          test_places_pane_keeps_its_layout_when_disk_space_arrives_and_on_unchanged_refreshes),
+        ("test_programs_run_appimages_ask_and_scripts_offer_run_or_open", test_programs_run_appimages_ask_and_scripts_offer_run_or_open),
     ]
 }
 
@@ -3075,5 +3077,108 @@ fn sidebar_shot(w: &FilesWindow, path: &str) -> Outcome {
     let crop = format!("{}x{}+{}+{}", bounds.width().round(), bounds.height().round(), bounds.x().round(), bounds.y().round());
     run("magick", &[&full, "-crop", &crop, "+repage", path])?;
     let _ = std::fs::remove_file(&full);
+    Ok(())
+}
+
+type Question = (String, String, Vec<String>, Box<dyn FnOnce(Option<usize>)>);
+
+/// Issue #25: opening a program runs it (an AppImage that may not run yet
+/// asks first), an executable script asks Run / Run in Terminal / Open, and
+/// everything else still opens with its application. One question at a time;
+/// the fake spawner records the app services and never runs anything.
+fn test_programs_run_appimages_ask_and_scripts_offer_run_or_open(f: &mut Fixture) -> Outcome {
+    use std::os::unix::fs::PermissionsExt;
+    let make = |name: &str, content: &[u8], mode: u32| -> PathBuf {
+        let path = f.source.join(name);
+        std::fs::write(&path, content).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(mode)).unwrap();
+        path
+    };
+    let mode = |path: &Path| std::fs::metadata(path).map(|m| m.permissions().mode() & 0o777).unwrap_or(0);
+    let mut elf = b"\x7fELF\x02\x01\x01\x00".to_vec();
+    elf.resize(256, 0);
+    let mut appimage = elf.clone();
+    appimage[8..11].copy_from_slice(b"AI\x02");
+    let tool = make("tool", &elf, 0o755);
+    let game = make("Game.AppImage", &appimage, 0o644);
+    let script = make("run me.sh", b"#!/bin/sh\nexit 0\n", 0o755);
+    let plain = make("plain.sh", b"#!/bin/sh\nexit 0\n", 0o644);
+    let notes = f.source.join("Alpha.txt");
+    let library = make("library.so", &elf, 0o644);
+    let spawner = tessel_dock::core::spawn::FakeSpawner::new();
+    *f.app.hooks.spawner.borrow_mut() = Some(Rc::new(spawner.clone()));
+    let opened: Rc<RefCell<Vec<String>>> = Rc::default();
+    let sink = opened.clone();
+    *f.app.hooks.open_files.borrow_mut() = Some(Rc::new(move |file: &gio::File| sink.borrow_mut().push(file.uri().to_string())));
+    let questions: Rc<RefCell<Vec<Question>>> = Rc::default();
+    let sink = questions.clone();
+    *f.app.hooks.choose.borrow_mut() = Some(Rc::new(move |title: &str, message: &str, buttons: &[String], answer: Box<dyn FnOnce(Option<usize>)>| {
+        sink.borrow_mut().push((title.to_owned(), message.to_owned(), buttons.to_vec(), answer));
+    }));
+    let next = || -> Result<Question, String> {
+        let mut list = questions.borrow_mut();
+        ensure_eq!(list.len(), 1);
+        Ok(list.remove(0))
+    };
+    let here = f.source.to_string_lossy().into_owned();
+    let path_of = |p: &Path| p.to_string_lossy().into_owned();
+    let program_service = |argv: &[String], program: &Path| -> Outcome {
+        ensure!(argv.iter().any(|a| a == "--service-type=forking") && argv.iter().any(|a| a == "--user"), "{argv:?}");
+        ensure_eq!(argv[argv.len() - 3..], ["--program".to_owned(), here.clone(), path_of(program)]);
+        ensure!(!argv.iter().any(|a| a == "sh" || a == "-c"), "{argv:?}");
+        Ok(())
+    };
+
+    f.window.open_files(vec![file(&tool), file(&game), file(&script), file(&plain), file(&notes), file(&library)]);
+    ensure_eq!(spawner.count(), 1);
+    program_service(&spawner.last_argv(), &tool)?;
+    ensure_eq!(*opened.borrow(), vec![uri(&plain), uri(&notes), uri(&library)]);
+    // The AppImage is asked about first; the script waits for its answer.
+    let (_, message, buttons, answer) = next()?;
+    ensure_eq!(message, "Game.AppImage is a program that is not allowed to run yet. Allow it to run and start it?");
+    ensure_eq!(buttons, vec!["Cancel", "Allow and Run"]);
+    answer(Some(1));
+    ensure_eq!(mode(&game), 0o755);
+    ensure_eq!(spawner.count(), 2);
+    program_service(&spawner.last_argv(), &game)?;
+    let (_, message, buttons, answer) = next()?;
+    ensure!(message.starts_with("run me.sh is an executable script."), "{message}");
+    ensure_eq!(buttons, vec!["Cancel", "Open", "Run in Terminal", "Run"]);
+    answer(Some(2));
+    ensure_eq!(spawner.count(), 3);
+    let argv = spawner.last_argv();
+    let terminal = argv.iter().position(|a| a == "--terminal").ok_or(format!("no terminal: {argv:?}"))?;
+    ensure_eq!(argv[terminal + 1], here);
+    ensure_eq!(argv.last().cloned(), Some(path_of(&script)));
+    ensure!(argv[terminal + 2].ends_with("xdg-terminal-exec") && argv[terminal + 3] == format!("--dir={here}"), "{argv:?}");
+    ensure!(questions.borrow().is_empty());
+
+    // Run, Open, Cancel and closing the question.
+    f.window.open_files(vec![file(&script)]);
+    (next()?.3)(Some(3));
+    ensure_eq!(spawner.count(), 4);
+    program_service(&spawner.last_argv(), &script)?;
+    f.window.open_files(vec![file(&script)]);
+    (next()?.3)(Some(1));
+    ensure_eq!(opened.borrow().last().cloned(), Some(uri(&script)));
+    f.window.open_files(vec![file(&script)]);
+    (next()?.3)(None);
+    std::fs::set_permissions(&game, std::fs::Permissions::from_mode(0o640)).unwrap();
+    f.window.open_files(vec![file(&game)]);
+    (next()?.3)(Some(0));
+    ensure_eq!(mode(&game), 0o640);
+    ensure_eq!(spawner.count(), 4);
+    ensure_eq!(opened.borrow().len(), 4);
+    // Allowing gives execute only where reading is allowed.
+    f.window.open_files(vec![file(&game)]);
+    (next()?.3)(Some(1));
+    ensure_eq!(mode(&game), 0o750);
+    ensure_eq!(spawner.count(), 5);
+    // Folders and desktop entries keep their handling.
+    std::fs::set_permissions(f.source.join("Documents"), std::fs::Permissions::from_mode(0o755)).unwrap();
+    let entry = make("app.desktop", b"#!/usr/bin/env xdg-open\n[Desktop Entry]\nType=Application\nName=App\nExec=true\n", 0o755);
+    f.window.open_files(vec![file(&entry)]);
+    ensure_eq!(opened.borrow().last().cloned(), Some(uri(&entry)));
+    ensure!(questions.borrow().is_empty() && spawner.count() == 5);
     Ok(())
 }

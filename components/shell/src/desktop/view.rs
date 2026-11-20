@@ -499,6 +499,14 @@ impl DesktopView {
 
     /// `_launch_path`: a .desktop file or a file/dir with its default handler.
     pub fn launch_path(&self, path: &str) {
+        if !path.ends_with(".desktop") && self.launch_program_path(path) {
+            return;
+        }
+        self.open_path(path);
+    }
+
+    /// `launch_path` without the program handling: the default handler.
+    fn open_path(&self, path: &str) {
         if let Some(hook) = self.launch_hook.borrow().clone() {
             return hook(path);
         }
@@ -514,6 +522,76 @@ impl DesktopView {
         if let Err(error) = result {
             let base = Path::new(path.trim_end_matches('/')).file_name().map(|n| n.to_string_lossy().into_owned()).filter(|n| !n.is_empty()).unwrap_or_else(|| path.to_owned());
             notify(&tr!("Could not open '{name}'", name = base), &error);
+        }
+    }
+
+    /// Issue #25: a native program or AppImage that may run starts, an
+    /// AppImage that may not offers to allow it, and an executable script asks
+    /// whether to run it (in a terminal) or open it. False for other files.
+    fn launch_program_path(&self, path: &str) -> bool {
+        use tessel_core::executable::Kind;
+        let program = Path::new(path);
+        let kind = if program.is_absolute() { tessel_core::executable::classify(program) } else { Kind::Other };
+        let name = program.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_owned());
+        let weak = self.me.borrow().clone();
+        let owned = path.to_owned();
+        match kind {
+            Kind::Other => return false,
+            Kind::Program => self.run_program(path, false),
+            Kind::AppImageNotExecutable => self.show_confirmation_dialog(
+                &tr!("Allow Program to Run?"),
+                &tr!("{name} is a program that is not allowed to run yet. Allow it to run and start it?", name = name.as_str()),
+                &[tr!("Cancel"), tr!("Allow and Run")],
+                Rc::new(move |index, _| {
+                    let Some(view) = weak.upgrade() else { return };
+                    if index != Some(1) {
+                        return;
+                    }
+                    match tessel_core::executable::allow_execution(Path::new(&owned)) {
+                        Ok(()) => view.run_program(&owned, false),
+                        Err(error) => notify(&tr!("Could not allow {name} to run", name = name.as_str()), &error),
+                    }
+                }),
+                None,
+                false,
+            ),
+            Kind::Script => self.show_confirmation_dialog(
+                &tr!("Run or Open Script?"),
+                &tr!("{name} is an executable script. Do you want to run it, or open it to see its contents?", name = name.as_str()),
+                &[tr!("Cancel"), tr!("Open"), tr!("Run in Terminal"), tr!("Run")],
+                Rc::new(move |index, _| {
+                    let Some(view) = weak.upgrade() else { return };
+                    match index {
+                        Some(1) => view.open_path(&owned),
+                        Some(2) => view.run_program(&owned, true),
+                        Some(3) => view.run_program(&owned, false),
+                        _ => {}
+                    }
+                }),
+                None,
+                false,
+            ),
+        }
+        true
+    }
+
+    /// Run the program at the absolute `path` in its folder as its own app
+    /// service (no shell); `terminal` runs it inside the default terminal.
+    fn run_program(&self, path: &str, terminal: bool) {
+        let environment = launch::labwc_launch_environment();
+        let cwd = Path::new(path).parent().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| "/".into());
+        let mut argv = vec![path.to_owned()];
+        if terminal {
+            let Some((command, _exe)) = launch::resolve_terminal(&environment, &cwd) else {
+                notify(&tr!("Could not open a terminal"), &tr!("No terminal app was found."));
+                return;
+            };
+            let name = Path::new(&command[0]).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            argv = tessel_core::executable::terminal_with_command(&name, &command, &argv);
+        }
+        if let Err(error) = launch::launch_process(&argv, Some(&environment), Some(&cwd), Some(self.launch_failed_cb())) {
+            let name = Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_owned());
+            notify(&tr!("Could not open '{name}'", name = name), &error);
         }
     }
 

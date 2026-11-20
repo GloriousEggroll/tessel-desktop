@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Przytrzymaj ten klawisz i przeciągnij, aby przenieść okno",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Przeciągnij prawym przyciskiem, aby zmienić rozmiar. Wybierz Super, jeśli przeciąganie z Alt przeszkadza w grach. Dotyczy to wszystkich myszy i paneli dotykowych.",
   "Super or Alt": "Super lub Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Wybierz, czy podczas przeciągania okna przenosi i zmienia ich rozmiar klawisz Super, Alt czy dowolny z nich."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Wybierz, czy podczas przeciągania okna przenosi i zmienia ich rozmiar klawisz Super, Alt czy dowolny z nich.",
+  "Allow Program to Run?": "Zezwolić na uruchomienie programu?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} to program, który nie ma jeszcze zezwolenia na uruchomienie. Zezwolić na uruchomienie i go uruchomić?",
+  "Allow and Run": "Zezwól i uruchom",
+  "Could not allow {name} to run: {error}": "Nie można zezwolić na uruchomienie {name}: {error}",
+  "Could not allow {name} to run": "Nie można zezwolić na uruchomienie {name}",
+  "Run or Open Script?": "Uruchomić czy otworzyć skrypt?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} to skrypt wykonywalny. Czy chcesz go uruchomić, czy otworzyć, aby zobaczyć jego zawartość?",
+  "Run in Terminal": "Uruchom w terminalu",
+  "Run": "Uruchom"
 }

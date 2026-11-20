@@ -26,6 +26,8 @@ pub struct Hooks {
     pub open_files: RefCell<Option<Rc<dyn Fn(&gio::File)>>>,
     /// `files_ui.confirm(parent, title, message, callback)`.
     pub confirm: RefCell<Option<Rc<dyn Fn(&str, &str, Box<dyn FnOnce(bool)>)>>>,
+    /// `dialogs::choose(parent, title, message, buttons, callback)` (running programs).
+    pub choose: RefCell<Option<Rc<dyn Fn(&str, &str, &[String], Box<dyn FnOnce(Option<usize>)>)>>>,
     /// `files_ui.ask_keep_running(parent, callback)`.
     pub ask_keep_running: RefCell<Option<Rc<dyn Fn(Box<dyn FnOnce(Option<KeepAnswer>)>)>>>,
     /// `patch.object(window, 'action', ...)`: return true to swallow the action.

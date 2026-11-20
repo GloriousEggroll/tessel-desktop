@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "Удерживайте эту клавишу и перетаскивайте, чтобы переместить окно",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "Перетаскивание правой кнопкой изменяет размер. Выберите Super, если перетаскивание с Alt мешает в играх. Это относится ко всем мышам и сенсорным панелям.",
   "Super or Alt": "Super или Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Выберите, какая клавиша перемещает окна и изменяет их размер при перетаскивании: Super, Alt или любая из них."
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "Выберите, какая клавиша перемещает окна и изменяет их размер при перетаскивании: Super, Alt или любая из них.",
+  "Allow Program to Run?": "Разрешить запуск программы?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} — программа, запуск которой ещё не разрешён. Разрешить запуск и запустить её?",
+  "Allow and Run": "Разрешить и запустить",
+  "Could not allow {name} to run: {error}": "Не удалось разрешить запуск {name}: {error}",
+  "Could not allow {name} to run": "Не удалось разрешить запуск {name}",
+  "Run or Open Script?": "Запустить или открыть сценарий?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} — исполняемый сценарий. Запустить его или открыть, чтобы посмотреть содержимое?",
+  "Run in Terminal": "Запустить в терминале",
+  "Run": "Запустить"
 }

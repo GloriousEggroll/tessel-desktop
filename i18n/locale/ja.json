@@ -2259,5 +2259,14 @@
   "Hold this key and drag to move a window": "このキーを押しながらドラッグしてウィンドウを移動",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "右ボタンでドラッグするとサイズを変更します。ゲームで Alt キーでのドラッグが邪魔になる場合は Super を選択してください。すべてのマウスとタッチパッドに適用されます。",
   "Super or Alt": "Super または Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "ドラッグでウィンドウを移動・サイズ変更するキーを Super、Alt、またはどちらでもよいかから選択します。"
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "ドラッグでウィンドウを移動・サイズ変更するキーを Super、Alt、またはどちらでもよいかから選択します。",
+  "Allow Program to Run?": "プログラムの実行を許可しますか？",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} はまだ実行が許可されていないプログラムです。実行を許可して起動しますか？",
+  "Allow and Run": "許可して実行",
+  "Could not allow {name} to run: {error}": "{name} の実行を許可できませんでした: {error}",
+  "Could not allow {name} to run": "{name} の実行を許可できませんでした",
+  "Run or Open Script?": "スクリプトを実行しますか、それとも開きますか？",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} は実行可能なスクリプトです。実行しますか？それとも開いて内容を表示しますか？",
+  "Run in Terminal": "端末で実行",
+  "Run": "実行"
 }

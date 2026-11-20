@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "กดปุ่มนี้ค้างไว้แล้วลากเพื่อย้ายหน้าต่าง",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "ลากด้วยปุ่มขวาเพื่อปรับขนาด เลือก Super หากการลากด้วย Alt รบกวนการเล่นเกม การตั้งค่านี้ใช้กับเมาส์และทัชแพดทุกตัว",
   "Super or Alt": "Super หรือ Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "เลือกว่าจะให้ Super, Alt หรือปุ่มใดก็ได้ย้ายและปรับขนาดหน้าต่างเมื่อคุณลาก"
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "เลือกว่าจะให้ Super, Alt หรือปุ่มใดก็ได้ย้ายและปรับขนาดหน้าต่างเมื่อคุณลาก",
+  "Allow Program to Run?": "อนุญาตให้โปรแกรมทำงานหรือไม่",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} เป็นโปรแกรมที่ยังไม่ได้รับอนุญาตให้ทำงาน อนุญาตให้ทำงานและเริ่มโปรแกรมหรือไม่",
+  "Allow and Run": "อนุญาตและเรียกใช้",
+  "Could not allow {name} to run: {error}": "ไม่สามารถอนุญาตให้ {name} ทำงานได้: {error}",
+  "Could not allow {name} to run": "ไม่สามารถอนุญาตให้ {name} ทำงานได้",
+  "Run or Open Script?": "เรียกใช้หรือเปิดสคริปต์",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} เป็นสคริปต์ที่เรียกใช้ได้ คุณต้องการเรียกใช้ หรือเปิดเพื่อดูเนื้อหา",
+  "Run in Terminal": "เรียกใช้ในเทอร์มินัล",
+  "Run": "เรียกใช้"
 }

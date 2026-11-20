@@ -372,3 +372,30 @@ fn program_helper_spawns_argv_in_cwd_without_waiting() {
     assert_eq!(backend.terminal.borrow().clone().unwrap(), ("/srv/x".to_owned(), strings(&["/usr/bin/tessel-archive", "--add", "a"])));
     assert_eq!(helper_main_with(&strings(&["--program", "/srv/x"]), &backend, || None), 2);
 }
+
+#[test]
+fn script_runs_in_the_terminal_in_its_folder_without_a_shell() {
+    crate::test_env();
+    let folder = "/srv/two words $(no-shell)";
+    let script = strings(&["/srv/two words $(no-shell)/run me.sh"]);
+    let spawner = FakeSpawner::new();
+    let mut launch = launcher(&spawner, env(&[("TERMINAL", "konsole"), ("PATH", "/test/bin"), ("XDG_CONFIG_HOME", "/nonexistent-files-model-test-config")]), None);
+    launch.which = Box::new(|name, _path| (name == "konsole").then(|| "/test/bin/konsole".to_owned()));
+    let (done, on_done) = done_log();
+    launch.launch_command_in_terminal(Path::new(folder), &script, None, Some(on_done)).unwrap();
+    let argv = spawner.last_argv();
+    assert_eq!(argv[argv.len() - 8..], ["--launch-helper", "--terminal", folder, "/test/bin/konsole", "--workdir", folder, "-e", script[0].as_str()]);
+    for argument in ["--wait", "--pipe", "--scope", "sh", "-c"] {
+        assert!(!argv.iter().any(|a| a == argument), "{argument}");
+    }
+    spawner.finish_last(Ok((true, String::new())));
+    assert_eq!(*done.borrow(), [None]);
+    // xdg-terminal-exec takes the command as its trailing arguments.
+    launch.which = Box::new(|name, _path| (name == "xdg-terminal-exec").then(|| "/test/bin/xdg-terminal-exec".to_owned()));
+    launch.launch_command_in_terminal(Path::new(folder), &script, None, None).unwrap();
+    let argv = spawner.last_argv();
+    assert_eq!(argv[argv.len() - 3..], ["/test/bin/xdg-terminal-exec".to_owned(), format!("--dir={folder}"), script[0].clone()]);
+    launch.which = Box::new(|_, _| None);
+    assert!(launch.launch_command_in_terminal(Path::new(folder), &script, None, None).is_err());
+    assert!(launch.launch_command_in_terminal(Path::new(folder), &[], None, None).is_err());
+}

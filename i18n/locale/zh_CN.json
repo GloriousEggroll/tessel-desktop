@@ -2259,5 +2259,14 @@
   "Hold this key and drag to move a window": "按住此键并拖动以移动窗口",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "用右键拖动可调整大小。如果在游戏中按住 Alt 拖动造成干扰，请选择 Super。此设置适用于所有鼠标和触摸板。",
   "Super or Alt": "Super 或 Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "选择拖动时由 Super、Alt 还是任一键来移动窗口和调整窗口大小。"
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "选择拖动时由 Super、Alt 还是任一键来移动窗口和调整窗口大小。",
+  "Allow Program to Run?": "允许运行此程序？",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} 是一个尚未被允许运行的程序。要允许它运行并启动它吗？",
+  "Allow and Run": "允许并运行",
+  "Could not allow {name} to run: {error}": "无法允许 {name} 运行：{error}",
+  "Could not allow {name} to run": "无法允许 {name} 运行",
+  "Run or Open Script?": "运行还是打开脚本？",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} 是一个可执行脚本。要运行它，还是打开它查看内容？",
+  "Run in Terminal": "在终端中运行",
+  "Run": "运行"
 }

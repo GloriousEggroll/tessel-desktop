@@ -6,6 +6,7 @@ pub mod base64;
 pub mod bus;
 pub mod clock;
 pub mod cursor_theme;
+pub mod executable;
 pub mod fsutil;
 pub mod glib_compat;
 pub mod i18n;

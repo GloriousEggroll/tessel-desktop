@@ -2080,5 +2080,14 @@
   "Hold this key and drag to move a window": "विंडो को हिलाने के लिए यह कुंजी दबाए रखें और खींचें",
   "Drag with the right button to resize. Choose Super if Alt-dragging gets in the way in games. This applies to every mouse and touchpad.": "आकार बदलने के लिए दाएँ बटन से खींचें। अगर Alt के साथ खींचना गेम में बाधा डालता है, तो Super चुनें। यह हर माउस और टचपैड पर लागू होता है।",
   "Super or Alt": "Super या Alt",
-  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "चुनें कि खींचते समय Super, Alt या दोनों में से कोई भी कुंजी विंडो को हिलाए और उनका आकार बदले।"
+  "Choose whether Super, Alt or either key moves and resizes windows when you drag.": "चुनें कि खींचते समय Super, Alt या दोनों में से कोई भी कुंजी विंडो को हिलाए और उनका आकार बदले।",
+  "Allow Program to Run?": "प्रोग्राम को चलने की अनुमति दें?",
+  "{name} is a program that is not allowed to run yet. Allow it to run and start it?": "{name} एक प्रोग्राम है जिसे अभी चलने की अनुमति नहीं है। इसे चलने की अनुमति देकर शुरू करें?",
+  "Allow and Run": "अनुमति दें और चलाएँ",
+  "Could not allow {name} to run: {error}": "{name} को चलने की अनुमति नहीं दी जा सकी: {error}",
+  "Could not allow {name} to run": "{name} को चलने की अनुमति नहीं दी जा सकी",
+  "Run or Open Script?": "स्क्रिप्ट चलाएँ या खोलें?",
+  "{name} is an executable script. Do you want to run it, or open it to see its contents?": "{name} एक निष्पादन योग्य स्क्रिप्ट है। क्या आप इसे चलाना चाहते हैं, या इसकी सामग्री देखने के लिए खोलना चाहते हैं?",
+  "Run in Terminal": "टर्मिनल में चलाएँ",
+  "Run": "चलाएँ"
 }

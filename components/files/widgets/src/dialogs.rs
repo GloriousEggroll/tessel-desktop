@@ -128,6 +128,36 @@ pub fn confirm(parent: Option<&gtk::Window>, title: &str, message: &str, callbac
     window
 }
 
+/// A question with one button per answer, left to right (the last one is the
+/// suggested action): `callback(Some(index))` for a button, `None` when the
+/// window is closed, exactly once.
+pub fn choose(parent: Option<&gtk::Window>, title: &str, message: &str, buttons: &[String], callback: impl FnOnce(Option<usize>) + 'static) -> gtk::Window {
+    let (window, content) = dialog_window(parent, title, 460, -1);
+    content.append(&gtk::Label::builder().label(message).xalign(0.0).wrap(true).build());
+    let row = button_row();
+    let once = Once::new(callback);
+    for (index, label) in buttons.iter().enumerate() {
+        let button = gtk::Button::with_label(label);
+        if index + 1 == buttons.len() {
+            button.add_css_class("suggested-action");
+        }
+        let (once, weak) = (once.clone(), window.downgrade());
+        button.connect_clicked(move |_| {
+            if let Some(window) = weak.upgrade() {
+                once.complete(&window, Some(index));
+            }
+        });
+        row.append(&button);
+    }
+    content.append(&row);
+    window.connect_close_request(move |window| {
+        once.complete(window, None);
+        glib::Propagation::Proceed
+    });
+    window.present();
+    window
+}
+
 /// `prompt_text(parent, title, message, initial, callback)`: `Some(text)` on OK/Enter, `None` otherwise.
 pub fn prompt_text(parent: Option<&gtk::Window>, title: &str, message: &str, initial: Option<&str>,
                    callback: impl FnOnce(Option<String>) + 'static) -> gtk::Window {
