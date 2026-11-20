@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 9e2c93a5ea13b8c2991f561aae0bae7993f2ee6d}
+%{!?commit:%global commit 1ff2fd8061db85be35f6dd81ff59657386838a16}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-clipboard
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tessel clipboard: keeps copied content after its application closes
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -74,6 +74,9 @@ install -Dm644 packaging/defaults/usr/lib/systemd/user-preset/90-tessel.preset %
 %{_userpresetdir}/90-tessel.preset
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
+- Run only in the labwc session: in Plasma it fought KDE's clipboard and Spectacle crashed copying a screenshot
+
 * Mon Nov 09 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-2
 - Require tessel-common by version, so it can update on its own
 
