@@ -144,6 +144,43 @@ fn shell_imports_optional_xdg_paths_only_when_set_before_reload() {
     }
 }
 
+/// A desktop name left by another desktop would choose that desktop's portal
+/// backends (issue #20: KDE's, which cannot capture the screen under labwc).
+#[test]
+fn shell_replaces_another_desktops_name() {
+    let root = scratch("labwc-xdg-desktop-name");
+    let bin = root.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    let log = root.join("commands.log");
+    for name in ["dbus-update-activation-environment", "systemctl"] {
+        stub(&bin, name, &format!("#!/bin/sh\necho \"{name}|$XDG_CURRENT_DESKTOP|${{IFS+set}}\" >> \"{}\"\n", log.display()));
+    }
+    for (before, after) in [(Some("KDE"), "wlroots:labwc"), (Some("KDE:labwc"), "wlroots:labwc"), (Some("labwc:GNOME"), "wlroots:labwc"),
+                            (Some("wlroots:labwc"), "wlroots:labwc"), (Some("labwc:wlroots"), "labwc:wlroots"), (Some("labwc"), "labwc"),
+                            (Some("wlroots"), "wlroots:labwc"), (Some(""), "labwc"), (None, "labwc")] {
+        let _ = fs::remove_file(&log);
+        let mut command = Command::new("sh");
+        // The block is sourced by labwc's autostart: it must leave IFS and its own variables alone.
+        command.arg("-c").arg(format!("{}\necho \"end|${{tessel_foreign_desktop-}}${{tessel_saved_ifs-}}${{tessel_desktop_name-}}|$(printf 'a b' | wc -w)\"", xdg::ENV_BLOCK))
+            .env_clear().env("PATH", format!("{}:/usr/bin:/bin", bin.display()));
+        if let Some(before) = before {
+            command.env("XDG_CURRENT_DESKTOP", before);
+        }
+        let output = command.output().unwrap();
+        assert!(output.status.success(), "{before:?}: {}", String::from_utf8_lossy(&output.stderr));
+        let first = fs::read_to_string(&log).unwrap().lines().next().unwrap().to_owned();
+        assert_eq!(first.split('|').nth(1), Some(after), "{before:?}");
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let mut words = "a b";
+        let _ = &mut words;
+        assert_eq!(stdout.trim().split('|').nth(1), Some(""), "{before:?}: helper variables are unset");
+        let split: Vec<String> = Command::new("sh").arg("-c").arg(format!("{}\nset -- $TESSEL_WORDS; echo $#", xdg::ENV_BLOCK))
+            .env_clear().env("PATH", format!("{}:/usr/bin:/bin", bin.display())).env("TESSEL_WORDS", "a b:c")
+            .output().map(|o| String::from_utf8_lossy(&o.stdout).lines().map(str::to_owned).collect()).unwrap();
+        assert_eq!(split.last().map(String::as_str), Some("2"), "word splitting is back to normal");
+    }
+}
+
 #[test]
 fn app_autostart_waits_for_dock_start_to_finish() {
     // Model a slow cold-start readiness handshake: a background start would let XDG apps

@@ -951,7 +951,9 @@ pub fn split_environment(current: &str, local: &str) -> (String, String) {
             }
             continue;
         };
-        if last[&name] == number && !managed.contains(&name) {
+        // Another desktop's name is neither kept nor moved to the personal file.
+        let foreign_desktop = name == "XDG_CURRENT_DESKTOP" && crate::xdg::session_desktop(&value) != value;
+        if last[&name] == number && !managed.contains(&name) && !foreign_desktop {
             if SETTINGS_VARIABLES.contains(&name.as_str()) && lookup(&template, &name) != Some(value.as_str()) {
                 kept.push(format!("{name}={value}\n"));
             } else if lookup(&template, &name) != Some(value.as_str()) && lookup(&local_values, &name) != Some(value.as_str()) {

@@ -21,7 +21,24 @@ pub const STOP_BEGIN: &str = "# Begin labwc XDG session cleanup";
 pub const STOP_END: &str = "# End labwc XDG session cleanup";
 
 pub const ENV_BLOCK: &str = r#"# Begin labwc XDG session environment
-# Keep the existing desktop first so portal backend selection is preserved.
+# The portal chooses its backends by the first desktop name. A name left by
+# another desktop (KDE, GNOME) would send screen capture to that desktop's
+# backend, which cannot capture here: such a value is replaced.
+tessel_foreign_desktop=
+tessel_saved_ifs=$IFS
+IFS=:
+for tessel_desktop_name in ${XDG_CURRENT_DESKTOP:-}; do
+    case "$tessel_desktop_name" in
+        wlroots|labwc|'') ;;
+        *) tessel_foreign_desktop=1 ;;
+    esac
+done
+IFS=$tessel_saved_ifs
+if [ -n "$tessel_foreign_desktop" ]; then
+    XDG_CURRENT_DESKTOP=wlroots:labwc
+fi
+unset tessel_foreign_desktop tessel_saved_ifs tessel_desktop_name
+# Keep an existing wlroots first so portal backend selection is preserved.
 case ":${XDG_CURRENT_DESKTOP:-}:" in
     *:labwc:*) ;;
     *) XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:+$XDG_CURRENT_DESKTOP:}labwc" ;;
@@ -68,15 +85,26 @@ pub fn block(text: &str, begin: &str, end: &str, content: &str, before: Option<&
 
 static DESKTOP_LINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^XDG_CURRENT_DESKTOP=([^\n]*)").unwrap());
 
+/// The desktop names of this session for a given `XDG_CURRENT_DESKTOP`.
+/// `wlroots` and `labwc` are kept in their order, with `labwc` added when
+/// missing. Any other name (another desktop's, which would select that
+/// desktop's portal backends) makes the whole value `wlroots:labwc`.
+pub fn session_desktop(value: &str) -> String {
+    let names: Vec<&str> = value.split(':').filter(|name| !name.is_empty()).collect();
+    if names.iter().any(|name| !matches!(*name, "wlroots" | "labwc")) {
+        return "wlroots:labwc".into();
+    }
+    if names.contains(&"labwc") {
+        return value.to_owned();
+    }
+    if value.is_empty() { "labwc".into() } else { format!("{value}:labwc") }
+}
+
 pub fn desktop_identity(text: &str) -> String {
     if DESKTOP_LINE.is_match(text) {
         return DESKTOP_LINE
             .replace_all(text, |caps: &Captures| {
-                let mut value = caps[1].to_owned();
-                if !value.split(':').any(|part| part == "labwc") {
-                    value = if value.is_empty() { "labwc".into() } else { format!("{value}:labwc") };
-                }
-                format!("XDG_CURRENT_DESKTOP={value}")
+                format!("XDG_CURRENT_DESKTOP={}", session_desktop(&caps[1]))
             })
             .into_owned();
     }
@@ -268,6 +296,14 @@ mod tests {
         assert!(after.contains("OTHER=unchanged\n"));
         assert_eq!(desktop_identity(&after), after);
         assert_eq!(desktop_identity("A=1\n\n"), "A=1\nXDG_CURRENT_DESKTOP=labwc\n");
+        // Another desktop's name would choose that desktop's portal backends.
+        for foreign in ["KDE", "KDE:labwc", "labwc:KDE", "GNOME:wlroots:labwc", "sway"] {
+            assert_eq!(session_desktop(foreign), "wlroots:labwc", "{foreign}");
+        }
+        for own in ["wlroots:labwc", "labwc:wlroots", "labwc"] {
+            assert_eq!(session_desktop(own), own);
+        }
+        assert_eq!(desktop_identity("XDG_CURRENT_DESKTOP=KDE\n"), "XDG_CURRENT_DESKTOP=wlroots:labwc\n");
     }
 
     #[test]
