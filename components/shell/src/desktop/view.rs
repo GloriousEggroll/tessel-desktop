@@ -365,7 +365,8 @@ impl DesktopView {
         self.grid.add_controller(right);
 
         let w = Rc::downgrade(self);
-        let monitor = gio::File::for_path(config::desktop_dir()).monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE).ok();
+        // Watching a folder that does not exist yet would miss what is put in it.
+        let monitor = gio::File::for_path(config::ensure_desktop_dir()).monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE).ok();
         if let Some(monitor) = &monitor {
             monitor.connect_changed(move |_, _, _, event| if let Some(v) = w.upgrade() { v.on_desktop_changed(event) });
         }
@@ -517,7 +518,7 @@ impl DesktopView {
     }
 
     pub fn launch_file_manager(&self) {
-        self.launch_path(&config::desktop_dir().to_string_lossy());
+        self.launch_path(&config::ensure_desktop_dir().to_string_lossy());
     }
 
     pub fn launch_web_browser(self: &Rc<Self>) {
