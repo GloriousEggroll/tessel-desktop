@@ -25,7 +25,7 @@ user-facing spec for behaviour and must stay true.
 | Waybar-compat scripts | `~/.config/waybar/scripts/showdesktop.sh` → `tessel-dock --desktop-status`; `toggle_showdesktop.sh` → `tessel-dock --toggle-desktop` | tessel-shell/install_switcher.py:133-134 |
 | Native helpers | `tessel-dock-toplevel`, `tessel-dock-workspaces` (C, built by build_helper.py with `wayland-scanner client-header/private-code`, `cc -std=c11 -O2 -Wall -Wextra -Werror`, pkg-config wayland-client) | build_helper.py:21-27 |
 | Readiness | sd_notify `READY=1\nSTATUS=Dock and system tray ready` over `$NOTIFY_SOCKET` (abstract `@` supported) **only after** startup complete AND tray backend `ready` AND `host_registered`; sent once | service_readiness.py; tessel-dock.py:166-169 |
-| Signals | SIGTERM/SIGINT → `app.quit()` (orderly shutdown closes helpers, restores previews) | tessel-dock.py:180-181,805-856 |
+| Signals | SIGTERM/SIGINT/SIGHUP → logged, then `app.quit()` (orderly shutdown closes helpers, restores previews) | tessel-dock.py:180-181,805-856 |
 
 ### CLI (`Gtk.Application`, id `org.tessel.Dock`, `HANDLES_COMMAND_LINE`) — tessel-dock.py:298-367
 Second invocations forward argv to the primary via `org.gtk.Application.CommandLine`. If argv contains any of
@@ -37,7 +37,7 @@ Unknown option → stderr `Unknown option: X` exit 2.
 |---|---|---|
 | (none) | start dock (primary) | — |
 | `--settings` | present (single) Dock Settings window | 0 |
-| `--quit` | quit | 0 |
+| `--quit` | quit (the running dock itself exits 75, which the unit treats as success and does not restart; after any other exit `Restart=always` brings it back) | 0 |
 | `--menu` | toggle application menu on the output the compositor picks (see §5 probe) | 0 / 1 if no docks |
 | `--menu-hotkey` | same, but suppressed when focused window is fullscreen and `menu_hotkey_fullscreen=false` (returns 0) | 0/1 |
 | `--toggle-desktop` | minimize all / restore only windows it minimized, refocus previous focus | 0 / 1 if backend not ready |

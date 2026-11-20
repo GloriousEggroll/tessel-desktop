@@ -14,5 +14,10 @@ Environment=GDK_BACKEND=wayland
 EnvironmentFile=-%h/.config/labwc/environment
 EnvironmentFile=-%h/.config/labwc/environment.d/90-local.env
 ExecStart=%h/.local/lib/tessel/tessel-dock
-Restart=on-failure
+# The dock comes back after any exit that systemd or `tessel-dock --quit`
+# (exit status 75) did not ask for. A signal from elsewhere ends it with a
+# clean exit, which Restart=on-failure left without a dock until the next login.
+Restart=always
+SuccessExitStatus=75
+RestartPreventExitStatus=75
 RestartSec=1

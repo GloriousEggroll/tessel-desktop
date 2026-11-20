@@ -111,6 +111,8 @@ pub struct App {
     display_signals: RefCell<Vec<(glib::Object, glib::SignalHandlerId)>>,
     workarea_monitor_signals: RefCell<Vec<(gdk::Monitor, glib::SignalHandlerId)>>,
     signal_sources: RefCell<Vec<glib::SourceId>>,
+    /// `--quit` asked the dock to stop (see [`EXIT_QUIT_REQUESTED`]).
+    quit_requested: Cell<bool>,
     menu_probe: RefCell<Option<Rc<MenuProbe>>>,
     activities_request: RefCell<Option<gio::Subprocess>>,
     focused_title: Rc<RefCell<FocusedTitle>>,
@@ -141,7 +143,7 @@ impl App {
             monitor_signature: RefCell::new(None), primary_outputs: RefCell::default(), primary_watch: RefCell::new(None), trash_count: Cell::new(None), trash_timer: RefCell::new(None),
             trash_refresh_timer: RefCell::new(None), trash_query: RefCell::new(None), trash_monitor: RefCell::new(None),
             catalog_timer: RefCell::new(None), catalog_monitor: RefCell::new(None), display_signals: RefCell::default(),
-            workarea_monitor_signals: RefCell::default(), signal_sources: RefCell::default(), menu_probe: RefCell::new(None),
+            workarea_monitor_signals: RefCell::default(), signal_sources: RefCell::default(), quit_requested: Cell::new(false), menu_probe: RefCell::new(None),
             activities_request: RefCell::new(None), focused_title: Rc::new(RefCell::new(FocusedTitle::new())),
             dock_app: OnceCell::new(),
         })
@@ -316,9 +318,12 @@ impl App {
                 Err(error) => eprintln!("Tessel Dock: {error}"),
             }
         }
-        for signal in [libc::SIGTERM, libc::SIGINT] {
+        // SIGHUP would end the dock without a word; systemd counts all three
+        // as a clean exit, so say which one it was.
+        for (signal, name) in [(libc::SIGTERM, "SIGTERM"), (libc::SIGINT, "SIGINT"), (libc::SIGHUP, "SIGHUP")] {
             let weak = self.weak();
             let source = glib_unix::unix_signal_add_local(signal, move || {
+                eprintln!("Tessel Dock: stopping on {name}");
                 if let Some(app) = weak.upgrade() {
                     app.application.quit();
                 }
@@ -508,6 +513,8 @@ impl App {
                 0
             }
             Command::Quit => {
+                eprintln!("Tessel Dock: stopping on --quit");
+                self.quit_requested.set(true);
                 self.application.quit();
                 0
             }
@@ -1238,6 +1245,13 @@ impl SettingsApp for AppRef {
 // ------------------------------------------------------------------ entry point
 
 /// The `tessel-dock` binary.
+/// Exit status of a dock that `--quit` stopped. The service restarts after
+/// every other exit it did not ask for itself (`Restart=always`): a dock that
+/// some signal ended exits 0, and used to stay gone. The unit lists this
+/// status in `SuccessExitStatus=` and `RestartPreventExitStatus=`, so `--quit`
+/// still stops the dock for good.
+pub const EXIT_QUIT_REQUESTED: i32 = 75;
+
 pub fn main() -> i32 {
     tessel_core::i18n::initialize();
     let argv: Vec<String> = std::env::args().collect();
@@ -1261,6 +1275,7 @@ pub fn main() -> i32 {
     let weak = Rc::downgrade(&app);
     application.connect_shutdown(move |_| if let Some(app) = weak.upgrade() { app.shutdown() });
     let status = application.run_with_args(&argv);
+    let quit_requested = app.quit_requested.get();
     drop(app);
-    i32::from(status.get())
+    if quit_requested { EXIT_QUIT_REQUESTED } else { i32::from(status.get()) }
 }

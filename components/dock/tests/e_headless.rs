@@ -312,6 +312,13 @@ fn launcher_options_never_start_a_dock_and_singleton_health_shutdown() -> Result
     ensure!(code == 0, "--quit exit {code}");
     let mut dock = dock;
     ensure!(wait_for(10.0, || matches!(dock.child.try_wait(), Ok(Some(_)))), "--quit did not stop the dock");
+    // The status the unit lists in RestartPreventExitStatus=, so --quit is final.
+    let status = dock.child.try_wait().ok().flatten().and_then(|status| status.code());
+    ensure!(status == Some(tessel_dock::app::EXIT_QUIT_REQUESTED), "--quit left exit status {status:?}");
+    let unit = include_str!("../../../data/units/tessel-dock.service");
+    for line in ["Restart=always", "SuccessExitStatus=75", "RestartPreventExitStatus=75"] {
+        ensure!(unit.lines().any(|l| l == line), "tessel-dock.service lacks {line}");
+    }
     let dock2 = Dock::start("sigterm", serde_json::json!({"mode": "bar"}))?;
     ensure!(dock2.stop()? == 0, "SIGTERM exit status");
     Ok(())
