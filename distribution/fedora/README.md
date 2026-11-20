@@ -63,4 +63,4 @@ Raise `Version:` in every spec together, because every package requires at least
   Updates never change this choice, and it takes effect at the next boot.
   - To use the Tessel login screen: `systemctl enable --force tessel-login.service`
   - To use normal greetd: `systemctl disable tessel-login.service`, then `systemctl enable --force greetd.service`
-- `tessel-keyring` conflicts with `gnome-keyring`: both own the `org.freedesktop.secrets` activation file.
+- `tessel-keyring` installs alongside `gnome-keyring`. It ships no `org.freedesktop.secrets` activation file (gnome-keyring owns that path); the Tessel session's autostart starts `tessel-keyring.service` before the portal and applications, so it owns the name there, and gnome-keyring serves other desktops. The two stores are separate.

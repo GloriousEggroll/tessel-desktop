@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 1969199e99bf090b6d57d18016def466e6360e52}
+%{!?commit:%global commit 4c25c60a15b6aa6da96616eef58229122201fa78}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-session-startup
 Version:        0.1.0
-Release:        12%{?dist}
+Release:        13%{?dist}
 Summary:        Tessel session: labwc configuration, autostart and login entry
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -116,6 +116,9 @@ install -Dm644 packaging/defaults/etc/xdg/autostart/tessel-icon-theme.desktop %{
 %config(noreplace) %{_sysconfdir}/xdg/autostart/tessel-icon-theme.desktop
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-13
+- Start tessel-keyring at login, before the portal and applications, so it works with gnome-keyring installed too
+
 * Wed Nov 18 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-12
 - Touchpad gestures by default: three- and four-finger swipes left and right switch workspace, up opens the window overview, down shows the desktop; added at sign-in to a labwc configuration that has no touchpad section; needs labwc 0.20.2-31
 

@@ -7,12 +7,12 @@
 # Sources come from GitHub: the commit this package is built from, and the
 # vendored crates for that commit's Cargo.lock (see README.md, "Sources").
 # build.sh overrides both to build the working tree.
-%{!?commit:%global commit 219a63a92b10f8502a8b97012868f4524014fc05}
+%{!?commit:%global commit 4c25c60a15b6aa6da96616eef58229122201fa78}
 %{!?vendorlock:%global vendorlock ace8d23feae6}
 
 Name:           tessel-keyring
 Version:        0.1.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Tessel saved passwords (Secret Service)
 License:        GPL-3.0-or-later
 URL:            https://github.com/GloriousEggroll/tessel-desktop
@@ -39,7 +39,8 @@ BuildRequires:  systemd-rpm-macros
 Requires:       tessel-common >= %{version}
 Requires:       pam
 Requires:       xdg-desktop-portal
-Conflicts:      gnome-keyring
+# The session starts the keyring; there is no D-Bus activation file.
+Requires:       tessel-session-startup >= 0.1.0-13
 
 %description
 Tessel saved passwords (Secret Service). Part of the Tessel desktop.
@@ -74,8 +75,9 @@ sed -e 's|@LIBDIR@|%{tessel_libdir}|g' -e 's#^\(Exec\|TryExec\)=tessel-#\1=%{tes
 chmod 644 %{buildroot}%{_datadir}/applications/org.tessel.Passwords.desktop
 sed 's|^ExecStart=.*|ExecStart=%{tessel_libdir}/tessel-keyring|' components/keyring/data/tessel-keyring.service > tessel-keyring.service
 install -Dm644 tessel-keyring.service %{buildroot}%{_userunitdir}/tessel-keyring.service
-sed 's|^Exec=.*|Exec=%{tessel_libdir}/tessel-keyring|' components/keyring/data/org.freedesktop.secrets.service > org.freedesktop.secrets.service
-install -Dm644 org.freedesktop.secrets.service %{buildroot}%{_datadir}/dbus-1/services/org.freedesktop.secrets.service
+# No activation file for org.freedesktop.secrets: gnome-keyring owns that path,
+# and the two can be installed together. The Tessel session starts
+# tessel-keyring.service itself (tessel-configure-session's autostart).
 install -Dm644 packaging/defaults/usr/share/xdg-desktop-portal/portals/tessel-keyring.portal %{buildroot}%{_datadir}/xdg-desktop-portal/portals/tessel-keyring.portal
 install -Dm755 "$CARGO_TARGET_DIR/release/libpam_tessel_keyring.so" %{buildroot}%{_libdir}/security/pam_tessel_keyring.so
 
@@ -98,11 +100,13 @@ fi
 %{_bindir}/tessel-keyring-prompt
 %{_datadir}/applications/org.tessel.Passwords.desktop
 %{_userunitdir}/tessel-keyring.service
-%{_datadir}/dbus-1/services/org.freedesktop.secrets.service
 %{_datadir}/xdg-desktop-portal/portals/tessel-keyring.portal
 %{_libdir}/security/pam_tessel_keyring.so
 
 %changelog
+* Thu Nov 19 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-4
+- Can be installed alongside gnome-keyring: the Tessel session starts the keyring itself instead of D-Bus activation
+
 * Wed Nov 11 2026 GloriousEggroll <tcrider84@gmail.com> - 0.1.0-3
 - Window buttons are as far from the side of the window as from its top
 - Rounded corners are 8 px, as browsers' own windows have
